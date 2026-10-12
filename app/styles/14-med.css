@@ -1,0 +1,734 @@
+.vitals-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(330px, 0.58fr);
+  gap: 20px;
+  align-items: start;
+}
+.vitals-browser {
+  min-width: 0;
+  overflow: hidden;
+}
+.vitals-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(210px, 0.75fr) 155px;
+  gap: 12px;
+  align-items: end;
+  padding: 17px 18px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.vitals-toolbar > div:first-child {
+  align-self: center;
+}
+.vitals-toolbar .resident-search {
+  min-height: 39px;
+}
+.vitals-unit-filter {
+  display: grid;
+  gap: 5px;
+}
+.vitals-unit-filter > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+}
+.vitals-unit-filter select {
+  width: 100%;
+  height: 39px;
+  padding: 0 30px 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fbfdff;
+  font-size: 10px;
+  font-weight: 680;
+}
+.vitals-unit-filter select:focus {
+  outline: 3px solid rgba(37, 99, 235, 0.12);
+  border-color: #93c5fd;
+}
+.vitals-status-filters {
+  grid-column: 1/-1;
+}
+.vitals-list {
+  min-height: 430px;
+}
+.vitals-row {
+  width: 100%;
+  min-height: 102px;
+  display: grid;
+  grid-template-columns: 40px minmax(135px, 0.66fr) minmax(395px, 1.55fr) auto 14px;
+  gap: 11px;
+  align-items: center;
+  padding: 13px 16px;
+  border: 0;
+  border-bottom: 1px solid #e9eef4;
+  color: var(--ink);
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  transition: 140ms ease;
+}
+.vitals-row:last-child {
+  border-bottom: 0;
+}
+.vitals-row:hover {
+  background: #f8fbff;
+}
+.vitals-row.selected {
+  background: var(--brand-soft);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+.vitals-row > .resident-avatar {
+  width: 40px;
+  height: 40px;
+}
+.vitals-person {
+  min-width: 0;
+}
+.vitals-person strong,
+.vitals-person small,
+.vitals-person em {
+  display: block;
+}
+.vitals-person strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vitals-person small {
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vitals-person em {
+  margin-top: 5px;
+  color: var(--brand);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 720;
+}
+.vitals-values {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(53px, 1fr));
+  gap: 5px;
+}
+.vitals-values > span {
+  min-width: 0;
+  padding: 7px 5px;
+  border-left: 1px solid var(--line);
+  text-align: center;
+}
+.vitals-values small,
+.vitals-values strong,
+.vitals-values em {
+  display: block;
+}
+.vitals-values small {
+  color: var(--muted);
+  font-size: 8px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+.vitals-values strong {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.vitals-values em {
+  margin-top: 2px;
+  color: #7b8ca0;
+  font-size: 7px;
+  font-style: normal;
+}
+.vitals-row > .status-badge {
+  justify-self: end;
+}
+.vitals-row > svg {
+  width: 14px;
+  height: 14px;
+  color: #9aabbe;
+}
+.vitals-detail {
+  display: grid;
+  gap: 20px;
+  position: sticky;
+  top: 90px;
+}
+.vitals-detail-card {
+  padding: 17px;
+}
+.vitals-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.vitals-detail-head .care-profile-identity {
+  align-items: center;
+}
+.vitals-detail-head .care-profile-identity h2 {
+  font-size: 15px;
+}
+.vitals-detail-head .care-profile-identity > .resident-avatar {
+  width: 44px;
+  height: 44px;
+}
+.vitals-clinical-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px;
+  border-left: 3px solid var(--attention);
+  background: var(--attention-soft);
+}
+.vitals-clinical-note.critical {
+  border-color: var(--critical);
+  background: var(--critical-soft);
+}
+.vitals-clinical-note.stable {
+  border-color: var(--success);
+  background: #e8f5ef;
+}
+.vitals-clinical-note > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--attention);
+}
+.vitals-clinical-note.critical > svg {
+  color: var(--critical);
+}
+.vitals-clinical-note.stable > svg {
+  color: var(--success);
+}
+.vitals-clinical-note p {
+  margin: 0;
+}
+.vitals-clinical-note strong {
+  display: block;
+  font-size: 10px;
+}
+.vitals-clinical-note span {
+  display: block;
+  margin-top: 4px;
+  color: #52687d;
+  font-size: 9px;
+  line-height: 1.45;
+}
+.vitals-detail-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 15px;
+}
+.vitals-detail-actions button {
+  justify-content: center;
+}
+.vitals-trend-card {
+  overflow: hidden;
+}
+.vitals-metric-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 0 15px 12px;
+  overflow-x: auto;
+}
+.vitals-metric-tabs button {
+  min-height: 29px;
+  flex: 0 0 auto;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: white;
+  font-size: 8px;
+  font-weight: 730;
+  cursor: pointer;
+}
+.vitals-metric-tabs button:hover,
+.vitals-metric-tabs button.active {
+  color: var(--brand-dark);
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+.vitals-chart {
+  height: 174px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  align-items: end;
+  padding: 14px 16px 10px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(to bottom, #f9fbfe, #fff);
+}
+.vitals-chart-point {
+  height: 100%;
+  display: grid;
+  grid-template-rows: 20px 1fr 28px;
+  gap: 4px;
+  align-items: end;
+  text-align: center;
+}
+.vitals-chart-point > strong {
+  color: var(--brand-dark);
+  font-size: 10px;
+}
+.vitals-chart-point > span {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid #cbd7e6;
+}
+.vitals-chart-point i {
+  width: min(28px, 72%);
+  min-height: 22px;
+  display: block;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
+}
+.vitals-chart-point small {
+  align-self: start;
+  color: var(--muted);
+  font-size: 7px;
+  line-height: 1.2;
+}
+.vitals-chart-note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 11px 15px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  background: #f9fbfd;
+  font-size: 8px;
+}
+.vitals-chart-note svg {
+  width: 14px;
+  height: 14px;
+  color: var(--brand);
+}
+.vitals-due-card {
+  overflow: hidden;
+}
+.vitals-due-card > div:last-child {
+  padding: 4px 12px 12px;
+}
+.vitals-due-card > div:last-child > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 14px;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 8px;
+  border: 0;
+  border-bottom: 1px solid #e9eef4;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+}
+.vitals-due-card > div:last-child > button:last-child {
+  border-bottom: 0;
+}
+.vitals-due-card > div:last-child > button:hover {
+  background: var(--brand-soft);
+}
+.vitals-due-card time {
+  color: var(--brand);
+  font-size: 10px;
+  font-weight: 780;
+}
+.vitals-due-card strong,
+.vitals-due-card small {
+  display: block;
+}
+.vitals-due-card strong {
+  font-size: 10px;
+}
+.vitals-due-card small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+.vitals-due-card button > svg {
+  width: 13px;
+  height: 13px;
+  color: #9aabbe;
+}
+.medication-two-column {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.42fr) minmax(0, 1.58fr);
+  gap: 20px;
+  align-items: start;
+}
+.med-resident-browser {
+  position: sticky;
+  top: 90px;
+  overflow: hidden;
+}
+.med-resident-toolbar {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.med-resident-list {
+  max-height: 620px;
+  overflow-y: auto;
+  padding: 7px;
+}
+.med-resident-list > button {
+  width: 100%;
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 39px minmax(0, 1fr) 14px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.med-resident-list > button:hover {
+  background: #f7faff;
+}
+.med-resident-list > button.selected {
+  background: var(--brand-soft);
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+.med-resident-list .resident-avatar {
+  width: 39px;
+  height: 39px;
+}
+.med-resident-list strong,
+.med-resident-list small,
+.med-resident-list em {
+  display: block;
+}
+.med-resident-list strong {
+  font-size: 11px;
+}
+.med-resident-list small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.med-resident-list em {
+  margin-top: 4px;
+  color: var(--brand);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 720;
+}
+.med-resident-list svg {
+  width: 13px;
+  color: #9aabbe;
+}
+.med-main-column {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+}
+.med-profile-head {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 15px 17px;
+}
+.med-profile-head .care-profile-identity h2 {
+  font-size: 15px;
+}
+.med-profile-head .resident-avatar {
+  width: 44px;
+  height: 44px;
+}
+.med-profile-flags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.med-plan-card,
+.med-round-card,
+.med-stock-card,
+.med-reserve-card,
+.med-reserve-log {
+  overflow: hidden;
+}
+.med-plan-head,
+.med-plan-list > button {
+  display: grid;
+  grid-template-columns: 34px minmax(145px, 1fr) minmax(115px, 0.72fr) minmax(150px, 1fr) minmax(145px, 0.9fr) auto 13px;
+  gap: 11px;
+  align-items: center;
+}
+.med-plan-head {
+  min-height: 37px;
+  padding: 0 16px;
+  color: var(--muted);
+  background: #f7f9fc;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.med-plan-head > span:first-child {
+  grid-column: 1/3;
+}
+.med-plan-list > button {
+  width: 100%;
+  min-height: 78px;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 1px solid #e9eef4;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+}
+.med-plan-list > button:last-child {
+  border-bottom: 0;
+}
+.med-plan-list > button:hover {
+  background: #f8fbff;
+}
+.med-pill-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+.med-pill-icon svg {
+  width: 17px;
+  height: 17px;
+}
+.med-plan-list strong,
+.med-plan-list small {
+  display: block;
+}
+.med-plan-list strong {
+  font-size: 10px;
+  line-height: 1.3;
+}
+.med-plan-list small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+  line-height: 1.3;
+}
+.med-plan-list > button > svg {
+  width: 13px;
+  color: #9aabbe;
+}
+.med-round-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 220px 180px;
+  gap: 15px;
+  align-items: end;
+  padding: 17px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.med-round-toolbar label {
+  display: grid;
+  gap: 5px;
+}
+.med-round-toolbar label > span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 740;
+}
+.med-round-toolbar select {
+  height: 39px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: #fbfdff;
+  font-size: 10px;
+}
+.med-round-progress {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  height: 39px;
+}
+.med-round-progress > span,
+.med-stock-level > span {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e4ebf4;
+}
+.med-round-progress i,
+.med-stock-level i {
+  height: 100%;
+  display: block;
+  border-radius: 6px;
+  background: var(--brand);
+  transition: width 180ms ease;
+}
+.med-round-progress strong {
+  font-size: 10px;
+}
+.med-round-list {
+  padding: 0 17px 10px;
+}
+.med-round-row {
+  min-height: 94px;
+  display: grid;
+  grid-template-columns: 40px minmax(125px, 0.58fr) minmax(260px, 1.25fr) auto minmax(190px, 0.72fr);
+  gap: 11px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9eef4;
+}
+.med-round-row:last-child {
+  border-bottom: 0;
+}
+.med-round-row.gegeben {
+  opacity: 0.7;
+}
+.med-round-person strong,
+.med-round-person small {
+  display: block;
+}
+.med-round-person strong {
+  font-size: 11px;
+}
+.med-round-person small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+}
+.med-round-meds {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.med-round-meds > span {
+  display: grid;
+  grid-template-columns: 15px minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #f6f9fd;
+}
+.med-round-meds svg {
+  width: 13px;
+  color: var(--brand);
+}
+.med-round-meds strong {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.med-round-meds small {
+  color: var(--muted);
+  font-size: 8px;
+}
+.med-round-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 32px;
+  gap: 5px;
+}
+.med-round-actions button {
+  min-height: 32px;
+  padding: 0 7px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: white;
+  font-size: 8px;
+  font-weight: 740;
+  cursor: pointer;
+}
+.med-round-actions button:hover,
+.med-round-actions button:first-child {
+  background: var(--brand-soft);
+}
+.med-round-actions button:nth-child(2) {
+  color: var(--critical);
+  border-color: #f1c1bb;
+}
+.med-round-actions svg {
+  width: 14px;
+}
+.med-stock-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, 0.75fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 17px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.med-stock-head,
+.med-stock-list > article {
+  display: grid;
+  grid-template-columns: 34px minmax(150px, 0.9fr) minmax(180px, 1fr) minmax(135px, 0.75fr) 100px 105px;
+  gap: 11px;
+  align-items: center;
+}
+.med-stock-head {
+  min-height: 37px;
+  padding: 0 18px;
+  color: var(--muted);
+  background: #f7f9fc;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.med-stock-head > span:first-child {
+  grid-column: 1/3;
+}
+.med-stock-list {
+  padding: 0 18px 10px;
+}
+.med-stock-list > article {
+  min-height: 78px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e9eef4;
+}
+.med-stock-list > article:last-child {
+  border-bottom: 0;
+}
+.med-stock-list strong,
+.med-stock-list small {
+  display: block;
+}
+.med-stock-list strong {
+  font-size: 10px;
+}
+.med-stock-list small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+}
+.med-stock-level {
+  min-width: 0;
+}
+.med-stock-level > span {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+}
+.med-stock-level i {
+  background: var(--success);
+}
+.med-stock-list article:has(.attention-text) .med-stock-level i {
+  background: var(--attention);
+}

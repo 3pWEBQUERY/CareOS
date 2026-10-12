@@ -1,0 +1,167 @@
+/* ---------- Drucken / PDF ---------- */
+@media print {
+  body.office-open > *:not(.office-shell) {
+    display: none !important;
+  }
+  body.office-open {
+    overflow: visible;
+    background: white;
+  }
+  .office-shell {
+    position: static;
+    display: block;
+    background: white;
+  }
+  .office-titlebar,
+  .office-banner,
+  .office-ribbon,
+  .office-contextbar,
+  .office-statusbar,
+  .office-inline-error,
+  .office-toast,
+  .office-popover,
+  .office-context,
+  .office-comments,
+  .sheet-formula-bar,
+  .sheet-grid,
+  .sheet-footer,
+  .deck-workspace {
+    display: none !important;
+  }
+  .office-print-only {
+    display: block;
+  }
+  .office-body,
+  .office-doc,
+  .office-sheet,
+  .office-deck {
+    display: block;
+  }
+  .office-canvas {
+    overflow: visible;
+    padding: 0;
+    background: white;
+  }
+  .office-page {
+    width: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    box-shadow: none;
+    zoom: 1 !important;
+  }
+  .office-page-header,
+  .office-page-footer {
+    display: none;
+  }
+  .office-page-break {
+    height: 0;
+    margin: 0;
+    border: 0;
+    visibility: hidden;
+    break-after: page;
+  }
+  .office-prose table,
+  .office-prose img {
+    break-inside: avoid;
+  }
+  .office-prose .office-comment-mark {
+    background: none;
+    border: 0;
+  }
+  .office-toc {
+    border: 0;
+    background: none;
+    padding: 0;
+  }
+  .office-footnotes li button {
+    display: none;
+  }
+  .office-footnotes li input {
+    border: 0;
+    padding: 0;
+  }
+  .sheet-print h1 {
+    margin: 0 0 8px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+  }
+  .sheet-print table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-family: Calibri, Carlito, Arial, sans-serif;
+    font-size: 11px;
+  }
+  .sheet-print td {
+    padding: 2px 5px;
+    border: 1px solid transparent;
+    overflow: hidden;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .sheet-print.gridlines td {
+    border-color: #e2e8f0;
+  }
+  .sheet-print.fit table {
+    width: 100%;
+  }
+  .sheet-print-chart {
+    margin-top: 12px;
+    break-inside: avoid;
+  }
+  .deck-print .deck-slide {
+    width: 297mm;
+    height: 167mm;
+    aspect-ratio: auto;
+    box-shadow: none;
+    break-after: page;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* Tooltips (Ablage und Office): dunkle Sprechblase mit Tastenkürzel. */
+.care-tooltip {
+  position: fixed;
+  z-index: 1400;
+  max-width: 280px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  color: white;
+  background: #102a43;
+  box-shadow: 0 8px 22px rgba(15, 42, 67, 0.28);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-2px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+.care-tooltip.above {
+  transform: translateY(2px);
+}
+.care-tooltip.visible {
+  opacity: 1;
+  transform: none;
+}
+.care-tooltip kbd {
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: #dbe7ff;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+@media print {
+  .care-tooltip {
+    display: none;
+  }
+}

@@ -1,0 +1,265 @@
+/* Additions for the database-backed assessments module. */
+
+/* Jede Frage als Karte: Nummer, Frage, Stand; Antworten als Optionskarten mit Punktzahl. */
+.area-editor-grid fieldset.assessment-item,
+.assessment-item {
+  display: block;
+  margin: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+}
+
+.area-editor-grid fieldset.assessment-item {
+  border: 1px solid var(--line);
+}
+
+.area-editor-grid fieldset.assessment-item.answered,
+.assessment-item.answered {
+  border-color: #bfdbfe;
+}
+
+.assessment-item legend {
+  float: left;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.assessment-item legend + * {
+  clear: both;
+}
+
+.assessment-item-number {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  font-size: 12px;
+}
+
+.assessment-item.answered .assessment-item-number {
+  color: white;
+  background: var(--brand);
+}
+
+.assessment-item-title {
+  min-width: 0;
+  flex: 1;
+}
+
+.assessment-item-state {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  background: #f1f5f9;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.assessment-item.answered .assessment-item-state {
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+}
+
+.assessment-item > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+}
+
+.assessment-item > div.compact {
+  grid-template-columns: repeat(11, minmax(0, 1fr));
+}
+
+.assessment-item button {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fafc;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.assessment-item button:hover {
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+
+.assessment-item button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 2px;
+}
+
+.assessment-option-points {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid #c7d4e2;
+  border-radius: 6px;
+  color: var(--muted);
+  background: white;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.assessment-option-label {
+  min-width: 0;
+}
+
+.assessment-item button.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+
+.assessment-item button.active .assessment-option-points {
+  border-color: var(--brand);
+  color: white;
+  background: var(--brand);
+}
+
+.assessment-item > div.compact button {
+  justify-content: center;
+  padding: 8px 4px;
+  font-weight: 800;
+}
+
+.assessment-item > div.compact button.active {
+  color: white;
+  background: var(--brand);
+}
+
+.assessment-score {
+  display: grid;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.assessment-score strong {
+  font-size: 20px;
+}
+
+.assessment-score.critical {
+  background: var(--critical-soft);
+  color: var(--critical);
+}
+
+.assessment-score.attention {
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+
+.assessment-score.stable {
+  background: #e7f5ee;
+  color: var(--success);
+}
+
+.assessment-history-body {
+  display: grid;
+  gap: 12px;
+  padding: 18px 22px 24px;
+  overflow: auto;
+}
+
+.assessment-history-body > button {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.assessment-history-body article {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.assessment-history-body article header {
+  display: grid;
+  gap: 2px;
+}
+
+.assessment-history-body article small {
+  color: var(--muted);
+}
+
+.assessment-history-body dl {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  font-size: 12px;
+}
+
+.assessment-history-body dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.assessment-history-body dt {
+  color: var(--muted);
+}
+
+.assessment-history-body dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.assessment-history-body p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.assessments-card .area-custom-select {
+  min-width: 200px;
+}
+
+.status-text.critical {
+  color: var(--critical);
+  font-weight: 700;
+}
+
+.status-text.attention {
+  color: var(--attention);
+}
+
+.status-text.stable {
+  color: var(--success);
+}
+
+/* Status in den Listen als kompaktes Kennzeichen statt über die ganze Spalte. */
+.assessment-list > article > .status-badge {
+  justify-self: start;
+}

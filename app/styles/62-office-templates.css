@@ -1,0 +1,214 @@
+/* ---------- Neu: Vorlagen (Ablage) ---------- */
+.files-menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--line);
+}
+.files-menu-text {
+  display: grid;
+  line-height: 1.2;
+}
+.files-menu-text small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.files-office-kinds {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.files-office-kinds button {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.files-office-kinds button.active {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px var(--brand);
+}
+.files-office-kinds strong {
+  display: block;
+  font-size: 14px;
+}
+.files-office-kinds small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.files-templates {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.files-templates legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+.files-templates > div {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.files-templates button {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.files-templates button:hover {
+  border-color: #9fb7ea;
+}
+.files-templates button.active {
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand);
+  background: var(--brand-soft);
+}
+.files-templates strong {
+  margin-top: 4px;
+  font-size: 13px;
+}
+.files-templates small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.files-template-preview {
+  height: 96px;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  padding: 10px 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: white;
+}
+.files-template-preview.doc i {
+  height: 4px;
+  border-radius: 2px;
+  background: #d5dde8;
+}
+.files-template-preview.doc i.h1 {
+  width: 62%;
+  height: 7px;
+  background: #2563eb;
+}
+.files-template-preview.doc i.h2 {
+  width: 38%;
+  height: 5px;
+  margin-top: 2px;
+  background: #102a43;
+}
+.files-template-preview.doc i.short {
+  width: 40%;
+}
+.files-template-preview.doc i.center {
+  justify-self: center;
+}
+.files-template-preview.doc i.right {
+  justify-self: end;
+}
+.files-template-preview.doc i.rule {
+  height: 1px;
+  background: #9aabbe;
+}
+.files-template-preview.doc i.gap {
+  background: transparent;
+}
+.files-template-preview.doc i.li {
+  width: 70%;
+  margin-left: 8px;
+}
+.files-template-preview.doc i.check {
+  width: 70%;
+  margin-left: 10px;
+  box-shadow:
+    -10px 0 0 -1px white,
+    -10px 0 0 0 #9aabbe;
+}
+.files-template-preview.doc i.table {
+  height: 10px;
+  border: 1px solid #bfc9ca;
+  border-radius: 0;
+  background: linear-gradient(90deg, #eaf1ff 0 25%, white 25% 50%, #eaf1ff 50% 75%, white 75%);
+}
+.files-template-preview.sheet {
+  gap: 0;
+  padding: 8px;
+}
+.files-template-preview.sheet > span {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+}
+.files-template-preview.sheet i {
+  height: 13px;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.files-template-preview.sheet > span.head i {
+  background: #eaf1ff;
+}
+.files-template-preview.sheet i.formula {
+  background: linear-gradient(90deg, transparent 55%, #bcd0fb 55% 90%, transparent 90%) center / 100% 4px no-repeat;
+}
+.files-template-preview.deck {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  padding: 0;
+  background: white;
+}
+.files-template-preview.deck b,
+.files-template-preview.deck em,
+.files-template-preview.deck small {
+  position: absolute;
+  left: 9%;
+  border-radius: 2px;
+}
+.files-template-preview.deck b {
+  top: 44%;
+  width: 52%;
+  height: 9%;
+  background: #102a43;
+}
+.files-template-preview.deck em {
+  top: 58%;
+  width: 16%;
+  height: 3%;
+  background: #2563eb;
+}
+.files-template-preview.deck small {
+  top: 66%;
+  width: 34%;
+  height: 5%;
+  background: #c4cfdc;
+}
+.files-template-preview.deck.deck-training {
+  background: #eef5ef;
+}
+.files-template-preview.deck.deck-training b {
+  background: #1d3324;
+}
+.files-template-preview.deck.deck-training em {
+  background: #2f7d4f;
+}

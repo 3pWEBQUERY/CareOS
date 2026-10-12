@@ -1,0 +1,81 @@
+/* Meine Kennzahlen: persönliches Dashboard aus den Kennzahlen aller Auswertungen. */
+.my-insights-section {
+  margin-bottom: 6px;
+}
+.my-insights-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.my-insights-section-head a {
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-weight: 720;
+  text-decoration: none;
+}
+.my-insights-empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 22px;
+}
+.my-insights-empty p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.my-insights-group {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+.my-insights-group legend {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 760;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.area-editor-form .my-insights-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: pointer;
+}
+.area-editor-form .my-insights-option input[type="checkbox"] {
+  flex: none;
+  width: 18px;
+  min-height: 0;
+  height: 18px;
+  margin: 1px 0 0;
+  padding: 0;
+  box-shadow: none;
+}
+.my-insights-option span {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  text-align: left;
+}
+.my-insights-option strong {
+  font-size: 12.5px;
+}
+.my-insights-option small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.my-insights-count {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}

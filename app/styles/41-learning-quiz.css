@@ -1,0 +1,118 @@
+/* CareOS Learn: Quiz (Editor und Ablegen) und Übersicht der Pflichtnachweise je Team. */
+.learning-quiz-editor {
+  display: grid;
+  gap: 10px;
+}
+.learning-quiz-pass {
+  max-width: 260px;
+}
+.learning-quiz-question {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fbff;
+}
+.learning-quiz-option {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.learning-quiz-option input[type="radio"],
+.learning-quiz-choice input {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+  accent-color: var(--brand);
+}
+.learning-quiz-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.learning-quiz-answer {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.learning-quiz-answer legend {
+  padding: 0 4px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.learning-quiz-choice {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.learning-quiz-result {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  color: #7c4a03;
+  background: #fffbeb;
+  font-size: 12px;
+}
+.learning-teams {
+  display: grid;
+  gap: 6px;
+  margin: 0 18px 18px;
+}
+.learning-team {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 1.2fr) 44px;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: white;
+  text-align: left;
+  cursor: pointer;
+}
+.learning-team:hover,
+.learning-team.selected {
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+.learning-team strong {
+  font-size: 14px;
+}
+.learning-team b {
+  color: var(--brand-dark);
+  font-size: 12px;
+  text-align: right;
+}
+.learning-team em {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+  font-style: normal;
+}
+.learning-team-bar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e7eef8;
+}
+.learning-team-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #60a5fa, var(--brand));
+}

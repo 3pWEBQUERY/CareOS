@@ -1,0 +1,18 @@
+/* Abstand zwischen untereinanderliegenden Bereichen: dieselben 18px wie unter den Kennzahlen, sonst stossen
+   Filterleisten und Karten direkt aneinander. */
+.handover-filterbar,
+.doc-filterbar {
+  margin-bottom: 18px;
+}
+.languages-admin > .card + .card,
+.med-stock-card + .card,
+.list-hint + .med-orders-card {
+  margin-top: 18px;
+}
+.intelligence-side,
+.development-side,
+.threshold-side {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}

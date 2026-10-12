@@ -1,0 +1,310 @@
+/* Resident record: care process as a stage bar (admission → evaluation). */
+.care-process {
+  margin-bottom: 18px;
+  padding: 14px 16px 16px;
+}
+.care-process-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.care-process-head small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+.care-process-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.care-process-step {
+  width: 100%;
+  min-height: 52px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 7px 22px 7px 26px;
+  border: 0;
+  color: #475569;
+  background: #e9eef5;
+  text-align: center;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%);
+  transition: filter 140ms ease;
+}
+.care-process-steps li:first-child .care-process-step {
+  padding-left: 16px;
+  border-radius: 8px 0 0 8px;
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%);
+}
+.care-process-steps li:last-child .care-process-step {
+  padding-right: 16px;
+  border-radius: 0 8px 8px 0;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%);
+}
+.care-process-steps li + li {
+  margin-left: -8px;
+}
+.care-process-step:hover {
+  filter: brightness(0.96);
+}
+.care-process-step strong {
+  font-size: 12px;
+  font-weight: 760;
+}
+.care-process-step small {
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+.care-process-step.done {
+  color: #14532d;
+  background: #bdebd9;
+}
+.care-process-step.current {
+  color: white;
+  background: var(--brand);
+}
+.care-process-step.attention {
+  color: #7c4a03;
+  background: #fde7b0;
+}
+@media (max-width: 760px) {
+  .care-process-steps {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .care-process-steps li + li {
+    margin-left: 0;
+  }
+  .care-process-step,
+  .care-process-steps li:first-child .care-process-step,
+  .care-process-steps li:last-child .care-process-step {
+    padding: 8px 12px;
+    border-radius: 8px;
+    text-align: left;
+    clip-path: none;
+  }
+}
+
+/* Personal appearance settings ("Einstellungen · Darstellung"). */
+html.text-large {
+  zoom: 1.12;
+}
+html.text-xlarge {
+  zoom: 1.24;
+}
+html.motion-reduced *,
+html.motion-reduced *::before,
+html.motion-reduced *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+html.contrast-high {
+  --ink: #0b1b2e;
+  --muted: #334155;
+  --line: #94a3b8;
+}
+html.contrast-high small,
+html.contrast-high .card-subtitle {
+  color: #1e293b;
+}
+
+/* 404 and error pages. */
+.status-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background: #f3f7fc;
+}
+.status-page-card {
+  width: min(100%, 520px);
+  padding: 36px 32px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: white;
+  box-shadow: 0 18px 40px rgba(15, 42, 82, 0.08);
+  text-align: center;
+}
+.status-page-code {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.status-page-card h1 {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
+.status-page-card p {
+  margin: 0 0 22px;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.status-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.status-page-actions a {
+  text-decoration: none;
+}
+
+/* Hilfe & Support side panel. */
+.help-panel-body {
+  display: grid;
+  gap: 18px;
+  padding: 24px 28px 36px;
+  overflow-y: auto;
+}
+.help-section {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+}
+.help-section h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+}
+.help-section p {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.help-guide-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.help-guide-tabs button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: white;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.help-guide-tabs button.active {
+  color: var(--brand-dark);
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+.help-guide-tabs svg {
+  width: 16px;
+}
+.help-steps {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding-left: 22px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.help-section textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+.help-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.help-report-actions small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.help-contacts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.help-contacts li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f8fc;
+  font-size: 13px;
+}
+.help-contacts small {
+  color: var(--muted);
+}
+.help-contacts a {
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+.help-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+.help-shortcuts > div {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  font-size: 13px;
+}
+.help-shortcuts > div > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+}
+.help-shortcuts kbd {
+  min-width: 22px;
+  margin-right: 3px;
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #f8fafc;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+@media (max-width: 960px) {
+  .help-panel-body {
+    padding: 16px;
+  }
+}

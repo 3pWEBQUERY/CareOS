@@ -1,0 +1,57 @@
+/* Sprache: bis die Übersetzung angewendet ist (app/components/translator.tsx). */
+.i18n-pending body {
+  visibility: hidden;
+}
+
+.languages-search {
+  min-height: 36px;
+  min-width: 220px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+.languages-entry strong {
+  white-space: pre-wrap;
+}
+.languages-source p {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+
+/* Sprachen › Texte prüfen: kompakte Knöpfe in derselben Höhe und Schrift wie „KI-Entwürfe für fehlende Texte“;
+   der Text gleitet beim Darüberfahren oder Fokussieren durch, bis das Ende sichtbar ist. */
+.languages-admin .languages-slide-button {
+  display: inline-flex;
+  align-items: center;
+  width: 190px;
+  min-height: 42px;
+  padding: 0 15px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.languages-slide-track {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  container-type: inline-size;
+  mask-image: linear-gradient(90deg, #000 82%, transparent);
+}
+.languages-slide-text {
+  display: inline-block;
+  transition: transform 2.2s ease-in-out;
+}
+.languages-slide-button:hover:not(:disabled) .languages-slide-track,
+.languages-slide-button:focus-visible .languages-slide-track {
+  mask-image: none;
+}
+.languages-slide-button:hover:not(:disabled) .languages-slide-text,
+.languages-slide-button:focus-visible .languages-slide-text {
+  transform: translateX(min(0px, calc(100cqw - 100%)));
+}
+@media (prefers-reduced-motion: reduce) {
+  .languages-slide-text {
+    transition: none;
+  }
+}

@@ -1,0 +1,154 @@
+/* Durchführungsnachweis (Dokumentation › Nachweis) */
+.proof-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 220px));
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+.proof-note {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.proof-residents {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+.proof-resident {
+  padding: 16px 18px;
+}
+.proof-resident > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-bottom: 10px;
+}
+.proof-resident h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 14px;
+}
+.proof-resident h2 a {
+  /* Tippfläche mindestens 24 px (WCAG 2.2, 2.5.8) ohne andere Optik. */
+  display: inline-block;
+  margin: -5px 0;
+  padding: 5px 0;
+  color: var(--brand-dark);
+}
+.proof-resident h2 span,
+.proof-resident small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.proof-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.proof-resident ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.proof-resident li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.proof-resident li > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.proof-resident li strong {
+  font-size: 13px;
+}
+.proof-resident li p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.proof-state {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+.proof-state b {
+  font-size: 12px;
+}
+.proof-resident li[data-state="open"] .proof-state b {
+  color: var(--muted);
+}
+.proof-resident li[data-state="done"] .proof-state b {
+  color: var(--success);
+}
+.proof-resident li[data-state="partial"],
+.proof-resident li[data-state="not_done"] {
+  border-color: var(--attention);
+}
+.proof-resident li[data-state="partial"] .proof-state b,
+.proof-resident li[data-state="not_done"] .proof-state b {
+  color: var(--attention);
+}
+.proof-cancel {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--brand-dark);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.proof-choices {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.proof-choices li {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.proof-choices li > small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.proof-choices label {
+  display: grid;
+  gap: 4px;
+}
+
+@media (max-width: 720px) {
+  .proof-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .proof-resident li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .proof-state {
+    grid-column: 1;
+    justify-items: start;
+    text-align: left;
+  }
+}

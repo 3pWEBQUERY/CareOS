@@ -1,0 +1,584 @@
+.operations-pulse {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: -4px 0 20px;
+  padding: 13px 18px;
+  border: 1px solid #c8d9ef;
+  border-radius: 6px;
+  color: #183b63;
+  background: linear-gradient(105deg, #eaf2ff, #f8fbff 68%);
+}
+.operations-pulse-intro {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.operations-pulse-intro .eyebrow {
+  margin: 0 0 3px;
+  font-size: 9px;
+}
+.operations-pulse-intro strong,
+.operations-pulse-intro small {
+  display: block;
+}
+.operations-pulse-intro strong {
+  font-size: 11px;
+}
+.operations-pulse-intro small {
+  margin-top: 3px;
+  color: #607793;
+  font-size: 8px;
+}
+.operations-live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 5px #d7f1e5;
+}
+.operations-pulse > button {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.operations-pulse > button span {
+  display: grid;
+  gap: 2px;
+  text-align: right;
+}
+.operations-pulse > button strong {
+  font-size: 15px;
+}
+.operations-pulse > button small {
+  color: #607793;
+  font-size: 8px;
+}
+.operations-pulse > button > svg {
+  width: 14px;
+  color: var(--brand);
+}
+.leadership-workspace {
+  max-width: 1540px;
+}
+.leadership-users .leadership-workspace {
+  width: min(100%, 1640px);
+  max-width: 1640px;
+}
+.leadership-heading {
+  align-items: flex-end;
+}
+.leadership-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.leadership-kpi {
+  min-height: 112px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+}
+.leadership-kpi-value {
+  color: var(--brand-dark);
+  font-size: 27px;
+  font-weight: 780;
+  letter-spacing: -0.04em;
+}
+.leadership-kpi strong {
+  font-size: 11px;
+}
+.leadership-kpi small {
+  color: var(--muted);
+  font-size: 9px;
+}
+.leadership-kpi.attention {
+  border-top: 3px solid var(--attention);
+}
+.leadership-kpi.attention .leadership-kpi-value {
+  color: var(--attention);
+}
+.leadership-kpi.critical {
+  border-top: 3px solid var(--critical);
+}
+.leadership-kpi.critical .leadership-kpi-value {
+  color: var(--critical);
+}
+.leadership-kpi.stable {
+  border-top: 3px solid var(--success);
+}
+.leadership-kpi.stable .leadership-kpi-value {
+  color: var(--success);
+}
+.leadership-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(290px, 0.75fr);
+  gap: 20px;
+  align-items: start;
+}
+.leadership-radar,
+.leadership-priority,
+.leadership-register,
+.leadership-decision {
+  overflow: hidden;
+}
+.leadership-radar {
+  grid-column: 1;
+}
+.leadership-priority {
+  grid-column: 2;
+}
+.leadership-bars {
+  height: 185px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  align-items: end;
+  padding: 20px 22px 8px;
+  background: repeating-linear-gradient(to top, transparent 0, transparent 44px, #edf2f8 45px);
+}
+.leadership-bars > div {
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  align-items: end;
+  gap: 4px;
+  position: relative;
+  padding-bottom: 21px;
+}
+.leadership-bars span {
+  min-height: 10px;
+  border-radius: 3px 3px 0 0;
+  background: #8bb4f2;
+}
+.leadership-bars > div:nth-child(2) span {
+  background: #5f91df;
+}
+.leadership-bars > div:nth-child(3) span {
+  background: #2563eb;
+}
+.leadership-bars small {
+  position: absolute;
+  inset: auto 0 0;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: center;
+}
+.leadership-chart-legend {
+  display: flex;
+  gap: 15px;
+  padding: 0 22px 16px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.leadership-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.leadership-chart-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: #8bb4f2;
+}
+.leadership-chart-legend i.plan {
+  background: #5f91df;
+}
+.leadership-chart-legend i.actual {
+  background: var(--brand);
+}
+.leadership-priority-list {
+  padding: 4px 15px 12px;
+}
+.leadership-priority-list button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 14px;
+  gap: 9px;
+  align-items: center;
+  padding: 11px 3px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.leadership-priority-list button:last-child {
+  border-bottom: 0;
+}
+.leadership-priority-list button:hover {
+  background: #f8fbff;
+}
+.leadership-priority-list strong,
+.leadership-priority-list small {
+  display: block;
+}
+.leadership-priority-list strong {
+  font-size: 12px;
+}
+.leadership-priority-list small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.leadership-register {
+  grid-column: 1;
+}
+.leadership-register-list {
+  padding: 0 18px 10px;
+}
+.leadership-register-list button {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto 14px;
+  gap: 11px;
+  align-items: center;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.leadership-register-list button:hover,
+.leadership-register-list button.selected {
+  background: #f8fbff;
+}
+.leadership-register-list button:last-child {
+  border-bottom: 0;
+}
+.leadership-register-list strong,
+.leadership-register-list small {
+  display: block;
+}
+.leadership-register-list strong {
+  font-size: 12px;
+}
+.leadership-register-list small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.leadership-decision {
+  grid-column: 2;
+}
+.leadership-decision-body {
+  display: grid;
+  gap: 12px;
+  padding: 17px 18px;
+}
+.leadership-decision-body > p {
+  margin: 0 0 2px;
+  color: #4f6478;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.leadership-decision-body > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #edf1f5;
+}
+.leadership-decision-body span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.leadership-decision-body strong {
+  font-size: 12px;
+  text-align: right;
+}
+.leadership-decision-actions {
+  display: flex;
+  gap: 8px;
+  padding: 0 18px 18px;
+}
+.leadership-decision-actions button {
+  flex: 1;
+  min-height: 40px;
+  padding-inline: 8px;
+  font-size: 13px;
+}
+.leadership-page .legacy-leadership-board {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+.leadership-page .legacy-leadership-board .leadership-radar,
+.leadership-page .legacy-leadership-board .leadership-priority {
+  min-height: 320px;
+}
+.leadership-page .legacy-leadership-board .card-header {
+  min-height: 96px;
+}
+.admin-setting-list {
+  padding: 5px 18px 12px;
+}
+.admin-setting-list > button {
+  width: 100%;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto 28px;
+  gap: 13px;
+  align-items: center;
+  padding: 13px 2px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.admin-setting-list > button:last-child {
+  border-bottom: 0;
+}
+.admin-setting-list > button:hover,
+.admin-setting-list > button.selected {
+  background: #f8fbff;
+}
+.admin-setting-list .governance-icon {
+  width: 38px;
+  height: 38px;
+}
+.admin-setting-list .governance-icon svg {
+  width: 18px;
+}
+.admin-setting-list strong,
+.admin-setting-list small {
+  display: block;
+}
+.admin-setting-list strong {
+  font-size: 12px;
+}
+.admin-setting-list small {
+  margin-top: 5px;
+  color: #4f6478;
+  font-size: 10px;
+  line-height: 1.35;
+}
+.admin-setting-list .status-badge {
+  justify-self: end;
+}
+.admin-setting-list .admin-toggle {
+  width: 28px;
+  height: 16px;
+  position: relative;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+.admin-setting-list .admin-toggle::after {
+  content: "";
+  width: 12px;
+  height: 12px;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(15, 42, 82, 0.22);
+  transition: transform 140ms ease;
+}
+.admin-setting-list .admin-toggle.on {
+  background: var(--brand);
+}
+.admin-setting-list .admin-toggle.on::after {
+  transform: translateX(12px);
+}
+.admin-system-card {
+  padding-bottom: 21px;
+}
+.admin-system-score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-system-score strong {
+  color: var(--success);
+  font-size: 27px;
+  letter-spacing: -0.04em;
+}
+.admin-system-score span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.admin-system-card ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 17px 18px 16px;
+  list-style: none;
+}
+.admin-system-card li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4f6478;
+  font-size: 11px;
+}
+.admin-system-card li svg {
+  width: 15px;
+  color: var(--success);
+}
+.admin-system-card > .secondary-button {
+  margin: 0 18px;
+}
+.leadership-users .leadership-kpis {
+  gap: 15px;
+  margin-bottom: 24px;
+}
+.leadership-users .leadership-kpi {
+  min-height: 140px;
+  padding: 22px 21px;
+  gap: 8px;
+}
+.leadership-users .leadership-kpi-value {
+  font-size: 34px;
+}
+.leadership-users .leadership-kpi strong {
+  font-size: 13px;
+}
+.leadership-users .leadership-kpi small {
+  font-size: 11px;
+}
+.leadership-users .admin-users-layout {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+.leadership-users .admin-access-card {
+  display: none;
+}
+.leadership-users .admin-users-card,
+.leadership-users .admin-access-card {
+  border-radius: 8px;
+}
+.leadership-users .admin-table-header {
+  min-height: 128px;
+  padding: 24px 22px;
+}
+.leadership-users .admin-table-header .card-title {
+  font-size: 20px;
+}
+.leadership-users .admin-table-header .card-subtitle {
+  margin-top: 8px;
+  font-size: 14px;
+}
+.leadership-users .admin-table-header .resident-search {
+  width: 245px;
+  min-height: 50px;
+}
+.leadership-users .admin-user-table-head {
+  grid-template-columns: 38px minmax(250px, 1fr) 130px 120px 110px;
+  padding: 13px 22px 10px;
+  font-size: 10px;
+}
+.leadership-users .admin-user-row {
+  grid-template-columns: 38px minmax(250px, 1fr) 130px 120px 110px;
+  min-height: 98px;
+  padding: 14px 22px;
+  gap: 13px;
+}
+.leadership-users .admin-user-row .avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 10px;
+}
+.leadership-users .admin-user-row strong {
+  font-size: 13px;
+}
+.leadership-users .admin-user-row small {
+  margin-top: 5px;
+  font-size: 10px;
+}
+.leadership-users .admin-user-row > span:nth-child(3),
+.leadership-users .admin-user-row > span:nth-child(4) {
+  font-size: 10px;
+}
+.leadership-users .admin-access-card {
+  padding-bottom: 21px;
+}
+.leadership-users .admin-access-card .card-header {
+  min-height: 94px;
+  padding: 20px 22px;
+}
+.leadership-users .admin-access-card .card-title {
+  font-size: 20px;
+}
+.leadership-users .admin-access-card > p {
+  margin: 0 22px 20px;
+  font-size: 12px;
+}
+.leadership-users .admin-access-card dl {
+  gap: 13px;
+  margin: 0 22px 21px;
+}
+.leadership-users .admin-access-card dl div {
+  padding-top: 12px;
+}
+.leadership-users .admin-access-card dt {
+  font-size: 10px;
+}
+.leadership-users .admin-access-card dd {
+  font-size: 10px;
+}
+.leadership-users .admin-access-card > .primary-button {
+  width: calc(100% - 44px);
+  margin: 0 22px;
+  min-height: 50px;
+  font-size: 14px;
+}
+.leadership-users .legacy-leadership-board {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+.leadership-users .legacy-leadership-board .leadership-radar,
+.leadership-users .legacy-leadership-board .leadership-priority {
+  min-height: 320px;
+}
+.leadership-users .legacy-leadership-board .card-header {
+  min-height: 96px;
+  padding: 20px 22px;
+}
+.leadership-users .legacy-leadership-board .card-title {
+  font-size: 20px;
+}
+.leadership-users .legacy-leadership-board .card-subtitle {
+  font-size: 13px;
+}
+.leadership-users .legacy-leadership-board .leadership-bars {
+  height: 225px;
+  padding-inline: 26px;
+}
+.leadership-users .legacy-leadership-board .leadership-priority-list {
+  padding-inline: 21px;
+}
+.leadership-users .legacy-leadership-board .leadership-priority-list button {
+  min-height: 72px;
+  padding-block: 14px;
+}
+.leadership-users .legacy-leadership-board .leadership-priority-list strong {
+  font-size: 12px;
+}
+.leadership-users .legacy-leadership-board .leadership-priority-list small {
+  font-size: 10px;
+}

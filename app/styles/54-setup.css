@@ -1,0 +1,129 @@
+/* Ersteinrichtung: Name der Einrichtung und Checkliste für die Administration. */
+.admin-organization-name {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 14px 18px 0;
+}
+.admin-organization-name label {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 6px;
+  color: #536a82;
+  font-size: 10px;
+  font-weight: 700;
+}
+.admin-organization-name input {
+  min-height: 40px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: white;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+.admin-organization-name button {
+  min-height: 40px;
+}
+
+.setup-checklist .card-header {
+  align-items: flex-start;
+}
+.setup-checklist-steps {
+  display: grid;
+  margin: 0;
+  padding: 4px 18px 14px;
+  list-style: none;
+}
+.setup-checklist-steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+.setup-checklist-steps li:last-child {
+  border-bottom: 0;
+}
+.setup-checklist-mark {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  flex: none;
+  place-items: center;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 50%;
+  color: white;
+}
+.setup-checklist-steps li.done .setup-checklist-mark {
+  border-color: var(--brand);
+  background: var(--brand);
+}
+.setup-checklist-mark svg {
+  width: 13px;
+  height: 13px;
+}
+.setup-checklist-copy {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+.setup-checklist-copy strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+.setup-checklist-steps li.done .setup-checklist-copy strong {
+  color: var(--muted);
+}
+.setup-checklist-copy small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.setup-checklist-state {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.setup-checklist-steps .secondary-button {
+  flex: none;
+  min-height: 34px;
+  text-decoration: none;
+}
+
+/* Logo der Einrichtung als App-Icon: weisse Kachel mit unseren abgerundeten Ecken, weicher Schatten, feiner Rand und
+   leichter Glanz wie bei iOS; das Logo steht verkleinert mit Rand in der Mitte. */
+.brand-mark.brand-mark-app {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: white;
+  box-shadow:
+    0 1px 2px rgba(2, 12, 27, 0.28),
+    0 6px 16px rgba(2, 12, 27, 0.32);
+}
+.brand-mark.brand-mark-app img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  padding: 18%;
+  object-fit: contain;
+}
+.brand-mark.brand-mark-app::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0) 48%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  content: "";
+  pointer-events: none;
+}

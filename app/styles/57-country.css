@@ -1,0 +1,164 @@
+/* Land der Einrichtung (Konfiguration) und Such-Assistenz der Suche ⌘K. */
+.admin-country-region {
+  display: grid;
+  gap: 6px;
+  max-width: 360px;
+  padding: 12px 18px 0;
+  color: #536a82;
+  font-size: 10px;
+  font-weight: 700;
+}
+.admin-country-hint {
+  margin: 0;
+  padding: 10px 18px 0;
+  color: #9a5b00;
+  font-size: 12px;
+  font-weight: 600;
+}
+.admin-country-body {
+  display: grid;
+  gap: 14px;
+  padding: 14px 18px 18px;
+}
+.admin-country-section h3 {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: 13px;
+}
+.admin-country-section p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.admin-country-levels {
+  display: grid;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-country-levels li {
+  display: grid;
+  grid-template-columns: minmax(130px, auto) 1fr;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid #edf1f5;
+  font-size: 12px;
+}
+.admin-country-levels li:last-child {
+  border-bottom: 0;
+}
+.admin-country-levels strong {
+  color: var(--ink);
+}
+.admin-country-levels span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+.admin-country-facts {
+  display: grid;
+  grid-template-columns: minmax(150px, auto) 1fr;
+  gap: 8px 12px;
+  margin: 0;
+  font-size: 12px;
+}
+.admin-country-facts dt {
+  color: #536a82;
+  font-weight: 700;
+}
+.admin-country-facts dd {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.45;
+}
+@media (max-width: 640px) {
+  .admin-country-levels li,
+  .admin-country-facts {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* Such-Assistenz in der Suche ⌘K: Antwort von CareOS KI über den Treffern. */
+.search-ai-answer {
+  display: grid;
+  gap: 6px;
+  margin: 0 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.search-ai-answer p {
+  margin: 0;
+  padding: 0 12px;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.search-ai-answer .search-ai-error {
+  color: #b42318;
+}
+.search-ai-note {
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Eigene Auswahllisten statt der Browser-Auswahl: Grösse wie die bisherigen Felder an diesen Stellen. */
+.area-custom-select.cloud-move {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  width: 130px;
+}
+.cloud-move .area-select-trigger {
+  min-height: 34px;
+  height: 34px;
+  padding: 0 8px;
+  color: #4d6680;
+  font-size: 12px;
+}
+.house-unit-filter .area-custom-select {
+  min-width: 0;
+  flex: 1;
+}
+.house-unit-filter .area-select-trigger {
+  min-height: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 680;
+}
+.portal-language .area-select-trigger {
+  min-height: 36px;
+  height: 36px;
+  padding: 0 8px;
+}
+@media (max-width: 760px) {
+  .area-custom-select.cloud-move {
+    width: auto;
+    flex: 1 1 auto;
+  }
+}
+
+/* Telefon: genug grosse Tipp-Flächen (mindestens etwa 32 px) für kleine Knöpfe und Links, ohne die Optik zu ändern
+   (grössere Fläche über Innenabstand und ausgleichenden Aussenabstand). */
+@media (max-width: 760px) {
+  .handover-event-list article > button {
+    min-width: 32px;
+    min-height: 32px;
+  }
+  .handover-event-list small a {
+    display: inline-block;
+    padding: 8px 4px;
+    margin: -8px -4px;
+  }
+  .teamlead-task-card button {
+    min-height: 32px;
+  }
+}

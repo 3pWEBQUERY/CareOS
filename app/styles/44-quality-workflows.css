@@ -1,0 +1,71 @@
+/* Ablaufketten nach Ereignissen (Qualität): Karte der Leitung, Schritte im Editor, Hinweis beim Melden. */
+.quality-workflow-card {
+  padding-bottom: 16px;
+}
+/* Nur die Texte der Karte, nicht die Überschrift im Kopf (sonst rückt sie ein und wird grau). */
+.quality-workflow-card > p {
+  margin: 0 18px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.quality-workflow-card > .card-header + p {
+  margin-top: 14px;
+}
+.quality-workflow-card .secondary-button {
+  margin: 0 18px;
+}
+.quality-workflow-step {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.quality-workflow-step legend {
+  padding: 0 4px;
+  font-weight: 700;
+}
+.quality-workflow-step .area-editor-wide {
+  grid-column: 1 / -1;
+}
+.quality-workflow-step-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.quality-workflow-hint {
+  margin: 0;
+  color: var(--brand-dark);
+}
+@media (max-width: 720px) {
+  .quality-workflow-step {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.quality-workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 18px;
+}
+.quality-workflow-actions .secondary-button {
+  margin: 0;
+}
+.event-types-builtin p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.event-types-custom {
+  display: grid;
+  gap: 10px;
+}
+.event-types-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}

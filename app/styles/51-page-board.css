@@ -1,0 +1,126 @@
+/* Einrichtbare Seiten (Kennzahlen): Zeilen aus Spalten; die Spaltenanteile verteilen die Breite wie zuvor das
+   Raster (gleicher Abstand, gleiche Verhältnisse). Gestapelte Bausteine teilen eine Spalte. */
+.page-board {
+  display: grid;
+  gap: 20px;
+}
+.page-board-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.page-board-column,
+.page-board-spacer {
+  flex-basis: 0;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.page-board-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+.page-board-widget {
+  position: relative;
+  min-width: 0;
+}
+/* Abstände kommen vom Raster; eigene Ränder der Bausteine fielen zuvor mit dem Rand darüber zusammen. */
+.page-board .leadership-kpis {
+  margin-bottom: 0;
+}
+.page-board .resident-insights-card {
+  margin-top: 0;
+}
+.leadership-customize-button:not([aria-pressed="true"]) {
+  width: 42px;
+  padding: 0;
+  justify-content: center;
+}
+.leadership-customize-button:not([aria-pressed="true"]) .button-icon {
+  margin: 0;
+}
+.leadership-heading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Bearbeiten: wie auf der Startseite (gestrichelter Rahmen, Leiste mit den Werkzeugen). */
+.page-board.is-editing .page-board-widget {
+  padding: 40px 3px 3px;
+  border: 1px dashed #93c5fd;
+  border-radius: 8px;
+  background: rgba(239, 246, 255, 0.45);
+  cursor: grab;
+}
+.page-board.is-editing .page-board-widget.is-dragging {
+  opacity: 0.55;
+}
+.page-board-handle {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  left: 10px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 740;
+  user-select: none;
+}
+.page-board-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.page-board-title span {
+  color: #4b6381;
+}
+.page-board-tools {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+.page-board-tools button,
+.page-board-tools select {
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: white;
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.page-board-tools button[aria-pressed="true"] {
+  background: #dbeafe;
+}
+.page-board-tools button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.page-board-customizer {
+  margin-bottom: 20px;
+}
+
+@media (max-width: 1080px) {
+  .page-board-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page-board-spacer {
+    display: none;
+  }
+}

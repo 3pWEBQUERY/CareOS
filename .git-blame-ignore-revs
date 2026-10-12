@@ -1,0 +1,3 @@
+# Mechanical reformatting commits, skipped by `git blame` (git config blame.ignoreRevsFile .git-blame-ignore-revs)
+# Format codebase with Prettier
+54fedc2583a2a6b6b2eeca278cfd990068008ecd

@@ -1,0 +1,226 @@
+/* Additions for the database-backed wound module. */
+
+.wound-size-inputs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wound-size-inputs input {
+  min-width: 0;
+  flex: 1;
+}
+
+.wound-dialog-section {
+  margin: 8px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.wound-timeline {
+  display: grid;
+  margin: 0;
+  padding: 0 18px 12px;
+  list-style: none;
+}
+
+.wound-timeline li {
+  display: grid;
+  gap: 3px;
+  padding: 10px 0 10px 14px;
+  border-left: 2px solid var(--line);
+  position: relative;
+}
+
+.wound-timeline li::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+
+.wound-timeline li.infection::before {
+  background: var(--critical);
+}
+
+.wound-timeline time,
+.wound-timeline small,
+.wound-timeline em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.wound-timeline strong {
+  font-size: 13px;
+}
+
+.wound-timeline p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.wound-timeline .wound-timeline-note {
+  color: var(--muted);
+}
+
+.wound-doc-next {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.wound-focus-body dd {
+  overflow-wrap: anywhere;
+}
+
+.wound-photos {
+  padding: 0 18px 14px;
+}
+
+.wound-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+}
+
+.wound-photos-grid > button {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+
+.wound-photos-grid > button img {
+  object-fit: cover;
+}
+
+.wound-photos-grid > button small {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 3px 5px;
+  background: rgb(11 31 58 / 70%);
+  color: white;
+  font-size: 9px;
+  text-align: left;
+}
+
+.wound-photos-grid > .wound-photo-add {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
+  border-style: dashed;
+  color: var(--brand-dark);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.wound-photos-grid > .wound-photo-add svg {
+  width: 22px;
+  height: 22px;
+}
+
+.wound-photo-preview img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 320px;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+
+.wound-photo-viewer > section {
+  width: min(1100px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  margin: 24px auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.wound-photo-viewer header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.wound-photo-viewer header > div {
+  display: grid;
+  flex: 1;
+}
+
+.wound-photo-viewer header small {
+  color: var(--muted);
+}
+
+.wound-photo-frame {
+  overflow: auto;
+  background: #0b1f3a;
+}
+
+.wound-photo-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.wound-photo-viewer header .area-editor-close {
+  border-color: var(--line);
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+/* Verbandsmaterial je Versorgung aus dem Materialkatalog. */
+.wound-materials ul {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+
+.wound-materials li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wound-materials small {
+  color: var(--muted);
+}
+
+.wound-material-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 80px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.wound-timeline .wound-timeline-materials {
+  color: var(--ink);
+}

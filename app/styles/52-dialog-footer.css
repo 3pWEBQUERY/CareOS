@@ -1,0 +1,144 @@
+/* Seitenpanels: Speichern, Abbrechen und weitere Aktionen stehen fest unten im Footer des Panels. Kurze Formulare
+   schieben den Footer ans untere Ende, bei langen scrollt der Inhalt unter dem Footer durch. */
+
+.area-editor-panel > .area-editor-form:has(> .area-editor-actions) {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+.area-editor-panel > .area-editor-form:has(> .area-editor-actions) > * {
+  width: 100%;
+  flex-shrink: 0;
+}
+/* Freier Raum zwischen Inhalt und Footer. */
+.area-editor-panel > .area-editor-form:has(> .area-editor-actions)::before {
+  content: "";
+  order: 1;
+  flex: 1 0 0;
+}
+.area-editor-panel > .area-editor-form > .area-editor-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  order: 2;
+  padding-bottom: 24px;
+  background: var(--bg);
+  /* Hintergrund über die ganze Panelbreite, damit gescrollter Inhalt nicht neben dem Footer durchscheint. */
+  box-shadow: 0 0 0 100vmax var(--bg);
+  clip-path: inset(0 -100vmax -100vmax);
+}
+
+/* Notizen: Footer war schon unten, bleibt jetzt auch bei langem Inhalt sichtbar. */
+.home-note-panel .home-note-form,
+.home-note-panel .home-note-reader {
+  padding-bottom: 0;
+}
+.home-note-panel .home-note-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  padding-bottom: 24px;
+  background: var(--bg);
+  box-shadow: 0 0 0 100vmax var(--bg);
+  clip-path: inset(0 -100vmax -100vmax);
+}
+
+/* Mitarbeitende, Rollen: die Karte reicht bis unten, der Footer bleibt unten in der Karte. */
+.user-editor-panel .user-editor-body:has(.user-editor-content > form > .user-editor-footer) {
+  padding-bottom: 0;
+}
+.user-editor-panel .user-editor-content:has(> form > .user-editor-footer) {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+}
+.user-editor-panel .user-editor-content > form:has(> .user-editor-footer) {
+  flex: 1;
+}
+.user-editor-panel .user-editor-content > form > .user-editor-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-top: auto;
+  background: white;
+}
+
+/* Rollen: der Bereich scrollt selbst, die Karte reicht bis unten, der Footer bleibt sichtbar. */
+.user-editor-panel > .role-editor {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  padding: 32px 28px 0;
+}
+.role-editor > .user-editor-content:has(> .user-editor-footer) {
+  flex: 1 0 auto;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+}
+.role-editor > .user-editor-content > .user-editor-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-top: auto;
+  background: white;
+}
+
+/* Nachrichten: der Inhalt füllt die Höhe, der Footer steht unten. */
+.messages-editor .messages-editor-body {
+  min-height: 0;
+  flex: 1;
+}
+
+/* Passwort ändern und Kontakt: Panel als Spalte, Formular füllt die Höhe, Footer unten. */
+.settings-password-dialog:has(> .settings-password-form),
+.contact-editor-panel:has(> form) {
+  display: flex;
+  flex-direction: column;
+}
+.settings-password-dialog > .settings-password-form,
+.contact-editor-panel > form {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.settings-password-dialog > .settings-password-form {
+  gap: 16px;
+  padding-bottom: 0;
+}
+.settings-password-dialog .settings-password-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  margin-top: auto;
+  padding-bottom: 22px;
+  background: white;
+  box-shadow: 0 0 0 100vmax white;
+  clip-path: inset(0 -100vmax -100vmax);
+}
+.contact-editor-panel > form::before {
+  content: "";
+  order: 1;
+  flex: 1 0 0;
+}
+.contact-editor-panel > form > footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  order: 2;
+}
+
+@media (max-width: 760px) {
+  .area-editor-panel > .area-editor-form > .area-editor-actions,
+  .home-note-panel .home-note-actions {
+    padding-bottom: 18px;
+  }
+}

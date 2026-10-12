@@ -1,0 +1,60 @@
+/* Diktat bzw. Rohtext mit CareOS KI umformulieren (nur Vorschlag) */
+.ai-rephrase {
+  display: grid;
+  gap: 10px;
+  grid-column: 1 / -1;
+}
+.ai-rephrase-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.ai-rephrase-bar .quiet-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  font-size: 13px;
+}
+.ai-rephrase-bar .quiet-button svg {
+  width: 15px;
+  height: 15px;
+}
+.ai-rephrase-bar small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.ai-suggestion {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #c7d7fe;
+  border-radius: 6px;
+  background: var(--brand-soft);
+}
+.ai-suggestion p {
+  margin: 0;
+}
+.ai-suggestion-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+}
+.ai-suggestion-head svg {
+  width: 15px;
+}
+.ai-suggestion-text {
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.ai-suggestion-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

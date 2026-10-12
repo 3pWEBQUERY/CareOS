@@ -1,0 +1,140 @@
+/* Arbeitsplatz als eine Anwendung: fester Rahmen, Übergang des Inhalts und Ladebalken beim Seitenwechsel. */
+
+.page-view {
+  min-width: 0;
+}
+
+/* Ladebalken oben: erscheint erst, wenn ein Wechsel länger als einen Augenblick dauert. */
+.navigation-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 1100;
+  height: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  box-shadow: 0 0 8px rgba(37, 99, 235, 0.45);
+}
+.navigation-progress.running {
+  opacity: 1;
+  animation: navigation-progress-run 8s cubic-bezier(0.08, 0.8, 0.2, 1) forwards;
+}
+.navigation-progress.done {
+  opacity: 0;
+  transform: scaleX(1);
+  transition:
+    transform 160ms ease-out,
+    opacity 260ms ease 140ms;
+}
+@keyframes navigation-progress-run {
+  from {
+    transform: scaleX(0.04);
+  }
+  to {
+    transform: scaleX(0.92);
+  }
+}
+
+/* Seitenwechsel: Rahmen ruhig, nur der Inhalt wechselt. Klicks gehen während des Übergangs an die Seite. */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 160ms;
+}
+::view-transition-old(.page-out) {
+  animation: 110ms cubic-bezier(0.4, 0, 1, 1) both page-fade-out;
+}
+::view-transition-new(.page-in) {
+  animation: 240ms cubic-bezier(0.16, 1, 0.3, 1) 50ms both page-rise-in;
+}
+::view-transition-old(.page-tab-out) {
+  animation: 90ms ease-in both page-fade-out;
+}
+::view-transition-new(.page-tab-in) {
+  animation: 170ms ease-out 30ms both page-fade-in;
+}
+::view-transition-group(.page-in),
+::view-transition-group(.page-out),
+::view-transition-group(.page-tab-in),
+::view-transition-group(.page-tab-out) {
+  animation: none;
+}
+/* Feste Bedienelemente (Kopfzeilen, untere Menüleiste auf dem Handy, Schnellaktion) eigenständig erfassen: Sie
+   bleiben während des Übergangs ruhig im Vordergrund, statt vom wechselnden Inhalt überdeckt und neu eingeblendet
+   zu werden. */
+.topbar {
+  view-transition-name: app-topbar;
+}
+.mobile-top {
+  view-transition-name: app-mobile-top;
+}
+.bottom-nav {
+  view-transition-name: app-bottom-nav;
+}
+.app-shell > .floating-action {
+  view-transition-name: app-quick-action;
+}
+::view-transition-group(app-topbar),
+::view-transition-group(app-mobile-top),
+::view-transition-group(app-bottom-nav),
+::view-transition-group(app-quick-action) {
+  z-index: 100;
+  animation: none;
+}
+::view-transition-old(app-topbar),
+::view-transition-old(app-mobile-top),
+::view-transition-old(app-bottom-nav),
+::view-transition-old(app-quick-action) {
+  display: none;
+}
+::view-transition-new(app-topbar),
+::view-transition-new(app-mobile-top),
+::view-transition-new(app-bottom-nav),
+::view-transition-new(app-quick-action) {
+  animation: none;
+}
+
+@keyframes page-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes page-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+  .navigation-progress.running {
+    animation: none;
+    transform: scaleX(0.6);
+  }
+}
+
+/* Hinweisseiten (z. B. „Kein Zugriff“) im Rahmen: Karte mittig im Inhaltsbereich. */
+.main-column > .status-page {
+  min-height: calc(100vh - 140px);
+  background: transparent;
+}
+@media (max-width: 960px) {
+  .main-column > .status-page {
+    min-height: calc(100vh - 160px);
+  }
+}

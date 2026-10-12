@@ -1,0 +1,11 @@
+.next
+out
+.kilo
+.vercel
+node_modules
+package-lock.json
+public
+docs/design-qa
+# Written and re-added by `next dev`
+AGENTS.md
+database/migrations

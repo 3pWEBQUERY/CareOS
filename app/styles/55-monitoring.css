@@ -1,0 +1,7 @@
+/* Überwachung: Serverfehler im Systemstatus hervorheben (nur wenn es welche gab). */
+.admin-system-card li.admin-system-errors {
+  color: #966300;
+}
+.admin-system-card li.admin-system-errors svg {
+  color: #b7791f;
+}

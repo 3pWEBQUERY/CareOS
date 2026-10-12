@@ -1,0 +1,338 @@
+/* Abrechnung: Grundlagen je Person, Monatsvorschau und Taxen der Einrichtung */
+.billing-toolbar {
+  align-items: center;
+}
+.billing-toolbar p {
+  margin: 0;
+}
+.billing-layout {
+  margin-top: 18px;
+}
+.billing-side {
+  display: grid;
+  gap: 16px;
+}
+.billing-rates-layout {
+  display: grid;
+  gap: 16px;
+}
+.billing-notice {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+.billing-notice p {
+  margin: 0;
+  font-size: 13px;
+}
+.billing-warnings {
+  margin: 0 0 12px;
+}
+.service-records .billing-warnings li {
+  border-color: var(--attention);
+  color: var(--attention);
+  background: var(--attention-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+.billing-lines {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.billing-lines th,
+.billing-lines td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+.billing-lines thead th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.billing-lines thead th:last-child {
+  text-align: right;
+}
+.billing-lines .billing-detail {
+  color: #4f6478;
+}
+.billing-lines .billing-amount {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.billing-lines .billing-payer th {
+  padding-top: 14px;
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.billing-lines .billing-subtotal td {
+  font-weight: 700;
+}
+.billing-lines tfoot td {
+  border-bottom: 0;
+  font-size: 14px;
+  font-weight: 800;
+  background: #f8fafc;
+}
+.billing-price {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  flex: none;
+}
+.billing-next-price {
+  color: var(--muted);
+  font-size: 12px;
+}
+.billing-care-wrap {
+  overflow-x: auto;
+}
+.billing-care-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.billing-care-table th,
+.billing-care-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.billing-care-table thead th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.billing-care-table tbody th {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.billing-care-table tbody th small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.billing-care-cell {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  cursor: pointer;
+}
+.billing-care-cell:hover,
+.billing-care-cell:focus-visible {
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+.billing-care-cell small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.billing-rule {
+  display: grid;
+  gap: 8px;
+}
+.billing-rule-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.billing-rule-fields label {
+  display: grid;
+  gap: 5px;
+}
+@media (max-width: 760px) {
+  .billing-rule-fields {
+    grid-template-columns: 1fr;
+  }
+  .billing-lines th,
+  .billing-lines td {
+    padding: 8px 6px;
+  }
+  .billing-lines .billing-detail {
+    font-size: 12px;
+  }
+}
+.billing-page .service-records li .quiet-button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+/* Rechnung: A4 hoch ohne Seitenrand; der Zahlteil liegt mit 210 × 105 mm am unteren Rand */
+.invoice-print {
+  background: #e2e8f0;
+}
+.invoice-sheet {
+  position: relative;
+  width: 210mm;
+  height: 297mm;
+  margin: 0 auto;
+  overflow: hidden;
+  color: #0f172a;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.15);
+  font-size: 10pt;
+  line-height: 1.45;
+}
+.invoice-body {
+  padding: 18mm 18mm 0 22mm;
+}
+.invoice-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12mm;
+}
+.invoice-head address {
+  display: grid;
+  align-content: start;
+  font-style: normal;
+}
+.invoice-recipient {
+  width: 85mm;
+  margin-top: 18mm;
+}
+.invoice-sheet h1 {
+  margin: 14mm 0 4mm;
+  font-size: 14pt;
+}
+.invoice-facts {
+  display: grid;
+  grid-template-columns: 40mm minmax(0, 1fr);
+  gap: 1mm 4mm;
+  margin: 0 0 6mm;
+}
+.invoice-facts dt {
+  color: #475569;
+}
+.invoice-facts dd {
+  margin: 0;
+}
+.invoice-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.invoice-sheet th,
+.invoice-sheet td {
+  padding: 1.6mm 2mm;
+  border-bottom: 1px solid #cbd5e1;
+  text-align: left;
+  vertical-align: top;
+}
+.invoice-sheet th {
+  color: #475569;
+  font-size: 9pt;
+}
+.invoice-sheet .funds-sheet-amount {
+  text-align: right;
+  white-space: nowrap;
+}
+.invoice-sheet .funds-sheet-total td {
+  font-weight: 800;
+  background: #f8fafc;
+}
+.invoice-note {
+  margin: 4mm 0 0;
+  color: #475569;
+  font-size: 8.5pt;
+}
+.invoice-cancelled {
+  margin: 8mm 0 0;
+  padding: 2mm 3mm;
+  border: 1px solid var(--critical);
+  border-radius: 6px;
+  color: var(--critical);
+  font-weight: 700;
+}
+.invoice-payment-part {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 210mm;
+  height: 105mm;
+}
+.invoice-payment-part svg {
+  display: block;
+  width: 210mm;
+  height: 105mm;
+}
+@media print {
+  .invoice-print {
+    background: #fff;
+  }
+  .invoice-sheet {
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* Zahlungen und offene Posten */
+.service-records li.billing-overdue {
+  border-color: var(--attention);
+}
+.billing-toolbar a.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+.billing-payment-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.billing-payment-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.billing-payment-list li > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+.billing-payment-list li.cancelled {
+  opacity: 0.6;
+}
+.billing-payment-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.billing-bank-summary {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.billing-bank-lines tr[data-status="ready"] td:nth-child(4) {
+  color: var(--success);
+  font-weight: 700;
+}
+.billing-bank-lines tr:not([data-status="ready"]) td:nth-child(4) {
+  color: var(--attention);
+}

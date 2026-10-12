@@ -1,0 +1,637 @@
+.fluids-table-card {
+  overflow: hidden;
+}
+.fluids-table-heading {
+  padding: 18px;
+  margin: 0;
+  border-bottom: 1px solid var(--line);
+}
+.fluids-table {
+  padding: 0 18px 12px;
+}
+.fluids-table-head,
+.fluids-table > button {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.35fr) 110px minmax(120px, 1fr) 100px 14px;
+  gap: 11px;
+  align-items: center;
+}
+.fluids-table-head {
+  min-height: 38px;
+  color: var(--muted);
+  background: #f8fbff;
+  font-size: 8px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+.fluids-table > button {
+  width: 100%;
+  min-height: 78px;
+  padding: 11px 0;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  color: #4f6478;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+}
+.fluids-table > button:last-child {
+  border-bottom: 0;
+}
+.fluids-table > button:hover,
+.fluids-table > button.selected {
+  background: var(--brand-soft);
+}
+.fluids-resident {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fluids-resident .resident-avatar {
+  width: 36px;
+  height: 36px;
+}
+.fluids-resident strong,
+.fluids-resident small,
+.fluids-table > button > span:not(.fluids-resident) strong,
+.fluids-table > button > span:not(.fluids-resident) small {
+  display: block;
+}
+.fluids-resident strong,
+.fluids-table > button > span:not(.fluids-resident) strong {
+  color: var(--ink);
+  font-size: 10px;
+}
+.fluids-resident small,
+.fluids-table > button > span:not(.fluids-resident) small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+.fluids-progress {
+  display: grid;
+  gap: 5px;
+}
+.fluids-progress > i {
+  height: 6px;
+  display: block;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e7eef8;
+}
+.fluids-progress em {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: #27a876;
+}
+.fluids-progress b {
+  color: var(--brand-dark);
+  font-size: 8px;
+}
+.fluids-table > button > svg {
+  width: 13px;
+  color: #9aabbe;
+}
+.fluids-detail {
+  display: grid;
+  gap: 20px;
+}
+.fluids-detail-card {
+  overflow: hidden;
+  padding-bottom: 17px;
+}
+.fluid-ring {
+  width: 128px;
+  height: 128px;
+  display: grid;
+  place-items: center;
+  margin: 18px auto;
+  border: 11px solid #dcecfb;
+  border-top-color: var(--brand);
+  border-right-color: #60a5fa;
+  border-radius: 50%;
+}
+.fluid-ring > div {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+}
+.fluid-ring strong {
+  color: var(--brand-dark);
+  font-size: 23px;
+}
+.fluid-ring small {
+  color: var(--muted);
+  font-size: 8px;
+}
+.fluid-detail-list {
+  display: grid;
+  gap: 0;
+  margin: 0 18px;
+  border-top: 1px solid var(--line);
+}
+.fluid-detail-list > div {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 9px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+.fluid-detail-list time {
+  color: var(--brand);
+  font-size: 9px;
+  font-weight: 760;
+}
+.fluid-detail-list strong,
+.fluid-detail-list small {
+  display: block;
+}
+.fluid-detail-list strong {
+  font-size: 10px;
+}
+.fluid-detail-list small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+.fluids-detail-card > .secondary-button {
+  width: calc(100% - 36px);
+  margin: 15px 18px 0;
+  justify-content: center;
+}
+.fluid-guidance-card {
+  display: flex;
+  gap: 9px;
+  padding: 17px;
+  color: var(--brand);
+  background: #f3f7ff;
+}
+.fluid-guidance-card > svg {
+  width: 18px;
+  flex: 0 0 auto;
+}
+.fluid-guidance-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 10px;
+}
+.fluid-guidance-card p {
+  margin: 4px 0 0;
+  color: #4f6478;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+/* Vitalwerte-Unterseiten */
+.vitals-development-layout,
+.vitals-threshold-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(290px, 0.65fr);
+  gap: 20px;
+  align-items: start;
+}
+.development-chart-card,
+.development-insight-card,
+.development-note-card,
+.threshold-list-card,
+.threshold-summary-card,
+.threshold-personal-card {
+  overflow: hidden;
+}
+.development-heading,
+.threshold-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.development-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+}
+.development-controls .area-custom-select {
+  width: 220px;
+}
+.development-controls > div {
+  display: flex;
+  gap: 6px;
+}
+.development-controls > div button {
+  min-height: 32px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: white;
+  font-size: 9px;
+  font-weight: 730;
+  cursor: pointer;
+}
+.development-controls > div button.active,
+.development-controls > div button:hover {
+  color: var(--brand-dark);
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+.development-chart {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 8px;
+  height: 238px;
+  padding: 18px 18px 0;
+}
+.development-y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding-bottom: 35px;
+  color: var(--muted);
+  font-size: 8px;
+  text-align: right;
+}
+.development-plot {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: repeat(5, 1fr) 32px;
+}
+.development-plot > i {
+  display: block;
+  border-top: 1px dashed #dfe8f2;
+}
+.development-plot svg {
+  position: absolute;
+  inset: 0 0 32px;
+  width: 100%;
+  height: calc(100% - 32px);
+  overflow: visible;
+}
+.development-x-axis {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  color: var(--muted);
+  font-size: 8px;
+}
+.development-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 13px 18px 16px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  font-size: 8px;
+}
+.development-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.development-legend i {
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  border-radius: 50%;
+  background: #dbeafe;
+}
+.development-legend i.line {
+  width: 18px;
+  height: 2px;
+  border-radius: 0;
+  background: var(--brand);
+}
+.development-insight-card > button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 14px;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 18px;
+  border: 0;
+  border-bottom: 1px solid #edf1f5;
+  color: var(--ink);
+  background: white;
+  text-align: left;
+  cursor: pointer;
+}
+.development-insight-card > button:hover {
+  background: var(--brand-soft);
+}
+.development-insight-card > button .resident-avatar {
+  width: 31px;
+  height: 31px;
+}
+.development-insight-card > button strong,
+.development-insight-card > button small {
+  display: block;
+}
+.development-insight-card > button strong {
+  font-size: 10px;
+}
+.development-insight-card > button small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+.development-insight-card > button > svg {
+  width: 13px;
+  color: #9aabbe;
+}
+.development-note-card {
+  display: flex;
+  gap: 9px;
+  padding: 17px;
+  color: var(--brand);
+  background: #f3f7ff;
+}
+.development-note-card > svg {
+  width: 18px;
+  flex: 0 0 auto;
+}
+.development-note-card strong {
+  display: block;
+  color: var(--ink);
+  font-size: 10px;
+}
+.development-note-card p {
+  margin: 4px 0 0;
+  color: #4f6478;
+  font-size: 9px;
+  line-height: 1.45;
+}
+.threshold-list {
+  padding: 0 18px 12px;
+}
+.threshold-list article {
+  display: grid;
+  grid-template-columns: 35px minmax(0, 1fr) minmax(130px, 0.7fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 76px;
+  border-bottom: 1px solid #edf1f5;
+}
+.threshold-list article:last-child {
+  border-bottom: 0;
+}
+.threshold-icon {
+  width: 33px;
+  height: 33px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+.threshold-icon svg {
+  width: 17px;
+}
+.threshold-icon.attention {
+  color: var(--attention);
+  background: var(--attention-soft);
+}
+.threshold-icon.critical {
+  color: var(--critical);
+  background: var(--critical-soft);
+}
+.threshold-icon.info {
+  color: #1684b8;
+  background: #e6f6ff;
+}
+.threshold-list strong,
+.threshold-list small {
+  display: block;
+}
+.threshold-list article > span:nth-child(2) strong {
+  font-size: 10px;
+}
+.threshold-list article > span:nth-child(2) small,
+.threshold-value small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+.threshold-value strong {
+  color: var(--brand-dark);
+  font-size: 10px;
+}
+.threshold-list .quiet-button {
+  white-space: nowrap;
+}
+.threshold-summary-card {
+  display: grid;
+  gap: 5px;
+  padding: 19px;
+}
+.threshold-summary-card > strong {
+  color: var(--brand-dark);
+  font-size: 38px;
+  letter-spacing: -0.05em;
+}
+.threshold-summary-card > span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.threshold-summary-card > div {
+  height: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #e7eef8;
+}
+.threshold-summary-card > div i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--brand), #60a5fa);
+}
+.threshold-summary-card > small {
+  color: var(--success);
+  font-size: 9px;
+}
+.threshold-personal-card > p {
+  margin: 0;
+  padding: 15px 18px 7px;
+  color: #4f6478;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.threshold-personal-card > .secondary-button {
+  margin: 8px 18px 17px;
+}
+
+@media (max-width: 1080px) {
+  .planning-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .planning-overview-layout,
+  .planning-goals-layout,
+  .planning-evaluation-layout,
+  .documentation-quick-layout,
+  .documentation-history-layout,
+  .nutrition-plan-layout,
+  .nutrition-fluids-layout,
+  .vitals-development-layout,
+  .vitals-threshold-layout {
+    grid-template-columns: 1fr;
+  }
+  .planning-side-stack,
+  .planning-evaluation-side,
+  .documentation-quick-aside,
+  .documentation-history-aside,
+  .fluids-detail,
+  .development-side,
+  .threshold-side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+  }
+  .nutrition-plan-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .planning-goal-aside {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .planning-goal-aside .card-header,
+  .planning-goal-note {
+    grid-column: 1/-1;
+  }
+  .development-insight-card,
+  .development-note-card,
+  .threshold-summary-card,
+  .threshold-personal-card {
+    min-width: 0;
+  }
+}
+@media (max-width: 780px) {
+  .planning-metrics {
+    gap: 9px;
+  }
+  .planning-metrics > div {
+    min-height: 72px;
+    padding: 12px;
+  }
+  .planning-metric-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .planning-metrics strong {
+    font-size: 18px;
+  }
+  .planning-focus-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .planning-focus-row .quiet-button {
+    width: 100%;
+    margin-left: 42px;
+    justify-content: flex-start;
+  }
+  .planning-board-header,
+  .documentation-capture-header,
+  .documentation-history-header,
+  .development-heading,
+  .threshold-heading,
+  .nutrition-board-heading,
+  .fluids-table-heading {
+    flex-direction: column;
+  }
+  .planning-board-filters {
+    width: 100%;
+  }
+  .planning-board-filters button {
+    flex: 1;
+  }
+  .planning-goal-aside {
+    display: block;
+  }
+  .documentation-capture-steps {
+    grid-template-columns: 1fr;
+  }
+  .documentation-step {
+    min-height: 58px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .documentation-step:last-child {
+    border-bottom: 0;
+  }
+  .documentation-quick-list > button {
+    grid-template-columns: 36px 31px minmax(0, 1fr) 14px;
+  }
+  .documentation-entry-tag {
+    display: none;
+  }
+  .documentation-timeline article {
+    grid-template-columns: 84px 10px minmax(0, 1fr);
+  }
+  .documentation-timeline article > .quiet-button {
+    grid-column: 3;
+    justify-self: start;
+    margin-top: 5px;
+  }
+  .nutrition-plan-grid {
+    grid-template-columns: 1fr;
+  }
+  .development-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .development-controls .area-custom-select {
+    width: 100%;
+  }
+  .development-chart {
+    height: 210px;
+    padding-inline: 12px;
+  }
+  .development-legend {
+    gap: 8px;
+  }
+  .threshold-list article {
+    grid-template-columns: 33px minmax(0, 1fr) auto;
+  }
+  .threshold-value {
+    grid-column: 2;
+  }
+  .threshold-list article > .quiet-button {
+    grid-column: 3;
+    grid-row: 1/3;
+  }
+  .fluids-table-head {
+    display: none;
+  }
+  .fluids-table > button {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 13px 0;
+  }
+  .fluids-table > button > span:nth-child(2),
+  .fluids-progress,
+  .fluids-table > button > span:nth-child(4) {
+    grid-column: 1;
+    margin-left: 44px;
+  }
+  .fluids-table > button > span:nth-child(2) {
+    grid-row: 2;
+  }
+  .fluids-progress {
+    grid-row: 3;
+  }
+  .fluids-table > button > span:nth-child(4) {
+    grid-row: 4;
+  }
+  .fluids-table > button > svg {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .fluid-guidance-card {
+    margin-bottom: 4px;
+  }
+}
+
+/* Login */

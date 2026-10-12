@@ -1,0 +1,219 @@
+/* Additions for the database-backed vital signs module. */
+
+.vital-value.attention strong {
+  color: var(--attention);
+}
+
+.vital-value.critical strong {
+  color: var(--critical);
+}
+
+.vital-value.empty strong {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.vital-chart {
+  margin: 12px 0 0;
+}
+
+.vital-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.vital-chart-band {
+  fill: rgb(38 113 87 / 10%);
+}
+
+.vital-chart-alarm {
+  stroke: var(--critical);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+  opacity: 0.7;
+}
+
+.vital-chart-axis {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.vital-chart-line {
+  fill: none;
+  stroke: var(--brand);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.vital-chart-line.secondary {
+  stroke: #93b4f5;
+  stroke-dasharray: 6 4;
+}
+
+.vital-chart-point {
+  fill: var(--surface);
+  stroke: var(--brand);
+  stroke-width: 2.5;
+}
+
+.vital-chart-point.attention {
+  fill: var(--attention);
+  stroke: var(--attention);
+}
+
+.vital-chart-point.critical {
+  fill: var(--critical);
+  stroke: var(--critical);
+}
+
+.vital-chart figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.vital-chart figcaption i {
+  display: inline-block;
+  width: 14px;
+  height: 8px;
+  margin-right: 5px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.vital-chart figcaption i.band {
+  background: rgb(38 113 87 / 18%);
+}
+
+.vital-chart figcaption i.alarm {
+  height: 0;
+  border-top: 2px dashed var(--critical);
+}
+
+.vital-chart figcaption i.secondary {
+  height: 0;
+  border-top: 2px dashed #93b4f5;
+}
+
+.vital-measurement-list {
+  display: grid;
+  gap: 2px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vital-measurement-list li {
+  display: grid;
+  grid-template-columns: 10px auto 1fr;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.vital-measurement-list small {
+  color: var(--muted);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.status-dot.attention {
+  background: var(--attention);
+}
+
+.status-dot.critical {
+  background: var(--critical);
+}
+
+.vital-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.vital-stats span {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.vital-stats small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.vital-input > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vital-input > span small {
+  font-weight: 500;
+}
+
+.vital-input > span em {
+  font-style: normal;
+}
+
+.vital-input > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vital-input input {
+  min-width: 0;
+  flex: 1;
+}
+
+.threshold-actions {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.threshold-personal-list {
+  display: grid;
+  margin: 0;
+  padding: 0 18px 8px;
+  list-style: none;
+}
+
+.threshold-personal-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.threshold-personal-list li > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.threshold-personal-list small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.vitals-trend-card .card-header {
+  align-items: flex-start;
+}

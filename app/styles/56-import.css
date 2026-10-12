@@ -1,0 +1,61 @@
+/* Datenübernahme: Vorschau der Datei mit Prüfung je Zeile. */
+.data-import-file {
+  color: var(--muted);
+  font-size: 12px;
+}
+.data-import-error {
+  margin: 0 18px 18px;
+  padding: 11px 13px;
+  border: 1px solid #efbeb7;
+  border-radius: 6px;
+  color: #a63e33;
+  background: var(--critical-soft);
+  font-size: 12px;
+}
+.data-import-note {
+  flex-basis: 100%;
+  margin: 0;
+  color: #536a82;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.data-import-table {
+  display: grid;
+  overflow-x: auto;
+  padding: 0 18px 18px;
+}
+.data-import-row {
+  min-width: 720px;
+  display: grid;
+  grid-template-columns: 56px repeat(4, minmax(0, 1fr)) minmax(0, 1.6fr);
+  gap: 12px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid #edf1f5;
+  color: var(--ink);
+  font-size: 12px;
+}
+.data-import-head {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.data-import-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.data-import-row > span:last-child {
+  color: #2f6b3d;
+}
+.data-import-row.has-errors > span:last-child {
+  color: #a63e33;
+  font-weight: 650;
+}
+.data-import-units {
+  margin-top: 4px;
+}
+.data-import a.secondary-button {
+  text-decoration: none;
+}

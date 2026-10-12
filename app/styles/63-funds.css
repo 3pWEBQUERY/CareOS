@@ -1,0 +1,307 @@
+/* Bewohnergelder: Konto der Person, Kasse und Kontoauszug */
+.fund-layout {
+  margin-top: 18px;
+}
+.fund-amount[data-direction="in"] {
+  color: var(--success);
+}
+.fund-amount[data-direction="out"] {
+  color: var(--ink);
+}
+.fund-entries li time {
+  flex: none;
+  width: 78px;
+  color: var(--muted);
+  font-size: 12px;
+}
+/* Handy: Guthaben heute als breite Hauptkachel, Einzahlungen sowie Auszahlungen und Ausgaben darunter nebeneinander. */
+@media (max-width: 960px) {
+  .fund-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fund-summary > div {
+    min-height: 0;
+    padding: 14px 16px;
+  }
+  .fund-summary > div:first-child {
+    grid-column: 1 / -1;
+    padding: 18px 18px 16px;
+    background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%);
+  }
+  .fund-summary > div:first-child .summary-icon {
+    display: grid;
+  }
+  .fund-summary > div:first-child strong {
+    font-size: 30px;
+    letter-spacing: -0.02em;
+  }
+  .fund-summary > div:first-child small {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--brand-dark);
+  }
+  .fund-summary > div:nth-child(2),
+  .fund-summary > div:nth-child(3) {
+    align-items: flex-start;
+    border-top: 1px solid var(--line);
+  }
+  .fund-summary > div:nth-child(2) {
+    border-left: 0;
+  }
+  .fund-summary > div:nth-child(3) {
+    border-left: 1px solid var(--line);
+  }
+  .fund-summary > div:nth-child(2) .summary-icon,
+  .fund-summary > div:nth-child(3) .summary-icon {
+    display: none;
+  }
+  .fund-summary > div:nth-child(2) strong,
+  .fund-summary > div:nth-child(3) strong {
+    font-size: 19px;
+    white-space: nowrap;
+  }
+  .fund-summary > div:nth-child(2) strong {
+    color: var(--success);
+  }
+  .fund-summary small {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
+/* Handy: Buchung als kleine Karte – oben Datum und Betrag, darunter Art, Zweck und Angaben über die ganze Breite,
+   unten „Stornieren“. */
+@media (max-width: 760px) {
+  .fund-entries li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "date amount"
+      "text text"
+      "action action";
+    align-items: center;
+    gap: 6px 12px;
+    padding: 12px 14px;
+  }
+  .fund-entries li time {
+    grid-area: date;
+    width: auto;
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .fund-entries li > div {
+    grid-area: text;
+    gap: 3px;
+  }
+  .fund-entries li strong {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+  .fund-entries li small {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .fund-entries li .fund-amount {
+    grid-area: amount;
+    justify-self: end;
+    font-size: 16px;
+  }
+  .fund-entries li > button {
+    grid-area: action;
+    justify-self: stretch;
+    min-height: 40px;
+    margin-top: 4px;
+  }
+}
+.fund-cash-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.fund-account-link {
+  padding: 0;
+  border: 0;
+  color: var(--brand);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.fund-account-link:hover,
+.fund-account-link:focus-visible {
+  text-decoration: underline;
+}
+.fund-counts {
+  margin-top: 16px;
+}
+.fund-counts h3 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.fund-counts li.fund-count-differs {
+  border-color: var(--critical);
+}
+.fund-preview {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.fund-preview[data-state="negative"] {
+  border-color: var(--critical);
+  color: var(--critical);
+}
+.fund-preview[data-state="balanced"] {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.funds-sheet table {
+  margin-top: 12px;
+}
+.funds-sheet .funds-sheet-amount {
+  text-align: right;
+  white-space: nowrap;
+}
+.funds-sheet .funds-sheet-total td {
+  font-weight: 800;
+  background: #f8fafc;
+}
+.transfer-sheet dl.funds-sheet-sums {
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: 320px;
+  margin: 12px 0 0 auto;
+}
+.funds-sheet-sums dd {
+  text-align: right;
+}
+.funds-sheet-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 36px;
+  margin-top: 48px;
+}
+.funds-sheet-signatures span {
+  padding-top: 6px;
+  border-top: 1px solid #0f172a;
+  color: #475569;
+}
+
+/* Kontoauszug am Handy (nur Bildschirm, Druck bleibt A4-Tabelle): jede Buchung als Block mit Datum und Betrag oben,
+   Buchungstext darunter und Beleg sowie Saldo am Fuss; Anfangs- und Endbestand als hervorgehobene Zeilen. */
+@media screen and (max-width: 700px) {
+  .funds-sheet table,
+  .funds-sheet tbody {
+    display: block;
+  }
+  .funds-sheet thead {
+    display: none;
+  }
+  .funds-sheet tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    padding: 12px 2px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .funds-sheet td {
+    padding: 0;
+    border: 0;
+    font-size: 14px;
+  }
+  .funds-sheet .funds-sheet-total {
+    align-items: center;
+    margin: 4px 0;
+    padding: 12px;
+    border: 0;
+    border-radius: 6px;
+    background: #f1f5f9;
+  }
+  .funds-sheet .funds-sheet-total td {
+    background: none;
+    font-size: 15px;
+  }
+  .funds-sheet .funds-sheet-total .funds-sheet-date {
+    display: none;
+  }
+  .funds-sheet-entry {
+    grid-template-areas:
+      "date change"
+      "text text"
+      "receipt balance";
+  }
+  .funds-sheet-entry .funds-sheet-change {
+    grid-area: change;
+    text-align: right;
+  }
+  .funds-sheet-entry .funds-sheet-receipt {
+    grid-area: receipt;
+  }
+  .funds-sheet-entry .funds-sheet-balance {
+    grid-area: balance;
+    text-align: right;
+  }
+  .funds-sheet-entry .funds-sheet-date {
+    grid-area: date;
+    color: #5f6f86;
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .funds-sheet-entry .funds-sheet-change {
+    font-size: 15px;
+    font-weight: 800;
+  }
+  .funds-sheet-entry .funds-sheet-change[data-direction="in"] {
+    color: var(--success);
+  }
+  .funds-sheet-entry .funds-sheet-text {
+    grid-area: text;
+    font-size: 15px;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+  .funds-sheet-entry .funds-sheet-text small {
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 400;
+  }
+  .funds-sheet-entry .funds-sheet-receipt,
+  .funds-sheet-entry .funds-sheet-balance {
+    color: #5f6f86;
+    font-size: 13px;
+  }
+  .funds-sheet-entry .funds-sheet-receipt::before,
+  .funds-sheet-entry .funds-sheet-balance::before {
+    content: attr(data-label) " ";
+    font-weight: 650;
+  }
+  .transfer-sheet dl.funds-sheet-sums {
+    width: auto;
+    margin-left: 0;
+    padding: 4px 2px;
+    font-size: 14px;
+  }
+  .funds-sheet .transfer-head h1 {
+    font-size: 24px;
+  }
+  .funds-sheet .transfer-head span,
+  .funds-sheet .transfer-facility span,
+  .funds-sheet .transfer-facility strong {
+    font-size: 13px;
+  }
+  .funds-sheet-signatures span {
+    font-size: 13px;
+  }
+  .funds-sheet-signatures {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+}

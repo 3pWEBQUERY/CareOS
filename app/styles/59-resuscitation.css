@@ -1,0 +1,44 @@
+/* Reanimationsstatus auf jeder Karte mit einer Person: in Notfällen ohne Suchen erkennbar. */
+.rea-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.rea-badge.dnr {
+  color: white;
+  background: #b4232f;
+}
+.rea-badge.full {
+  color: var(--success);
+  border-color: rgba(38, 113, 87, 0.35);
+  background: #e6f4ee;
+}
+.rea-badge.unknown {
+  color: #885a00;
+  border-color: rgba(136, 90, 0, 0.3);
+  background: var(--attention-soft);
+}
+/* Name und Kennzeichnung in einer Zeile. */
+.rea-name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+strong > .rea-badge,
+h2 > .rea-badge,
+.room-scan-list li > .rea-badge,
+.occupancy-occupants .rea-badge {
+  margin-left: 6px;
+}

@@ -1,0 +1,2017 @@
+/* FBM (Tab „FBM“), Reiterleiste der Akte, Vorsorge & Vertretung, Qualitätsindikatoren, Visite, Leistungserfassung, Isolation & Ausbruch, Alltag & Aktivierung, Belegung & Eintritt (mit QR-Etiketten je Zimmer), eMediplan, Lagerung & Bewegung, Auskunft & Datenexport, Wünsche am Lebensende und Ablauf nach dem Todesfall, Evakuierungsliste, Diagnosen, Impfungen, Hilfsmittel & Gegenstände, Einwilligungen, Geräte & Prüfungen, Kühlschrank-Temperatur, Fahrdienst, Einarbeitung, Rückmeldungen, Inventarliste, Bild bei der Aufnahme, Küchenliste, Tippflächen kleiner Links und Textknöpfe sowie die Hauptüberschrift der Druckansichten. */
+.restraints-list {
+  display: grid;
+  gap: 16px;
+}
+.restraints-empty,
+.restraints-error {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: #fbfcfe;
+  font-size: 12px;
+}
+.restraints-error {
+  border-style: solid;
+  color: #a43b2d;
+  background: var(--critical-soft);
+}
+.restraint-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.restraint-description {
+  margin: 0;
+  padding: 12px 18px 0;
+  color: var(--ink);
+  font-size: 12px;
+}
+.restraint-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+  padding: 14px 18px;
+}
+.restraint-facts div {
+  min-width: 0;
+}
+.restraint-facts dt {
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.restraint-facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+.restraint-reviews {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 18px 14px;
+  list-style: none;
+}
+.restraint-reviews li {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcfe;
+  font-size: 12px;
+}
+.restraint-reviews small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.restraint-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+}
+.restraint-actions svg {
+  width: 14px;
+  height: 14px;
+}
+.restraints-ended {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+}
+.restraints-ended summary {
+  padding: 12px 16px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.restraints-ended ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 16px 14px;
+  list-style: none;
+}
+.restraints-ended li {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+.restraints-ended small,
+.restraints-ended span {
+  color: var(--muted);
+}
+@media (max-width: 760px) {
+  .restraint-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .restraint-actions {
+    flex-wrap: wrap;
+  }
+  .restraint-actions button {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}
+/* Mit dem Reiter „FBM“ passen nicht mehr alle Reiter in jede Breite: die Leiste scrollt seitlich (ohne sichtbare
+   Scrollleiste), der aktive Reiter wird ins Bild gerückt. */
+.resident-record-tabs {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.resident-record-tabs::-webkit-scrollbar {
+  display: none;
+}
+@media (min-width: 761px) {
+  .resident-record-tabs button {
+    flex: none;
+  }
+}
+/* Vorsorge & Vertretung in den Stammdaten. */
+.advance-care-representative {
+  display: grid;
+  gap: 7px;
+  color: #455b70;
+  font-size: 10px;
+  font-weight: 730;
+}
+.advance-care-representative strong {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+.advance-care-representative small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+/* Reanimationsstatus, Patientenverfügung und Vertretung im Aktenkopf: untereinander, damit der Kopf nicht breiter
+   wird als mit dem REA-Abzeichen allein. */
+.record-legal-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.record-legal-badges .status-badge {
+  max-width: 150px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.record-legal-badges .status-badge::before {
+  flex: none;
+}
+/* Qualitätsindikatoren (Leitung › Qualität & Kennzahlen). */
+.quality-indicators-toolbar {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.quality-indicators-toolbar p,
+.quality-indicators-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.quality-indicators-meta {
+  margin: 12px 0 18px;
+}
+.quality-indicators-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+.quality-indicator-card {
+  padding: 16px 18px;
+}
+.quality-indicator-card header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.quality-indicator-value {
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+}
+.quality-indicator-value strong {
+  color: var(--ink);
+  font-size: 24px;
+}
+.quality-indicator-method {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.quality-indicator-method strong {
+  color: var(--ink);
+}
+.quality-indicator-residents {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.quality-indicator-residents li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.quality-indicator-residents a {
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+.quality-indicator-residents span,
+.quality-indicators-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .quality-indicators-toolbar,
+  .quality-indicators-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Visite vorbereiten */
+.visit-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+.visit-toolbar > :first-child {
+  width: min(100%, 260px);
+}
+.visit-toolbar a[aria-disabled="true"] {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.visit-groups {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+.visit-group,
+.visit-resolved {
+  padding: 16px 18px;
+}
+.visit-group > header,
+.visit-resolved > header {
+  margin-bottom: 10px;
+}
+.visit-resident + .visit-resident {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.visit-resident h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.visit-resident h3 a {
+  color: var(--brand-dark);
+}
+.visit-resident h3 span,
+.visit-resident small,
+.visit-resolved small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.visit-resident ul,
+.visit-resolved ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.visit-resident li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.visit-resident li p,
+.visit-resolved li p {
+  margin: 0 0 3px;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.visit-resident li button {
+  flex: none;
+}
+.visit-resolved {
+  margin-top: 16px;
+}
+.visit-resolved li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.visit-resolved li span {
+  color: var(--muted);
+  font-weight: 700;
+}
+.visit-answer-question span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.visit-answer-question p {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+.visit-sheet h2 span {
+  margin-left: 8px;
+  color: #5f6f86;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.visit-sheet td:first-child {
+  width: 24%;
+}
+.visit-sheet-answer {
+  width: 38%;
+  height: 52px;
+  border-left: 1px solid #e2e8f0;
+}
+.visit-sheet-empty {
+  margin: 18px 0;
+  color: #5f6f86;
+}
+@media (max-width: 760px) {
+  .visit-resident li {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Leistungserfassung, Leistungsauswertung und Leistungskatalog */
+.service-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+.service-toolbar > .form-field {
+  width: min(100%, 220px);
+}
+.service-toolbar p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.service-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  gap: 16px;
+  margin-top: 18px;
+}
+.service-records,
+.service-suggestions,
+.services-report-card,
+.service-catalog-card {
+  padding: 16px 18px;
+}
+.service-records > header,
+.service-suggestions > header,
+.services-report-card > header,
+.service-catalog-card > header {
+  margin-bottom: 12px;
+}
+.service-records ul,
+.service-suggestion-group ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.service-records li,
+.service-suggestion-group li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.service-records li > div,
+.service-suggestion-group li > div {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+.service-records li strong,
+.service-suggestion-group li strong {
+  font-size: 13px;
+}
+.service-records li small,
+.service-suggestion-group li small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.service-records li p {
+  margin: 2px 0 0;
+  font-size: 12px;
+}
+.service-records li button,
+.service-suggestion-group li button {
+  flex: none;
+}
+.service-records li.cancelled {
+  background: var(--surface-soft);
+}
+.service-records li.cancelled strong,
+.service-records li.cancelled .service-minutes {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.service-cancel-reason {
+  color: var(--critical);
+}
+.service-minutes {
+  flex: none;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.service-suggestion-group + .service-suggestion-group {
+  margin-top: 16px;
+}
+.service-suggestion-group h3 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.service-empty,
+.services-report-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.services-report-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(180px, 240px) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+.services-report-toolbar p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.services-report-card {
+  margin-top: 18px;
+}
+.services-report-table {
+  overflow-x: auto;
+}
+.services-report-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.services-report-table th,
+.services-report-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.services-report-table th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.services-report-table td small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.services-report-table a {
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+.services-report-table tr.inactive td {
+  color: var(--muted);
+}
+@media (max-width: 960px) {
+  .service-layout,
+  .services-report-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .service-records li,
+  .service-suggestion-group li {
+    flex-wrap: wrap;
+  }
+}
+
+/* Isolation & Ausbruch */
+.hygiene-toolbar {
+  display: grid;
+  grid-template-columns: minmax(200px, 260px) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+/* Hinweis unter Auswahl und Knopf, über die ganze Breite. */
+.hygiene-toolbar p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.outbreak-card {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-color: var(--critical);
+  background: var(--critical-soft);
+}
+.outbreak-card > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.outbreak-card .eyebrow {
+  color: var(--critical);
+}
+.outbreak-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.outbreak-measures {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.outbreak-authority {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.isolation-group,
+.hygiene-history,
+.hygiene-empty {
+  margin-top: 16px;
+  padding: 16px 18px;
+}
+.isolation-group > header,
+.hygiene-history > header {
+  margin-bottom: 12px;
+}
+.isolation-group ul,
+.hygiene-history ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.isolation-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(0, 3fr) auto;
+  align-items: start;
+  gap: 12px 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.isolation-person {
+  display: grid;
+  gap: 2px;
+}
+.isolation-person a {
+  color: var(--brand-dark);
+  font-size: 13px;
+  font-weight: 700;
+}
+.isolation-person small,
+.isolation-detail small,
+.hygiene-history small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.isolation-detail {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.isolation-detail strong {
+  font-size: 13px;
+}
+.isolation-detail p,
+.hygiene-history p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.isolation-precautions {
+  color: var(--muted);
+}
+.isolation-review {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+.hygiene-history li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.hygiene-history strong {
+  font-size: 13px;
+}
+@media (max-width: 960px) {
+  .hygiene-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .isolation-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .isolation-review {
+    justify-items: start;
+  }
+}
+
+/* Alltag & Aktivierung */
+.activities-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  margin-bottom: 18px;
+}
+.activities-toolbar > .area-custom-select {
+  width: min(100%, 240px);
+}
+.activities-week {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.activities-week strong {
+  min-width: 190px;
+  font-size: 14px;
+  text-align: center;
+}
+.activities-week .button-icon.flip {
+  transform: rotate(180deg);
+}
+.activities-days {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.activities-day {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px 16px;
+  padding: 14px 18px;
+}
+.activities-day.today {
+  border-color: var(--brand);
+}
+.activities-day-list {
+  display: grid;
+  gap: 8px;
+}
+.activities-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.activity-card {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.activity-card.cancelled {
+  background: var(--surface-soft);
+}
+.activity-card.cancelled .activity-body > strong {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.activity-time {
+  display: grid;
+  gap: 2px;
+}
+.activity-time strong {
+  font-size: 14px;
+}
+.activity-time small,
+.activity-body small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.activity-body {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.activity-body > strong {
+  font-size: 13px;
+}
+.activity-body p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.activity-counts {
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+.activity-cancelled {
+  color: var(--critical);
+}
+.activity-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.participation-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.participation-list li {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.participation-person {
+  display: grid;
+  gap: 2px;
+}
+.participation-person strong {
+  font-size: 13px;
+}
+.participation-person small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.participation-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.participation-note {
+  grid-column: 1 / -1;
+}
+.participation-report {
+  margin-top: 18px;
+  padding: 16px 18px;
+}
+.participation-report > header {
+  margin-bottom: 12px;
+}
+.portal-card h3 {
+  margin: 12px 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+@media (max-width: 960px) {
+  .activities-day {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .activity-card {
+    grid-template-columns: 60px minmax(0, 1fr);
+  }
+  .activity-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 760px) {
+  .participation-list li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Tippflächen mindestens 24 px (WCAG 2.2, 2.5.8), auf allen Bildschirmen: grössere Fläche über Innenabstand und
+   gleich grossen negativen Aussenabstand, damit sich die Optik nicht ändert. */
+.visit-resident h3 a,
+.services-report-table td > a {
+  display: inline-block;
+  margin: -5px 0;
+  padding: 5px 0;
+}
+.home-notes-empty button {
+  margin: -2px 0 -5px;
+  padding: 5px 0;
+}
+.home-news-foot button,
+.teamlead-task-card button {
+  margin: -6px 0;
+  padding: 6px 0;
+}
+@media (min-width: 761px) {
+  .handover-event-list article > button {
+    margin: -5px;
+    padding: 5px;
+  }
+}
+
+/* Belegung & Eintritt */
+.occupancy-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+  align-items: start;
+  gap: 16px;
+  margin-top: 18px;
+}
+.occupancy-units,
+.occupancy-side {
+  display: grid;
+  gap: 16px;
+}
+.occupancy-unit,
+.occupancy-planned,
+.occupancy-waitlist,
+.occupancy-closed {
+  padding: 16px 18px;
+}
+.occupancy-unit > header,
+.occupancy-planned > header,
+.occupancy-waitlist > header,
+.occupancy-closed > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+}
+.occupancy-unit .card-subtitle strong {
+  color: var(--brand-dark);
+}
+.occupancy-bar {
+  height: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+.occupancy-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--brand);
+}
+.occupancy-rooms,
+.occupancy-planned ul,
+.occupancy-waitlist ul,
+.occupancy-closed ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.occupancy-rooms li {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.occupancy-rooms li.inactive {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+.occupancy-room-head {
+  display: grid;
+  gap: 2px;
+}
+.occupancy-room-head strong {
+  font-size: 13px;
+}
+.occupancy-room-head small,
+.occupancy-planned small,
+.occupancy-waitlist small,
+.occupancy-closed small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.occupancy-occupants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.occupancy-occupants span {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-size: 12px;
+  font-weight: 600;
+}
+.occupancy-occupants span.planned {
+  background: var(--info-soft);
+  color: var(--info);
+}
+.occupancy-occupants span.transferred {
+  background: var(--attention-soft);
+  color: var(--attention);
+}
+.occupancy-planned li,
+.occupancy-waitlist li,
+.occupancy-closed li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.occupancy-planned li > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+.occupancy-planned a {
+  color: var(--brand-dark);
+  font-size: 13px;
+  font-weight: 700;
+}
+.waitlist-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.waitlist-head strong,
+.occupancy-closed strong {
+  font-size: 13px;
+}
+.occupancy-waitlist p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+.waitlist-status-note {
+  color: var(--muted);
+}
+.occupancy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.occupancy-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 1100px) {
+  .occupancy-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 760px) {
+  .occupancy-rooms li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* eMediplan einlesen */
+.emediplan-input,
+.emediplan-summary,
+.emediplan-line {
+  padding: 16px 18px;
+}
+.emediplan-input label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.emediplan-input textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+}
+.emediplan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+.emediplan-summary,
+.emediplan-lines {
+  margin-top: 16px;
+}
+.emediplan-lines {
+  display: grid;
+  gap: 12px;
+}
+.emediplan-summary > header,
+.emediplan-line > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 10px;
+}
+.emediplan-mismatch {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--critical);
+  border-radius: 6px;
+  background: var(--critical-soft);
+  color: var(--critical);
+  font-size: 13px;
+}
+.emediplan-remark,
+.emediplan-times p,
+.emediplan-hint {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.emediplan-hint {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--attention-soft);
+  color: var(--ink);
+}
+.emediplan-times > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.emediplan-times label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.emediplan-times input {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.emediplan-line.done {
+  background: var(--surface-soft);
+}
+.emediplan-plan {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 16px;
+  margin: 0 0 12px;
+}
+.emediplan-plan dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.emediplan-plan dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.emediplan-form.area-editor-grid {
+  max-width: none;
+  margin: 0;
+}
+.emediplan-group > label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 730;
+}
+.emediplan-group {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(0, 2fr);
+  align-items: end;
+  gap: 8px 12px;
+}
+@media (max-width: 760px) {
+  .emediplan-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.emediplan-video {
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 6px;
+  background: #0f172a;
+  object-fit: cover;
+}
+
+/* QR-Etiketten je Zimmer (A4, 3 × 7) und Ziel des QR-Codes. */
+.occupancy-unit > header .occupancy-actions {
+  margin-top: 0;
+}
+.room-labels-sheet {
+  max-width: 190mm;
+  margin: 0 auto;
+}
+.room-labels-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 4mm;
+  font-size: 14px;
+}
+.room-labels-title span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.room-labels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.room-labels li {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  height: 37mm;
+  padding: 3mm;
+  border: 1px dashed #c9d3df;
+  break-inside: avoid;
+}
+.room-label-code {
+  flex: 0 0 28mm;
+  width: 28mm;
+  height: 28mm;
+}
+.room-label-code svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.room-label-text {
+  display: grid;
+  gap: 1mm;
+  min-width: 0;
+}
+.room-label-text strong {
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.room-label-text small {
+  color: var(--muted);
+  font-size: 9px;
+}
+/* Vorschau auf dem Handy: Etiketten untereinander statt drei nebeneinander (kein seitliches Scrollen); der Druck
+   bleibt A4 mit 3 × 7 Etiketten. */
+@media screen and (max-width: 760px) {
+  .room-labels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .room-labels-title {
+    flex-wrap: wrap;
+  }
+}
+.room-scan-list {
+  padding: 16px 18px;
+}
+.room-scan-list ul {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.room-scan-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.room-scan-list small {
+  color: var(--muted);
+}
+
+/* Druckansichten: Hauptüberschrift für Screenreader, solange der Bogen noch lädt oder nicht erstellt werden kann. */
+.print-hidden-heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+/* Lagerung & Bewegung: Positionswechsel, Hautbefund und Lagerungsplan. */
+.repositioning-choices,
+.repositioning-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.repositioning-range {
+  margin-bottom: 10px;
+}
+.repositioning-hint {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.repositioning-day + .repositioning-day {
+  margin-top: 14px;
+}
+.repositioning-day h3 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.repositioning-entries li time {
+  flex: none;
+  width: 44px;
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.repositioning-skin.notable {
+  color: #a43b2d;
+  font-weight: 650;
+}
+.repositioning-plan dl {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.repositioning-plan dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+.repositioning-plan dd {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Auskunft & Datenexport: Karte in der Akte und lesbare Fassung zum Drucken. */
+.record-export-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.export-legal,
+.export-notes {
+  margin: 0 0 8px;
+  font-size: 11px;
+}
+.export-notes {
+  padding-left: 16px;
+}
+.export-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+.export-sheet section {
+  break-inside: auto;
+}
+.export-sheet .export-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 16px;
+  margin: 0 0 6px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e5eaf0;
+  break-inside: avoid;
+  font-size: 10.5px;
+}
+.export-sheet .export-row div {
+  display: grid;
+  grid-template-columns: 11em minmax(0, 1fr);
+  gap: 6px;
+  min-width: 0;
+}
+.export-sheet .export-row dt {
+  color: var(--muted);
+}
+.export-sheet .export-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+/* Wünsche für die letzte Lebensphase und Checkliste nach dem Todesfall (Stammdaten der Akte). */
+.end-of-life-wish strong {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.end-of-life-updated {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.death-checklist-empty {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+.death-checklist {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.death-checklist li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+.death-checklist li:last-child {
+  border-bottom: 0;
+}
+.death-checklist-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+.death-checklist li.done .death-checklist-mark {
+  border-color: var(--success);
+  color: #fff;
+  background: var(--success);
+}
+.death-checklist li > div {
+  display: grid;
+  gap: 2px;
+}
+.death-checklist strong {
+  color: var(--ink);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.death-checklist small {
+  color: var(--muted);
+  font-size: 11px;
+}
+/* Wie die Knöpfe im Kartenkopf der Akte. */
+.death-checklist-action {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.death-checklist-action svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+/* Evakuierungs- und Notfallliste: ein Wohnbereich pro Seite, gut lesbar auch ausgedruckt. */
+.evacuation-sheet {
+  max-width: 190mm;
+  margin: 0 auto 10mm;
+  color: #000;
+}
+.evacuation-sheet + .evacuation-sheet {
+  break-before: page;
+}
+.evacuation-sheet header h1 {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 2mm;
+  font-size: 16px;
+}
+.evacuation-sheet header h1 span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.evacuation-sheet header p {
+  margin: 0 0 4mm;
+  font-size: 12px;
+}
+.evacuation-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.evacuation-sheet th,
+.evacuation-sheet td {
+  padding: 2.2mm 2mm;
+  border: 1px solid #9aa7b4;
+  text-align: left;
+  vertical-align: top;
+}
+.evacuation-sheet thead th {
+  background: #eef2f6;
+  font-weight: 700;
+}
+.evacuation-sheet tr {
+  break-inside: avoid;
+}
+.evacuation-sheet tr.absent td {
+  color: #5b6b7b;
+}
+.evacuation-sheet td.mobility-wheelchair,
+.evacuation-sheet td.mobility-bedridden {
+  font-weight: 700;
+}
+.evacuation-sheet td.mobility-unknown {
+  font-style: italic;
+}
+.evacuation-sheet .evacuation-check {
+  width: 22mm;
+  text-align: center;
+}
+.evacuation-sheet .evacuation-check span {
+  display: inline-block;
+  width: 5mm;
+  height: 5mm;
+  border: 1px solid #000;
+}
+/* Diagnosen (Stammdaten): Liste wie die Checkliste, ohne Häkchen; Code als kleines Kennzeichen. */
+.diagnosis-list li {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.diagnosis-list li.resolved strong {
+  color: var(--muted);
+}
+.diagnosis-code {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  font-size: 11px;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+.diagnosis-actions {
+  display: flex;
+  gap: 6px;
+}
+.diagnosis-resolved summary {
+  min-height: 24px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.visit-diagnoses {
+  display: block;
+  margin: -4px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+/* Impfstatus (Isolation & Ausbruch). */
+.vaccination-overview {
+  margin-top: 18px;
+  padding: 16px 18px;
+}
+.vaccination-overview > header {
+  margin-bottom: 12px;
+}
+.vaccination-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.vaccination-filters label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.vaccination-filters input {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.vaccination-unit + .vaccination-unit {
+  margin-top: 12px;
+}
+.vaccination-unit h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+.vaccination-unit h3 span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.vaccination-unit ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.vaccination-unit li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #edf1f5;
+  font-size: 12.5px;
+}
+.vaccination-unit li:last-child {
+  border-bottom: 0;
+}
+.vaccination-unit li small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.vaccination-unit li.done > small {
+  color: var(--success);
+  font-weight: 700;
+}
+/* Überleitungsbogen: Hilfsmittel und Gegenstände mit Kästchen zum Abhaken „mitgegeben“. */
+.transfer-belongings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+}
+.transfer-belongings li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.transfer-check {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 1px solid currentColor;
+}
+/* Einwilligungen: Stand je Thema (Akte) und Übersicht je Wohnbereich. */
+.diagnosis-code.consent-refused,
+.diagnosis-code.consent-revoked {
+  color: #a43b2d;
+  background: var(--critical-soft);
+}
+.diagnosis-code.consent-missing {
+  color: var(--muted);
+  background: #eef2f6;
+}
+.consent-row.refused > small,
+.consent-row.revoked > small {
+  color: #a43b2d;
+  font-weight: 700;
+}
+.consent-row.granted > small {
+  color: var(--success);
+  font-weight: 700;
+}
+.consent-row a {
+  display: inline-block;
+  margin: -5px 0;
+  padding: 5px 0;
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+/* Geräte & Prüfungen (Leitung › Qualität). */
+.device-filter {
+  margin: 18px 0 0;
+}
+.device-list {
+  margin-top: 18px;
+  padding: 6px 18px;
+}
+.device-list > ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.device-list > ul > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+.device-list > ul > li:last-child {
+  border-bottom: 0;
+}
+.device-list > ul > li > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.device-list strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+.device-list small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.device-list li.due .device-due {
+  color: #9a5b00;
+  font-weight: 700;
+}
+.device-list li.retired strong {
+  color: var(--muted);
+}
+.device-defect {
+  color: #a43b2d !important;
+}
+.device-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.device-checks {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .device-list > ul > li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .device-actions {
+    justify-content: flex-start;
+  }
+}
+/* Kühlschrank-Temperatur: letzter Wert ausserhalb der Grenzen der Einrichtung. */
+.diagnosis-code.fridge-outside {
+  color: #a43b2d;
+  background: var(--critical-soft);
+}
+/* Fahrdienst: Tagwahl (Heute, Morgen, Datum) über der Tagesliste. */
+.outing-day-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 14px;
+}
+.outing-day-picker > .repositioning-choices {
+  margin: 0;
+}
+.outing-day-picker > .outing-print {
+  margin-left: auto;
+}
+@media (max-width: 760px) {
+  .outing-day-picker > .outing-print {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+/* Einarbeitung: Checkliste je Person in der Liste, Checklisten je Rolle als eigene Karte. */
+.device-list .death-checklist {
+  margin-top: 8px;
+}
+.onboarding-checklists {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+.onboarding-checklists .card-header {
+  padding: 0;
+  border: 0;
+}
+.onboarding-items {
+  margin: 0;
+}
+/* Rückmeldungen & Beschwerden: Art farbig, Text vollständig, Auswertung als schlichte Tabellen. */
+.diagnosis-code.feedback-complaint {
+  color: #a43b2d;
+  background: var(--critical-soft);
+}
+.diagnosis-code.feedback-praise {
+  color: #1f7a4d;
+  background: #e8f6ee;
+}
+.device-list small.feedback-text {
+  color: var(--ink);
+  white-space: pre-line;
+}
+.feedback-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 14px;
+}
+.feedback-toolbar > .repositioning-choices {
+  margin: 0;
+}
+.feedback-toolbar > .death-checklist-action {
+  margin-left: auto;
+}
+.feedback-evaluation {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin-top: 18px;
+  padding: 18px;
+}
+.feedback-table-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  min-width: 0;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+.feedback-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.feedback-table caption {
+  padding-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+}
+.feedback-table th,
+.feedback-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid #edf1f5;
+  text-align: left;
+}
+.feedback-table thead th {
+  color: var(--muted);
+  background: #f7f9fc;
+  font-size: 11px;
+}
+.feedback-table .number {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 760px) {
+  .feedback-toolbar > .death-checklist-action {
+    margin-left: 0;
+  }
+}
+/* Wäsche- und Inventarliste (A4 hoch): Gruppen je Art, Unterschriftsfelder am Ende. */
+.belongings-print {
+  justify-self: start;
+  text-decoration: none;
+}
+.inventory-sheet h2 {
+  margin: 5mm 0 2mm;
+  font-size: 13px;
+  font-weight: 700;
+}
+.inventory-sheet td.number,
+.inventory-sheet th.number {
+  width: 16mm;
+  text-align: right;
+}
+.inventory-sheet td small {
+  display: block;
+  color: #4b5563;
+}
+.inventory-signatures {
+  margin-top: 8mm;
+  font-size: 12px;
+  break-inside: avoid;
+}
+.inventory-signatures div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8mm;
+  margin-top: 14mm;
+}
+.inventory-signatures span {
+  padding-top: 2mm;
+  border-top: 1px solid #000;
+}
+/* Bild bei der Aufnahme: Vorschau wie in der Akte (rund, Kamera-Zeichen), daneben Hinweis und Knöpfe. */
+.intake-photo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcfe;
+}
+.intake-photo .record-photo-trigger {
+  width: 64px;
+  height: 64px;
+  position: relative;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  font-size: 18px;
+  cursor: pointer;
+}
+/* Bild fest quadratisch und rund zugeschnitten (Hoch- und Querformat), unabhängig von allgemeinen Bildregeln. */
+.intake-photo .record-photo-trigger > img {
+  width: 64px;
+  height: 64px;
+  max-width: none;
+  display: block;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+.intake-photo .record-photo-trigger:focus-visible {
+  outline: 3px solid #bfdbfe;
+  outline-offset: 3px;
+}
+.intake-photo .record-photo-trigger:disabled {
+  cursor: wait;
+}
+.intake-photo .record-photo-trigger > span:first-child svg {
+  width: 26px;
+  height: 26px;
+}
+.intake-photo > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.intake-photo strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+.intake-photo small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.intake-photo small.intake-photo-error {
+  color: #a43b2d;
+}
+.intake-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+@media (max-width: 760px) {
+  .intake-photo {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .intake-photo-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+/* Küchenliste (A4 quer): breiter als die Evakuierungsliste, Allergien hervorgehoben. */
+.kitchen-sheet {
+  max-width: 277mm;
+}
+.kitchen-sheet td small {
+  display: block;
+  color: #5b6b7b;
+  font-size: 12px;
+}
+.kitchen-sheet td.kitchen-allergies {
+  font-weight: 700;
+}
+.kitchen-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+.kitchen-links a {
+  text-decoration: none;
+}
+.kitchen-links > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+.intake-room-hint,
+.activity-leader-hint {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+/* Der Hinweis unter „Leitung“ streckt das Feld daneben nicht. */
+.area-editor-grid:has(.activity-leader-hint) > label {
+  align-content: start;
+}

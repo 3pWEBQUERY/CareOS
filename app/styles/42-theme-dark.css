@@ -1,0 +1,36 @@
+/* Erscheinungsbild „Dunkel“ (persönliche Einstellung): die helle Oberfläche wird farbtreu umgekehrt, damit alle
+   Module – auch fest gesetzte Farben – dunkel erscheinen und Statusfarben ihren Ton behalten. Fotos, Videos und
+   gezeichnete Inhalte (3D-Körperansicht, Unterschriften) werden zurückgekehrt und bleiben farbecht.
+   Der Filter auf dem Wurzelelement ändert die Positionierung fester Elemente nicht. */
+html.theme-dark {
+  background: #f3f7fc;
+  filter: invert(0.92) hue-rotate(180deg);
+}
+html.theme-dark img,
+html.theme-dark video,
+html.theme-dark picture,
+html.theme-dark canvas,
+html.theme-dark iframe,
+html.theme-dark [data-keep-colors] {
+  filter: invert(1) hue-rotate(180deg);
+}
+html.theme-dark picture img {
+  filter: none;
+}
+/* Die Navigationsleiste ist schon dunkel: sie behält ihre Farben (Tooltips liegen ausserhalb, per Portal). */
+html.theme-dark .sidebar {
+  filter: invert(1) hue-rotate(180deg);
+}
+html.theme-dark .sidebar img {
+  filter: none;
+}
+@media print {
+  html.theme-dark {
+    filter: none;
+  }
+  html.theme-dark img,
+  html.theme-dark video,
+  html.theme-dark canvas {
+    filter: none;
+  }
+}

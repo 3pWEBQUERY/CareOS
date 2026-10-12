@@ -1,0 +1,70 @@
+/* ---------- Mobil ---------- */
+@media (max-width: 760px) {
+  .office-titlebar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .office-back span,
+  .office-action span {
+    display: none;
+  }
+  .office-actions {
+    margin-left: auto;
+  }
+  .office-ribbon,
+  .office-contextbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 6px 10px;
+  }
+  .office-canvas {
+    padding: 12px 8px 32px;
+  }
+  .deck-workspace,
+  .deck-workspace.with-comments {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  /* Kommentare unter der Arbeitsfläche statt daneben */
+  .office-main {
+    flex-direction: column;
+  }
+  .office-comments {
+    width: auto;
+    max-height: 45vh;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+  .deck-workspace.with-comments {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  .deck-rail {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .deck-thumb {
+    width: 150px;
+    flex: none;
+    margin: 0;
+  }
+  .deck-thumb-actions,
+  .deck-drop-line,
+  .deck-add {
+    display: none;
+  }
+  .deck-stage-wrap {
+    padding: 14px 10px;
+  }
+  .deck-stage,
+  .deck-notes {
+    width: 100%;
+    min-width: 0;
+  }
+  .files-office-kinds {
+    grid-template-columns: 1fr;
+  }
+}

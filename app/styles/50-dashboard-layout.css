@@ -1,0 +1,175 @@
+/* Arbeitsplatz: Kopf- und Hauptbereich im 12er-Raster; jeder Baustein hat eine Breite (Standard je Baustein oder
+   gewählt: ⅓, ½, ⅔, volle Breite). Standardbreiten ergeben dieselbe Anordnung wie zuvor. */
+.home-desk-grid.dashboard-area,
+.dashboard-custom-grid.dashboard-area {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+.dashboard-area > .span-4 {
+  grid-column: span 4;
+}
+.dashboard-area > .span-5 {
+  grid-column: span 5;
+}
+.dashboard-area > .span-6 {
+  grid-column: span 6;
+}
+.dashboard-area > .span-7 {
+  grid-column: span 7;
+}
+.dashboard-area > .span-8 {
+  grid-column: span 8;
+}
+.dashboard-area > .span-12 {
+  grid-column: 1 / -1;
+}
+/* Neuigkeiten standen zuvor ausserhalb des Rasters (28px Abstand statt 20px); an ihrem Standardplatz bleibt es so. */
+.dashboard-custom-grid.dashboard-area > [data-widget="news"]:first-child {
+  margin-bottom: 8px;
+}
+.home-desk-grid > .dashboard-widget {
+  display: flex;
+  flex-direction: column;
+}
+.home-desk-grid > .dashboard-widget > * {
+  flex: 1;
+}
+
+/* Bearbeiten: gestrichelter Rahmen, Leiste mit Verschieben, Breite, Bereich und Ausblenden. */
+.dashboard-area.is-editing > .dashboard-widget {
+  padding: 40px 3px 3px;
+  border: 1px dashed #93c5fd;
+  border-radius: 8px;
+  background: rgba(239, 246, 255, 0.45);
+  cursor: grab;
+}
+.dashboard-area.is-editing > .dashboard-widget:active {
+  cursor: grabbing;
+}
+.dashboard-area .dashboard-widget-handle {
+  right: 8px;
+  left: 10px;
+  top: 6px;
+  justify-content: space-between;
+  gap: 10px;
+}
+.dashboard-widget-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.dashboard-widget-tools {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+}
+.dashboard-widget-tools button,
+.dashboard-widget-tools select {
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: white;
+  color: #1d4ed8;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dashboard-widget-tools button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.dashboard-area-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 22px;
+  border: 1px dashed #93c5fd;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+@media (max-width: 1050px) {
+  .home-desk-grid.dashboard-area > .span-4,
+  .home-desk-grid.dashboard-area > .span-5 {
+    grid-column: span 6;
+  }
+  .home-desk-grid.dashboard-area > .span-4:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 960px) {
+  .dashboard-custom-grid.dashboard-area > .dashboard-widget {
+    grid-column: 1 / -1;
+  }
+  .dashboard-custom-grid.dashboard-area > [data-widget="news"]:first-child {
+    margin-bottom: 12px;
+  }
+}
+@media (max-width: 700px) {
+  .home-desk-grid.dashboard-area > .dashboard-widget {
+    grid-column: 1 / -1;
+  }
+  .dashboard-custom-grid.dashboard-area > [data-widget="news"]:first-child {
+    margin-bottom: 1px;
+  }
+}
+
+/* Breitenwahl der Bausteine (Arbeitsplatz und Kennzahlen): eigenes CareOS-Dropdown, kompakt in der Leiste. */
+.widget-size-select .area-select-trigger {
+  width: 100px;
+  min-height: 26px;
+  height: 26px;
+  gap: 6px;
+  padding: 0 7px 0 9px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  color: #1d4ed8;
+  background: white;
+  font-size: 11px;
+  font-weight: 700;
+}
+.widget-size-select .area-select-trigger svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Begrüssung als Baustein: im Kopfbereich mit denselben Abständen wie zuvor (Rasterabstand 16px abgezogen). */
+.home-desk-grid > [data-widget="greeting"] > .home-greeting {
+  margin-bottom: 22px;
+}
+.dashboard-custom-grid > [data-widget="greeting"] > .home-greeting {
+  margin: 0;
+  padding: 24px 26px;
+  border: 1px solid #d6e4f7;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #fff 8%, #f1f7ff 100%);
+}
+.home-hero-hidden-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* Mit der Begrüssung als erstem Baustein zählt die dritte Karte als vierte. */
+@media (max-width: 1050px) {
+  .home-desk-grid.dashboard-area:has(> [data-widget="greeting"]:first-child) > .span-4:last-child:nth-child(odd) {
+    grid-column: span 6;
+  }
+  .home-desk-grid.dashboard-area:has(> [data-widget="greeting"]:first-child) > .span-4:last-child:nth-child(even) {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 700px) {
+  .home-desk-grid > [data-widget="greeting"] > .home-greeting {
+    margin-bottom: 14px;
+  }
+}

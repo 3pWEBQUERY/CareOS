@@ -1,0 +1,603 @@
+/* ---------- Dokument ---------- */
+/* Arbeitsfläche mit Kommentar-Seitenleiste rechts */
+.office-main {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+}
+.office-main > :first-child {
+  min-width: 0;
+  flex: 1;
+}
+.office-comments {
+  width: 320px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--line);
+  background: var(--surface);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.office-comments header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.office-comments h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--ink);
+  font-size: 14px;
+}
+.office-comments h2 svg {
+  width: 18px;
+  height: 18px;
+  color: var(--brand);
+}
+.office-comments-count {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 12px;
+  text-align: center;
+}
+.office-comments-filter {
+  margin: 8px 12px 0;
+}
+.office-comments-list {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 10px 12px 16px;
+}
+.office-comments-empty {
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+.office-comment,
+.office-comment-draft {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+.office-comment-draft {
+  margin: 10px 12px 0;
+  border-color: var(--brand);
+}
+.office-comment.active {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.14);
+}
+.office-comment.resolved {
+  opacity: 0.72;
+}
+.office-comment-anchor {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-style: italic;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+button.office-comment-anchor:hover {
+  color: var(--brand);
+}
+.office-comment-entry {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+.office-comment-avatar {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 11px;
+  font-weight: 700;
+}
+.office-comment-body p {
+  margin: 0;
+}
+.office-comment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  align-items: baseline;
+  font-size: 12px;
+}
+.office-comment-meta strong {
+  color: var(--ink);
+}
+.office-comment-meta time {
+  color: var(--muted);
+  font-size: 11px;
+}
+.office-comment-text {
+  margin-top: 2px !important;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.office-comment-status {
+  margin: 0;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+}
+.office-comment-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.office-comment-icon:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.office-comment-icon.danger:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.office-comment-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.office-comment-draft textarea,
+.office-comment-reply textarea {
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: vertical;
+}
+.office-comment-draft textarea:focus,
+.office-comment-reply textarea:focus {
+  border-color: var(--brand);
+  outline: 2px solid rgba(37, 99, 235, 0.18);
+}
+.office-comment-reply {
+  display: grid;
+  gap: 6px;
+}
+.office-comment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.office-comment-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.office-comment-actions button:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.office-comment-actions button.primary {
+  border-color: var(--brand);
+  color: white;
+  background: var(--brand);
+}
+.office-comment-actions button.primary:hover:not(:disabled) {
+  color: white;
+  filter: brightness(1.08);
+}
+.office-comment-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.office-comment-actions svg {
+  width: 14px;
+  height: 14px;
+}
+.office-status-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.office-prose .office-comment-mark {
+  background: rgba(250, 204, 21, 0.32);
+  border-bottom: 2px solid rgba(217, 119, 6, 0.75);
+}
+/* Änderungen nachverfolgen: in der Farbe der Person, eingefügt unterstrichen, gelöscht durchgestrichen. */
+.office-prose .office-ins {
+  color: var(--change-color);
+  text-decoration: underline;
+  text-decoration-color: var(--change-color);
+  text-underline-offset: 2px;
+}
+.office-prose .office-del {
+  color: var(--change-color);
+  text-decoration: line-through;
+  text-decoration-color: var(--change-color);
+}
+.office-canvas {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 28px 24px 48px;
+  background: #e9eef4;
+}
+.office-page {
+  position: relative;
+  margin: 0 auto;
+  background: white;
+  box-shadow:
+    0 1px 3px rgba(15, 42, 67, 0.12),
+    0 10px 30px rgba(15, 42, 67, 0.1);
+}
+.office-page-header,
+.office-page-footer {
+  position: absolute;
+  overflow: hidden;
+  color: #5f6f86;
+  font-family: Calibri, Carlito, Arial, sans-serif;
+  font-size: 9pt;
+  white-space: pre;
+  text-overflow: ellipsis;
+}
+.office-page-header {
+  text-align: right;
+}
+.office-page-footer {
+  text-align: center;
+}
+.office-prose {
+  min-height: 160mm;
+  color: #111827;
+  font-family: Calibri, Carlito, Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.38;
+  outline: none;
+  overflow-wrap: break-word;
+}
+.office-prose > * + * {
+  margin-top: 0;
+}
+.office-prose p {
+  margin: 0 0 6pt;
+}
+.office-prose h1,
+.office-prose h2,
+.office-prose h3 {
+  margin: 14pt 0 6pt;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.office-prose h1 {
+  color: #1d4ed8;
+  font-size: 18pt;
+}
+.office-prose h2 {
+  color: #102a43;
+  font-size: 14pt;
+}
+.office-prose h3 {
+  color: #102a43;
+  font-size: 12pt;
+}
+.office-prose > :first-child {
+  margin-top: 0;
+}
+.office-prose ul,
+.office-prose ol {
+  margin: 0 0 6pt;
+  padding-left: 24pt;
+}
+.office-prose ul,
+.deck-body ul {
+  list-style: disc;
+}
+.office-prose ul ul,
+.deck-body ul ul {
+  list-style: circle;
+}
+.office-prose ul ul ul,
+.deck-body ul ul ul {
+  list-style: square;
+}
+.office-prose ol,
+.deck-body ol {
+  list-style: decimal;
+}
+.office-prose ol ol {
+  list-style: lower-alpha;
+}
+.office-prose ol ol ol {
+  list-style: lower-roman;
+}
+.office-prose li p {
+  margin: 0 0 2pt;
+}
+.office-prose blockquote {
+  margin: 6pt 0;
+  padding-left: 12pt;
+  border-left: 3pt solid #2563eb;
+  color: #5f6f86;
+  font-style: italic;
+}
+.office-prose hr {
+  margin: 10pt 0;
+  border: 0;
+  border-top: 1pt solid #a0aeb0;
+}
+.office-prose a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+.office-prose mark {
+  padding: 0 1px;
+  border-radius: 2px;
+}
+.office-prose ul[data-type="taskList"] {
+  padding-left: 4pt;
+  list-style: none;
+}
+.office-prose ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.office-prose ul[data-type="taskList"] li > label {
+  margin-top: 2pt;
+}
+.office-prose ul[data-type="taskList"] li > label input {
+  width: 15px;
+  height: 15px;
+  accent-color: #2563eb;
+}
+.office-prose ul[data-type="taskList"] li > div {
+  flex: 1;
+}
+.office-prose ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: #5f6f86;
+  text-decoration: line-through;
+}
+.office-prose table {
+  width: 100%;
+  margin: 6pt 0 10pt;
+  border-collapse: collapse;
+  table-layout: fixed;
+  overflow: hidden;
+}
+.office-prose td,
+.office-prose th {
+  position: relative;
+  min-width: 2em;
+  padding: 3pt 6pt;
+  border: 1px solid #bfc9ca;
+  vertical-align: top;
+  box-sizing: border-box;
+}
+.office-prose th {
+  background: #eaf1ff;
+  font-weight: 700;
+  text-align: left;
+}
+.office-prose td p,
+.office-prose th p {
+  margin: 0;
+}
+.office-prose .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(37, 99, 235, 0.14);
+  pointer-events: none;
+}
+.office-prose .column-resize-handle {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  bottom: -2px;
+  width: 4px;
+  background: #2563eb;
+  pointer-events: none;
+}
+.office-prose.resize-cursor {
+  cursor: col-resize;
+}
+.office-prose img {
+  max-width: 100%;
+  height: auto;
+}
+.office-prose [data-resize-container] {
+  max-width: 100%;
+}
+.office-prose .ProseMirror-selectednode img,
+.office-prose img.ProseMirror-selectednode {
+  outline: 2px solid #2563eb;
+}
+.office-page-break {
+  position: relative;
+  margin: 14pt -6mm;
+  border-top: 1.5px dashed #9aabbe;
+  color: #5f6f86;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 0;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+.office-page-break.ProseMirror-selectednode {
+  border-top-color: #2563eb;
+}
+.office-prose {
+  counter-reset: footnote;
+}
+.office-footnote {
+  color: #1d4ed8;
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: super;
+  cursor: default;
+}
+.office-footnote::after {
+  counter-increment: footnote;
+  content: counter(footnote);
+}
+.office-footnote.ProseMirror-selectednode {
+  outline: 2px solid #2563eb;
+  border-radius: 2px;
+}
+.office-footnotes {
+  margin-top: 18pt;
+  padding-top: 6pt;
+  border-top: 1px solid #a0aeb0;
+  font-size: 9pt;
+}
+.office-footnotes ol {
+  margin: 0;
+  padding-left: 18pt;
+  list-style: decimal;
+}
+.office-footnotes li {
+  margin: 0 0 3pt;
+}
+.office-footnotes li input {
+  width: calc(100% - 28px);
+  padding: 1px 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #111827;
+  font: inherit;
+}
+.office-footnotes li input:hover,
+.office-footnotes li input:focus {
+  border-color: #bfc9ca;
+  outline: none;
+}
+.office-footnotes li button {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  margin-left: 4px;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #5f6f86;
+  vertical-align: middle;
+  cursor: pointer;
+}
+.office-footnotes li button:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.office-toc {
+  margin: 6pt 0 12pt;
+  padding: 6pt 10pt;
+  border: 1px solid #dbe3ec;
+  border-radius: 6px;
+  background: #f8fafc;
+  user-select: none;
+}
+.office-toc.ProseMirror-selectednode {
+  outline: 2px solid #2563eb;
+}
+.office-toc-title {
+  margin: 0 0 4pt;
+  color: #1d4ed8;
+  font-size: 14pt;
+  font-weight: 700;
+}
+.office-toc-empty {
+  margin: 0;
+  color: #5f6f86;
+  font-style: italic;
+}
+.office-toc ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.office-toc li {
+  margin: 0;
+}
+.office-toc li button {
+  display: block;
+  width: 100%;
+  padding: 1pt 0;
+  border: 0;
+  background: none;
+  color: #111827;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.office-toc li button:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+.office-toc-level2 {
+  padding-left: 12pt;
+}
+.office-toc-level3 {
+  padding-left: 24pt;
+}
+.office-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #9aabbe;
+  pointer-events: none;
+}

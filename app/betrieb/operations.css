@@ -1,0 +1,530 @@
+/* Additions for the database-backed operations views (handover). */
+
+.handover-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.handover-filterbar .area-custom-select {
+  min-width: 230px;
+}
+
+.handover-filterbar small {
+  margin-left: auto;
+  color: var(--muted);
+}
+
+.handover-side {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.handover-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.handover-editor > .area-custom-select,
+.handover-editor > .care-record-filters {
+  margin: 0 18px;
+}
+
+.handover-notes ul {
+  display: grid;
+  margin: 0;
+  padding: 0 18px 12px;
+  list-style: none;
+}
+
+.handover-notes li {
+  display: grid;
+  gap: 5px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.handover-notes li.read {
+  opacity: 0.7;
+}
+
+.handover-notes li header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.handover-notes li p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.handover-notes li small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.handover-notes li button {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.handover-event-list small a {
+  font-weight: 700;
+}
+
+/* Shift and task workspaces. */
+
+.operations-quick a {
+  min-height: 62px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: white;
+  font-size: 9px;
+  font-weight: 740;
+  text-decoration: none;
+}
+
+.operations-quick a:hover {
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+
+.operations-quick a svg {
+  width: 17px;
+  color: var(--brand);
+}
+
+.operations-timeline-row > a {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--muted);
+  background: white;
+}
+
+.operations-timeline-row > a:hover {
+  color: var(--brand-dark);
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+
+.operations-timeline-row.complete > a {
+  color: white;
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.operations-timeline-row > a svg {
+  width: 13px;
+}
+
+.operations-timeline-row time small,
+.task-row time small {
+  display: block;
+  margin-top: 2px;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.operations-timeline-row.overdue time,
+.task-row.overdue time {
+  color: var(--critical);
+}
+
+.shift-timeline-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shift-timeline-controls .area-custom-select {
+  min-width: 180px;
+}
+
+.operations-note-list a.operations-hint {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  padding: 11px;
+  border-left: 3px solid var(--brand);
+  color: inherit;
+  background: var(--brand-soft);
+  text-decoration: none;
+}
+
+.operations-note-list a.operations-hint:hover {
+  filter: brightness(0.98);
+}
+
+.operations-note-list a.operations-hint.critical {
+  border-color: var(--critical);
+  background: var(--critical-soft);
+}
+
+.operations-note-list a.operations-hint.attention {
+  border-color: var(--attention);
+  background: var(--attention-soft);
+}
+
+.operations-note-list a.operations-hint > svg {
+  width: 17px;
+  color: var(--brand);
+}
+
+.operations-note-list a.operations-hint.critical > svg {
+  color: var(--critical);
+}
+
+.operations-note-list a.operations-hint.attention > svg {
+  color: var(--attention);
+}
+
+.operations-note-list p.stable {
+  border-color: var(--success);
+  background: #e8f5ef;
+}
+
+.operations-note-list p.stable > svg {
+  color: var(--success);
+}
+
+.shift-end-checks {
+  padding: 0;
+}
+
+.shift-start-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: var(--attention-soft);
+  font-size: 10px;
+}
+
+.shift-start-hint svg {
+  width: 16px;
+  color: var(--attention);
+}
+
+.task-subbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.task-subbar .area-custom-select {
+  min-width: 200px;
+}
+
+.task-subbar .resident-search {
+  flex: 1 1 240px;
+}
+
+.task-row .task-check:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.task-detail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 18px;
+  margin: 0;
+}
+
+.task-detail-list > div.wide {
+  grid-column: 1 / -1;
+}
+
+.task-detail-list dt {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.task-detail-list dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.shift-history-entry {
+  border-bottom: 1px solid #e9eef4;
+}
+
+.shift-history-entry:last-child {
+  border-bottom: 0;
+}
+
+.operations-history-list .shift-history-entry article {
+  border-bottom: 0;
+}
+
+.shift-history-entry article > button svg {
+  transition: transform 0.15s ease;
+}
+
+.shift-history-entry article > button svg.open {
+  transform: rotate(90deg);
+}
+
+.shift-history-detail {
+  padding: 4px 0 16px;
+}
+
+@media (max-width: 720px) {
+  .task-detail-list {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-timeline > .card-header {
+    flex-wrap: wrap;
+  }
+
+  .shift-timeline-controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .shift-timeline-controls .area-custom-select {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+}
+
+/* Fixed owner/status columns keep rows aligned; below 960px the global layout takes over. */
+@media (min-width: 961px) {
+  .task-list .task-row {
+    grid-template-columns: 28px 43px 34px minmax(160px, 1fr) minmax(150px, 0.6fr) 112px 62px;
+  }
+
+  .task-list .task-row > .status-badge {
+    justify-self: start;
+  }
+}
+
+/* Duty schedule. */
+
+.schedule-controls .area-custom-select {
+  min-width: 190px;
+}
+
+.schedule-view-switch button svg {
+  width: 13px;
+  height: 13px;
+  vertical-align: middle;
+}
+
+.schedule-view-switch button svg.previous {
+  transform: rotate(180deg);
+}
+
+.schedule-week button.today strong,
+.schedule-month-grid button.today strong {
+  color: var(--brand);
+}
+
+.schedule-month-grid button.today {
+  border-color: #93c5fd;
+}
+
+.schedule-week i.has-open {
+  background: var(--attention);
+}
+
+.schedule-week i.has-absence {
+  background: #94a3b8;
+}
+
+.schedule-month-grid button span.open {
+  color: var(--attention);
+  background: var(--attention-soft);
+}
+
+.schedule-month-grid button span.absent {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+.schedule-day-detail {
+  align-items: start;
+}
+
+.schedule-day-add {
+  margin-top: 12px;
+}
+
+.schedule-day-add svg {
+  width: 12px;
+}
+
+.schedule-day-list {
+  display: grid;
+  gap: 10px;
+}
+
+.schedule-shift-group {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #f8fbff;
+}
+
+.schedule-shift-group.highlight {
+  border-color: #93c5fd;
+  box-shadow: inset 3px 0 0 var(--brand);
+}
+
+.schedule-shift-group header strong,
+.schedule-shift-group header small {
+  display: block;
+}
+
+.schedule-shift-group header strong {
+  font-size: 11px;
+}
+
+.schedule-shift-group header small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.schedule-shift-group > .quiet-button {
+  justify-self: start;
+}
+
+.schedule-team-grid button:disabled {
+  cursor: default;
+}
+
+.schedule-team-grid button.absent {
+  opacity: 0.6;
+}
+
+.schedule-team-grid button.absent strong {
+  text-decoration: line-through;
+}
+
+.schedule-team-grid button.open-slot {
+  border-style: dashed;
+  border-color: var(--attention);
+  background: var(--attention-soft);
+}
+
+.schedule-team-grid button.open-slot .avatar {
+  color: var(--attention);
+  background: white;
+}
+
+.schedule-team-grid button.open-slot .avatar svg {
+  width: 13px;
+}
+
+.schedule-shift-detail.absence {
+  background: #f8fafc;
+}
+
+.schedule-confirm {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 9px;
+}
+
+.schedule-confirm svg {
+  width: 12px;
+}
+
+.absence-list article {
+  grid-template-columns: minmax(150px, 1fr) 120px minmax(170px, 1.1fr) 110px 170px;
+}
+
+.absence-list article > .status-badge {
+  justify-self: start;
+}
+
+.absence-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.absence-actions button {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: white;
+  font-size: 8px;
+  font-weight: 740;
+  cursor: pointer;
+}
+
+.absence-actions button:hover {
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+
+@media (max-width: 960px) {
+  .absence-list article {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .absence-list article > span:nth-child(2),
+  .absence-list article > span:nth-child(3) {
+    grid-column: 1;
+  }
+
+  .absence-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .schedule-controls .area-custom-select {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .schedule-card > .card-header {
+    flex-wrap: wrap;
+  }
+
+  .schedule-card .schedule-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.schedule-day-detail > div:first-child > p:not(.eyebrow) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+}

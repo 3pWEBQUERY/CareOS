@@ -1,0 +1,86 @@
+/* Zwei-Faktor-Anmeldung: zweiter Schritt der Anmeldung und Einrichtung in den Einstellungen. */
+.login-mfa-hint {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.login-mfa-hint button {
+  padding: 0;
+  border: 0;
+  color: var(--brand);
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.settings-mfa {
+  display: grid;
+  gap: 10px;
+}
+.settings-mfa p {
+  margin: 0;
+}
+.settings-mfa-setup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+.settings-mfa-setup img {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+}
+.settings-mfa-setup code,
+.settings-mfa-codes {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.settings-mfa-code {
+  display: grid;
+  gap: 4px;
+  max-width: 260px;
+}
+.settings-mfa-code input {
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+}
+.settings-mfa-codes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, max-content));
+  gap: 6px 18px;
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  list-style: none;
+}
+
+/* Spracheingabe (nur mit Erkennung auf dem Gerät; ohne sie erscheint nichts). */
+.dictation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+.dictation-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dictation small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.login-mfa-hint a {
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: none;
+}

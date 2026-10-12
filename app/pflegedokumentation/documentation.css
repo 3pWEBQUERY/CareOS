@@ -1,0 +1,121 @@
+/* Additions for the database-backed care documentation module. */
+
+.doc-inline-form {
+  padding: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.doc-entry-list {
+  display: grid;
+  padding: 0 18px 12px;
+}
+
+.doc-entry {
+  display: grid;
+  grid-template-columns: 118px 1fr auto;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.doc-entry time {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.doc-entry > div {
+  display: grid;
+  gap: 4px;
+}
+
+.doc-entry header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.doc-entry p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.doc-entry small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.doc-entry.amended p {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.doc-entry.correction {
+  padding-left: 10px;
+  border-left: 3px solid var(--brand);
+}
+
+.doc-entry .doc-entry-reason {
+  color: var(--brand-dark);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.doc-missing-card ul {
+  display: grid;
+  margin: 0;
+  padding: 0 18px 12px;
+  list-style: none;
+}
+
+.doc-missing-card button {
+  display: grid;
+  width: 100%;
+  gap: 2px;
+  padding: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.doc-missing-card button:hover strong {
+  color: var(--brand);
+}
+
+.doc-missing-card small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.doc-filterbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.doc-filterbar .area-custom-select {
+  min-width: 190px;
+}
+
+.doc-filterbar .resident-search {
+  flex: 1;
+  min-width: 200px;
+}
+
+@media (max-width: 720px) {
+  .doc-entry {
+    grid-template-columns: 1fr;
+  }
+}
+
+.doc-entry > button {
+  align-self: start;
+}

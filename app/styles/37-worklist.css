@@ -1,0 +1,329 @@
+/* Home: "Mein Dienst" worklist per resident. */
+.worklist-card .card-header {
+  align-items: center;
+}
+.worklist-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.worklist-filters button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: white;
+  font-size: 10px;
+  font-weight: 720;
+  cursor: pointer;
+}
+.worklist-filters button.active {
+  color: var(--brand-dark);
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+.worklist-list {
+  display: grid;
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 4px 18px 16px;
+}
+.worklist-resident {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.28fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf1f5;
+}
+.worklist-resident:last-child {
+  border-bottom: 0;
+}
+.worklist-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.worklist-person strong,
+.worklist-person small {
+  display: block;
+}
+.worklist-person strong {
+  font-size: 12px;
+}
+.worklist-person small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.worklist-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.worklist-item {
+  max-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 6px;
+  color: var(--ink);
+  background: white;
+  text-align: left;
+  cursor: pointer;
+}
+.worklist-item:hover {
+  background: #f8fbff;
+}
+.worklist-item svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--brand);
+}
+.worklist-item.critical {
+  border-left-color: var(--critical);
+}
+.worklist-item.critical svg {
+  color: var(--critical);
+}
+.worklist-item.attention {
+  border-left-color: var(--attention);
+}
+.worklist-item.attention svg {
+  color: var(--attention);
+}
+.worklist-item.info {
+  border-left-color: var(--brand);
+}
+.worklist-item span {
+  min-width: 0;
+}
+.worklist-item strong,
+.worklist-item small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.worklist-item strong {
+  font-size: 11px;
+}
+.worklist-item small {
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.worklist-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.worklist-empty svg {
+  width: 16px;
+  color: var(--success);
+}
+@media (max-width: 760px) {
+  .worklist-resident {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .worklist-item {
+    max-width: 100%;
+  }
+  .worklist-card .card-header {
+    flex-wrap: wrap;
+  }
+}
+
+/* Sidebar: quick links with live counts and recently used pages. */
+.sidebar-rail-badge {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  min-width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  padding: 0 4px;
+  border: 2px solid #0b1f3a;
+  border-radius: 999px;
+  color: white;
+  background: var(--critical);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.sidebar-rail-divider {
+  width: 26px;
+  height: 1px;
+  flex: 0 0 auto;
+  margin: 4px 0;
+  background: rgba(184, 201, 227, 0.22);
+}
+
+/* Header: keyboard shortcut overview. */
+.shortcut-menu-wrap {
+  position: relative;
+}
+.shortcut-trigger svg {
+  width: 19px;
+  height: 19px;
+}
+.shortcut-trigger.open {
+  color: var(--brand);
+  border-color: #bfdbfe;
+  background: var(--brand-soft);
+}
+.shortcut-dropdown {
+  width: min(560px, calc(100vw - 32px));
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 22px 60px rgba(5, 27, 35, 0.18);
+  animation: fade-in 140ms ease;
+}
+.shortcut-dropdown > header {
+  display: grid;
+  gap: 3px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+.shortcut-dropdown > header strong {
+  font-size: 14px;
+}
+.shortcut-dropdown > header small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.shortcut-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 22px;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  padding: 14px 18px 18px;
+}
+.shortcut-group > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--brand);
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.shortcut-group dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+.shortcut-group dl > div {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+.shortcut-group dt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.shortcut-group dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+}
+.shortcut-group kbd {
+  min-width: 22px;
+  padding: 2px 6px;
+  border: 1px solid #cbd5e1;
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  color: #334155;
+  background: #f8fafc;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 750;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .shortcut-groups {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tabs of the current module (replace the former sidebar submenus). */
+.page-tabs {
+  width: min(100%, 1640px);
+  display: flex;
+  gap: 7px;
+  margin: 0 auto;
+  padding: 22px 34px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.page-tabs::-webkit-scrollbar {
+  display: none;
+}
+.page-tabs a {
+  min-height: 32px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  background: white;
+  font-size: 11px;
+  font-weight: 740;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.page-tabs a:hover,
+.page-tabs a.active {
+  color: var(--brand-dark);
+  border-color: #93c5fd;
+  background: var(--brand-soft);
+}
+.page-tabs em {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: white;
+  background: var(--critical);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+  text-align: center;
+}
+.page-tabs + .workspace,
+.page-tabs + main {
+  padding-top: 22px;
+}
+@media (max-width: 960px) {
+  .page-tabs {
+    padding: 16px 16px 0;
+  }
+}

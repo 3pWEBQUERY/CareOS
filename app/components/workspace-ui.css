@@ -1,0 +1,144 @@
+/* Shared styles for workspace-ui.tsx: editor dialogs and form building blocks. */
+
+.editor-dialog {
+  width: min(760px, calc(100vw - 32px));
+}
+
+.editor-dialog .appointment-danger-button,
+.editor-dialog .primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.form-field {
+  display: grid;
+  gap: 7px;
+}
+
+.form-field > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.chip-row > small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 6px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.chip button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chip button:hover {
+  background: rgb(37 99 235 / 12%);
+}
+
+.chip-add {
+  min-width: 170px;
+}
+
+.day-toggle {
+  min-width: 40px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.day-toggle.active {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: white;
+}
+
+.form-checkbox {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 13px;
+}
+
+.form-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--brand);
+}
+
+.form-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--attention-soft);
+  color: var(--attention);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.list-hint {
+  margin: 0;
+  padding: 18px 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.editor-dialog .appointment-kind-switch {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  width: 100%;
+}
+
+/* Resident-centred pages without a header resident. */
+.header-resident-hint {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+}
+
+/* Resident-centred pages: the resident comes from the header, no list column. */
+.medication-two-column.header-resident-layout {
+  grid-template-columns: minmax(0, 1fr);
+}

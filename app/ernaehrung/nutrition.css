@@ -1,0 +1,306 @@
+/* Additions for the database-backed nutrition module. */
+
+.nutrition-plan-detail {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.nutrition-plan-detail dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.nutrition-plan-detail dl div {
+  padding: 9px 11px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.nutrition-plan-detail dl div.limit,
+.nutrition-plan-detail dl div.allergy {
+  background: var(--critical-soft);
+}
+
+.nutrition-plan-detail dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.nutrition-plan-detail dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.nutrition-day {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 14px;
+}
+
+.nutrition-fluid-total {
+  display: grid;
+  gap: 6px;
+  padding: 0 18px;
+}
+
+.nutrition-fluid-total strong {
+  font-size: 26px;
+}
+
+.nutrition-fluid-total small {
+  color: var(--muted);
+}
+
+.nutrition-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+}
+
+.nutrition-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--brand);
+}
+
+.nutrition-bar i.over {
+  background: var(--critical);
+}
+
+.nutrition-bar b {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--ink);
+}
+
+.nutrition-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 18px;
+}
+
+.nutrition-quick button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.nutrition-quick button.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface);
+}
+
+.nutrition-quick button:disabled {
+  opacity: 0.5;
+}
+
+.nutrition-entries {
+  display: grid;
+  margin: 0;
+  padding: 0 18px;
+  list-style: none;
+}
+
+.nutrition-entries li {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.nutrition-entries li span {
+  display: grid;
+}
+
+.nutrition-entries small,
+.nutrition-entries time {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.nutrition-week {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  height: 110px;
+  margin: 0 18px;
+  align-items: end;
+}
+
+.nutrition-week span {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+  align-items: end;
+  justify-items: center;
+  gap: 4px;
+}
+
+.nutrition-week i {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 4px 4px 0 0;
+  background: #bcd0f7;
+}
+
+.nutrition-week i.reached {
+  background: var(--success);
+}
+
+.nutrition-week i.over {
+  background: var(--critical);
+}
+
+.nutrition-week small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.nutrition-meals {
+  display: grid;
+  gap: 6px;
+  padding: 0 18px;
+}
+
+.nutrition-meals > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface-soft);
+}
+
+.nutrition-meals > div span {
+  display: grid;
+  gap: 1px;
+}
+
+.nutrition-meals small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.nutrition-meals > div.logged {
+  border-left-color: var(--success);
+}
+
+.nutrition-meals > div.p50 {
+  border-left-color: var(--attention);
+}
+
+.nutrition-meals > div.p25,
+.nutrition-meals > div.p0 {
+  border-left-color: var(--critical);
+}
+
+.nutrition-weight {
+  display: grid;
+  justify-items: end;
+  font-weight: 800;
+}
+
+.nutrition-weight em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.nutrition-weight em.loss {
+  color: var(--critical);
+}
+
+.nutrition-fluids-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.nutrition-fluids-toolbar > div:first-child {
+  flex: 1;
+}
+
+.nutrition-fluids-toolbar .area-custom-select {
+  min-width: 180px;
+}
+
+.nutrition-selected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+}
+
+.nutrition-selected > span:last-child {
+  display: grid;
+}
+
+.nutrition-selected small {
+  color: var(--muted);
+}
+
+.status-text.critical {
+  color: var(--critical);
+  font-weight: 700;
+}
+
+.status-text.stable {
+  color: var(--success);
+}
+
+/* Trendhinweis nach den Grenzen der Einrichtung (Gewichtsverlust, Trinkziel mehrere Tage verfehlt). */
+.nutrition-trends {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 12px 16px;
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+
+.nutrition-trends > svg {
+  width: 18px;
+  margin-top: 2px;
+  color: var(--critical);
+}
+
+.nutrition-trends .eyebrow {
+  margin: 0 0 4px;
+  color: var(--critical);
+}
+
+.nutrition-trends ul {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 650;
+}

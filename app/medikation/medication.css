@@ -1,0 +1,364 @@
+/* Medication-specific additions; shared form and dialog styles live in app/components/workspace-ui.css. */
+
+.med-reserve-note {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.med-reserve-note strong {
+  color: var(--attention);
+}
+
+.med-allergy-text {
+  color: var(--critical) !important;
+  font-weight: 700;
+}
+
+.med-plan-list > button:disabled {
+  cursor: default;
+}
+
+.med-round-actions button:disabled,
+.med-reserve-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.med-stock-level.low strong {
+  color: var(--critical);
+}
+
+.med-round-toolbar .schedule-date-picker {
+  min-width: 150px;
+}
+
+/* BtM-Kontrolle: Kennzeichnung, Bestandsliste, Zweitunterschrift und BtM-Buch. */
+.btm-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid #f1c1bb;
+  border-radius: 4px;
+  color: var(--critical);
+  background: var(--critical-soft);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+}
+
+.btm-toolbar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.med-stock-head.btm-grid,
+.med-stock-list > article.btm-grid {
+  grid-template-columns: 34px minmax(150px, 1fr) minmax(150px, 0.9fr) minmax(110px, 0.6fr) minmax(140px, 0.8fr) 190px;
+}
+
+.btm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.btm-actions button {
+  min-height: 33px;
+  padding: 0 8px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  color: var(--brand-dark);
+  background: var(--brand-soft);
+  font-size: 8px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.btm-actions button:first-child {
+  color: white;
+  border-color: var(--brand);
+  background: var(--brand);
+}
+
+.critical-text {
+  color: var(--critical) !important;
+}
+
+.btm-medications ul {
+  display: grid;
+  margin: 0;
+  padding: 0 18px 10px;
+  list-style: none;
+}
+
+.btm-medications li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e9eef4;
+}
+
+.btm-medications li:last-child {
+  border-bottom: 0;
+}
+
+.btm-medications li strong,
+.btm-medications li small {
+  display: block;
+}
+
+.btm-medications li strong {
+  font-size: 10px;
+}
+
+.btm-medications li small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.btm-difference {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  font-size: 12px;
+}
+
+.btm-difference span {
+  color: var(--muted);
+  font-weight: 730;
+}
+
+.btm-difference.ok strong {
+  color: var(--success);
+}
+
+.btm-difference.critical {
+  border-color: #f1c1bb;
+  background: var(--critical-soft);
+}
+
+.btm-difference.critical strong {
+  color: var(--critical);
+}
+
+.area-editor-grid fieldset.btm-witness {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 20px;
+  padding: 14px;
+  border: 1px solid #f1c1bb;
+  border-radius: 8px;
+  background: var(--critical-soft);
+}
+
+.btm-witness legend {
+  float: left;
+  grid-column: 1/-1;
+  width: 100%;
+  color: var(--critical);
+}
+
+.btm-witness p {
+  grid-column: 1/-1;
+  margin: 0;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.btm-witness label {
+  display: grid;
+  gap: 7px;
+}
+
+.btm-book-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 18px 28px 28px;
+}
+
+.btm-book-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.btm-book-actions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.btm-book-actions .button-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.btm-book {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 11px;
+}
+
+.btm-book th {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  background: #f7f9fc;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.btm-book td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #e9eef4;
+  vertical-align: top;
+}
+
+.btm-book td span,
+.btm-book td strong {
+  display: block;
+}
+
+.btm-book td span {
+  color: var(--muted);
+}
+
+.btm-book .number {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.btm-book tr.count td {
+  background: #f5f9ff;
+}
+
+.btm-book tr.disposal td,
+.btm-book tr.correction td {
+  background: #fffaf0;
+}
+
+.btm-book tr.opening td {
+  color: var(--muted);
+  font-style: italic;
+}
+
+@media print {
+  .btm-print-sheet .btm-book thead {
+    display: table-header-group;
+  }
+  .btm-print-sheet .btm-book tr {
+    break-inside: avoid;
+  }
+}
+
+@media (max-width: 960px) {
+  .med-stock-head.btm-grid {
+    display: none;
+  }
+  .med-stock-list > article.btm-grid {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+  .med-stock-list > article.btm-grid > span:not(.med-pill-icon) {
+    grid-column: 2;
+  }
+  .btm-actions {
+    justify-content: flex-start;
+  }
+  .btm-book-body {
+    padding: 14px 16px 20px;
+  }
+  .area-editor-grid fieldset.btm-witness {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.btm-print-sheet .btm-book {
+  table-layout: auto;
+  font-size: 10px;
+}
+
+.btm-print-sheet .btm-book th,
+.btm-print-sheet .btm-book td {
+  padding: 5px 6px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.btm-print-sheet .btm-book .number {
+  text-align: right;
+}
+
+.med-round-readonly {
+  margin: 0 0 18px;
+}
+
+/* Wechselwirkungen: nur sichtbar, wenn ein Hinweis der Einrichtung zutrifft. */
+.med-interaction-card {
+  border-color: #f1c1bb;
+}
+
+.med-interaction-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.med-interaction-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface-soft);
+}
+
+.med-interaction-list p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.med-interaction-list small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+/* Bestellungen bei der Apotheke. */
+.med-orders-list {
+  padding: 0 18px 18px;
+}
+.med-orders-list p {
+  margin: 6px 0 0;
+  font-size: 13px;
+}
+.area-editor-grid fieldset.med-order-item {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
