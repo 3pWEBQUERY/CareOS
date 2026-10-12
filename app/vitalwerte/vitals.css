@@ -24,7 +24,7 @@
 }
 
 .vital-chart-band {
-  fill: rgb(38 113 87 / 10%);
+  fill: rgba(159, 223, 201, 0.1);
 }
 
 .vital-chart-alarm {
@@ -97,7 +97,7 @@
 
 .vital-chart figcaption i.secondary {
   height: 0;
-  border-top: 2px dashed #93b4f5;
+  border-top: 2px dashed rgba(78, 132, 239, 0.38);
 }
 
 .vital-measurement-list {
@@ -148,7 +148,7 @@
   display: grid;
   gap: 3px;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
 }
 

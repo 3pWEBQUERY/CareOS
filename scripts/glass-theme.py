@@ -7,7 +7,7 @@ Glaskanten. Statusfarben, App-Farben und Knöpfe behalten ihren Ton. Druckregeln
 
 Einmalig angewendet: Die Farbumstellung ist nicht wiederholbar (ein zweiter Lauf würde helle Schrift wieder
 abdunkeln). Neue Regeln gleich in den Glasfarben schreiben (Variablen aus app/styles/71-glass.css).
-Aufruf: python3 scripts/glass-theme.py app/styles/*.css app/components/*.css
+Aufruf: python3 scripts/glass-theme.py app/styles/*.css app/components/*.css app/<modul>/*.css
 """
 import colorsys
 import re

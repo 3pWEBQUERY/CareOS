@@ -12,14 +12,14 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
           placeItems: "center",
           padding: 24,
           fontFamily: "system-ui, sans-serif",
-          color: "#102a43",
-          background: "#f3f7fc",
+          color: "#f2f5fa",
+          background: "#0f1a33",
         }}
       >
         <title>CareOS · Fehler</title>
         <main style={{ maxWidth: 460, textAlign: "center" }}>
           <h1 style={{ fontSize: 26 }}>CareOS ist gerade nicht erreichbar</h1>
-          <p style={{ color: "#475569", lineHeight: 1.5 }}>
+          <p style={{ color: "#a3adbf", lineHeight: 1.5 }}>
             Bitte versuche es in einem Moment erneut.{error.digest ? ` Fehlercode: ${error.digest}` : ""}
           </p>
           <button
@@ -29,9 +29,9 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
               marginTop: 12,
               padding: "12px 20px",
               border: 0,
-              borderRadius: 8,
-              color: "white",
-              background: "#2563eb",
+              borderRadius: 999,
+              color: "#10131c",
+              background: "#f3f4f7",
               fontSize: 15,
               fontWeight: 700,
               cursor: "pointer",

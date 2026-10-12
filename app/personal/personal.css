@@ -8,7 +8,7 @@
   gap: 8px;
   padding: 9px 18px;
   border-bottom: 1px solid var(--line);
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 
 .team-channel-bar small {
@@ -56,7 +56,7 @@
 }
 
 .team-channels-card li.active {
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
 }
 
@@ -74,16 +74,16 @@
   min-height: 24px;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
-  background: white;
+  background: var(--glass-surface);
   font-size: 12px;
   font-weight: 740;
   cursor: pointer;
 }
 
 .team-channel-join:hover {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 
@@ -163,8 +163,8 @@ a.quiet-button {
   min-height: 28px;
   padding: 0 4px 0 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f8fbff;
+  border-radius: 12px;
+  background: var(--glass-surface);
   color: var(--ink);
 }
 
@@ -193,7 +193,7 @@ a.quiet-button {
 
 .learning-course-icon.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 
 .learning-course-icon.attention {
@@ -231,7 +231,7 @@ a.quiet-button {
 .documents-file-icon.stable,
 .documents-preview-badge.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 
 .documents-file-icon.attention,
@@ -254,8 +254,8 @@ a.quiet-button {
 
 .documents-file-icon.archived,
 .documents-preview-badge.archived {
-  color: #5f6f86;
-  background: #f1f5f9;
+  color: #a6b0c0;
+  background: rgba(255, 255, 255, 0.053);
 }
 
 .documents-facts {

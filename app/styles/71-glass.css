@@ -384,10 +384,13 @@ body::before {
   margin: 0 auto;
   padding: 8px 34px 0;
 }
+/* Die App behält ihre natürliche Breite (alle Reiter sichtbar); reicht der Platz nicht, rücken Wohnbereich und
+   Bewohner in eine eigene Zeile darunter. */
 .careos-subbar .careos-app-bar {
   width: auto;
   min-width: 0;
-  flex: 1 1 520px;
+  max-width: 100%;
+  flex: 0 1 auto;
   margin: 0;
   padding: 0;
 }

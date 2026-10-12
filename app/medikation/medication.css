@@ -3,7 +3,7 @@
 .med-reserve-note {
   margin: 10px 0 0;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
   color: var(--muted);
   font-size: 12px;
@@ -42,7 +42,7 @@
   display: inline-block;
   margin-left: 6px;
   padding: 1px 5px;
-  border: 1px solid #f1c1bb;
+  border: 1px solid rgba(222, 108, 94, 0.38);
   border-radius: 4px;
   color: var(--critical);
   background: var(--critical-soft);
@@ -72,8 +72,8 @@
 .btm-actions button {
   min-height: 33px;
   padding: 0 8px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 8px;
@@ -105,7 +105,7 @@
   gap: 12px;
   min-height: 58px;
   padding: 10px 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 
 .btm-medications li:last-child {
@@ -133,7 +133,7 @@
   gap: 4px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
   font-size: 12px;
 }
@@ -148,7 +148,7 @@
 }
 
 .btm-difference.critical {
-  border-color: #f1c1bb;
+  border-color: rgba(222, 108, 94, 0.38);
   background: var(--critical-soft);
 }
 
@@ -160,8 +160,8 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 20px;
   padding: 14px;
-  border: 1px solid #f1c1bb;
-  border-radius: 8px;
+  border: 1px solid rgba(222, 108, 94, 0.38);
+  border-radius: 14px;
   background: var(--critical-soft);
 }
 
@@ -211,7 +211,7 @@
 .btm-book {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: var(--glass-surface);
   font-size: 11px;
 }
 
@@ -219,7 +219,7 @@
   padding: 9px 8px;
   border-bottom: 1px solid var(--line);
   color: var(--muted);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -229,7 +229,7 @@
 
 .btm-book td {
   padding: 9px 8px;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   vertical-align: top;
 }
 
@@ -249,12 +249,12 @@
 }
 
 .btm-book tr.count td {
-  background: #f5f9ff;
+  background: rgba(255, 255, 255, 0.038);
 }
 
 .btm-book tr.disposal td,
 .btm-book tr.correction td {
-  background: #fffaf0;
+  background: rgba(255, 255, 255, 0.046);
 }
 
 .btm-book tr.opening td {
@@ -314,7 +314,7 @@
 
 /* Wechselwirkungen: nur sichtbar, wenn ein Hinweis der Einrichtung zutrifft. */
 .med-interaction-card {
-  border-color: #f1c1bb;
+  border-color: rgba(222, 108, 94, 0.38);
 }
 
 .med-interaction-list {
@@ -331,7 +331,7 @@
   gap: 12px;
   align-items: start;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
 }
 
@@ -360,5 +360,5 @@
   gap: 10px 16px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
 }

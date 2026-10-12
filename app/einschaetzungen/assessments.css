@@ -7,8 +7,8 @@
   margin: 0;
   padding: 14px 16px 16px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 
 .area-editor-grid fieldset.assessment-item {
@@ -17,7 +17,7 @@
 
 .area-editor-grid fieldset.assessment-item.answered,
 .assessment-item.answered {
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
 }
 
 .assessment-item legend {
@@ -43,7 +43,7 @@
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 12px;
@@ -62,9 +62,9 @@
 .assessment-item-state {
   flex: none;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.053);
   font-size: 11px;
   font-weight: 700;
 }
@@ -91,8 +91,8 @@
   gap: 10px;
   padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f8fafc;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.038);
   color: var(--ink);
   font-size: 13px;
   font-weight: 600;
@@ -105,12 +105,12 @@
 }
 
 .assessment-item button:hover {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 
 .assessment-item button:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline: 3px solid rgba(124, 161, 243, 0.18);
   outline-offset: 2px;
 }
 
@@ -120,10 +120,10 @@
   flex: none;
   display: grid;
   place-items: center;
-  border: 1px solid #c7d4e2;
-  border-radius: 6px;
+  border: 1px solid rgba(127, 157, 189, 0.38);
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 12px;
   font-weight: 800;
 }
@@ -160,7 +160,7 @@
   display: grid;
   gap: 2px;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 14px;
   background: var(--surface-soft);
 }
 
@@ -179,7 +179,7 @@
 }
 
 .assessment-score.stable {
-  background: #e7f5ee;
+  background: rgba(255, 255, 255, 0.074);
   color: var(--success);
 }
 
@@ -202,7 +202,7 @@
   gap: 8px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
 }
 
 .assessment-history-body article header {
