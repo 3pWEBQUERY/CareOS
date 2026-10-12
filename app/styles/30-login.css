@@ -2,7 +2,7 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(390px, 0.86fr) minmax(520px, 1.14fr);
-  background: white;
+  background: var(--glass-surface);
 }
 .login-brand-panel {
   min-height: 100vh;
@@ -24,7 +24,7 @@
   position: absolute;
   right: -250px;
   bottom: -220px;
-  border: 1px solid rgba(147, 197, 253, 0.18);
+  border: 1px solid rgba(76, 153, 240, 0.068);
   border-radius: 50%;
   box-shadow:
     0 0 0 62px rgba(147, 197, 253, 0.035),
@@ -42,9 +42,9 @@
   height: 48px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.019);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.006);
 }
 .login-brand svg {
   width: 29px;
@@ -60,7 +60,7 @@
 }
 .login-brand small {
   margin-top: 3px;
-  color: #b9cbe4;
+  color: #506d95;
   font-size: 11px;
 }
 .login-brand-copy {
@@ -84,7 +84,7 @@
 .login-brand-copy > p:last-child {
   max-width: 540px;
   margin: 0;
-  color: #b9cbe4;
+  color: #506d95;
   font-size: 17px;
   line-height: 1.65;
 }
@@ -102,9 +102,9 @@
   align-items: flex-start;
   gap: 10px;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.01);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.004);
   backdrop-filter: blur(10px);
 }
 .login-trust-list svg {
@@ -122,14 +122,14 @@
 }
 .login-trust-list small {
   margin-top: 4px;
-  color: #aebfda;
+  color: #506b95;
   font-size: 10px;
   line-height: 1.45;
 }
 .login-brand-panel footer {
   position: relative;
   z-index: 1;
-  color: #839abd;
+  color: #6984ae;
   font-size: 10px;
 }
 .login-form-panel {
@@ -137,7 +137,7 @@
   display: grid;
   place-items: center;
   padding: 48px clamp(30px, 7vw, 110px);
-  background: linear-gradient(145deg, #fff 0%, #f8fbff 100%);
+  background: linear-gradient(145deg, var(--glass-surface) 0%, var(--glass-surface) 100%);
 }
 .login-form-wrap {
   width: min(100%, 460px);
@@ -189,23 +189,23 @@
   grid-template-columns: 20px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  border: 1px solid #cedbec;
-  border-radius: 6px;
+  border: 1px solid rgba(115, 152, 201, 0.38);
+  border-radius: 12px;
   padding: 0 14px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(27, 61, 101, 0.035);
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease;
 }
 .login-input:focus-within {
-  border-color: #60a5fa;
+  border-color: #6facf7;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
 }
 .login-input > svg {
   width: 18px;
   height: 18px;
-  color: #7890aa;
+  color: #8198b0;
 }
 .login-input input {
   width: 100%;
@@ -218,7 +218,7 @@
   font-size: 13px;
 }
 .login-input input::placeholder {
-  color: #9aa9bb;
+  color: #6a809b;
 }
 .login-input button {
   width: 34px;
@@ -226,8 +226,8 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
-  color: #71869e;
+  border-radius: 12px;
+  color: #8f9fb2;
   background: transparent;
   cursor: pointer;
 }
@@ -242,9 +242,9 @@
 .login-error {
   margin-top: 5px;
   padding: 11px 12px;
-  border: 1px solid #f1b7ae;
-  border-radius: 6px;
-  color: #983b30;
+  border: 1px solid rgba(226, 108, 90, 0.38);
+  border-radius: 12px;
+  color: #dfa099;
   background: var(--critical-soft);
   font-size: 11px;
   line-height: 1.45;
@@ -257,7 +257,7 @@
   gap: 9px;
   margin-top: 13px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: linear-gradient(135deg, var(--brand), var(--brand-dark));
   box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
@@ -279,8 +279,8 @@
 .login-spinner {
   width: 15px;
   height: 15px;
-  border: 2px solid rgba(255, 255, 255, 0.38);
-  border-top-color: white;
+  border: 2px solid rgba(255, 255, 255, 0.03);
+  border-top-color: rgba(255, 255, 255, 0.08);
   border-radius: 50%;
   animation: login-spin 700ms linear infinite;
 }
@@ -359,7 +359,7 @@
     height: 38px;
     display: grid;
     place-items: center;
-    border-radius: 6px;
+    border-radius: 12px;
     color: white;
     background: var(--nav);
   }
@@ -424,10 +424,10 @@
   transition: background 140ms ease;
 }
 .teamlead-employee-row:hover {
-  background: #f6f9fe;
+  background: rgba(255, 255, 255, 0.038);
 }
 .teamlead-employee-row:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline: 3px solid rgba(124, 161, 243, 0.2);
   outline-offset: -3px;
 }
 .teamlead-employee-table .teamlead-row-actions {
@@ -446,15 +446,15 @@
   position: relative;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #607890;
-  background: white;
+  border-radius: 12px;
+  color: #9eaebe;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .teamlead-employee-table .teamlead-row-icon:hover,
 .teamlead-employee-table .teamlead-row-icon:focus-visible {
   color: var(--brand);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .teamlead-employee-table .teamlead-row-icon svg {
@@ -479,18 +479,18 @@
   gap: 13px;
   margin-bottom: 20px;
   padding: 15px 17px;
-  border: 1px solid #bdd6ff;
-  border-radius: 7px;
-  background: linear-gradient(100deg, #eaf3ff, #f8fbff);
+  border: 1px solid rgba(76, 138, 240, 0.38);
+  border-radius: 12px;
+  background: linear-gradient(100deg, rgba(76, 146, 240, 0.18), var(--glass-surface));
 }
 .biography-intro > span {
   width: 42px;
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 7px;
+  border-radius: 12px;
   color: var(--brand);
-  background: #dbeafe;
+  background: rgba(76, 146, 240, 0.18);
 }
 .biography-intro svg {
   width: 20px;
@@ -502,13 +502,13 @@
 }
 .biography-intro p {
   margin: 4px 0 0;
-  color: #506a87;
+  color: #a7b8cb;
   font-size: 11px;
   line-height: 1.45;
 }
 .biography-intro > small {
   max-width: 180px;
-  color: #647d98;
+  color: #97a8bb;
   font-size: 10px;
   line-height: 1.45;
   text-align: right;
@@ -516,9 +516,9 @@
 .biography-error {
   margin-bottom: 15px;
   padding: 11px 13px;
-  border: 1px solid #f0b4ab;
-  border-radius: 6px;
-  color: #91392e;
+  border: 1px solid rgba(226, 108, 91, 0.38);
+  border-radius: 12px;
+  color: #dfa29a;
   background: var(--critical-soft);
   font-size: 12px;
   font-weight: 680;
@@ -528,9 +528,9 @@
   min-height: 260px;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: 12px;
   color: var(--muted);
-  background: #fff;
+  background: var(--glass-surface);
   font-size: 13px;
 }
 .biography-layout {
@@ -552,7 +552,7 @@
 .biography-reading p {
   max-width: 70ch;
   margin: 0;
-  color: #344f6d;
+  color: #c2cfde;
   font-size: 14px;
   line-height: 1.8;
   white-space: pre-wrap;
@@ -582,28 +582,28 @@
 .biography-daily-grid > div > span {
   display: block;
   margin-bottom: 10px;
-  color: #48627f;
+  color: #aebfd1;
   font-size: 11px;
   font-weight: 760;
 }
 .biography-daily-grid p {
   margin: 0;
-  color: #3d5875;
+  color: #b8c8d9;
   font-size: 12px;
   line-height: 1.65;
   white-space: pre-wrap;
 }
 .biography-sensitive {
-  background: #fffaf0;
+  background: rgba(255, 255, 255, 0.046);
 }
 .biography-sensitive > span {
-  color: #8b6317 !important;
+  color: #edcd90 !important;
 }
 .biography-field {
   display: grid;
   gap: 8px;
   padding: 18px;
-  color: #49627e;
+  color: #afbfd1;
   font-size: 11px;
   font-weight: 740;
 }
@@ -616,10 +616,10 @@
   resize: vertical;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   outline: 0;
   color: var(--ink);
-  background: #fbfdff;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
   line-height: 1.55;
@@ -628,9 +628,9 @@
   min-height: 270px;
 }
 .biography-field textarea:focus {
-  border-color: #8ebcfb;
+  border-color: rgba(76, 145, 240, 0.38);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-  background: #fff;
+  background: var(--glass-surface);
 }
 .biography-daily-grid .biography-field {
   padding: 0;

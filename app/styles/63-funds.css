@@ -26,7 +26,7 @@
   .fund-summary > div:first-child {
     grid-column: 1 / -1;
     padding: 18px 18px 16px;
-    background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.049) 0%, var(--glass-surface) 100%);
   }
   .fund-summary > div:first-child .summary-icon {
     display: grid;
@@ -151,7 +151,7 @@
   margin: 0;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 13px;
   font-weight: 700;
 }
@@ -173,7 +173,7 @@
 }
 .funds-sheet .funds-sheet-total td {
   font-weight: 800;
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
 }
 .transfer-sheet dl.funds-sheet-sums {
   grid-template-columns: minmax(0, 1fr) auto;
@@ -191,8 +191,8 @@
 }
 .funds-sheet-signatures span {
   padding-top: 6px;
-  border-top: 1px solid #0f172a;
-  color: #475569;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  color: #bfc8d4;
 }
 
 /* Kontoauszug am Handy (nur Bildschirm, Druck bleibt A4-Tabelle): jede Buchung als Block mit Datum und Betrag oben,
@@ -210,7 +210,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 6px 12px;
     padding: 12px 2px;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.096);
   }
   .funds-sheet td {
     padding: 0;
@@ -222,8 +222,8 @@
     margin: 4px 0;
     padding: 12px;
     border: 0;
-    border-radius: 6px;
-    background: #f1f5f9;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.053);
   }
   .funds-sheet .funds-sheet-total td {
     background: none;
@@ -251,7 +251,7 @@
   }
   .funds-sheet-entry .funds-sheet-date {
     grid-area: date;
-    color: #5f6f86;
+    color: #a6b0c0;
     font-size: 13px;
     font-weight: 650;
   }
@@ -275,7 +275,7 @@
   }
   .funds-sheet-entry .funds-sheet-receipt,
   .funds-sheet-entry .funds-sheet-balance {
-    color: #5f6f86;
+    color: #a6b0c0;
     font-size: 13px;
   }
   .funds-sheet-entry .funds-sheet-receipt::before,

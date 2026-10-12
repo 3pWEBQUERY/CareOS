@@ -1,0 +1,828 @@
+/* CareOS Glas: die ganze Oberfläche liegt auf einem nächtlichen Wolkenhimmel. Flächen sind dunkles, durchscheinendes
+   Glas mit weichen Rundungen, Schrift ist hell. Oben ein runder Start-Knopf, in der Mitte die Apps als eine Pille
+   (die gewählte App hell), rechts „Suchen“ und das Profil. Die Farben der übrigen Stylesheets wurden einmalig mit
+   scripts/glass-theme.py umgestellt; hier stehen die Grundwerte und der Rahmen. */
+
+:root {
+  color-scheme: dark;
+  --sky: #0f1a33;
+  --glass-surface: rgba(17, 21, 38, 0.56);
+  --glass-strong: rgba(22, 26, 44, 0.94);
+  --glass-pill: rgba(18, 22, 38, 0.58);
+  --glass-edge: rgba(255, 255, 255, 0.07);
+  --glass-hover: rgba(255, 255, 255, 0.08);
+  --glass-active: #f3f4f7;
+  --glass-active-ink: #10131c;
+  --glass-blur: blur(20px) saturate(150%);
+  --glass-shadow: 0 10px 34px rgba(3, 7, 18, 0.28);
+  --radius-glass: 22px;
+
+  --bg: transparent;
+  --surface: var(--glass-surface);
+  --surface-soft: rgba(255, 255, 255, 0.045);
+  --ink: #f2f5fa;
+  --muted: #a3adbf;
+  --line: rgba(255, 255, 255, 0.09);
+  --brand: #4b84f4;
+  --brand-dark: #79a6ff;
+  --brand-soft: rgba(75, 132, 244, 0.18);
+  --nav: rgba(12, 16, 30, 0.72);
+  --critical: #f2786a;
+  --critical-soft: rgba(242, 120, 106, 0.16);
+  --attention: #f5c35b;
+  --attention-soft: rgba(245, 195, 91, 0.15);
+  --success: #4fd1a0;
+  --info: #6ea0ff;
+  --info-soft: rgba(110, 160, 255, 0.16);
+}
+
+/* ---------- Himmel ---------- */
+html {
+  background: var(--sky);
+}
+body {
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-geist-sans), "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: -0.005em;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--sky) url("/backgrounds/night-sky.webp") center / cover no-repeat;
+  pointer-events: none;
+}
+::selection {
+  background: rgba(75, 132, 244, 0.45);
+}
+::placeholder {
+  color: rgba(226, 232, 244, 0.45);
+}
+* {
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* ---------- Glasflächen in Menüs, Dialogen und Hinweisen: deckender, damit Text darunter nicht durchscheint ---- */
+[role="dialog"],
+[role="alertdialog"],
+[role="menu"],
+[role="listbox"],
+[aria-modal="true"],
+[class*="dropdown"],
+[class*="popover"],
+[class*="modal"],
+[class*="dialog"],
+[class*="drawer"],
+[class*="tooltip"],
+[class*="flyout"],
+[class*="-sheet"],
+.toast {
+  --glass-surface: var(--glass-strong);
+}
+[role="dialog"],
+[role="alertdialog"],
+[role="menu"],
+[role="listbox"],
+[class*="dropdown"],
+[class*="popover"] {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.toast {
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* ---------- Rahmen: keine Seitenleiste mehr, Inhalt mittig unter der Kopfzeile ---------- */
+.app-shell,
+.app-shell.sidebar-is-collapsed {
+  display: block;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: transparent;
+}
+.main-column {
+  grid-column: auto;
+  min-width: 0;
+}
+.app-shell > .sidebar {
+  display: none;
+}
+
+/* ---------- Kopfzeile ---------- */
+.topbar {
+  height: 78px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 0 22px;
+  border: 0;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.topbar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -18px;
+  z-index: -1;
+  background: linear-gradient(rgba(13, 21, 42, 0.78), rgba(13, 21, 42, 0.36) 70%, rgba(13, 21, 42, 0));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  -webkit-mask-image: linear-gradient(#000 62%, transparent);
+  mask-image: linear-gradient(#000 62%, transparent);
+  pointer-events: none;
+}
+.topbar-start {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  justify-self: start;
+}
+.topbar .careos-switcher {
+  justify-self: center;
+}
+.top-actions {
+  min-width: 0;
+  gap: 8px;
+  justify-self: end;
+}
+
+/* Runde Glasknöpfe (Start, KI, Hinweise) */
+.careos-home-button,
+.topbar .icon-button,
+.mobile-top .icon-button {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--glass-edge);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.86);
+  background: var(--glass-pill);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  transition:
+    background 220ms ease,
+    color 220ms ease,
+    transform 220ms ease;
+}
+.careos-home-button svg,
+.topbar .icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+.careos-home-button:hover,
+.topbar .icon-button:hover,
+.mobile-top .icon-button:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(40, 46, 70, 0.7);
+}
+.careos-home-button:active,
+.topbar .icon-button:active {
+  transform: scale(0.95);
+}
+.careos-home-button.active {
+  color: var(--glass-active-ink);
+  background: var(--glass-active);
+}
+.topbar .shortcut-trigger {
+  display: none;
+}
+
+/* Suchen: Glas-Pille mit Wort */
+.topbar .search-trigger {
+  width: auto;
+  min-height: 46px;
+  gap: 8px;
+  padding: 0 22px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  background: var(--glass-pill);
+  box-shadow: var(--glass-shadow);
+  font-size: 15px;
+  font-weight: 500;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  transition: background 220ms ease;
+}
+.topbar .search-trigger:hover {
+  color: #fff;
+  background: rgba(40, 46, 70, 0.7);
+}
+.topbar .search-trigger svg {
+  width: 17px;
+  height: 17px;
+  opacity: 0.8;
+}
+.topbar .search-trigger kbd {
+  display: none;
+}
+
+/* Profil: nur der runde Avatar */
+.topbar .profile-menu-wrap {
+  margin-left: 2px;
+}
+.topbar .profile-trigger {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+}
+.topbar .profile-trigger > span:not(.avatar),
+.topbar .profile-caret {
+  display: none;
+}
+.avatar {
+  color: #fff;
+  background: #4b84f4;
+  font-weight: 600;
+}
+.topbar .avatar {
+  width: 48px;
+  height: 48px;
+  font-size: 17px;
+  box-shadow: var(--glass-shadow);
+  transition: transform 220ms ease;
+}
+.topbar .profile-trigger:hover .avatar,
+.topbar .profile-trigger.open .avatar {
+  transform: scale(1.04);
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.16),
+    var(--glass-shadow);
+}
+
+/* ---------- App-Leiste: eine Glas-Pille, die gewählte App hell, Markierung gleitet mit ---------- */
+.careos-switcher {
+  max-width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  background: var(--glass-pill);
+  box-shadow: var(--glass-shadow);
+  scrollbar-width: none;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.careos-switcher::-webkit-scrollbar {
+  display: none;
+}
+.careos-switcher-thumb {
+  width: var(--thumb-w);
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  border-radius: 999px;
+  background: var(--glass-active);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+  transform: translateX(var(--thumb-x));
+  transition:
+    transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 460ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.careos-switcher-item {
+  height: 44px;
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 19px;
+  border: 0;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.64);
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 300ms ease;
+}
+.careos-switcher-item:hover {
+  color: #fff;
+}
+.careos-switcher-item[data-active="true"] {
+  color: var(--glass-active-ink);
+}
+.careos-switcher-item:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: -2px;
+}
+.careos-switcher-count {
+  min-width: 19px;
+  height: 19px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #fff;
+  background: #e5594a;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+@media (max-width: 1500px) {
+  .careos-switcher-item {
+    padding: 0 14px;
+    font-size: 14px;
+  }
+}
+@media (max-width: 1260px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .topbar .search-trigger span {
+    display: none;
+  }
+  .topbar .search-trigger {
+    width: 46px;
+    padding: 0;
+    justify-content: center;
+  }
+  .careos-switcher-item {
+    padding: 0 12px;
+    font-size: 13.5px;
+  }
+}
+
+/* ---------- Zweite Zeile: App (Symbol, Name, Reiter) und Ort/Bewohner ---------- */
+.careos-subbar {
+  width: min(100%, 1640px);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+  margin: 0 auto;
+  padding: 8px 34px 0;
+}
+.careos-subbar .careos-app-bar {
+  width: auto;
+  min-width: 0;
+  flex: 1 1 520px;
+  margin: 0;
+  padding: 0;
+}
+.careos-subbar .header-context {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.careos-subbar .header-context > * {
+  min-width: 0;
+}
+.careos-subbar .location-control,
+.careos-subbar .resident-selector-trigger,
+.careos-subbar .header-context > button,
+.careos-subbar .header-context > div > button {
+  min-height: 46px;
+  padding: 4px 16px 4px 6px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--glass-pill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.careos-subbar .location-control:hover,
+.careos-subbar .header-context > button:hover,
+.careos-subbar .header-context > div > button:hover {
+  background: rgba(40, 46, 70, 0.7);
+}
+.careos-app-bar-name strong {
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.careos-app-bar .page-tabs {
+  flex: 0 1 auto;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 999px;
+  background: var(--glass-pill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+.careos-app-bar .page-tabs a {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.66);
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background 260ms ease,
+    color 260ms ease;
+}
+.careos-app-bar .page-tabs a:hover {
+  color: #fff;
+  border-color: transparent;
+  background: var(--glass-hover);
+}
+.careos-app-bar .page-tabs a.active {
+  color: var(--glass-active-ink);
+  border-color: transparent;
+  background: var(--glass-active);
+}
+.careos-app-bar .page-tabs a.active em {
+  color: #fff;
+  background: #e5594a;
+}
+.careos-subbar + .workspace,
+.careos-subbar + main,
+.careos-subbar + .page-view > .workspace,
+.careos-subbar ~ .page-view > main {
+  padding-top: 24px;
+}
+
+/* ---------- Glas für Karten und Knöpfe ---------- */
+.primary-button {
+  color: #fff;
+  background: var(--brand);
+  box-shadow: 0 8px 22px rgba(75, 132, 244, 0.3);
+}
+.primary-button:hover {
+  background: #5d92f7;
+}
+.primary-button,
+.secondary-button {
+  border-radius: 999px;
+}
+.secondary-button {
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+.secondary-button:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+input,
+select,
+textarea {
+  color-scheme: dark;
+}
+select option {
+  color: #e9edf5;
+  background: #1a2036;
+}
+
+/* ---------- Startseite: grosse Uhr links, Begrüssung als Sprechblasen ---------- */
+.careos-clock {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  color: #f6f8fc;
+  font-size: clamp(44px, 4.6vw, 76px);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.2);
+}
+.careos-clock strong {
+  font-weight: 500;
+}
+.home-hero {
+  padding: 4px 0 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.home-greeting.home-hero-intro {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.42fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 32px;
+}
+.careos-bubbles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.careos-bubbles .home-date {
+  margin: 0 0 4px 4px;
+  color: var(--muted);
+}
+.careos-bubble,
+.careos-bubbles .careos-bubble,
+.home-greeting .careos-bubbles .careos-bubble {
+  max-width: 560px;
+  margin: 0;
+  padding: 14px 20px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-glass);
+  color: #f3f5f9;
+  background: rgba(18, 21, 34, 0.62);
+  box-shadow: var(--glass-shadow);
+  font-size: 16.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.38;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  animation: careos-bubble-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.careos-bubble:nth-of-type(2) {
+  animation-delay: 70ms;
+}
+.careos-bubble:nth-of-type(3) {
+  animation-delay: 140ms;
+}
+@keyframes careos-bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+@media (max-width: 760px) {
+  .home-greeting.home-hero-intro {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .careos-clock {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    font-size: 34px;
+  }
+}
+
+/* ---------- Handy und Tablet hochkant ---------- */
+@media (max-width: 960px) {
+  .topbar {
+    display: none;
+  }
+  .mobile-top {
+    min-height: 66px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 0;
+    background: linear-gradient(rgba(13, 21, 42, 0.86), rgba(13, 21, 42, 0.5));
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+  }
+  .mobile-top .careos-home-button {
+    width: 42px;
+    height: 42px;
+  }
+  .mobile-top .icon-button {
+    width: 40px;
+    height: 40px;
+    box-shadow: none;
+  }
+  .careos-subbar {
+    padding: 8px 14px 0;
+  }
+  .careos-subbar .header-context {
+    display: none;
+  }
+  .bottom-nav {
+    border: 1px solid var(--glass-edge);
+    background: rgba(16, 20, 36, 0.78);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+  }
+}
+
+/* ---------- Druck: hell und ohne Himmel ---------- */
+@media print {
+  :root {
+    color-scheme: light;
+    --glass-surface: #fff;
+    --glass-strong: #fff;
+    --surface: #fff;
+    --surface-soft: #f6f8fb;
+    --ink: #111827;
+    --muted: #4b5563;
+    --line: #d1d5db;
+    --brand: #1d4ed8;
+    --brand-dark: #1e40af;
+    --brand-soft: #eef2ff;
+    --critical: #b42318;
+    --attention: #8a5a00;
+    --success: #1f6f50;
+  }
+  html,
+  body {
+    color: #111827;
+    background: #fff;
+  }
+  /* Die Bildschirmfarben sind für dunkles Glas gemacht: gedruckt wird schwarz auf weiss. */
+  *,
+  *::before,
+  *::after {
+    color: #111827 !important;
+    border-color: #c9ced8 !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  body::before,
+  .topbar,
+  .careos-subbar,
+  .mobile-top {
+    display: none;
+  }
+}
+
+/* ---------- Anmeldung und „Passwort setzen“: Bühne wie der Startbildschirm ---------- */
+.login-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px) minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr auto;
+  grid-template-areas:
+    "top top top"
+    "clock intro ."
+    "clock form ."
+    "clock form ."
+    "foot foot foot";
+  column-gap: 48px;
+  padding: 0 22px;
+  background: transparent;
+}
+.login-topbar {
+  height: 78px;
+  grid-area: top;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+}
+.login-mark {
+  color: #fff;
+}
+.login-switcher {
+  justify-self: center;
+}
+.login-switcher .careos-switcher-item[data-active="true"] {
+  color: var(--glass-active-ink);
+  background: var(--glass-active);
+}
+.login-clock {
+  grid-area: clock;
+  align-self: center;
+  justify-self: start;
+  padding-left: clamp(0px, 3vw, 56px);
+}
+.login-bubbles {
+  grid-area: intro;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-top: clamp(24px, 9vh, 110px);
+}
+.login-page > .login-form-panel {
+  min-height: 0;
+  grid-area: form;
+  display: block;
+  padding: 18px 0 40px;
+  background: transparent;
+}
+.login-page .login-form-wrap {
+  width: 100%;
+  max-width: none;
+  padding: 26px 26px 22px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 28px;
+  background: rgba(18, 21, 34, 0.62);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  animation: careos-bubble-in 620ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+}
+.login-page .login-mobile-brand,
+.login-page .login-heading .eyebrow {
+  display: none;
+}
+.login-page .login-heading h2 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.login-page .login-heading p {
+  margin: 0 0 18px;
+  color: var(--muted);
+}
+.login-page .login-input {
+  min-height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.login-page .login-input:focus-within {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.06);
+}
+.login-page .login-submit {
+  min-height: 52px;
+  border-radius: 999px;
+  color: var(--glass-active-ink);
+  background: var(--glass-active);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+.login-page .login-submit:hover:not(:disabled) {
+  background: #fff;
+}
+.login-page .login-support {
+  border-top-color: var(--line);
+}
+.login-footnote {
+  grid-area: foot;
+  padding: 14px 0 18px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12.5px;
+  text-align: center;
+}
+@media (max-width: 1100px) {
+  .login-page {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 520px) minmax(0, 1fr);
+    grid-template-areas:
+      "top top top"
+      ". clock ."
+      ". intro ."
+      ". form ."
+      "foot foot foot";
+    column-gap: 0;
+  }
+  .login-clock {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding: 18px 0 0;
+    font-size: 40px;
+  }
+  .login-bubbles {
+    padding-top: 18px;
+  }
+}
+@media (max-width: 560px) {
+  .login-page {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "top" "clock" "intro" "form" "foot";
+    padding: 0 14px;
+  }
+  .login-topbar {
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+  }
+  .login-switcher {
+    justify-self: end;
+  }
+  .login-topbar-end {
+    display: none;
+  }
+  .login-bubbles .careos-bubble:nth-of-type(2) {
+    display: none;
+  }
+  .login-page .login-form-wrap {
+    padding: 22px 18px 18px;
+  }
+}

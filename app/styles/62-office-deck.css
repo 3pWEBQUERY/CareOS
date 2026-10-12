@@ -47,7 +47,7 @@
 .deck-thumb-comments {
   display: block;
   margin-top: 4px;
-  color: #d97706;
+  color: #f8bf7d;
   font-size: 14px;
   line-height: 1;
 }
@@ -69,12 +69,12 @@
 .deck-thumb-button {
   padding: 0;
   border: 2px solid transparent;
-  border-radius: 6px;
+  border-radius: 12px;
   background: transparent;
   cursor: pointer;
 }
 .deck-thumb-button:hover .deck-slide {
-  box-shadow: 0 0 0 1px #9fb0c2;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
 }
 .deck-thumb.active .deck-thumb-button {
   border-color: var(--brand);
@@ -93,7 +93,7 @@
   place-items: center;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   cursor: pointer;
@@ -120,8 +120,8 @@
   justify-content: center;
   gap: 6px;
   margin-left: 24px;
-  border: 1px dashed #b8c6d6;
-  border-radius: 6px;
+  border: 1px dashed rgba(132, 156, 184, 0.38);
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   font: inherit;
@@ -145,7 +145,7 @@
   gap: 14px;
   padding: 22px 28px 16px;
   overflow: auto;
-  background: #e9eef4;
+  background: rgba(255, 255, 255, 0.072);
 }
 .deck-stage {
   width: min(100%, calc((100vh - 330px) * 16 / 9));
@@ -162,8 +162,8 @@
   font-family: Calibri, Carlito, Arial, sans-serif;
   line-height: 1.2;
   box-shadow:
-    0 1px 3px rgba(15, 42, 67, 0.14),
-    0 12px 32px rgba(15, 42, 67, 0.12);
+    0 1px 3px rgba(0, 0, 0, 0.264),
+    0 12px 32px rgba(0, 0, 0, 0.232);
 }
 .deck-slide.thumb {
   pointer-events: none;
@@ -235,10 +235,10 @@
   place-content: center;
   justify-items: center;
   gap: 8px;
-  border: 2px dashed rgba(95, 111, 134, 0.45);
-  border-radius: 6px;
+  border: 2px dashed rgba(166, 176, 192, 0.45);
+  border-radius: 12px;
   color: var(--deck-muted);
-  background: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.028);
   font: inherit;
   font-size: 1.6cqw;
   font-weight: 700;
@@ -263,13 +263,13 @@
 }
 .deck-input:hover,
 .deck-body.editable:hover .tiptap {
-  border-color: rgba(95, 111, 134, 0.55);
+  border-color: rgba(166, 176, 192, 0.55);
 }
 .deck-input:focus,
 .deck-body.editable .tiptap:focus {
   border-color: var(--brand);
   outline: none;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.003);
 }
 .deck-input::placeholder {
   color: inherit;
@@ -316,7 +316,7 @@
   margin-top: -3px;
 }
 .deck-item-layer .deck-item:hover {
-  outline: 1px dashed rgba(95, 111, 134, 0.65);
+  outline: 1px dashed rgba(166, 176, 192, 0.65);
 }
 .deck-item-layer .deck-item.selected,
 .deck-item-layer .deck-item:focus-visible {
@@ -406,9 +406,9 @@ textarea.deck-shape-text {
   place-content: center;
   justify-items: center;
   gap: 0.5cqw;
-  border: 2px dashed rgba(95, 111, 134, 0.45);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.35);
+  border: 2px dashed rgba(166, 176, 192, 0.45);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.028);
   color: var(--deck-muted);
   font-size: 1.4cqw;
   font-weight: 700;
@@ -476,7 +476,7 @@ textarea.deck-shape-text {
   margin: -5px 0 0 -5px;
   border: 1.5px solid var(--brand);
   border-radius: 2px;
-  background: #ffffff;
+  background: var(--glass-surface);
 }
 .deck-item-handle.nw,
 .deck-item-handle.w,
@@ -526,7 +526,7 @@ textarea.deck-shape-text {
   max-height: 46vh;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .deck-chart-grid table {
   width: 100%;
@@ -552,7 +552,7 @@ textarea.deck-shape-text {
   min-height: 32px;
   padding: 4px 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -560,7 +560,7 @@ textarea.deck-shape-text {
 }
 .deck-chart-grid input:focus {
   border-color: var(--brand);
-  outline: 2px solid rgba(37, 99, 235, 0.18);
+  outline: 2px solid rgba(124, 161, 243, 0.18);
 }
 .deck-chart-head {
   display: flex;
@@ -573,14 +573,14 @@ textarea.deck-shape-text {
   height: 30px;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
 }
 .deck-chart-grid button:hover {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: rgba(240, 76, 76, 0.18);
+  color: #ed8989;
 }
 .deck-chart-actions {
   display: flex;
@@ -592,7 +592,7 @@ textarea.deck-shape-text {
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -624,7 +624,7 @@ textarea.deck-shape-text {
   min-height: 78px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -634,7 +634,7 @@ textarea.deck-shape-text {
 }
 .deck-notes textarea:focus {
   border-color: var(--brand);
-  outline: 2px solid rgba(37, 99, 235, 0.18);
+  outline: 2px solid rgba(124, 161, 243, 0.18);
 }
 .deck-themes {
   display: grid;
@@ -647,7 +647,7 @@ textarea.deck-shape-text {
   gap: 6px;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -668,7 +668,7 @@ textarea.deck-shape-text {
   place-items: center start;
   padding-left: 12px;
   border-radius: 4px;
-  box-shadow: inset 0 0 0 1px rgba(16, 42, 67, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.232);
   font-family: Calibri, Carlito, Arial, sans-serif;
   font-size: 22px;
   font-weight: 700;
@@ -712,7 +712,7 @@ textarea.deck-shape-text {
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: rgba(0, 0, 0, 0.55);
   font-size: 13px;
@@ -731,13 +731,13 @@ textarea.deck-shape-text {
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: transparent;
   cursor: pointer;
 }
 .deck-presenter-bar button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.013);
 }
 .deck-presenter-bar button:disabled {
   opacity: 0.35;

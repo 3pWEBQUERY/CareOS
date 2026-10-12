@@ -4,7 +4,7 @@
 }
 .directory-filter.active {
   color: var(--brand-dark);
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .directory-filter svg {
@@ -72,9 +72,9 @@
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
@@ -83,12 +83,12 @@
 .resident-status-filter button:hover,
 .resident-filter-reset:hover {
   color: var(--brand-dark);
-  border-color: #bfdbfe;
-  background: #f8fbff;
+  border-color: rgba(76, 149, 240, 0.38);
+  background: var(--glass-surface);
 }
 .resident-status-filter button.active {
   color: var(--brand-dark);
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .resident-filter-reset {
@@ -106,7 +106,7 @@
 .resident-table-head {
   padding: 11px 20px;
   color: var(--muted);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
   font-size: 10px;
   font-weight: 780;
   letter-spacing: 0.055em;
@@ -117,8 +117,8 @@
   min-height: 79px;
   padding: 14px 20px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
-  background: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
   transition: background 150ms ease;
@@ -127,10 +127,10 @@
   border-bottom: 0;
 }
 .resident-list-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .resident-list-row > span:not(.resident-person) {
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 12px;
 }
 .resident-list-row strong {
@@ -156,7 +156,7 @@
 }
 .status-badge.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .resident-empty {
   min-height: 270px;
@@ -192,9 +192,9 @@
   margin-bottom: 18px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .wound-summary > div {
   min-height: 88px;
@@ -239,9 +239,9 @@
   align-items: center;
   gap: 8px;
   padding: 9px 10px;
-  border: 1px solid #f3d6d1;
-  border-radius: 6px;
-  background: white;
+  border: 1px solid rgba(215, 118, 101, 0.38);
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .wound-overdue-list li > span {
   min-width: 0;
@@ -249,20 +249,20 @@
   gap: 2px;
 }
 .wound-overdue-list b {
-  color: #6d2b23;
+  color: #e0a69f;
   font-size: 13px;
 }
 .wound-overdue-list small {
-  color: #87564f;
+  color: #cbaca7;
   font-size: 11px;
 }
 .wound-overdue-list button {
   min-height: 32px;
   padding: 0 11px;
-  border: 1px solid #efc5be;
-  border-radius: 6px;
-  color: #8f2f24;
-  background: white;
+  border: 1px solid rgba(217, 116, 99, 0.38);
+  border-radius: 12px;
+  color: #e59e96;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -308,9 +308,9 @@
   flex: 0 0 auto;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 720;
   cursor: pointer;
@@ -318,7 +318,7 @@
 .wound-status-filter button:hover,
 .wound-status-filter button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .wound-toolbar > .secondary-button {
@@ -336,7 +336,7 @@
   min-height: 42px;
   padding: 0 18px;
   color: var(--muted);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -353,9 +353,9 @@
   min-height: 92px;
   padding: 13px 0;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -363,12 +363,12 @@
   border-bottom: 0;
 }
 .wound-case-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .wound-case-row.selected {
   margin-inline: -8px;
   padding-inline: 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
   box-shadow: inset 3px 0 0 var(--brand);
 }
@@ -401,7 +401,7 @@
 .wound-case-main > span {
   display: block;
   margin-top: 6px;
-  color: #455b70;
+  color: #bac8d5;
   font-size: 10px;
 }
 .wound-progress {
@@ -415,14 +415,14 @@
 .wound-focus-progress > span {
   height: 6px;
   overflow: hidden;
-  border-radius: 6px;
-  background: #dce5ee;
+  border-radius: 12px;
+  background: rgba(125, 158, 192, 0.18);
 }
 .wound-progress i,
 .wound-focus-progress i {
   height: 100%;
   display: block;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand);
 }
 .wound-progress strong {
@@ -431,7 +431,7 @@
 .wound-case-row > .chevron {
   width: 16px;
   height: 16px;
-  color: #9aabb9;
+  color: #6d869a;
 }
 .wound-sidebar {
   display: grid;
@@ -450,7 +450,7 @@
   display: grid;
   place-items: center;
   margin: 0 auto 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -464,7 +464,7 @@
 }
 .wound-focus-icon.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .wound-focus-icon svg {
   width: 24px;
@@ -489,7 +489,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   font-size: 10px;
 }
 .wound-focus-body dt {
@@ -531,7 +531,7 @@
   gap: 9px;
   padding: 10px 5px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   background: transparent;
   text-align: left;

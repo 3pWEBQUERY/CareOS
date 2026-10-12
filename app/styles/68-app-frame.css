@@ -37,31 +37,80 @@
   }
 }
 
-/* Seitenwechsel: Rahmen ruhig, nur der Inhalt wechselt. Klicks gehen während des Übergangs an die Seite. */
+/* Seitenwechsel: Himmel und Rahmen stehen still, nur der Inhalt wechselt – der alte blendet in einem Augenblick weich
+   aus, der neue gleitet leicht verschwommen herein und wird scharf. Beide überlappen, es gibt keinen leeren Moment.
+   Richtung: weiter rechts in der App-Leiste oder bei den Reitern gleitet der Inhalt von rechts herein, sonst von links.
+   Klicks gehen während des Übergangs an die Seite. */
 ::view-transition {
   pointer-events: none;
 }
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 160ms;
-}
-::view-transition-old(.page-out) {
-  animation: 110ms cubic-bezier(0.4, 0, 1, 1) both page-fade-out;
-}
-::view-transition-new(.page-in) {
-  animation: 240ms cubic-bezier(0.16, 1, 0.3, 1) 50ms both page-rise-in;
-}
-::view-transition-old(.page-tab-out) {
-  animation: 90ms ease-in both page-fade-out;
-}
-::view-transition-new(.page-tab-in) {
-  animation: 170ms ease-out 30ms both page-fade-in;
+  animation: none;
 }
 ::view-transition-group(.page-in),
 ::view-transition-group(.page-out),
+::view-transition-group(.page-in-forward),
+::view-transition-group(.page-in-back),
+::view-transition-group(.page-out-forward),
+::view-transition-group(.page-out-back),
 ::view-transition-group(.page-tab-in),
-::view-transition-group(.page-tab-out) {
+::view-transition-group(.page-tab-out),
+::view-transition-group(.page-tab-in-forward),
+::view-transition-group(.page-tab-in-back),
+::view-transition-group(.page-tab-out-forward),
+::view-transition-group(.page-tab-out-back) {
   animation: none;
+}
+::view-transition-old(.page-out),
+::view-transition-old(.page-out-forward),
+::view-transition-old(.page-out-back),
+::view-transition-old(.page-tab-out),
+::view-transition-old(.page-tab-out-forward),
+::view-transition-old(.page-tab-out-back) {
+  animation: 170ms cubic-bezier(0.4, 0, 1, 1) both page-leave;
+}
+::view-transition-old(.page-out-forward),
+::view-transition-old(.page-tab-out-forward) {
+  --page-shift: -18px;
+}
+::view-transition-old(.page-out-back),
+::view-transition-old(.page-tab-out-back) {
+  --page-shift: 18px;
+}
+::view-transition-new(.page-in),
+::view-transition-new(.page-in-forward),
+::view-transition-new(.page-in-back),
+::view-transition-new(.page-tab-in),
+::view-transition-new(.page-tab-in-forward),
+::view-transition-new(.page-tab-in-back) {
+  animation: 420ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both page-arrive;
+}
+::view-transition-new(.page-in) {
+  --page-rise: 12px;
+}
+::view-transition-new(.page-in-forward),
+::view-transition-new(.page-tab-in-forward) {
+  --page-shift: 28px;
+}
+::view-transition-new(.page-in-back),
+::view-transition-new(.page-tab-in-back) {
+  --page-shift: -28px;
+}
+/* Die zweite Zeile (App-Name und Reiter) blendet beim Wechsel der App leise über. */
+.careos-subbar {
+  view-transition-name: app-subbar;
+}
+::view-transition-group(app-subbar) {
+  z-index: 90;
+  animation-duration: 320ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(app-subbar) {
+  animation: 140ms ease-in both page-fade-out;
+}
+::view-transition-new(app-subbar) {
+  animation: 300ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both page-fade-in;
 }
 /* Feste Bedienelemente (Kopfzeilen, untere Menüleiste auf dem Handy, Schnellaktion) eigenständig erfassen: Sie
    bleiben während des Übergangs ruhig im Vordergrund, statt vom wechselnden Inhalt überdeckt und neu eingeblendet
@@ -108,10 +157,18 @@
     opacity: 0;
   }
 }
-@keyframes page-rise-in {
+@keyframes page-leave {
+  to {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translate(var(--page-shift, 0), 0) scale(0.992);
+  }
+}
+@keyframes page-arrive {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    filter: blur(8px);
+    transform: translate(var(--page-shift, 0), var(--page-rise, 0)) scale(0.996);
   }
 }
 

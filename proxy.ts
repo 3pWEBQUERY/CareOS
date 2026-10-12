@@ -81,6 +81,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/api/:path*",
-    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|sw.js|sw-crypto.js|manifest.webmanifest|icons/).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|sw.js|sw-crypto.js|manifest.webmanifest|icons/|backgrounds/).*)",
   ],
 };

@@ -24,7 +24,7 @@
   align-items: center;
   gap: 6px;
   padding: 12px 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.006);
 }
 .topbar {
   height: 70px;
@@ -37,7 +37,7 @@
   gap: 20px;
   padding: 0 34px;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.93);
+  background: rgba(255, 255, 255, 0.074);
   backdrop-filter: blur(12px);
 }
 .location-control {
@@ -46,7 +46,7 @@
   align-items: center;
   gap: 9px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 5px 9px;
   background: transparent;
   text-align: left;
@@ -60,7 +60,7 @@
   height: 33px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -113,13 +113,13 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #53677d;
-  background: white;
+  border-radius: 12px;
+  color: #aebbc9;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .resident-context-nav button:hover {
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -146,7 +146,7 @@
 .resident-context-trigger .chevron {
   width: 14px;
   height: 14px;
-  color: #8195aa;
+  color: #8094a9;
   transition:
     transform 160ms ease,
     color 160ms ease;
@@ -159,13 +159,13 @@
   max-width: 190px;
   padding: 5px 9px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 12px;
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 .resident-context-trigger:hover {
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .resident-context-avatar {
@@ -175,21 +175,21 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #1d4ed8;
-  background: #dbeafe;
+  color: #84a0ee;
+  background: rgba(76, 146, 240, 0.18);
   font-size: 10px;
   font-weight: 800;
 }
 .resident-context-avatar.critical {
-  color: #a23a30;
+  color: #e09d97;
   background: var(--critical-soft);
 }
 .resident-context-avatar.attention {
-  color: #8b5a00;
+  color: #f9d087;
   background: var(--attention-soft);
 }
 .resident-context-avatar.info {
-  color: #14618d;
+  color: #8eccef;
   background: var(--info-soft);
 }
 .resident-context-copy {
@@ -218,7 +218,7 @@
   gap: 14px;
   padding: 14px 15px 12px;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(135deg, #f4f8ff 0%, #ffffff 72%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, var(--glass-surface) 72%);
 }
 .context-dropdown-header .eyebrow {
   margin: 0 0 3px;
@@ -243,9 +243,9 @@
   z-index: 35;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 18px 42px rgba(23, 54, 64, 0.18);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.328);
   animation: rise-in 160ms ease;
 }
 .location-dropdown {
@@ -265,7 +265,7 @@
   gap: 8px;
   padding: 6px 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -281,9 +281,9 @@
   height: 29px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
-  background: #edf4ff;
+  background: rgba(76, 140, 240, 0.18);
 }
 .location-option-icon svg {
   width: 15px;
@@ -327,12 +327,12 @@
   margin: 10px 12px 7px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
 }
 .resident-context-search:focus-within {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 .resident-context-search svg {
@@ -364,9 +364,9 @@
   min-height: 27px;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 700;
   cursor: pointer;
@@ -374,7 +374,7 @@
 .resident-context-filters button:hover,
 .resident-context-filters button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .resident-context-list {
@@ -392,7 +392,7 @@
   gap: 8px;
   padding: 7px 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -523,13 +523,13 @@
   gap: 10px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
-  background: white;
-  box-shadow: 0 4px 16px rgba(23, 54, 64, 0.04);
+  background: var(--glass-surface);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.104);
 }
 .resident-picker-search:focus-within {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 .resident-picker-search svg {
@@ -563,22 +563,22 @@
   gap: 1px;
   padding: 6px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #536a82;
-  background: white;
+  border-radius: 12px;
+  color: #aab9c9;
+  background: var(--glass-surface);
   font-size: 11px;
   font-weight: 730;
   text-align: left;
   cursor: pointer;
 }
 .resident-picker-filters button small {
-  color: #5d80af;
+  color: #a0b4d0;
   font-size: 9px;
   font-weight: 700;
 }
 .resident-picker-filters button:hover,
 .resident-picker-filters button.active {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   color: var(--brand-dark);
   background: var(--brand-soft);
 }
@@ -587,8 +587,8 @@
   gap: 7px;
   padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .resident-picker-list > button {
   min-height: 68px;
@@ -598,7 +598,7 @@
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -606,7 +606,7 @@
 }
 .resident-picker-list > button:hover,
 .resident-picker-list > button.active {
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .resident-picker-list > button > span:nth-child(2) {
@@ -624,14 +624,14 @@
 }
 .resident-picker-list > button > svg {
   width: 16px;
-  color: #8da3b7;
+  color: #6f8ba4;
 }
 .resident-picker-list > button > svg:nth-last-child(2) {
   color: var(--brand);
 }
 .location-icon.has-logo {
   overflow: hidden;
-  background: white;
+  background: var(--glass-surface);
 }
 .location-icon.has-logo img {
   width: 100%;

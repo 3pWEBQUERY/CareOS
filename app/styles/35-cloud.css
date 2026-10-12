@@ -5,10 +5,10 @@
   max-width: 980px;
   margin: 18px auto 0;
   padding: 11px 13px;
-  border: 1px solid #efbeb7;
-  border-radius: 6px;
-  color: #a63e33;
-  background: #fff2f0;
+  border: 1px solid rgba(220, 112, 96, 0.38);
+  border-radius: 12px;
+  color: #df9e97;
+  background: rgba(255, 255, 255, 0.046);
   font-size: 12px;
 }
 .appointment-editor-actions {
@@ -22,10 +22,10 @@
   gap: 6px;
   margin-right: auto;
   padding: 0 12px;
-  border: 1px solid #e6b8b3;
-  border-radius: 6px;
-  color: #aa453d;
-  background: #fff7f6;
+  border: 1px solid rgba(207, 119, 109, 0.38);
+  border-radius: 12px;
+  color: #db9e9a;
+  background: rgba(255, 255, 255, 0.037);
   font: inherit;
   font-size: 11px;
   font-weight: 750;
@@ -38,16 +38,16 @@
   max-width: 980px;
   margin: 20px auto 0;
   padding: 17px;
-  border: 1px solid #e9bbb5;
-  border-radius: 7px;
-  background: #fff6f4;
+  border: 1px solid rgba(211, 118, 106, 0.38);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
 }
 .appointment-delete-confirm strong {
   font-size: 13px;
 }
 .appointment-delete-confirm p {
   margin: 6px 0 15px;
-  color: #795a57;
+  color: #c7b3b1;
   font-size: 11px;
   line-height: 1.5;
 }
@@ -59,7 +59,7 @@
   min-height: 38px;
   padding: 0 13px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: #c34940;
   font: inherit;
@@ -82,9 +82,9 @@
   gap: 9px;
   padding: 10px 14px;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  color: #506680;
-  background: #fff;
+  border-radius: 12px;
+  color: #acbacb;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
   font-weight: 750;
@@ -95,14 +95,14 @@
     color 0.18s;
 }
 .appointment-kind-switch button:hover {
-  border-color: #a9c7f5;
-  background: #f8fbff;
+  border-color: rgba(81, 142, 235, 0.38);
+  background: var(--glass-surface);
 }
 .appointment-kind-switch button.active {
-  border-color: #8cb7f8;
+  border-color: rgba(76, 141, 240, 0.38);
   color: var(--brand-dark);
-  background: #eef5ff;
-  box-shadow: inset 0 0 0 1px #c6dcff;
+  background: rgba(255, 255, 255, 0.049);
+  box-shadow: inset 0 0 0 1px rgba(76, 139, 240, 0.38);
 }
 .appointment-kind-switch svg {
   width: 19px;
@@ -127,7 +127,7 @@
   align-items: center;
   padding: 12px 2px;
   border: 0;
-  border-bottom: 1px solid #eaf0f6;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.084);
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -137,7 +137,7 @@
   border-bottom: 0;
 }
 .resident-appointment-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .resident-appointment-date {
   width: 42px;
@@ -145,8 +145,8 @@
   display: grid;
   place-items: center;
   align-content: center;
-  border: 1px solid #d9e7fc;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 142, 240, 0.38);
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
 }
@@ -176,7 +176,7 @@
 }
 .resident-appointment-row > svg {
   width: 15px;
-  color: #8296ad;
+  color: #7c91a9;
 }
 .resident-appointment-empty {
   display: grid;
@@ -210,10 +210,10 @@
   gap: 10px;
   margin-bottom: 15px;
   padding: 12px;
-  border: 1px solid #e9bbb5;
-  border-radius: 6px;
-  color: #a63e33;
-  background: #fff6f4;
+  border: 1px solid rgba(211, 118, 106, 0.38);
+  border-radius: 12px;
+  color: #df9e97;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 11px;
 }
 .resident-appointment-error button {
@@ -388,10 +388,10 @@
   gap: 9px;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
   color: var(--brand-dark);
-  background: #eff6ff;
+  background: rgba(255, 255, 255, 0.047);
   font: inherit;
   font-size: 12px;
   font-weight: 730;
@@ -411,9 +411,9 @@
   gap: 13px;
   padding: 15px 17px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .cloud-summary-icon {
   width: 42px;
@@ -421,7 +421,7 @@
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -442,7 +442,7 @@
   font-size: 11px;
 }
 .cloud-summary-note {
-  color: #5e748e;
+  color: #a0aec0;
   font-size: 11px;
 }
 .cloud-summary-note svg {
@@ -453,9 +453,9 @@
 .cloud-panel {
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .cloud-panel-head {
   display: flex;
@@ -494,9 +494,9 @@
   gap: 6px;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #4d6680;
-  background: white;
+  border-radius: 12px;
+  color: #adbdcd;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -507,12 +507,12 @@
   height: 15px;
 }
 .cloud-folders button em {
-  color: #8aa0b6;
+  color: #718ca6;
   font-style: normal;
   font-weight: 600;
 }
 .cloud-folders button.active {
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   color: var(--brand-dark);
   background: var(--brand-soft);
 }
@@ -526,16 +526,16 @@
   margin-left: auto;
 }
 .cloud-folder-tools button.danger {
-  color: #a23b2f;
+  color: #e19e96;
 }
 .cloud-move {
   height: 34px;
   max-width: 130px;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #4d6680;
-  background: white;
+  border-radius: 12px;
+  color: #adbdcd;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
 }
@@ -547,9 +547,9 @@
   gap: 9px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #7890aa;
-  background: #f8fafc;
+  border-radius: 12px;
+  color: #8198b0;
+  background: rgba(255, 255, 255, 0.038);
 }
 .cloud-search svg {
   width: 17px;
@@ -566,15 +566,15 @@
   font-size: 12px;
 }
 .cloud-search input::placeholder {
-  color: #91a1b3;
+  color: #74899f;
 }
 .cloud-error {
   margin: 14px 20px 0;
   padding: 10px 12px;
-  border: 1px solid #f1c1b8;
+  border: 1px solid rgba(223, 114, 93, 0.38);
   border-radius: 5px;
-  color: #8d3028;
-  background: #fff5f3;
+  color: #e29e98;
+  background: rgba(255, 255, 255, 0.041);
   font-size: 12px;
 }
 .cloud-file-list {
@@ -586,7 +586,7 @@
   grid-template-columns: minmax(240px, 1fr) minmax(160px, 0.65fr) auto;
   align-items: center;
   gap: 13px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .cloud-file-row:last-child {
   border-bottom: 0;
@@ -597,7 +597,7 @@
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -612,7 +612,7 @@
   gap: 11px;
   padding: 8px 6px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: inherit;
   background: transparent;
   text-align: left;
@@ -621,7 +621,7 @@
   cursor: pointer;
 }
 .cloud-file-main:where(button):hover {
-  background: #f6f9fd;
+  background: rgba(255, 255, 255, 0.04);
 }
 .cloud-file-name {
   min-width: 0;
@@ -654,21 +654,21 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #6b829c;
-  background: white;
+  border-radius: 12px;
+  color: #92a3b6;
+  background: var(--glass-surface);
   cursor: pointer;
   text-decoration: none;
 }
 .cloud-actions .icon-button:hover {
-  border-color: #b9d4ff;
+  border-color: rgba(76, 139, 240, 0.38);
   color: var(--brand);
   background: var(--brand-soft);
 }
 .cloud-actions .icon-button.danger:hover {
-  border-color: #f3c3bd;
-  color: #be3f34;
-  background: #fff4f2;
+  border-color: rgba(225, 106, 91, 0.38);
+  color: #e19892;
+  background: rgba(255, 255, 255, 0.043);
 }
 .cloud-actions svg {
   width: 16px;
@@ -690,7 +690,7 @@
   display: grid;
   place-items: center;
   margin-bottom: 13px;
-  border-radius: 7px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -709,9 +709,9 @@
 .cloud-empty .secondary-button {
   min-height: 36px;
   padding-inline: 12px;
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   color: var(--brand-dark);
-  background: #eff6ff;
+  background: rgba(255, 255, 255, 0.047);
   box-shadow: none;
 }
 .cloud-file-thumb {
@@ -722,8 +722,8 @@
   flex: 0 0 auto;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f3f7fc;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.046);
 }
 .cloud-file-thumb img {
   object-fit: cover;
@@ -738,14 +738,14 @@
   pointer-events: none;
   transform: scale(0.19);
   transform-origin: top left;
-  background: white;
+  background: var(--glass-surface);
 }
 .cloud-pdf-thumb i {
   position: absolute;
   right: 2px;
   bottom: 2px;
   padding: 2px 3px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.056);
   border-radius: 3px;
   color: white;
   background: #c43e38;
@@ -770,10 +770,10 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 8px;
-  background: #f3f7fc;
-  box-shadow: 0 25px 80px rgba(2, 15, 30, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.046);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.52);
 }
 .cloud-preview-dialog > header,
 .cloud-preview-dialog > footer {
@@ -782,7 +782,7 @@
   justify-content: space-between;
   gap: 14px;
   padding: 14px 18px;
-  background: white;
+  background: var(--glass-surface);
 }
 .cloud-preview-dialog > header {
   border-bottom: 1px solid var(--line);
@@ -807,9 +807,9 @@
   flex: 0 0 auto;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #637a94;
-  background: white;
+  border-radius: 12px;
+  color: #9aaabc;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .cloud-preview-dialog > header .icon-button svg {
@@ -833,7 +833,7 @@
   width: 100%;
   height: min(68dvh, 720px);
   border: 0;
-  background: white;
+  background: var(--glass-surface);
 }
 .cloud-preview-content audio {
   width: min(560px, 100%);
@@ -906,7 +906,7 @@
   }
   .cloud-preview-dialog {
     max-height: 92dvh;
-    border-radius: 10px 10px 0 0;
+    border-radius: 16px 16px 0 0;
   }
   .cloud-preview-content {
     min-height: 200px;

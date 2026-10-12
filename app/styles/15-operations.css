@@ -5,8 +5,8 @@
 .med-stock-list article > button {
   min-height: 33px;
   padding: 0 8px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 8px;
@@ -15,8 +15,8 @@
 }
 .med-stock-list article > button.ordered {
   color: var(--success);
-  border-color: #aad6c7;
-  background: #e8f5ef;
+  border-color: rgba(124, 192, 169, 0.38);
+  background: rgba(255, 255, 255, 0.072);
 }
 .med-reserve-alert {
   grid-template-columns: auto minmax(0, 1fr);
@@ -34,7 +34,7 @@
 }
 .med-reserve-list > article {
   padding: 16px 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .med-reserve-list > article:last-child {
   border-bottom: 0;
@@ -66,8 +66,8 @@
 .med-reserve-rules > span {
   min-width: 0;
   padding: 9px;
-  border-radius: 6px;
-  background: #f6f9fd;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
 }
 .med-reserve-rules small,
 .med-reserve-rules strong,
@@ -101,8 +101,8 @@
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 9px;
@@ -111,7 +111,7 @@
 }
 .med-reserve-actions button:last-child {
   color: var(--critical);
-  border-color: #f0c3be;
+  border-color: rgba(219, 110, 98, 0.38);
   background: var(--critical-soft);
 }
 .med-reserve-actions svg {
@@ -127,8 +127,8 @@
   align-items: center;
   margin: 0;
   padding: 9px 0;
-  border-bottom: 1px solid #e9eef4;
-  color: #4f6478;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
+  color: #b3c0cd;
   font-size: 9px;
 }
 .med-reserve-log > div:last-child > p:last-child {
@@ -166,7 +166,7 @@
   gap: 11px;
   align-items: center;
   margin: 0 18px;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .operations-timeline-row:last-child {
   border-bottom: 0;
@@ -184,7 +184,7 @@
   height: 34px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -202,7 +202,7 @@
 }
 .operations-timeline-icon.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .operations-timeline-row strong,
 .operations-timeline-row small {
@@ -224,7 +224,7 @@
   border: 1px solid var(--line);
   border-radius: 50%;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .operations-timeline-row > button:hover,
@@ -277,7 +277,7 @@
 }
 .operations-note-list small {
   margin-top: 4px;
-  color: #566b7e;
+  color: #adbbc7;
   font-size: 9px;
   line-height: 1.4;
 }
@@ -295,15 +295,15 @@
   gap: 6px;
   padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
-  background: white;
+  background: var(--glass-surface);
   font-size: 9px;
   font-weight: 740;
   cursor: pointer;
 }
 .operations-quick button:hover {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .operations-quick button svg {
@@ -334,7 +334,7 @@
   gap: 12px;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .operations-history-list article:last-child {
   border-bottom: 0;
@@ -362,16 +362,16 @@
   gap: 5px;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
-  background: white;
+  background: var(--glass-surface);
   font-size: 8px;
   font-weight: 740;
   cursor: pointer;
 }
 .operations-history-list article > button:hover,
 .quiet-button:hover {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .operations-history-list article > button svg {
@@ -387,9 +387,9 @@
   flex: 0 0 auto;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 9px;
   font-weight: 730;
   cursor: pointer;
@@ -397,7 +397,7 @@
 .operations-filter-buttons button:hover,
 .operations-filter-buttons button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .task-list {
@@ -410,7 +410,7 @@
   gap: 10px;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .task-row:last-child {
   border-bottom: 0;
@@ -423,10 +423,10 @@
   height: 25px;
   display: grid;
   place-items: center;
-  border: 1px solid #b7c6d7;
+  border: 1px solid rgba(130, 156, 186, 0.38);
   border-radius: 50%;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .task-check:hover,
@@ -459,7 +459,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 8px;
 }
 .task-owner .avatar {
@@ -483,7 +483,7 @@
   gap: 10px;
   align-items: start;
   padding: 14px 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .handover-event-list article:last-child {
   border-bottom: 0;
@@ -508,7 +508,7 @@
 }
 .handover-event-list article.stable > .operations-timeline-icon {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .handover-event-list strong,
 .handover-event-list p,
@@ -520,7 +520,7 @@
 }
 .handover-event-list p {
   margin: 5px 0;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 10px;
   line-height: 1.4;
 }
@@ -530,7 +530,7 @@
 }
 .handover-event-list article > button {
   border: 0;
-  color: #9aabbe;
+  color: #66809c;
   background: transparent;
   cursor: pointer;
 }
@@ -547,15 +547,15 @@
   padding: 12px;
   resize: vertical;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: #fbfdff;
+  background: var(--glass-surface);
   font-size: 11px;
   line-height: 1.5;
 }
 .handover-editor textarea:focus {
-  outline: 3px solid rgba(37, 99, 235, 0.12);
-  border-color: #93c5fd;
+  outline: 3px solid rgba(124, 161, 243, 0.12);
+  border-color: rgba(76, 153, 240, 0.38);
 }
 .handover-editor-footer {
   display: flex;
@@ -565,7 +565,7 @@
   margin-top: 13px;
   padding: 13px 15px;
   border-top: 1px solid var(--line);
-  background: #f9fbfd;
+  background: rgba(255, 255, 255, 0.036);
 }
 .handover-editor-footer span {
   color: var(--muted);
@@ -578,7 +578,7 @@
   margin: 0;
   padding: 10px 15px;
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
   font-size: 9px;
 }
 .handover-saved svg {
@@ -599,10 +599,10 @@
   align-items: center;
   gap: 8px 10px;
   padding: 11px 14px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: #12376b;
-  box-shadow: 0 14px 38px rgba(15, 42, 82, 0.24);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.424);
   font-size: 13px;
   font-weight: 650;
   animation: fade-in 180ms ease;
@@ -625,7 +625,7 @@
 }
 .offline-status button {
   padding: 4px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.032);
   border-radius: 5px;
   color: white;
   background: transparent;
@@ -647,7 +647,7 @@
   justify-content: space-between;
   gap: 10px;
   padding: 7px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.014);
 }
 .offline-status-list strong,
 .offline-status-list small {
@@ -692,7 +692,7 @@
   border: 0;
   border-radius: 5px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-weight: 500;
 }

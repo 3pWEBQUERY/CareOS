@@ -28,9 +28,9 @@
   gap: 11px;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(28, 66, 112, 0.04);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.104);
 }
 .planning-metric-icon {
   width: 38px;
@@ -38,7 +38,7 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -51,11 +51,11 @@
 }
 .planning-metric-icon.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .planning-metric-icon.info {
-  color: #1684b8;
-  background: #e6f6ff;
+  color: #87cff1;
+  background: rgba(76, 181, 240, 0.18);
 }
 .planning-metrics > div > span:last-child {
   display: grid;
@@ -95,7 +95,7 @@
   align-items: center;
   gap: 11px;
   min-height: 66px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .planning-process-step:last-child {
   border-bottom: 0;
@@ -106,20 +106,20 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #7a90a8;
-  background: #eef3f8;
+  color: #8398ae;
+  background: rgba(255, 255, 255, 0.059);
 }
 .planning-process-step > span svg {
   width: 15px;
 }
 .planning-process-step.complete > span {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .planning-process-step.active > span {
   color: var(--brand);
   background: var(--brand-soft);
-  box-shadow: 0 0 0 4px #edf4ff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
 }
 .planning-process-step strong,
 .planning-process-step small {
@@ -135,15 +135,15 @@
 }
 .planning-process-step em {
   padding: 4px 7px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: #f5f7fa;
+  background: rgba(255, 255, 255, 0.046);
   font-size: 9px;
   font-style: normal;
 }
 .planning-process-step.complete em {
   color: var(--success);
-  background: #effaf4;
+  background: rgba(255, 255, 255, 0.055);
 }
 .planning-process-step.active em {
   color: var(--brand-dark);
@@ -155,9 +155,9 @@
   gap: 11px;
   margin: 0 18px 18px;
   padding: 13px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  background: #f3f7ff;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.041);
 }
 .planning-focus-icon {
   width: 31px;
@@ -165,9 +165,9 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
-  background: #dbeafe;
+  background: rgba(76, 146, 240, 0.18);
 }
 .planning-focus-icon svg {
   width: 16px;
@@ -185,7 +185,7 @@
   font-size: 11px;
 }
 .planning-focus-row small {
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 9px;
 }
 .planning-focus-row .quiet-button {
@@ -207,7 +207,7 @@
   justify-content: space-between;
   gap: 12px;
   padding-top: 9px;
-  border-top: 1px solid #edf1f5;
+  border-top: 1px solid rgba(255, 255, 255, 0.082);
 }
 .planning-context-list span {
   color: var(--muted);
@@ -229,7 +229,7 @@
   grid-template-columns: 45px minmax(0, 1fr);
   gap: 8px;
   padding: 11px 2px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .planning-team-list > div:last-child {
   border-bottom: 0;
@@ -268,9 +268,9 @@
   min-height: 30px;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 9px;
   font-weight: 730;
   cursor: pointer;
@@ -278,7 +278,7 @@
 .planning-board-filters button.active,
 .planning-board-filters button:hover {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .planning-goal-list {
@@ -289,8 +289,8 @@
 .planning-goal-card {
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fbfdff;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .planning-goal-head {
   display: grid;
@@ -303,7 +303,7 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -336,14 +336,14 @@
   height: 8px;
   display: block;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .planning-goal-progress i,
 .planning-score-card > div i {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: linear-gradient(90deg, var(--brand), #60a5fa);
 }
 .planning-goal-progress small {
@@ -376,9 +376,9 @@
   align-items: center;
   padding: 13px 18px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -393,7 +393,7 @@
   height: 30px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -414,16 +414,16 @@
 }
 .planning-action-tile > svg {
   width: 13px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .planning-goal-note {
   display: flex;
   gap: 8px;
   margin: 14px 18px 18px;
   padding: 11px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--success);
-  background: #effaf4;
+  background: rgba(255, 255, 255, 0.055);
 }
 .planning-goal-note > svg {
   width: 16px;
@@ -434,12 +434,12 @@
   display: block;
 }
 .planning-goal-note strong {
-  color: #256d49;
+  color: #a0dfbf;
   font-size: 10px;
 }
 .planning-goal-note small {
   margin-top: 3px;
-  color: #4f7560;
+  color: #b5cdc0;
   font-size: 8px;
   line-height: 1.4;
 }
@@ -463,8 +463,8 @@
 }
 .planning-evaluation-row {
   min-height: 69px;
-  border-bottom: 1px solid #edf1f5;
-  color: #4f6478;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
+  color: #b3c0cd;
   font-size: 10px;
 }
 .planning-evaluation-row:last-child {
@@ -491,13 +491,13 @@
   height: 5px;
   display: block;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .planning-evaluation-row > span:nth-child(3) em {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: #60a5fa;
 }
 .planning-score-card {

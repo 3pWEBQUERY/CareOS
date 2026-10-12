@@ -11,16 +11,16 @@
   min-height: 30px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 720;
   cursor: pointer;
 }
 .worklist-filters button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .worklist-list {
@@ -35,7 +35,7 @@
   gap: 14px;
   align-items: start;
   padding: 12px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .worklist-resident:last-child {
   border-bottom: 0;
@@ -76,14 +76,14 @@
   padding: 7px 10px;
   border: 1px solid var(--line);
   border-left-width: 3px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
 .worklist-item:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .worklist-item svg {
   width: 16px;
@@ -159,7 +159,7 @@
   display: grid;
   place-items: center;
   padding: 0 4px;
-  border: 2px solid #0b1f3a;
+  border: 2px solid #f5f7fa;
   border-radius: 999px;
   color: white;
   background: var(--critical);
@@ -185,7 +185,7 @@
 }
 .shortcut-trigger.open {
   color: var(--brand);
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .shortcut-dropdown {
@@ -196,9 +196,9 @@
   z-index: 30;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
-  box-shadow: 0 22px 60px rgba(5, 27, 35, 0.18);
+  border-radius: 14px;
+  background: var(--glass-surface);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.328);
   animation: fade-in 140ms ease;
 }
 .shortcut-dropdown > header {
@@ -256,11 +256,11 @@
 .shortcut-group kbd {
   min-width: 22px;
   padding: 2px 6px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.13);
   border-bottom-width: 2px;
   border-radius: 5px;
-  color: #334155;
-  background: #f8fafc;
+  color: #d2d9e4;
+  background: rgba(255, 255, 255, 0.038);
   font-family: inherit;
   font-size: 10px;
   font-weight: 750;
@@ -293,9 +293,9 @@
   gap: 6px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 11px;
   font-weight: 740;
   text-decoration: none;
@@ -304,7 +304,7 @@
 .page-tabs a:hover,
 .page-tabs a.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .page-tabs em {

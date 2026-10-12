@@ -64,11 +64,11 @@
     align-items: center;
     justify-content: space-between;
     padding: 0 18px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.72);
-    background: rgba(255, 255, 255, 0.58);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.058);
+    background: rgba(255, 255, 255, 0.046);
     box-shadow:
       inset 0 -1px 0 rgba(157, 184, 216, 0.18),
-      0 5px 20px rgba(31, 63, 101, 0.06);
+      0 5px 20px rgba(0, 0, 0, 0.136);
     backdrop-filter: blur(24px) saturate(170%);
     -webkit-backdrop-filter: blur(24px) saturate(170%);
   }
@@ -82,7 +82,7 @@
     color: var(--brand);
     background: var(--brand-soft);
     border-color: transparent;
-    border-radius: 6px;
+    border-radius: 12px;
   }
   .mobile-top .brand-mark svg {
     width: 20px;
@@ -370,12 +370,12 @@
     overflow-y: auto;
     padding-bottom: 78px;
     transform: translateX(50%);
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.022);
     border-radius: 28px;
     background: rgba(12, 31, 58, 0.78);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      0 18px 42px rgba(9, 31, 64, 0.3);
+      0 18px 42px rgba(0, 0, 0, 0.52);
     backdrop-filter: blur(30px) saturate(180%);
     -webkit-backdrop-filter: blur(30px) saturate(180%);
     animation: mobile-glass-pop 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -386,7 +386,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 17px 18px 13px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.011);
     color: white;
   }
   .mobile-nav-menu-head .eyebrow {
@@ -402,10 +402,10 @@
     height: 32px;
     display: grid;
     place-items: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.016);
     border-radius: 50%;
     color: #dbeafe;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.008);
     cursor: pointer;
   }
   .mobile-nav-menu-head button svg {
@@ -443,7 +443,7 @@
     border: 1px solid transparent;
     border-radius: 14px;
     color: #e7f0ff;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.005);
     text-align: left;
     cursor: pointer;
     transition: 150ms ease;
@@ -451,7 +451,7 @@
   .mobile-nav-groups > button:hover,
   .mobile-nav-groups > button:focus-visible,
   .mobile-nav-groups > button.active {
-    border-color: rgba(147, 197, 253, 0.4);
+    border-color: rgba(76, 153, 240, 0.152);
     background: rgba(37, 99, 235, 0.35);
   }
   .mobile-nav-group-icon {
@@ -459,7 +459,7 @@
     height: 36px;
     display: grid;
     place-items: center;
-    border-radius: 11px;
+    border-radius: 18px;
     color: #bfdbfe;
     background: rgba(147, 197, 253, 0.18);
   }
@@ -475,7 +475,7 @@
   }
   .mobile-nav-groups small {
     margin-top: 3px;
-    color: #adc2df;
+    color: #506d95;
     font-size: 10px;
   }
   .mobile-nav-groups > button > svg {
@@ -513,10 +513,10 @@
     justify-content: space-between;
     gap: 12px;
     padding: 9px 11px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.008);
+    border-radius: 18px;
     color: #edf5ff;
-    background: rgba(255, 255, 255, 0.075);
+    background: rgba(255, 255, 255, 0.006);
     text-align: left;
     font-size: 12px;
     font-weight: 650;
@@ -525,7 +525,7 @@
   }
   .mobile-nav-subgroups section button:hover,
   .mobile-nav-subgroups section button:focus-visible {
-    border-color: rgba(147, 197, 253, 0.45);
+    border-color: rgba(76, 153, 240, 0.171);
     background: rgba(37, 99, 235, 0.38);
   }
   .mobile-nav-subgroups section button svg {
@@ -544,13 +544,13 @@
     transform: translateX(50%);
     overflow-x: auto;
     scrollbar-width: none;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.02);
     border-radius: 999px;
     background: rgba(12, 31, 58, 0.62);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.25),
-      inset 0 -10px 24px rgba(4, 16, 35, 0.2),
-      0 14px 34px rgba(9, 31, 64, 0.28);
+      inset 0 -10px 24px rgba(0, 0, 0, 0.36),
+      0 14px 34px rgba(0, 0, 0, 0.488);
     backdrop-filter: blur(28px) saturate(180%);
     -webkit-backdrop-filter: blur(28px) saturate(180%);
     pointer-events: none;
@@ -586,8 +586,8 @@
   .bottom-nav button:hover,
   .bottom-nav button:focus-visible {
     color: white;
-    border-color: rgba(191, 219, 254, 0.24);
-    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(76, 149, 240, 0.091);
+    background: rgba(255, 255, 255, 0.008);
     transform: translateY(-1px);
   }
 }

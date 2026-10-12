@@ -19,7 +19,7 @@
 .fluids-table-head {
   min-height: 38px;
   color: var(--muted);
-  background: #f8fbff;
+  background: var(--glass-surface);
   font-size: 8px;
   font-weight: 760;
   text-transform: uppercase;
@@ -29,9 +29,9 @@
   min-height: 78px;
   padding: 11px 0;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
-  color: #4f6478;
-  background: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
+  color: #b3c0cd;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -76,13 +76,13 @@
   height: 6px;
   display: block;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .fluids-progress em {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: #27a876;
 }
 .fluids-progress b {
@@ -91,7 +91,7 @@
 }
 .fluids-table > button > svg {
   width: 13px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .fluids-detail {
   display: grid;
@@ -107,9 +107,9 @@
   display: grid;
   place-items: center;
   margin: 18px auto;
-  border: 11px solid #dcecfb;
+  border: 11px solid rgba(81, 161, 235, 0.38);
   border-top-color: var(--brand);
-  border-right-color: #60a5fa;
+  border-right-color: #6facf7;
   border-radius: 50%;
 }
 .fluid-ring > div {
@@ -136,7 +136,7 @@
   grid-template-columns: 48px minmax(0, 1fr);
   gap: 9px;
   padding: 10px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .fluid-detail-list time {
   color: var(--brand);
@@ -165,7 +165,7 @@
   gap: 9px;
   padding: 17px;
   color: var(--brand);
-  background: #f3f7ff;
+  background: rgba(255, 255, 255, 0.041);
 }
 .fluid-guidance-card > svg {
   width: 18px;
@@ -178,7 +178,7 @@
 }
 .fluid-guidance-card p {
   margin: 4px 0 0;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 9px;
   line-height: 1.45;
 }
@@ -226,9 +226,9 @@
   min-height: 32px;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 9px;
   font-weight: 730;
   cursor: pointer;
@@ -236,7 +236,7 @@
 .development-controls > div button.active,
 .development-controls > div button:hover {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .development-chart {
@@ -263,7 +263,7 @@
 }
 .development-plot > i {
   display: block;
-  border-top: 1px dashed #dfe8f2;
+  border-top: 1px dashed rgba(255, 255, 255, 0.097);
 }
 .development-plot svg {
   position: absolute;
@@ -298,7 +298,7 @@
   height: 10px;
   display: inline-block;
   border-radius: 50%;
-  background: #dbeafe;
+  background: rgba(76, 146, 240, 0.18);
 }
 .development-legend i.line {
   width: 18px;
@@ -314,9 +314,9 @@
   align-items: center;
   padding: 11px 18px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -341,14 +341,14 @@
 }
 .development-insight-card > button > svg {
   width: 13px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .development-note-card {
   display: flex;
   gap: 9px;
   padding: 17px;
   color: var(--brand);
-  background: #f3f7ff;
+  background: rgba(255, 255, 255, 0.041);
 }
 .development-note-card > svg {
   width: 18px;
@@ -361,7 +361,7 @@
 }
 .development-note-card p {
   margin: 4px 0 0;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 9px;
   line-height: 1.45;
 }
@@ -374,7 +374,7 @@
   gap: 10px;
   align-items: center;
   min-height: 76px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .threshold-list article:last-child {
   border-bottom: 0;
@@ -384,7 +384,7 @@
   height: 33px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -400,8 +400,8 @@
   background: var(--critical-soft);
 }
 .threshold-icon.info {
-  color: #1684b8;
-  background: #e6f6ff;
+  color: #87cff1;
+  background: rgba(76, 181, 240, 0.18);
 }
 .threshold-list strong,
 .threshold-list small {
@@ -441,13 +441,13 @@
   height: 8px;
   margin-top: 8px;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .threshold-summary-card > div i {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: linear-gradient(90deg, var(--brand), #60a5fa);
 }
 .threshold-summary-card > small {
@@ -457,7 +457,7 @@
 .threshold-personal-card > p {
   margin: 0;
   padding: 15px 18px 7px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 10px;
   line-height: 1.5;
 }

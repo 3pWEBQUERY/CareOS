@@ -29,7 +29,7 @@ body.office-open {
   gap: 6px;
   padding: 0 12px 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -61,7 +61,7 @@ body.office-open {
   min-height: 28px;
   padding: 2px 6px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -115,7 +115,7 @@ body.office-open {
   gap: 7px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -132,7 +132,7 @@ body.office-open {
   background: var(--brand-soft);
 }
 .office-action:disabled {
-  color: #9aabbe;
+  color: #66809c;
   cursor: not-allowed;
 }
 .office-banner {
@@ -159,7 +159,7 @@ body.office-open {
   min-height: 32px;
   padding: 0 12px;
   border: 1px solid currentColor;
-  border-radius: 6px;
+  border-radius: 12px;
   color: inherit;
   background: var(--surface);
   font: inherit;
@@ -250,7 +250,7 @@ body.office-open {
   gap: 5px;
   padding: 0 6px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -270,11 +270,11 @@ body.office-open {
 }
 .office-tool.active {
   color: var(--brand-dark);
-  border-color: #bcd0fb;
+  border-color: rgba(76, 128, 240, 0.38);
   background: var(--brand-soft);
 }
 .office-tool:disabled {
-  color: #a7b5c6;
+  color: #5e7692;
   cursor: not-allowed;
 }
 .office-tool.with-text {
@@ -340,7 +340,7 @@ body.office-open {
   height: 4px;
   margin-top: -2px;
   border-radius: 2px;
-  box-shadow: inset 0 0 0 1px rgba(16, 42, 67, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.328);
 }
 
 /* Aufklappfelder */
@@ -352,10 +352,10 @@ body.office-open {
   overflow: auto;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
-  box-shadow: 0 18px 44px rgba(15, 42, 67, 0.2);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
   font-family: Arial, Helvetica, sans-serif;
 }
 .office-popover.wide {
@@ -372,7 +372,7 @@ body.office-open {
   gap: 10px;
   padding: 0 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -403,7 +403,7 @@ body.office-open {
   background: var(--critical-soft);
 }
 .office-menu button:disabled {
-  color: #a7b5c6;
+  color: #5e7692;
   cursor: not-allowed;
 }
 .office-menu-separator {
@@ -417,9 +417,9 @@ body.office-open {
   width: 250px;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 18px 44px rgba(15, 42, 67, 0.2);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
 }
 .office-context-backdrop {
   position: fixed;
@@ -440,7 +440,7 @@ body.office-open {
   width: 22px;
   height: 22px;
   padding: 0;
-  border: 1px solid rgba(16, 42, 67, 0.16);
+  border: 1px solid rgba(238, 242, 246, 0.16);
   border-radius: 4px;
   cursor: pointer;
 }
@@ -453,7 +453,7 @@ body.office-open {
   min-height: 32px;
   margin-bottom: 4px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -489,7 +489,7 @@ body.office-open {
   min-height: 36px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -497,7 +497,7 @@ body.office-open {
 }
 .office-form input:focus {
   border-color: var(--brand);
-  outline: 2px solid rgba(37, 99, 235, 0.18);
+  outline: 2px solid rgba(124, 161, 243, 0.18);
 }
 .office-form-actions {
   display: flex;
@@ -510,7 +510,7 @@ body.office-open {
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -537,7 +537,7 @@ body.office-open {
 .office-segmented button.active,
 .office-toggle.active {
   color: var(--brand-dark);
-  border-color: #bcd0fb;
+  border-color: rgba(76, 128, 240, 0.38);
   background: var(--brand-soft);
 }
 .office-toggle {
@@ -630,7 +630,7 @@ body.office-open {
   min-height: 26px;
   padding: 0 7px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   font: inherit;
@@ -650,7 +650,7 @@ body.office-open {
 .office-undo button {
   padding: 3px 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--surface);
   font: inherit;
@@ -664,10 +664,10 @@ body.office-open {
   left: 50%;
   transform: translateX(-50%);
   padding: 10px 16px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: #102a43;
-  box-shadow: 0 12px 30px rgba(15, 42, 67, 0.28);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.488);
   font-size: 13px;
   font-weight: 650;
 }

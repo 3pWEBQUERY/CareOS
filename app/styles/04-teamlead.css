@@ -35,9 +35,9 @@
   gap: 6px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 11px;
   font-weight: 730;
   cursor: pointer;
@@ -45,7 +45,7 @@
 .notifications-filter-bar button:hover,
 .notifications-filter-bar button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .notifications-filter-bar button span {
@@ -53,9 +53,9 @@
   height: 18px;
   display: inline-grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
-  background: white;
+  background: var(--glass-surface);
   font-size: 10px;
 }
 .notifications-page-list {
@@ -70,14 +70,14 @@
   gap: 13px;
   padding: 13px 2px;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
 .notifications-bundle {
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .notifications-bundle:last-child {
   border-bottom: 0;
@@ -98,13 +98,13 @@
 }
 .notifications-page-row:hover,
 .notifications-page-row:focus-visible {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .notifications-page-row.unread {
   margin-inline: -8px;
   padding-inline: 10px;
-  border-radius: 6px;
-  background: #f7faff;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.036);
   box-shadow: inset 3px 0 0 var(--brand);
 }
 .notifications-page-icon {
@@ -112,7 +112,7 @@
   height: 41px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -130,7 +130,7 @@
 }
 .notifications-page-icon.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .notifications-page-copy {
   min-width: 0;
@@ -151,7 +151,7 @@
 .notifications-page-copy small {
   display: block;
   margin-top: 5px;
-  color: #536a82;
+  color: #aab9c9;
   font-size: 12px;
   line-height: 1.4;
 }
@@ -166,7 +166,7 @@
 }
 .notifications-page-meta > .chevron {
   width: 15px;
-  color: #9aabb9;
+  color: #6d869a;
 }
 .notifications-empty {
   display: grid;
@@ -180,9 +180,9 @@
   width: 30px;
   height: 30px;
   padding: 6px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .notifications-empty strong {
   color: var(--ink);
@@ -244,9 +244,9 @@
   gap: 13px;
   padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .teamlead-metric-icon {
   width: 43px;
@@ -254,7 +254,7 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -267,8 +267,8 @@
   background: var(--attention-soft);
 }
 .teamlead-metric-icon.tone-2 {
-  color: #6f7f91;
-  background: #edf2f7;
+  color: #9ba6b3;
+  background: rgba(255, 255, 255, 0.062);
 }
 .teamlead-metrics article > div {
   min-width: 0;
@@ -302,9 +302,9 @@
 .teamlead-panel {
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .teamlead-panel-head {
   display: flex;
@@ -334,14 +334,14 @@
   place-items: center;
   flex: 0 0 auto;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #627b96;
-  background: white;
+  border-radius: 12px;
+  color: #99aabc;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .teamlead-icon-button:hover {
   color: var(--brand);
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .teamlead-icon-button svg {
@@ -367,8 +367,8 @@
 }
 .teamlead-table-row {
   min-height: 78px;
-  border-top: 1px solid #edf1f5;
-  color: #50667d;
+  border-top: 1px solid rgba(255, 255, 255, 0.082);
+  color: #afbdcc;
   font-size: 11px;
 }
 .teamlead-person {
@@ -385,7 +385,7 @@
   flex: 0 0 auto;
   border-radius: 50%;
   color: var(--brand);
-  background: #dbeafe;
+  background: rgba(76, 146, 240, 0.18);
   font-size: 11px;
 }
 .teamlead-person > span {
@@ -419,9 +419,9 @@
   justify-self: start;
   gap: 5px;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
   font-size: 9px;
   font-weight: 760;
   white-space: nowrap;
@@ -433,8 +433,8 @@
   background: currentColor;
 }
 .teamlead-status.archived {
-  color: #6b7b8e;
-  background: #edf1f5;
+  color: #9ea9b6;
+  background: rgba(255, 255, 255, 0.065);
 }
 .teamlead-row-menu {
   display: inline-flex;
@@ -442,7 +442,7 @@
   gap: 5px;
   justify-self: end;
   border: 0;
-  color: #607890;
+  color: #9eaebe;
   background: transparent;
   font-size: 9px;
   font-weight: 700;
@@ -474,13 +474,13 @@
   justify-content: space-between;
   gap: 10px;
   padding: 11px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .teamlead-role-breakdown span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #50667d;
+  color: #afbdcc;
   font-size: 10px;
 }
 .role-dot {
@@ -509,10 +509,10 @@
   display: flex;
   gap: 10px;
   padding: 17px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
   color: var(--brand);
-  background: linear-gradient(135deg, #f5f9ff, #eef6ff);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.038), rgba(255, 255, 255, 0.049));
 }
 .teamlead-info-card > svg {
   width: 20px;
@@ -526,7 +526,7 @@
 }
 .teamlead-info-card p {
   margin: 4px 0 0;
-  color: #526a83;
+  color: #aab9ca;
   font-size: 10px;
   line-height: 1.45;
 }
@@ -539,7 +539,7 @@
   grid-template-columns: 52px 15px minmax(0, 1fr) auto 36px;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .teamlead-shift:last-child {
   border-bottom: 0;
@@ -559,10 +559,10 @@
 .teamlead-shift-line {
   width: 9px;
   height: 9px;
-  border: 3px solid #a8c9ff;
+  border: 3px solid rgba(76, 138, 240, 0.38);
   border-radius: 50%;
-  background: white;
-  box-shadow: 0 0 0 3px #eff6ff;
+  background: var(--glass-surface);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
 }
 .teamlead-shift > div {
   min-width: 0;
@@ -580,7 +580,7 @@
 }
 .teamlead-shift > div span {
   margin-top: 4px;
-  color: #50667d;
+  color: #afbdcc;
   font-size: 10px;
 }
 .teamlead-shift > div small {
@@ -606,7 +606,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #50667d;
+  color: #afbdcc;
   font-size: 10px;
 }
 .teamlead-planning-card span svg {
@@ -626,7 +626,7 @@
   grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
   gap: 14px;
   padding: 18px 20px 20px;
-  background: #f7faff;
+  background: rgba(255, 255, 255, 0.036);
 }
 .teamlead-task-column {
   min-width: 0;
@@ -636,7 +636,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
-  color: #50667d;
+  color: #afbdcc;
   font-size: 11px;
   font-weight: 750;
 }
@@ -647,7 +647,7 @@
   place-items: center;
   border-radius: 50%;
   color: var(--brand-dark);
-  background: #dbeafe;
+  background: rgba(76, 146, 240, 0.18);
   font-size: 10px;
 }
 .teamlead-task-column > div {
@@ -659,9 +659,9 @@
   gap: 9px;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 4px 12px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.096);
 }
 .teamlead-task-card > div {
   display: flex;

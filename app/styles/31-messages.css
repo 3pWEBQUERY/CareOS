@@ -14,13 +14,13 @@
 }
 .resident-contact-card {
   padding: 13px;
-  border: 1px solid #e3eaf3;
-  border-radius: 7px;
-  background: #fbfcfe;
+  border: 1px solid rgba(255, 255, 255, 0.093);
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .resident-contact-card:hover {
-  border-color: #bed6f7;
-  background: #f7faff;
+  border-color: rgba(82, 146, 234, 0.38);
+  background: rgba(255, 255, 255, 0.036);
 }
 .resident-contact-card-head {
   display: grid;
@@ -35,7 +35,7 @@
   place-items: center;
   border-radius: 50%;
   color: var(--brand);
-  background: #dbeafe;
+  background: rgba(76, 146, 240, 0.18);
   font-size: 10px;
   font-weight: 800;
 }
@@ -63,26 +63,26 @@
 .resident-contact-badges span {
   padding: 4px 6px;
   border-radius: 4px;
-  color: #286a57;
-  background: #e6f5ef;
+  color: #a2dccb;
+  background: rgba(255, 255, 255, 0.075);
   font-size: 8px;
   font-weight: 800;
 }
 .resident-contact-badges span.emergency {
-  color: #9a5d00;
-  background: #fff3d7;
+  color: #f9cb85;
+  background: rgba(240, 191, 76, 0.18);
 }
 .resident-contact-details {
   display: grid;
   gap: 4px;
   margin: 11px 0;
   padding: 9px 0;
-  border-top: 1px solid #e7edf4;
-  border-bottom: 1px solid #e7edf4;
+  border-top: 1px solid rgba(255, 255, 255, 0.088);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.088);
 }
 .resident-contact-details a {
   overflow: hidden;
-  color: #55708e;
+  color: #a1b3c7;
   font-size: 10px;
   text-decoration: none;
   text-overflow: ellipsis;
@@ -105,20 +105,20 @@
   padding: 0 7px;
   border: 1px solid var(--line);
   border-radius: 5px;
-  color: #57708c;
-  background: #fff;
+  color: #a2b3c5;
+  background: var(--glass-surface);
   font-size: 9px;
   font-weight: 750;
   cursor: pointer;
 }
 .resident-contact-actions button:hover {
   color: var(--brand);
-  border-color: #a7caf9;
+  border-color: rgba(76, 146, 240, 0.38);
   background: var(--brand-soft);
 }
 .resident-contact-actions button.danger:hover {
   color: var(--critical);
-  border-color: #f1b5ac;
+  border-color: rgba(227, 107, 89, 0.38);
   background: var(--critical-soft);
 }
 .resident-contact-actions svg {
@@ -133,9 +133,9 @@
 .resident-contacts-error {
   margin: 0 12px 12px;
   padding: 9px;
-  border: 1px solid #f0b4ab;
+  border: 1px solid rgba(226, 108, 91, 0.38);
   border-radius: 5px;
-  color: #903a30;
+  color: #dea29b;
   background: var(--critical-soft);
   font-size: 10px;
 }
@@ -181,10 +181,10 @@
   width: min(680px, 100%);
   max-height: calc(100dvh - 48px);
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 10px;
-  background: #f8fbff;
-  box-shadow: 0 26px 68px rgba(11, 32, 59, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.056);
+  border-radius: 16px;
+  background: var(--glass-surface);
+  box-shadow: 0 26px 68px rgba(0, 0, 0, 0.55);
 }
 .contact-editor-panel > header {
   display: flex;
@@ -193,7 +193,7 @@
   gap: 18px;
   padding: 24px 27px 20px;
   border-bottom: 1px solid var(--line);
-  background: #fff;
+  background: var(--glass-surface);
 }
 .contact-editor-panel h3 {
   margin: 3px 0 0;
@@ -212,9 +212,9 @@
   place-items: center;
   flex: 0 0 auto;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #607890;
-  background: #fff;
+  border-radius: 12px;
+  color: #9eaebe;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .contact-editor-panel > header > button:hover {
@@ -235,7 +235,7 @@
 .contact-editor-form-grid label {
   display: grid;
   gap: 7px;
-  color: #4a627e;
+  color: #afbed0;
   font-size: 11px;
   font-weight: 750;
 }
@@ -247,15 +247,15 @@
   height: 42px;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   outline: 0;
   color: var(--ink);
-  background: #fff;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
 }
 .contact-editor-form-grid input:focus {
-  border-color: #8dbbf9;
+  border-color: rgba(76, 146, 240, 0.38);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 .contact-editor-options {
@@ -268,7 +268,7 @@
 }
 .contact-editor-options legend {
   margin-bottom: 9px;
-  color: #4a627e;
+  color: #afbed0;
   font-size: 11px;
   font-weight: 750;
 }
@@ -280,8 +280,8 @@
   gap: 8px;
   padding: 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
+  border-radius: 12px;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .contact-editor-options input {
@@ -308,16 +308,16 @@
   height: 18px;
   display: grid;
   place-items: center;
-  border: 1px solid #bdcad8;
+  border: 1px solid rgba(133, 157, 183, 0.38);
   border-radius: 50%;
   color: transparent;
-  background: #fff;
+  background: var(--glass-surface);
 }
 .contact-editor-options i svg {
   width: 12px;
 }
 .contact-editor-options label.active {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
   box-shadow: inset 3px 0 0 var(--brand);
 }
@@ -327,8 +327,8 @@
   background: var(--brand);
 }
 .contact-editor-options label.emergency.active {
-  border-color: #f0cf8e;
-  background: #fff8e7;
+  border-color: rgba(232, 182, 84, 0.38);
+  background: rgba(240, 192, 76, 0.18);
   box-shadow: inset 3px 0 0 var(--attention);
 }
 .contact-editor-options label.emergency.active i {
@@ -342,7 +342,7 @@
   margin: 24px -27px 0;
   padding: 16px 27px;
   border-top: 1px solid var(--line);
-  background: #fff;
+  background: var(--glass-surface);
 }
 .contact-editor-panel footer svg {
   width: 15px;
@@ -468,10 +468,10 @@
   gap: 12px;
   margin: -8px 0 16px;
   padding: 12px 14px;
-  border: 1px solid #f2cc8d;
-  border-radius: 8px;
-  color: #7b5511;
-  background: #fff9e9;
+  border: 1px solid rgba(235, 177, 81, 0.38);
+  border-radius: 14px;
+  color: #f0cd8f;
+  background: rgba(240, 196, 76, 0.18);
   font-size: 13px;
   font-weight: 650;
 }
@@ -482,7 +482,7 @@
   height: 28px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: inherit;
   background: transparent;
   cursor: pointer;
@@ -496,14 +496,14 @@
   min-height: 680px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
+  border-radius: 16px;
+  background: var(--glass-surface);
   box-shadow: 0 14px 34px rgba(43, 77, 120, 0.055);
 }
 .messages-conversations,
 .messages-people {
   min-width: 0;
-  background: #fbfcff;
+  background: var(--glass-surface);
 }
 .messages-conversations {
   border-right: 1px solid var(--line);
@@ -531,9 +531,9 @@
   padding: 0 12px;
   height: 40px;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #fff;
-  color: #71849c;
+  border-radius: 12px;
+  background: var(--glass-surface);
+  color: #91a0b2;
 }
 .messages-search svg {
   width: 17px;
@@ -559,7 +559,7 @@
   gap: 10px;
   padding: 11px 10px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -569,10 +569,10 @@
     box-shadow 140ms ease;
 }
 .messages-conversation:hover {
-  background: #f2f6fc;
+  background: rgba(255, 255, 255, 0.047);
 }
 .messages-conversation.is-active {
-  background: #eaf2ff;
+  background: rgba(76, 138, 240, 0.18);
   box-shadow: inset 3px 0 0 var(--brand);
 }
 .messages-avatar {
@@ -583,14 +583,14 @@
   flex: 0 0 auto;
   border-radius: 50%;
   color: var(--brand);
-  background: #dbeafe;
+  background: rgba(76, 146, 240, 0.18);
   font-size: 12px;
   font-weight: 800;
 }
 .messages-avatar.is-group {
-  border-radius: 8px;
-  color: #386eaa;
-  background: #e7f0ff;
+  border-radius: 14px;
+  color: #98b9dd;
+  background: rgba(76, 138, 240, 0.18);
 }
 .messages-avatar svg {
   width: 20px;
@@ -618,7 +618,7 @@
   display: grid;
   justify-items: end;
   gap: 5px;
-  color: #8090a5;
+  color: #8595a9;
   font-size: 10px;
 }
 .messages-conversation-meta b {
@@ -626,7 +626,7 @@
   height: 18px;
   display: grid;
   place-items: center;
-  border-radius: 9px;
+  border-radius: 16px;
   color: #fff;
   background: var(--brand);
   font-size: 9px;
@@ -641,7 +641,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #fff 0%, #f9fbff 100%);
+  background: linear-gradient(180deg, var(--glass-surface) 0%, var(--glass-surface) 100%);
 }
 .messages-thread-heading {
   min-height: 76px;
@@ -650,7 +650,7 @@
   gap: 11px;
   padding: 15px 22px;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.07);
 }
 .messages-thread-heading > div {
   display: grid;

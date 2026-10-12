@@ -42,7 +42,7 @@
   gap: 10px;
   padding: 0 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -98,7 +98,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .files-tree-row:hover {
   background: rgba(37, 99, 235, 0.06);
@@ -119,7 +119,7 @@
   place-items: center;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
@@ -141,7 +141,7 @@
   padding: 0 6px;
   overflow: hidden;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -159,13 +159,13 @@
 .files-tree-label > svg {
   width: 17px;
   height: 17px;
-  color: #c08a1c;
+  color: #eecc88;
 }
 .files-tree-row.active .files-tree-label {
   color: var(--brand-dark);
 }
 .files-tree-label:disabled {
-  color: #9aabbe;
+  color: #66809c;
   cursor: not-allowed;
 }
 .files-tree-empty {
@@ -212,7 +212,7 @@
   gap: 7px;
   padding: 0 11px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -230,11 +230,11 @@
   background: var(--brand-soft);
 }
 .files-command:disabled {
-  color: #9aabbe;
+  color: #66809c;
   cursor: not-allowed;
 }
 .files-command:disabled svg {
-  color: #9aabbe;
+  color: #66809c;
 }
 .files-command.primary {
   color: white;
@@ -266,9 +266,9 @@
   display: grid;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 16px 40px rgba(15, 42, 67, 0.16);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.296);
 }
 .files-menu button {
   min-height: 38px;
@@ -277,7 +277,7 @@
   gap: 10px;
   padding: 0 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -289,13 +289,13 @@
 .files-menu button > svg {
   width: 18px;
   height: 18px;
-  color: #c08a1c;
+  color: #eecc88;
 }
 .files-menu button:hover:not(:disabled) {
   background: var(--brand-soft);
 }
 .files-menu button:disabled {
-  color: #9aabbe;
+  color: #66809c;
   cursor: not-allowed;
 }
 .files-menu button.danger {
@@ -316,7 +316,7 @@
   gap: 4px;
   margin-left: 6px;
   padding: 4px 4px 4px 10px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 12px;
@@ -328,7 +328,7 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: transparent;
   cursor: pointer;
@@ -355,11 +355,11 @@
   gap: 8px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
 }
 .files-search:focus-within {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 .files-search svg {
@@ -380,7 +380,7 @@
   display: inline-flex;
   padding: 2px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .files-layout button {
   width: 32px;
@@ -388,7 +388,7 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
@@ -408,7 +408,7 @@
   gap: 6px;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -421,7 +421,7 @@
   color: var(--brand);
 }
 .files-details-toggle.active {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   color: var(--brand-dark);
   background: var(--brand-soft);
 }
@@ -438,13 +438,13 @@
   height: 6px;
   display: block;
   overflow: hidden;
-  border-radius: 6px;
-  background: #d5e3fb;
+  border-radius: 12px;
+  background: rgba(78, 137, 238, 0.18);
 }
 .files-progress b {
   height: 100%;
   display: block;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand);
   transition: width 200ms ease;
 }
@@ -455,10 +455,10 @@
   gap: 10px;
   margin: 12px 18px 0;
   padding: 10px 12px;
-  border: 1px solid #efbeb7;
-  border-radius: 6px;
-  color: #a63e33;
-  background: #fff2f0;
+  border: 1px solid rgba(220, 112, 96, 0.38);
+  border-radius: 12px;
+  color: #df9e97;
+  background: rgba(255, 255, 255, 0.046);
   font-size: 13px;
 }
 .files-error button {
@@ -503,7 +503,7 @@
   min-height: 30px;
   padding: 0 7px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   font: inherit;
@@ -551,9 +551,9 @@
   place-content: center;
   justify-items: center;
   gap: 6px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
-  background: rgba(234, 241, 255, 0.92);
+  background: rgba(76, 131, 240, 0.167);
   pointer-events: none;
 }
 .files-drop-hint svg {
@@ -575,7 +575,7 @@
   display: grid;
   flex: none;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .files-icon svg {
   width: 21px;
@@ -590,39 +590,39 @@
   height: 44px;
 }
 .files-icon.tone-folder {
-  color: #d39b29;
+  color: #e8c989;
 }
 .files-icon.tone-pdf {
-  color: #c2412d;
-  background: #fff0ed;
+  color: #e59a8e;
+  background: rgba(240, 103, 76, 0.18);
 }
 .files-icon.tone-word {
-  color: #1d5bd8;
-  background: #eaf1ff;
+  color: #84a7ee;
+  background: rgba(76, 131, 240, 0.18);
 }
 .files-icon.tone-excel {
-  color: #1c7a4b;
-  background: #e8f5ef;
+  color: #97e7bf;
+  background: rgba(255, 255, 255, 0.072);
 }
 .files-icon.tone-ppt {
-  color: #c4501a;
-  background: #fff3e9;
+  color: #efa786;
+  background: rgba(240, 151, 76, 0.18);
 }
 .files-icon.tone-image {
-  color: #7c3aed;
-  background: #f3edff;
+  color: #a67af3;
+  background: rgba(131, 76, 240, 0.18);
 }
 .files-icon.tone-media {
-  color: #0e7490;
-  background: #e6f6fa;
+  color: #89ddf4;
+  background: rgba(94, 197, 223, 0.18);
 }
 .files-icon.tone-note {
-  color: #475569;
-  background: #eef2f7;
+  color: #bfc8d4;
+  background: rgba(255, 255, 255, 0.061);
 }
 .files-icon.tone-plain {
-  color: #5f6f86;
-  background: #eef2f7;
+  color: #a6b0c0;
+  background: rgba(255, 255, 255, 0.061);
 }
 
 /* Liste */
@@ -648,7 +648,7 @@
   gap: 4px;
   padding: 4px 6px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: inherit;
   background: transparent;
   font: inherit;
@@ -668,7 +668,7 @@
 .files-table td {
   height: 50px;
   padding: 0 8px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--muted);
   white-space: nowrap;
 }
@@ -676,7 +676,7 @@
   cursor: default;
 }
 .files-table tbody tr:hover td {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .files-table tbody tr.selected td {
   background: var(--brand-soft);
@@ -688,10 +688,10 @@
     inset 0 -2px 0 var(--brand);
 }
 .files-table tbody tr td:first-child {
-  border-radius: 6px 0 0 6px;
+  border-radius: 12px 0 0 12px;
 }
 .files-table tbody tr td:last-child {
-  border-radius: 0 6px 6px 0;
+  border-radius: 0 12px 12px 0;
 }
 .files-col-check {
   width: 38px;
@@ -752,7 +752,7 @@
 }
 .files-version {
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 11px;
@@ -765,7 +765,7 @@
   display: inline-grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
@@ -800,13 +800,13 @@
   gap: 4px;
   padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
   cursor: default;
 }
 .files-tile:hover {
-  border-color: #b8cdee;
-  box-shadow: 0 6px 18px rgba(15, 42, 67, 0.07);
+  border-color: rgba(99, 145, 218, 0.38);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.152);
 }
 .files-tile.selected {
   border-color: var(--brand);
@@ -832,7 +832,7 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
 }
 .files-tile-visual img {
@@ -955,7 +955,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 8px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .files-versions li > span:first-child {
   display: grid;
@@ -1002,10 +1002,10 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px 10px 16px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: #0f2a43;
-  box-shadow: 0 18px 40px rgba(2, 15, 30, 0.3);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.52);
   font-size: 13px;
   transform: translateX(-50%);
 }
@@ -1016,9 +1016,9 @@
   min-height: 30px;
   padding: 0 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: #bfdbfe;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.006);
   font: inherit;
   font-weight: 750;
   cursor: pointer;
@@ -1043,7 +1043,7 @@
   gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -1072,7 +1072,7 @@
   overflow-y: auto;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
 }
 .files-tree[role="tree"] .files-tree-label > svg {
@@ -1135,7 +1135,7 @@
   gap: 8px;
   padding: 6px 10px 6px 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
   font-size: 13px;
   font-weight: 650;
@@ -1152,9 +1152,9 @@
   overflow: auto;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 13px;
   line-height: 1.55;

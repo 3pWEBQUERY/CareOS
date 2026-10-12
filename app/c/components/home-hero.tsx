@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Icon } from "./dashboard-shared";
 import { AppGrid, openAppLauncher, useApps } from "@/app/components/app-launcher";
 import { useNavigationBadges } from "@/app/components/care-context";
+import { SideClock } from "@/app/components/top-navigation";
 import type { DashboardState } from "./use-dashboard";
 
 export function HomeHero({ r, children }: { r: DashboardState; children: ReactNode }) {
@@ -38,23 +39,22 @@ export function HomeHero({ r, children }: { r: DashboardState; children: ReactNo
 }
 
 // Begrüssung mit Datum und Uhrzeit: ein Baustein wie alle anderen (verschieben, Breite, Bereich, ausblenden).
+// Links die grosse Uhr wie auf einem Sperrbildschirm, rechts die Begrüssung als ruhige Glas-Sprechblasen.
 export function HomeGreetingCard({ r }: { r: DashboardState }) {
-  const { formattedDate, formattedTime, greeting, firstName, currentScope } = r;
+  const { formattedDate, greeting, firstName, currentScope } = r;
   return (
     <div className="home-hero-intro home-greeting">
-      <div>
+      <SideClock className="home-side-clock" />
+      <div className="careos-bubbles">
         <p className="home-date">{formattedDate}</p>
-        <h1 id="page-title">
+        <h1 id="page-title" className="careos-bubble">
           {greeting}, {firstName}.
         </h1>
-        <p>
+        <p className="careos-bubble">
           Das ist dein Überblick für {currentScope}. Notizen, Aufgaben und {r.terms.prefix}-Neuigkeiten sind hier an
           einem Ort.
         </p>
-      </div>
-      <div className="home-clock" aria-label={`Aktuelle Uhrzeit ${formattedTime}`}>
-        <strong>{formattedTime}</strong>
-        <span>Uhr · Zürich</span>
+        <p className="careos-bubble">Wir können dort anfangen, wo du möchtest.</p>
       </div>
     </div>
   );

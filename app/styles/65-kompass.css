@@ -23,7 +23,7 @@
   flex: none;
   width: 44px;
   height: 44px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
   color: var(--brand);
   font-size: 22px;
@@ -47,7 +47,7 @@
   gap: 2px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .kompass-start-facts span {
   color: var(--muted);
@@ -89,7 +89,7 @@
   gap: 3px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .kompass-history strong {
   font-size: 13px;
@@ -134,13 +134,13 @@
 .kompass-progress {
   height: 8px;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
 }
 .kompass-progress span {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand);
   transition: width 0.25s ease;
 }
@@ -166,7 +166,7 @@
   min-height: 36px;
   padding: 6px 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   background: transparent;
   color: var(--ink);
   font-size: 13px;
@@ -214,7 +214,7 @@
 .kompass-note {
   margin: 16px 0 0;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
   color: var(--muted);
   font-size: 13px;
@@ -225,7 +225,7 @@
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-left: 3px solid var(--info);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--info-soft);
 }
 .kompass-facts strong {
@@ -266,7 +266,7 @@
   margin-bottom: 16px;
   padding: 10px 12px;
   border: 1px dashed var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 13px;
   line-height: 1.45;
 }
@@ -282,7 +282,7 @@
   gap: 8px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .kompass-item[data-answered="true"] {
   border-color: color-mix(in srgb, var(--brand) 30%, var(--line));
@@ -321,7 +321,7 @@
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--ink);
   font-size: 13px;
@@ -356,7 +356,7 @@
   margin: 0;
   padding: 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
 }
 .kompass-need legend {
@@ -462,7 +462,7 @@
   min-height: 72px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   outline: 0;
   color: var(--ink);
   background: var(--surface);
@@ -477,7 +477,7 @@
 .kompass-texts textarea:focus,
 .kompass-need textarea:focus,
 .kompass-summary textarea:focus {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 .kompass-history > .card-header {
@@ -512,7 +512,7 @@
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-left: 3px solid var(--brand);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .kompass-needs li strong {
   font-size: 13px;
@@ -546,7 +546,7 @@
   gap: 8px;
   margin: 0;
   padding: 12px 14px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
 }
 .kompass-adopt-facts dt {
@@ -563,7 +563,7 @@
 /* Bericht (Druck) */
 .kompass-sheet-note {
   margin: 0 0 10px;
-  color: #475569;
+  color: #bfc8d4;
   font-size: 11px;
   line-height: 1.45;
 }
@@ -578,7 +578,7 @@
 .kompass-sheet-domain dd small {
   display: block;
   margin-top: 2px;
-  color: #475569;
+  color: #bfc8d4;
   font-size: 10px;
 }
 .kompass-sheet-domain dl {
@@ -640,7 +640,7 @@
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -651,7 +651,7 @@
 }
 .kompass-statistics-row > svg {
   width: 13px;
-  color: #9aabbe;
+  color: #66809c;
   transition: transform 0.15s ease;
 }
 .kompass-statistics-list article.open .kompass-statistics-row > svg {
@@ -682,13 +682,13 @@
 .kompass-statistics-meter {
   height: 8px;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .kompass-statistics-meter span {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand);
 }
 .kompass-statistics-meter span.need {
@@ -705,8 +705,8 @@
   gap: 8px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f8fbff;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .kompass-statistics-item strong {
   font-size: 13px;
@@ -716,8 +716,8 @@
   gap: 2px;
   height: 10px;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .kompass-statistics-bar span {
   flex-basis: 0;
@@ -729,7 +729,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 12px;
 }
 .kompass-statistics-item li {
@@ -746,7 +746,7 @@
   border-radius: 50%;
 }
 .kompass-statistics .level-0 {
-  background: #bfdbfe;
+  background: rgba(76, 149, 240, 0.18);
 }
 .kompass-statistics .level-1 {
   background: #60a5fa;
@@ -809,8 +809,8 @@
   gap: 8px;
   margin-top: 12px;
   padding: 14px;
-  border: 1px solid #c7d7fe;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 124, 240, 0.38);
+  border-radius: 12px;
   background: var(--brand-soft);
 }
 .kompass-ai-draft p {

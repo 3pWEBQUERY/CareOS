@@ -6,7 +6,7 @@
   align-items: flex-start;
 }
 .house-resident-focus.archived {
-  border-color: #cfd7e1;
+  border-color: rgba(255, 255, 255, 0.126);
 }
 .house-resident-focus-body {
   padding: 18px;
@@ -37,7 +37,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   font-size: 12px;
 }
 .house-resident-focus-body dt {
@@ -54,10 +54,10 @@
   gap: 9px;
   margin: 0 0 15px;
   padding: 10px;
-  border-left: 3px solid #7b8794;
-  border-radius: 0 6px 6px 0;
-  color: #4d5c6b;
-  background: #f1f4f7;
+  border-left: 3px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0 12px 12px 0;
+  color: #bdc6cf;
+  background: rgba(255, 255, 255, 0.056);
   text-align: left;
 }
 .archive-privacy-note > svg {
@@ -72,7 +72,7 @@
 .archive-privacy-note small {
   display: block;
   margin-top: 3px;
-  color: #6e7b89;
+  color: #a2abb4;
   font-size: 11px;
 }
 .house-status-overview > div:last-child {
@@ -87,7 +87,7 @@
   gap: 9px;
   padding: 7px 5px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -111,7 +111,7 @@
 }
 .house-status-overview svg {
   width: 14px;
-  color: #91a2b2;
+  color: #768b9f;
 }
 
 .care-page-layout {
@@ -144,9 +144,9 @@
   flex: 0 0 auto;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 9px;
   font-weight: 720;
   cursor: pointer;
@@ -154,7 +154,7 @@
 .care-record-filters button:hover,
 .care-record-filters button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .care-resident-list {
@@ -171,10 +171,10 @@
   gap: 10px;
   padding: 11px 7px;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   border-radius: 0;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -182,10 +182,10 @@
   border-bottom: 0;
 }
 .care-resident-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .care-resident-row.selected {
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
   box-shadow: inset 3px 0 0 var(--brand);
 }
@@ -213,7 +213,7 @@
   display: -webkit-box;
   margin-top: 6px;
   overflow: hidden;
-  color: #4b6176;
+  color: #b5c3d0;
   font-size: 8px;
   font-style: normal;
   line-height: 1.35;
@@ -222,7 +222,7 @@
 }
 .care-resident-row > svg {
   width: 14px;
-  color: #91a2b2;
+  color: #768b9f;
 }
 .care-profile-workspace {
   min-width: 0;
@@ -311,7 +311,7 @@
   min-height: 42px;
   padding: 0 18px;
   color: var(--muted);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -328,9 +328,9 @@
   min-height: 91px;
   padding: 13px 0;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -338,12 +338,12 @@
   border-bottom: 0;
 }
 .wound-doc-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .wound-doc-row.selected {
   margin-inline: -8px;
   padding-inline: 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
   box-shadow: inset 3px 0 0 var(--brand);
 }
@@ -379,7 +379,7 @@
 .wound-doc-resident > span {
   display: block;
   margin-top: 6px;
-  color: #455b70;
+  color: #bac8d5;
   font-size: 9px;
 }
 .wound-doc-detail-body > .wound-focus-icon {
@@ -389,8 +389,8 @@
   margin-bottom: 10px;
   padding: 11px 12px;
   border-left: 3px solid var(--brand);
-  border-radius: 0 6px 6px 0;
-  background: #f7faff;
+  border-radius: 0 12px 12px 0;
+  background: rgba(255, 255, 255, 0.036);
 }
 .wound-doc-detail-body > section > span {
   display: block;
@@ -402,7 +402,7 @@
 }
 .wound-doc-detail-body > section p {
   margin: 5px 0 0;
-  color: #42586c;
+  color: #becbd7;
   font-size: 10px;
   line-height: 1.5;
 }
@@ -418,7 +418,7 @@
   gap: 9px;
   padding: 8px 5px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -478,9 +478,9 @@
   flex-direction: column;
   margin-top: 12vh;
   overflow: hidden;
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 28px 80px rgba(5, 27, 35, 0.28);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.488);
   animation: rise-in 180ms ease;
 }
 .search-input-wrap {
@@ -507,7 +507,7 @@
 .search-input-wrap button {
   padding: 5px 7px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 11px;
@@ -535,7 +535,7 @@
   gap: 14px;
   padding: 14px 12px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -561,7 +561,7 @@
 .house-timeline li {
   position: relative;
   padding: 9px 0 9px 16px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .house-timeline li:last-child {
   border-bottom: 0;
@@ -603,7 +603,7 @@
 }
 .house-timeline li p {
   margin: 5px 0 0;
-  color: #4d5c6b;
+  color: #bdc6cf;
   font-size: 12px;
   line-height: 1.5;
 }

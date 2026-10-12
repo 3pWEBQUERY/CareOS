@@ -6,16 +6,16 @@
 .data-import-error {
   margin: 0 18px 18px;
   padding: 11px 13px;
-  border: 1px solid #efbeb7;
-  border-radius: 6px;
-  color: #a63e33;
+  border: 1px solid rgba(220, 112, 96, 0.38);
+  border-radius: 12px;
+  color: #df9e97;
   background: var(--critical-soft);
   font-size: 12px;
 }
 .data-import-note {
   flex-basis: 100%;
   margin: 0;
-  color: #536a82;
+  color: #aab9c9;
   font-size: 12px;
   line-height: 1.5;
 }
@@ -31,7 +31,7 @@
   gap: 12px;
   align-items: center;
   padding: 9px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   font-size: 12px;
 }
@@ -47,10 +47,10 @@
   overflow-wrap: anywhere;
 }
 .data-import-row > span:last-child {
-  color: #2f6b3d;
+  color: #c6e0cc;
 }
 .data-import-row.has-errors > span:last-child {
-  color: #a63e33;
+  color: #df9e97;
   font-weight: 650;
 }
 .data-import-units {

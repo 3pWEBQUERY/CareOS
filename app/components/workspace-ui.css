@@ -75,7 +75,7 @@
   min-height: 32px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--ink);
   font-weight: 700;
@@ -110,7 +110,7 @@
 .form-note {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--attention-soft);
   color: var(--attention);
   font-size: 12px;

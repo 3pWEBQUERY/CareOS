@@ -14,7 +14,7 @@
   align-items: center;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   font-size: 13px;
   font-weight: 700;
@@ -42,7 +42,7 @@
   min-height: 30px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font-family: Consolas, "Liberation Mono", Menlo, monospace;
@@ -51,7 +51,7 @@
 .sheet-formula-field textarea:focus,
 .sheet-formula-field input:focus {
   border-color: var(--brand);
-  outline: 2px solid rgba(37, 99, 235, 0.18);
+  outline: 2px solid rgba(124, 161, 243, 0.18);
 }
 .sheet-suggest {
   position: absolute;
@@ -62,9 +62,9 @@
   display: grid;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: 0 16px 40px rgba(15, 42, 67, 0.18);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.328);
 }
 .sheet-suggest button,
 .sheet-suggest p {
@@ -73,7 +73,7 @@
   margin: 0;
   padding: 6px 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -111,7 +111,7 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  background: white;
+  background: var(--glass-surface);
   outline: none;
   user-select: none;
 }
@@ -125,7 +125,7 @@
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
-  color: #111827;
+  color: #f5f7fa;
   font-family: Calibri, Carlito, Arial, sans-serif;
   font-size: 14px;
 }
@@ -133,15 +133,15 @@
 .sheet-table td {
   height: inherit;
   padding: 0;
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid rgba(255, 255, 255, 0.096);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.096);
 }
 .sheet-table td {
   position: relative;
   max-width: 0;
   overflow: hidden;
   padding: 0 6px;
-  background: white;
+  background: var(--glass-surface);
   line-height: 1.25;
   text-overflow: clip;
   cursor: cell;
@@ -174,10 +174,10 @@
 }
 .sheet-table td.freeze-edge-col,
 .sheet-table th.freeze-edge-col {
-  border-right: 2px solid #9fb0c2;
+  border-right: 2px solid #617c99;
 }
 .sheet-table tr.sheet-frozen-row td.freeze-edge-row {
-  border-bottom: 2px solid #9fb0c2;
+  border-bottom: 2px solid #617c99;
 }
 .sheet-table thead th {
   position: sticky;
@@ -185,7 +185,7 @@
   z-index: 7;
   height: 26px;
   color: var(--muted);
-  background: #f2f5f9;
+  background: rgba(255, 255, 255, 0.052);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 650;
@@ -197,7 +197,7 @@
   left: 0;
   z-index: 5;
   color: var(--muted);
-  background: #f2f5f9;
+  background: rgba(255, 255, 255, 0.052);
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -210,7 +210,7 @@
 }
 .sheet-table th.selected {
   color: var(--brand-dark);
-  background: #dbe7ff;
+  background: rgba(76, 131, 240, 0.18);
 }
 .sheet-colhead,
 .sheet-rowhead {
@@ -241,7 +241,7 @@
 .sheet-spacer {
   padding: 0;
   border: 0;
-  background: white;
+  background: var(--glass-surface);
 }
 .sheet-cell-editor {
   position: absolute;
@@ -252,11 +252,11 @@
   height: 100%;
   padding: 0 5px;
   border: 2px solid var(--brand);
-  color: #111827;
-  background: white;
+  color: #f5f7fa;
+  background: var(--glass-surface);
   font: inherit;
   outline: none;
-  box-shadow: 0 6px 18px rgba(15, 42, 67, 0.18);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.328);
 }
 .sheet-fill-handle {
   position: absolute;
@@ -265,7 +265,7 @@
   z-index: 3;
   width: 8px;
   height: 8px;
-  border: 1px solid white;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   background: var(--brand);
   cursor: crosshair;
 }
@@ -280,8 +280,8 @@
   align-items: center;
   gap: 6px;
   padding: 0 12px;
-  border: 1px dashed #b8c6d6;
-  border-radius: 6px;
+  border: 1px dashed rgba(132, 156, 184, 0.38);
+  border-radius: 12px;
   color: var(--muted);
   background: var(--surface);
   font: inherit;
@@ -347,7 +347,7 @@
 .sheet-tab-rename {
   width: 140px;
   border: 1px solid var(--brand);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   cursor: text;
@@ -368,7 +368,7 @@
   min-height: 28px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -408,10 +408,10 @@
   cursor: copy;
 }
 .sheet-table th.after-hidden.sheet-colhead {
-  box-shadow: inset 2px 0 0 #9fb0c2;
+  box-shadow: inset 2px 0 0 rgba(0, 0, 0, 0.55);
 }
 .sheet-table th.after-hidden.sheet-rowhead {
-  box-shadow: inset 0 2px 0 #9fb0c2;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.55);
 }
 .sheet-table td.filter-head {
   padding-right: 24px;
@@ -430,7 +430,7 @@
   max-width: 180px;
   overflow: hidden;
   padding: 0 5px;
-  border-radius: 6px 6px 6px 0;
+  border-radius: 12px 12px 12px 0;
   color: white;
   font:
     600 10px/16px Arial,
@@ -442,7 +442,7 @@
 .sheet-remote.first-row span {
   top: 100%;
   bottom: auto;
-  border-radius: 0 6px 6px 6px;
+  border-radius: 0 12px 12px 12px;
 }
 /* Kommentar an einer Zelle: Dreieck oben rechts wie in Excel */
 .sheet-comment-flag {
@@ -451,12 +451,12 @@
   right: 0;
   width: 0;
   height: 0;
-  border-top: 7px solid #d97706;
+  border-top: 7px solid #f8bf7d;
   border-left: 7px solid transparent;
   cursor: pointer;
 }
 .sheet-comment-flag.resolved {
-  border-top-color: #94a3b8;
+  border-top-color: #6e829f;
 }
 .sheet-filter-button,
 .sheet-list-button {
@@ -467,7 +467,7 @@
   display: grid;
   place-items: center;
   padding: 0;
-  border: 1px solid #b8c6d6;
+  border: 1px solid rgba(132, 156, 184, 0.38);
   border-radius: 4px;
   color: var(--muted);
   background: var(--surface);
@@ -511,40 +511,40 @@
   position: absolute;
   z-index: 4;
   overflow: visible;
-  border: 1px solid #d5dde7;
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 6px 18px rgba(15, 42, 67, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.116);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.232);
   cursor: move;
 }
 .sheet-chart.selected {
   border-color: var(--brand);
   box-shadow:
     0 0 0 2px rgba(37, 99, 235, 0.25),
-    0 6px 18px rgba(15, 42, 67, 0.12);
+    0 6px 18px rgba(0, 0, 0, 0.232);
 }
 .sheet-chart-svg {
   display: block;
-  border-radius: 6px;
+  border-radius: 12px;
   font-family: Arial, Helvetica, sans-serif;
 }
 .sheet-chart-title {
-  fill: #1c2b2d;
+  fill: #f4f8f8;
   font-size: 14px;
   font-weight: 700;
 }
 .sheet-chart-axis,
 .sheet-chart-legend {
-  fill: #5b6b6d;
+  fill: #bac4c5;
   font-size: 11px;
 }
 .sheet-chart-axis-title {
-  fill: #1c2b2d;
+  fill: #f4f8f8;
   font-size: 11px;
   font-weight: 700;
 }
 .sheet-chart-label {
-  fill: #1c2b2d;
+  fill: #f4f8f8;
   font-size: 10px;
   font-weight: 700;
 }
@@ -554,7 +554,7 @@
   font-weight: 700;
 }
 .sheet-chart-empty {
-  fill: #5b6b6d;
+  fill: #bac4c5;
   font-size: 13px;
 }
 .sheet-chart-grid {
@@ -562,7 +562,7 @@
   stroke-width: 1;
 }
 .sheet-chart-zero {
-  stroke: #9fb0c2;
+  stroke: #617c99;
   stroke-width: 1;
 }
 .sheet-chart-tools {
@@ -581,10 +581,10 @@
   min-height: 28px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
-  box-shadow: 0 4px 12px rgba(15, 42, 67, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.232);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -603,7 +603,7 @@
   bottom: -5px;
   width: 10px;
   height: 10px;
-  border: 2px solid white;
+  border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 2px;
   background: var(--brand);
   cursor: nwse-resize;
@@ -634,7 +634,7 @@
   align-items: center;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
   cursor: pointer;
 }
@@ -659,9 +659,9 @@
   min-height: 34px;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font-family: Calibri, Carlito, Arial, sans-serif;
   font-size: 13px;
   text-align: left;
@@ -687,7 +687,7 @@
   min-height: 30px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -695,7 +695,7 @@
 }
 .sheet-find input:focus {
   border-color: var(--brand);
-  outline: 2px solid rgba(37, 99, 235, 0.18);
+  outline: 2px solid rgba(124, 161, 243, 0.18);
 }
 .sheet-find button {
   min-height: 30px;
@@ -704,7 +704,7 @@
   gap: 6px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -717,7 +717,7 @@
   color: var(--brand-dark);
 }
 .sheet-find button:disabled {
-  color: #a7b5c6;
+  color: #5e7692;
   cursor: not-allowed;
 }
 .sheet-find .sheet-find-option {
@@ -745,7 +745,7 @@
   display: inline-grid;
   flex: none;
   place-items: center;
-  border: 1.5px solid #9fb0c2;
+  border: 1.5px solid #617c99;
   border-radius: 4px;
   color: white;
   background: var(--surface);
@@ -767,10 +767,10 @@
   display: grid;
   padding: 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
-  box-shadow: 0 18px 44px rgba(15, 42, 67, 0.2);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
   font-family: Arial, Helvetica, sans-serif;
 }
 .sheet-filter-search {
@@ -778,7 +778,7 @@
   margin: 2px 4px 6px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font: inherit;
   font-size: 13px;
 }
@@ -794,7 +794,7 @@
   gap: 8px;
   padding: 0 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -837,7 +837,7 @@
   min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -859,7 +859,7 @@
   min-height: 32px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -900,10 +900,10 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
-  box-shadow: 0 24px 60px rgba(15, 42, 67, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.52);
   font-family: Arial, Helvetica, sans-serif;
 }
 .sheet-dialog.wide {
@@ -926,7 +926,7 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
   background: transparent;
   cursor: pointer;
@@ -982,7 +982,7 @@
   min-height: 36px;
   padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -993,7 +993,7 @@
 .sheet-dialog-field input:focus,
 .sheet-dialog-field textarea:focus {
   border-color: var(--brand);
-  outline: 2px solid rgba(37, 99, 235, 0.18);
+  outline: 2px solid rgba(124, 161, 243, 0.18);
 }
 .sheet-dialog-presets {
   display: grid;
@@ -1011,7 +1011,7 @@
   gap: 8px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -1037,7 +1037,7 @@
   padding: 2px 6px;
   border: 1px solid var(--line);
   border-radius: 4px;
-  background: white;
+  background: var(--glass-surface);
   font-family: Calibri, Carlito, Arial, sans-serif;
   font-size: 12px;
   text-align: center;
@@ -1058,7 +1058,7 @@
   gap: 8px;
   padding: 6px 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 13px;
 }
 .sheet-dialog-list li.empty {
@@ -1074,7 +1074,7 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   cursor: pointer;

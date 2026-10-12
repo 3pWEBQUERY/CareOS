@@ -9,7 +9,7 @@
   width: 100%;
   border-width: 0 0 1px;
   border-style: solid;
-  border-color: #edf1f5;
+  border-color: rgba(255, 255, 255, 0.082);
   background: none;
   color: inherit;
   font: inherit;
@@ -67,8 +67,8 @@
 .portal-card {
   padding: 20px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface, #fff);
+  border-radius: 16px;
+  background: var(--surface, var(--glass-surface));
 }
 .portal-card h2 {
   margin: 0 0 10px;
@@ -89,13 +89,13 @@
   min-height: 40px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font: inherit;
 }
 .portal-form textarea {
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font: inherit;
   font-weight: 400;
   resize: vertical;
@@ -118,8 +118,8 @@
 .portal-residents button {
   padding: 10px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface, #fff);
+  border-radius: 14px;
+  background: var(--surface, var(--glass-surface));
   color: inherit;
   font: inherit;
   text-align: left;
@@ -149,7 +149,7 @@
 }
 .portal-list li {
   padding-bottom: 8px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .portal-list li:last-child {
   border-bottom: 0;
@@ -172,8 +172,8 @@
   min-height: 36px;
   padding: 4px 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface, #fff);
+  border-radius: 12px;
+  background: var(--surface, var(--glass-surface));
   font: inherit;
 }
 
@@ -203,7 +203,7 @@
 .portal-conversation-messages li {
   max-width: 85%;
   padding: 10px 12px;
-  border-radius: 10px;
+  border-radius: 16px;
   background: var(--surface-soft);
 }
 .portal-conversation-messages li.own {
@@ -227,7 +227,7 @@
 .portal-conversation-reply textarea {
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font: inherit;
 }
 .portal-conversation-reply button {
@@ -246,8 +246,8 @@
   gap: 2px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface, #fff);
+  border-radius: 14px;
+  background: var(--surface, var(--glass-surface));
   color: inherit;
   font: inherit;
   text-align: left;
@@ -285,7 +285,7 @@
   padding: 8px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--surface, #fff);
+  background: var(--surface, var(--glass-surface));
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -317,7 +317,7 @@
   min-height: 36px;
   padding: 6px 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font: inherit;
 }
 .portal-help img {
@@ -327,7 +327,7 @@
   height: auto;
   margin: 10px 0 4px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
 }
 .portal-help figcaption {
   color: var(--muted);

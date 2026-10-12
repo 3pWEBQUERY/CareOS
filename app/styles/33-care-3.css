@@ -2,20 +2,20 @@
   min-height: 73px;
   grid-template-columns: 31px minmax(160px, 1.25fr) minmax(145px, 0.62fr) 95px 72px;
   padding: 10px 6px;
-  border-bottom: 1px solid #e8edf3;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.088);
 }
 .supply-row:last-child {
   border-bottom: 0;
 }
 .supply-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .supply-icon {
   width: 31px;
   height: 31px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -39,11 +39,11 @@
 }
 .supply-quantity strong {
   display: block;
-  color: #38526d;
+  color: #c0cedd;
   font-size: 11px;
 }
 .supply-quantity strong small {
-  color: #8090a4;
+  color: #8796a9;
   font-size: 9px;
   font-weight: 600;
 }
@@ -62,7 +62,7 @@
 }
 .supply-quantity::after {
   width: 100%;
-  background: #e5edf7;
+  background: rgba(107, 152, 209, 0.18);
 }
 .supply-quantity i {
   max-width: 100%;
@@ -72,18 +72,18 @@
   justify-self: start;
   padding: 5px 7px;
   border-radius: 5px;
-  color: #28785e;
-  background: #e6f5ef;
+  color: #9edfca;
+  background: rgba(255, 255, 255, 0.075);
   font-size: 9px;
   font-weight: 800;
 }
 .supply-status.blocked {
-  color: #976600;
-  background: #fff2d6;
+  color: #f9d385;
+  background: rgba(240, 188, 76, 0.18);
 }
 .supply-status.archived {
-  color: #6b7788;
-  background: #edf1f5;
+  color: #a3abb7;
+  background: rgba(255, 255, 255, 0.065);
 }
 .supply-actions {
   display: flex;
@@ -97,18 +97,18 @@
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 5px;
-  color: #607992;
-  background: #fff;
+  color: #9cadbe;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .supply-actions button:hover {
   color: var(--brand);
-  border-color: #9bc4fa;
+  border-color: rgba(76, 147, 240, 0.38);
   background: var(--brand-soft);
 }
 .supply-actions button.danger:hover {
   color: var(--critical);
-  border-color: #f0b4ab;
+  border-color: rgba(226, 108, 91, 0.38);
   background: var(--critical-soft);
 }
 .supply-actions svg {
@@ -191,26 +191,26 @@
   gap: 13px;
   padding: 17px 19px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .care-supply-summary-icon {
   width: 38px;
   height: 38px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
 .care-supply-summary-icon.active {
-  color: #28785e;
-  background: #e6f5ef;
+  color: #9edfca;
+  background: rgba(255, 255, 255, 0.075);
 }
 .care-supply-summary-icon.muted {
-  color: #607890;
-  background: #edf2f8;
+  color: #9eaebe;
+  background: rgba(255, 255, 255, 0.061);
 }
 .care-supply-summary-icon svg {
   width: 19px;
@@ -258,9 +258,9 @@
   gap: 9px;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #71869e;
-  background: #f8fafc;
+  border-radius: 12px;
+  color: #8f9fb2;
+  background: rgba(255, 255, 255, 0.038);
 }
 .care-supply-search svg {
   width: 17px;
@@ -287,9 +287,9 @@
   min-height: 31px;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  color: #60758e;
-  background: white;
+  border-radius: 12px;
+  color: #9faebe;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 700;
   white-space: nowrap;
@@ -297,7 +297,7 @@
 }
 .care-supply-filters button:hover,
 .care-supply-filters button.active {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   color: var(--brand-dark);
   background: var(--brand-soft);
 }
@@ -316,9 +316,9 @@
 }
 .care-supply-table-head {
   padding: 11px 20px 11px 18px;
-  color: #71839a;
-  background: #f8fafc;
-  border-bottom: 1px solid #e8edf3;
+  color: #93a0b2;
+  background: rgba(255, 255, 255, 0.038);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.088);
   font-size: 9px;
   font-weight: 780;
   letter-spacing: 0.055em;
@@ -338,8 +338,8 @@
 .care-supply-product {
   min-height: 76px;
   padding: 11px 0;
-  border-bottom: 1px solid #e8edf3;
-  color: #526983;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.088);
+  color: #aab9ca;
   font-size: 10px;
 }
 .care-supply-product:last-child {
@@ -350,7 +350,7 @@
   height: 30px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -377,7 +377,7 @@
   white-space: nowrap;
 }
 .care-supply-product-stock {
-  color: #38526d;
+  color: #c0cedd;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -385,18 +385,18 @@
   width: max-content;
   padding: 5px 7px;
   border-radius: 5px;
-  color: #28785e;
-  background: #e6f5ef;
+  color: #9edfca;
+  background: rgba(255, 255, 255, 0.075);
   font-size: 9px;
   font-weight: 750;
 }
 .care-supply-product-status.blocked {
-  color: #966400;
-  background: #fff3d8;
+  color: #f9d285;
+  background: rgba(240, 190, 76, 0.18);
 }
 .care-supply-product-status.archived {
-  color: #65758a;
-  background: #edf1f5;
+  color: #a2adbb;
+  background: rgba(255, 255, 255, 0.065);
 }
 .care-supply-product-actions {
   width: 99px;
@@ -412,12 +412,12 @@
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 5px;
-  color: #617991;
-  background: white;
+  color: #9dadbd;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .care-supply-product-actions button:hover {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -550,7 +550,7 @@
 .care-supply-product-stock small {
   display: block;
   margin-top: 2px;
-  color: #8193a8;
+  color: #8294a9;
   font-size: 8px;
   font-weight: 600;
 }

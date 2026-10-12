@@ -36,15 +36,15 @@
   height: 39px;
   padding: 0 30px 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: #fbfdff;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 680;
 }
 .vitals-unit-filter select:focus {
-  outline: 3px solid rgba(37, 99, 235, 0.12);
-  border-color: #93c5fd;
+  outline: 3px solid rgba(124, 161, 243, 0.12);
+  border-color: rgba(76, 153, 240, 0.38);
 }
 .vitals-status-filters {
   grid-column: 1/-1;
@@ -61,9 +61,9 @@
   align-items: center;
   padding: 13px 16px;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
   transition: 140ms ease;
@@ -72,7 +72,7 @@
   border-bottom: 0;
 }
 .vitals-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .vitals-row.selected {
   background: var(--brand-soft);
@@ -140,7 +140,7 @@
 }
 .vitals-values em {
   margin-top: 2px;
-  color: #7b8ca0;
+  color: #8b9aac;
   font-size: 7px;
   font-style: normal;
 }
@@ -150,7 +150,7 @@
 .vitals-row > svg {
   width: 14px;
   height: 14px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .vitals-detail {
   display: grid;
@@ -192,7 +192,7 @@
 }
 .vitals-clinical-note.stable {
   border-color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .vitals-clinical-note > svg {
   width: 18px;
@@ -215,7 +215,7 @@
 .vitals-clinical-note span {
   display: block;
   margin-top: 4px;
-  color: #52687d;
+  color: #aebdca;
   font-size: 9px;
   line-height: 1.45;
 }
@@ -242,9 +242,9 @@
   flex: 0 0 auto;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 8px;
   font-weight: 730;
   cursor: pointer;
@@ -252,7 +252,7 @@
 .vitals-metric-tabs button:hover,
 .vitals-metric-tabs button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .vitals-chart {
@@ -263,7 +263,7 @@
   align-items: end;
   padding: 14px 16px 10px;
   border-top: 1px solid var(--line);
-  background: linear-gradient(to bottom, #f9fbfe, #fff);
+  background: linear-gradient(to bottom, var(--glass-surface), var(--glass-surface));
 }
 .vitals-chart-point {
   height: 100%;
@@ -282,13 +282,13 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  border-bottom: 1px solid #cbd7e6;
+  border-bottom: 1px solid rgba(124, 154, 192, 0.38);
 }
 .vitals-chart-point i {
   width: min(28px, 72%);
   min-height: 22px;
   display: block;
-  border-radius: 6px 6px 0 0;
+  border-radius: 12px 12px 0 0;
   background: linear-gradient(180deg, #60a5fa, #2563eb);
 }
 .vitals-chart-point small {
@@ -305,7 +305,7 @@
   padding: 11px 15px;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  background: #f9fbfd;
+  background: rgba(255, 255, 255, 0.036);
   font-size: 8px;
 }
 .vitals-chart-note svg {
@@ -327,8 +327,8 @@
   align-items: center;
   padding: 10px 8px;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
-  background: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -358,7 +358,7 @@
 .vitals-due-card button > svg {
   width: 13px;
   height: 13px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .medication-two-column {
   display: grid;
@@ -391,14 +391,14 @@
   align-items: center;
   padding: 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 .med-resident-list > button:hover {
-  background: #f7faff;
+  background: rgba(255, 255, 255, 0.036);
 }
 .med-resident-list > button.selected {
   background: var(--brand-soft);
@@ -430,7 +430,7 @@
 }
 .med-resident-list svg {
   width: 13px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .med-main-column {
   min-width: 0;
@@ -475,7 +475,7 @@
   min-height: 37px;
   padding: 0 16px;
   color: var(--muted);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -489,8 +489,8 @@
   min-height: 78px;
   padding: 12px 16px;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
-  background: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -498,14 +498,14 @@
   border-bottom: 0;
 }
 .med-plan-list > button:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .med-pill-icon {
   width: 34px;
   height: 34px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -529,7 +529,7 @@
 }
 .med-plan-list > button > svg {
   width: 13px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .med-round-toolbar {
   display: grid;
@@ -552,9 +552,9 @@
   height: 39px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: #fbfdff;
+  background: var(--glass-surface);
   font-size: 10px;
 }
 .med-round-progress {
@@ -568,14 +568,14 @@
 .med-stock-level > span {
   height: 6px;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e4ebf4;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
 }
 .med-round-progress i,
 .med-stock-level i {
   height: 100%;
   display: block;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand);
   transition: width 180ms ease;
 }
@@ -592,7 +592,7 @@
   gap: 11px;
   align-items: center;
   padding: 12px 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .med-round-row:last-child {
   border-bottom: 0;
@@ -623,8 +623,8 @@
   gap: 6px;
   align-items: center;
   padding: 4px 7px;
-  border-radius: 6px;
-  background: #f6f9fd;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
 }
 .med-round-meds svg {
   width: 13px;
@@ -648,10 +648,10 @@
 .med-round-actions button {
   min-height: 32px;
   padding: 0 7px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
   color: var(--brand-dark);
-  background: white;
+  background: var(--glass-surface);
   font-size: 8px;
   font-weight: 740;
   cursor: pointer;
@@ -662,7 +662,7 @@
 }
 .med-round-actions button:nth-child(2) {
   color: var(--critical);
-  border-color: #f1c1bb;
+  border-color: rgba(222, 108, 94, 0.38);
 }
 .med-round-actions svg {
   width: 14px;
@@ -686,7 +686,7 @@
   min-height: 37px;
   padding: 0 18px;
   color: var(--muted);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -701,7 +701,7 @@
 .med-stock-list > article {
   min-height: 78px;
   padding: 12px 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
 }
 .med-stock-list > article:last-child {
   border-bottom: 0;

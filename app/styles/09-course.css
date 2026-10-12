@@ -37,9 +37,9 @@
   flex: 0 0 auto;
   padding: 0 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 720;
   cursor: pointer;
@@ -47,7 +47,7 @@
 .course-filters button:hover,
 .course-filters button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .course-day-label {
@@ -57,8 +57,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 0 18px;
-  color: #43596f;
-  background: #f7f9fc;
+  color: #bbc9d6;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 10px;
   font-weight: 780;
   letter-spacing: 0.035em;
@@ -80,9 +80,9 @@
   gap: 11px;
   padding: 15px 0;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -90,12 +90,12 @@
   border-bottom: 0;
 }
 .course-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .course-row.selected {
   margin-inline: -8px;
   padding-inline: 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
   box-shadow: inset 3px 0 0 var(--brand);
 }
@@ -114,7 +114,7 @@
   height: 39px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -131,7 +131,7 @@
 .course-icon.stable,
 .course-detail-icon.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .course-icon svg,
 .course-detail-icon svg {
@@ -157,14 +157,14 @@
 }
 .course-main p {
   margin: 7px 0 0;
-  color: #40566b;
+  color: #bfccd9;
   font-size: 11px;
   line-height: 1.5;
 }
 .course-main em {
   display: block;
   margin-top: 6px;
-  color: #7a8da1;
+  color: #8a9bad;
   font-size: 9px;
   font-style: normal;
 }
@@ -208,7 +208,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   font-size: 10px;
 }
 .course-focus-body dt,
@@ -242,7 +242,7 @@
   gap: 10px;
   padding: 8px 5px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   background: transparent;
   text-align: left;
   cursor: pointer;
@@ -265,7 +265,7 @@
 }
 .course-priority-list svg {
   width: 14px;
-  color: #91a2b2;
+  color: #768b9f;
 }
 .priority-dot {
   width: 7px;
@@ -290,12 +290,12 @@
 }
 
 .summary-icon.archived {
-  color: #5f6f80;
-  background: #eef2f6;
+  color: #aab5c0;
+  background: rgba(255, 255, 255, 0.062);
 }
 .resident-avatar.archived {
-  color: #5f6f80;
-  background: #e8edf2;
+  color: #aab5c0;
+  background: rgba(255, 255, 255, 0.077);
 }
 .house-scope-note {
   display: grid;
@@ -304,18 +304,18 @@
   gap: 14px;
   margin-bottom: 18px;
   padding: 14px 17px;
-  border: 1px solid #bfdbfe;
-  border-radius: 6px;
-  background: #f3f7ff;
+  border: 1px solid rgba(76, 149, 240, 0.38);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.041);
 }
 .house-scope-note > span {
   width: 39px;
   height: 39px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
-  background: white;
+  background: var(--glass-surface);
 }
 .house-scope-note > span svg {
   width: 19px;
@@ -328,7 +328,7 @@
 }
 .house-scope-note p {
   margin: 4px 0 0;
-  color: #566d86;
+  color: #a7b6c6;
   font-size: 11px;
 }
 .house-history-layout {
@@ -357,8 +357,8 @@
   gap: 7px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f8fafc;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.038);
 }
 .house-unit-filter > span {
   position: absolute;
@@ -366,7 +366,7 @@
   left: 8px;
   padding: 0 4px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 8px;
   font-weight: 750;
 }
@@ -392,9 +392,9 @@
   flex: 0 0 auto;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 10px;
   font-weight: 730;
   cursor: pointer;
@@ -402,7 +402,7 @@
 .house-status-filters button:hover,
 .house-status-filters button.active {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .house-resident-table-head,
@@ -418,7 +418,7 @@
   min-height: 42px;
   padding: 0 18px;
   color: var(--muted);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -435,9 +435,9 @@
   min-height: 86px;
   padding: 12px 0;
   border: 0;
-  border-bottom: 1px solid #e9eef4;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.087);
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
@@ -445,12 +445,12 @@
   border-bottom: 0;
 }
 .house-resident-row:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .house-resident-row.selected {
   margin-inline: -8px;
   padding-inline: 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
   box-shadow: inset 3px 0 0 var(--brand);
 }
@@ -486,7 +486,7 @@
 }
 .house-resident-row > .chevron {
   width: 15px;
-  color: #91a2b2;
+  color: #768b9f;
 }
 .resident-state {
   display: inline-flex;
@@ -495,9 +495,9 @@
   justify-self: start;
   min-height: 25px;
   padding: 0 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
   font-size: 9px;
   font-weight: 760;
   white-space: nowrap;
@@ -508,10 +508,10 @@
   background: var(--brand-soft);
 }
 .resident-state.ausgetreten {
-  color: #5f6f80;
-  background: #eef2f6;
+  color: #aab5c0;
+  background: rgba(255, 255, 255, 0.062);
 }
 .resident-state.verstorben {
-  color: #5b6470;
-  background: #e5e9ee;
+  color: #b7bdc5;
+  background: rgba(255, 255, 255, 0.087);
 }

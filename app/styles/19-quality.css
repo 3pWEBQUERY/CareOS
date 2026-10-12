@@ -38,7 +38,7 @@
   gap: 11px;
   align-items: center;
   padding: 14px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .quality-timeline-list article:last-child {
   border-bottom: 0;
@@ -48,7 +48,7 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -65,7 +65,7 @@
 }
 .quality-timeline-marker.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .quality-timeline-list h3 {
   margin: 3px 0;
@@ -73,7 +73,7 @@
 }
 .quality-timeline-list p:not(.eyebrow) {
   margin: 0;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 9px;
   line-height: 1.4;
 }
@@ -93,9 +93,9 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
   font-size: 15px;
   font-weight: 780;
 }
@@ -103,18 +103,18 @@
   height: 10px;
   margin: 16px 18px 12px;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .quality-risk-meter span {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--success);
 }
 .quality-risk-card > p {
   margin: 0 18px 14px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 13px;
   line-height: 1.45;
 }
@@ -123,7 +123,7 @@
   grid-template-columns: repeat(3, 1fr);
   margin: 0 18px 15px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .quality-risk-stats span {
   display: grid;
@@ -156,8 +156,8 @@
 .quality-kanban-column {
   min-height: 220px;
   padding: 10px;
-  border-radius: 6px;
-  background: #f8fbff;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .quality-kanban-column > div {
   display: flex;
@@ -177,15 +177,15 @@
   margin-top: 8px;
   padding: 9px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
 .quality-kanban-column > button:hover,
 .quality-kanban-column > button.selected {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .quality-kanban-column .governance-icon {
@@ -240,7 +240,7 @@
 }
 .quality-action-detail > p {
   margin: 0 18px 15px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 10px;
   line-height: 1.5;
 }
@@ -254,7 +254,7 @@
   justify-content: space-between;
   gap: 10px;
   padding-top: 8px;
-  border-top: 1px solid #edf1f5;
+  border-top: 1px solid rgba(255, 255, 255, 0.082);
 }
 .quality-action-detail dt {
   color: var(--muted);
@@ -286,7 +286,7 @@
   align-items: center;
   padding: 13px 2px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -300,7 +300,7 @@
 .care-indicator-list a:hover,
 .care-indicator-list button.selected,
 .care-indicator-list a.selected {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .care-indicator-list .governance-icon {
   width: 32px;
@@ -337,9 +337,9 @@
   align-content: center;
   gap: 3px;
   margin: 8px auto 16px;
-  border: 13px solid #dbeafe;
+  border: 13px solid rgba(76, 146, 240, 0.38);
   border-top-color: var(--brand);
-  border-right-color: #60a5fa;
+  border-right-color: #6facf7;
   border-radius: 50%;
 }
 .care-target-ring strong {
@@ -352,7 +352,7 @@
 }
 .care-target-card > p {
   margin: 0 18px 15px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 10px;
   line-height: 1.5;
 }
@@ -375,8 +375,8 @@
   gap: 5px;
   padding: 13px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #f8fbff;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .executive-score-grid span,
 .executive-score-grid small {
@@ -395,7 +395,7 @@
 .executive-trend > span {
   height: 9px;
   display: block;
-  border-radius: 6px;
+  border-radius: 12px;
   background: linear-gradient(90deg, var(--brand), #60a5fa);
 }
 .executive-trend b {
@@ -411,7 +411,7 @@
   align-items: center;
   padding: 12px 15px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -421,7 +421,7 @@
 .executive-decisions > a:hover,
 .executive-decisions > button.selected,
 .executive-decisions > a.selected {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .executive-decisions > button strong,
 .executive-decisions > a strong,
@@ -448,7 +448,7 @@
 .executive-decisions > button > svg,
 .executive-decisions > a > svg {
   width: 12px;
-  color: #9aabbe;
+  color: #66809c;
 }
 .insights-workforce-layout {
   grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
@@ -472,7 +472,7 @@
 }
 .workforce-table-row {
   min-height: 46px;
-  border-top: 1px solid #edf1f5;
+  border-top: 1px solid rgba(255, 255, 255, 0.082);
 }
 .workforce-table-row strong {
   font-size: 9px;
@@ -483,7 +483,7 @@
   min-height: 24px;
   border-radius: 4px;
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
   font-size: 9px;
   font-weight: 760;
 }
@@ -502,7 +502,7 @@
   align-items: center;
   margin: 0 15px;
   padding: 12px 3px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .workforce-person .avatar {
   width: 30px;
@@ -563,8 +563,8 @@
 .care-target-ring.gauge {
   border: 0;
   background:
-    radial-gradient(closest-side, white 80%, transparent 81%),
-    conic-gradient(var(--brand) calc(var(--value) * 1%), #dbeafe 0);
+    radial-gradient(closest-side, var(--glass-surface) 80%, transparent 81%),
+    conic-gradient(var(--brand) calc(var(--value) * 1%), rgba(76, 146, 240, 0.18) 0);
 }
 .care-target-card > a.primary-button {
   display: flex;
@@ -588,8 +588,8 @@
 .executive-unit-bar {
   height: 8px;
   overflow: hidden;
-  border-radius: 6px;
-  background: #e7eef8;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.069);
 }
 .executive-unit-bar > span {
   display: block;
@@ -606,7 +606,7 @@
 }
 .workforce-table-row span.empty {
   color: var(--muted);
-  background: #f3f6fa;
+  background: rgba(255, 255, 255, 0.049);
 }
 .workforce-availability > a.primary-button,
 .quality-risk-card > a.secondary-button {
@@ -633,9 +633,9 @@
   place-items: center;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   color: var(--brand);
-  background: white;
+  background: var(--glass-surface);
 }
 .admin-branding-preview img {
   width: 100%;
@@ -662,7 +662,7 @@
   justify-content: space-between;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .admin-retention-row:last-child {
   border-bottom: 0;

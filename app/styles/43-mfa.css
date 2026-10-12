@@ -29,8 +29,8 @@
 }
 .settings-mfa-setup img {
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .settings-mfa-setup code,
 .settings-mfa-codes {
@@ -47,7 +47,7 @@
   min-height: 38px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 15px;
   letter-spacing: 0.12em;
 }
@@ -58,7 +58,7 @@
   margin: 0;
   padding: 12px;
   border: 1px dashed var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   list-style: none;
 }
 

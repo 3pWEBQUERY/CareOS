@@ -18,8 +18,8 @@
   flex-direction: column;
   overflow: hidden;
   border-left: 1px solid var(--line);
-  background: white;
-  box-shadow: -24px 0 60px rgba(15, 42, 82, 0.18);
+  background: var(--glass-surface);
+  box-shadow: -24px 0 60px rgba(0, 0, 0, 0.328);
   animation: ai-drawer-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes ai-drawer-in {
@@ -41,7 +41,7 @@
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 55%, #0b1f3a 100%);
   box-shadow: 0 8px 18px rgba(37, 99, 235, 0.28);
@@ -78,7 +78,7 @@
   gap: 10px 12px;
   padding: 12px 20px;
   border-bottom: 1px solid var(--line);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
 }
 .ai-assist-context > div:first-child {
   min-width: 0;
@@ -106,8 +106,8 @@
   gap: 4px;
   padding: 3px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .ai-assist-scope button {
   min-height: 32px;
@@ -149,7 +149,7 @@
   gap: 10px;
   padding: 12px 20px 14px;
   border-top: 1px solid var(--line);
-  background: white;
+  background: var(--glass-surface);
 }
 .ai-assist .intelligence-suggestions {
   flex-wrap: nowrap;
@@ -187,7 +187,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 10px 20px 14px;
-  background: white;
+  background: var(--glass-surface);
 }
 .ai-assist-foot p {
   margin: 0;

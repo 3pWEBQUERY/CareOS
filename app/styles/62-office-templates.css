@@ -25,7 +25,7 @@
   gap: 10px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -68,7 +68,7 @@
   gap: 4px;
   padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -76,7 +76,7 @@
   cursor: pointer;
 }
 .files-templates button:hover {
-  border-color: #9fb7ea;
+  border-color: rgba(96, 136, 220, 0.38);
 }
 .files-templates button.active {
   border-color: var(--brand);
@@ -101,12 +101,12 @@
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 4px;
-  background: white;
+  background: var(--glass-surface);
 }
 .files-template-preview.doc i {
   height: 4px;
   border-radius: 2px;
-  background: #d5dde8;
+  background: rgba(130, 154, 186, 0.18);
 }
 .files-template-preview.doc i.h1 {
   width: 62%;
@@ -143,14 +143,20 @@
   width: 70%;
   margin-left: 10px;
   box-shadow:
-    -10px 0 0 -1px white,
-    -10px 0 0 0 #9aabbe;
+    -10px 0 0 -1px rgba(255, 255, 255, 0.08),
+    -10px 0 0 0 rgba(0, 0, 0, 0.55);
 }
 .files-template-preview.doc i.table {
   height: 10px;
-  border: 1px solid #bfc9ca;
+  border: 1px solid rgba(255, 255, 255, 0.161);
   border-radius: 0;
-  background: linear-gradient(90deg, #eaf1ff 0 25%, white 25% 50%, #eaf1ff 50% 75%, white 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(76, 131, 240, 0.18) 0 25%,
+    var(--glass-surface) 25% 50%,
+    rgba(76, 131, 240, 0.18) 50% 75%,
+    var(--glass-surface) 75%
+  );
 }
 .files-template-preview.sheet {
   gap: 0;
@@ -162,21 +168,22 @@
 }
 .files-template-preview.sheet i {
   height: 13px;
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid rgba(255, 255, 255, 0.096);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.096);
 }
 .files-template-preview.sheet > span.head i {
-  background: #eaf1ff;
+  background: rgba(76, 131, 240, 0.18);
 }
 .files-template-preview.sheet i.formula {
-  background: linear-gradient(90deg, transparent 55%, #bcd0fb 55% 90%, transparent 90%) center / 100% 4px no-repeat;
+  background: linear-gradient(90deg, transparent 55%, rgba(76, 128, 240, 0.18) 55% 90%, transparent 90%) center / 100%
+    4px no-repeat;
 }
 .files-template-preview.deck {
   position: relative;
   aspect-ratio: 16 / 9;
   height: auto;
   padding: 0;
-  background: white;
+  background: var(--glass-surface);
 }
 .files-template-preview.deck b,
 .files-template-preview.deck em,
@@ -204,7 +211,7 @@
   background: #c4cfdc;
 }
 .files-template-preview.deck.deck-training {
-  background: #eef5ef;
+  background: rgba(255, 255, 255, 0.063);
 }
 .files-template-preview.deck.deck-training b {
   background: #1d3324;

@@ -13,7 +13,6 @@ import {
 import { usePathname } from "next/navigation";
 import AppHeader from "./app-header";
 import { FrameContext, type FrameApi } from "./app-frame";
-import AppSidebar from "./app-sidebar";
 import { AppLauncher } from "./app-launcher";
 import { GlobalSearchDialog } from "./global-search-dialog";
 import { MobileNavigation } from "./mobile-navigation";
@@ -39,9 +38,23 @@ export default function ModulePageShell(props: ShellProps) {
   return frame ? <FramedPage frame={frame} {...props} /> : <StandaloneShell {...props} />;
 }
 
-// Übergänge: anderer Bereich – der Inhalt steigt leicht auf; anderer Reiter im Bereich – leises Überblenden.
-const ENTER = { "nav-tab": "page-tab-in", default: "page-in" };
-const EXIT = { "nav-tab": "page-tab-out", default: "page-out" };
+// Übergänge: Der Inhalt gleitet weich herein; mit Richtung (App-Leiste, Reiter), sonst steigt er leicht auf.
+const ENTER = {
+  "nav-tab-forward": "page-tab-in-forward",
+  "nav-tab-back": "page-tab-in-back",
+  "nav-tab": "page-tab-in",
+  "nav-forward": "page-in-forward",
+  "nav-back": "page-in-back",
+  default: "page-in",
+};
+const EXIT = {
+  "nav-tab-forward": "page-tab-out-forward",
+  "nav-tab-back": "page-tab-out-back",
+  "nav-tab": "page-tab-out",
+  "nav-forward": "page-out-forward",
+  "nav-back": "page-out-back",
+  default: "page-out",
+};
 
 function FramedPage({
   frame,
@@ -75,7 +88,7 @@ function FramedPage({
   );
 }
 
-// Page frame for pages outside the fixed frame: sidebar, header, mobile navigation, global search and toast.
+// Page frame for pages outside the fixed frame: header with app bar, mobile navigation, global search and toast.
 function StandaloneShell({
   activeModule,
   activeChild,
@@ -114,17 +127,17 @@ function StandaloneShell({
 
   return (
     <div className={`app-shell ${pageClass}`}>
-      <AppSidebar activeModule={moduleId} activeChild={child} onToast={setToast} />
-
       <div className="main-column">
         <AppHeader
+          activeModule={moduleId}
+          activeChild={child}
+          appBar={page && <PageTabs moduleId={page.moduleId} child={page.child} />}
           locationPrimary={locationPrimary}
           locationSecondary={locationSecondary}
           searchOpen={searchOpen}
           onSearch={openSearch}
           onToast={setToast}
         />
-        {page && <PageTabs moduleId={page.moduleId} child={page.child} />}
         {children(setToast)}
       </div>
 

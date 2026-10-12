@@ -1,7 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ModuleIcon } from "./module-icon";
-import { Brand } from "./header-parts";
+import { AppSwitcher, HomeButton } from "./top-navigation";
 import { ProfilePopover } from "./header-profile-popover";
 import { ResidentPickerPopover } from "./header-resident-picker";
 import { useAppHeader } from "./use-app-header";
@@ -16,6 +17,10 @@ import { IdleLogout } from "./idle-logout";
 import { HelpPanel } from "./help-panel";
 
 export default function AppHeader(props: {
+  activeModule?: string;
+  activeChild?: string;
+  // Kopf der geöffneten App (Name und Reiter), in der zweiten Zeile links neben Wohnbereich und Bewohner.
+  appBar?: ReactNode;
   locationPrimary?: string;
   locationSecondary?: string;
   searchOpen: boolean;
@@ -51,10 +56,10 @@ export default function AppHeader(props: {
       <IdleLogout />
       <HelpPanel />
       <header className="topbar">
-        <div className="header-context">
-          <HeaderLocationControl r={r} ref={locationMenuRef} />
-          <HeaderResidentSelector r={r} />
+        <div className="topbar-start">
+          <HomeButton active={props.activeModule === "home"} />
         </div>
+        <AppSwitcher activeModule={props.activeModule} activeChild={props.activeChild} />
         <div className="top-actions">
           <button
             className="search-trigger"
@@ -67,7 +72,7 @@ export default function AppHeader(props: {
             aria-expanded={searchOpen}
           >
             <ModuleIcon name="search" />
-            <span>Suchen…</span>
+            <span>Suchen</span>
             <kbd>⌘ K</kbd>
           </button>
           <HeaderAiButton />
@@ -76,8 +81,15 @@ export default function AppHeader(props: {
           <HeaderProfileMenu r={r} ref={profileMenuRef} />
         </div>
       </header>
+      <div className="careos-subbar">
+        {props.appBar}
+        <div className="header-context">
+          <HeaderLocationControl r={r} ref={locationMenuRef} />
+          <HeaderResidentSelector r={r} />
+        </div>
+      </div>
       <header className="mobile-top">
-        <Brand />
+        <HomeButton active={props.activeModule === "home"} />
         <div className="mobile-actions">
           <HeaderLocationControl r={r} ref={mobileLocationMenuRef} compact={true} />
           <HeaderResidentSelector r={r} compact={true} />

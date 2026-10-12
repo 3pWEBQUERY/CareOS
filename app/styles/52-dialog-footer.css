@@ -53,7 +53,7 @@
   flex-direction: column;
   overflow: clip;
   border-bottom: 0;
-  border-radius: 6px 6px 0 0;
+  border-radius: 12px 12px 0 0;
 }
 .user-editor-panel .user-editor-content > form:has(> .user-editor-footer) {
   flex: 1;
@@ -63,7 +63,7 @@
   bottom: 0;
   z-index: 3;
   margin-top: auto;
-  background: white;
+  background: var(--glass-surface);
 }
 
 /* Rollen: der Bereich scrollt selbst, die Karte reicht bis unten, der Footer bleibt sichtbar. */
@@ -82,14 +82,14 @@
   flex-direction: column;
   overflow: clip;
   border-bottom: 0;
-  border-radius: 6px 6px 0 0;
+  border-radius: 12px 12px 0 0;
 }
 .role-editor > .user-editor-content > .user-editor-footer {
   position: sticky;
   bottom: 0;
   z-index: 3;
   margin-top: auto;
-  background: white;
+  background: var(--glass-surface);
 }
 
 /* Nachrichten: der Inhalt füllt die Höhe, der Footer steht unten. */
@@ -120,8 +120,8 @@
   z-index: 3;
   margin-top: auto;
   padding-bottom: 22px;
-  background: white;
-  box-shadow: 0 0 0 100vmax white;
+  background: var(--glass-surface);
+  box-shadow: 0 0 0 100vmax rgba(255, 255, 255, 0.08);
   clip-path: inset(0 -100vmax -100vmax);
 }
 .contact-editor-panel > form::before {

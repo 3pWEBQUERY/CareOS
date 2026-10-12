@@ -3,7 +3,6 @@
 import { createContext, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AppHeader from "./app-header";
-import AppSidebar from "./app-sidebar";
 import { AppLauncher } from "./app-launcher";
 import { beginNavigation, NavigationProgress, settleNavigation, useNavigationTarget } from "./app-navigation";
 import { GlobalSearchDialog } from "./global-search-dialog";
@@ -13,7 +12,7 @@ import { activePage } from "./navigation";
 import { PageTabs } from "./page-tabs";
 import { isFramedRoute } from "./shell-routes";
 
-// Fester Rahmen des Arbeitsplatzes im Hauptlayout: Seitenleiste, Kopfzeile, Reiter, mobile Navigation, Suche,
+// Fester Rahmen des Arbeitsplatzes im Hauptlayout: Kopfzeile mit App-Leiste, Reiter, mobile Navigation, Suche,
 // Hinweise und Ladebalken werden einmal aufgebaut und bleiben beim Seitenwechsel stehen (Zustand, Zähler, offene
 // Menüs, kein erneutes Laden). Die Seiten liefern über ModulePageShell nur ihren Inhalt und melden Bereich,
 // Ortsangaben und eine eigene Suche an.
@@ -123,16 +122,17 @@ function FramedShell({ pathname, children }: { pathname: string; children: React
   return (
     <FrameContext.Provider value={api}>
       <div className="app-shell">
-        <AppSidebar activeModule={moduleId} activeChild={child} onToast={setToast} />
         <div className="main-column">
           <AppHeader
+            activeModule={moduleId}
+            activeChild={child}
+            appBar={shown && <PageTabs moduleId={shown.moduleId} child={shown.child} />}
             locationPrimary={page?.locationPrimary}
             locationSecondary={page?.locationSecondary}
             searchOpen={searchOpen}
             onSearch={openSearch}
             onToast={setToast}
           />
-          {shown && <PageTabs moduleId={shown.moduleId} child={shown.child} />}
           {children}
         </div>
         <MobileNavigation activeModule={moduleId} />

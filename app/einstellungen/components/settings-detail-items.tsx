@@ -9,7 +9,6 @@ import {
   AUTO_LOGOUT_MINUTES,
   CONTRASTS,
   MOTIONS,
-  THEMES,
   NOTIFY_CATEGORIES,
   START_PAGES,
   TEXT_SIZES,
@@ -144,11 +143,7 @@ export function itemsFor(
         : `vor ${passwordAge} Tagen geändert`;
   const enabled = Object.values(preferences.notify).filter(Boolean).length;
   const total = Object.keys(NOTIFY_CATEGORIES).length;
-  const appearance = [
-    TEXT_SIZES[preferences.textSize],
-    CONTRASTS[preferences.contrast],
-    THEMES[preferences.theme],
-  ].join(" · ");
+  const appearance = [TEXT_SIZES[preferences.textSize], CONTRASTS[preferences.contrast]].join(" · ");
   const onOff = (value: boolean) => (value ? "Ein" : "Aus");
   const startLabel = (key: StartPage) => (key === "residents" ? extras.terms.many : START_PAGES[key].label);
   const quiet = preferences.quietHours;
@@ -574,21 +569,6 @@ export function itemsFor(
         value: CONTRASTS[preferences.contrast],
         options: Object.values(CONTRASTS),
         save: (label) => save({ contrast: pick(CONTRASTS, label, "standard") }, `Kontrast: ${label}`),
-      },
-    },
-    {
-      id: "app-theme",
-      title: "Erscheinungsbild",
-      description: "Hell oder dunkel",
-      value: THEMES[preferences.theme],
-      icon: "settings",
-      detail: {
-        kind: "select",
-        text: "„Dunkel“ zeigt alle Seiten mit dunklem Hintergrund – angenehmer im Nachtdienst. Fotos bleiben farbecht.",
-        label: "Erscheinungsbild",
-        value: THEMES[preferences.theme],
-        options: Object.values(THEMES),
-        save: (label) => save({ theme: pick(THEMES, label, "light") }, `Erscheinungsbild: ${label}`),
       },
     },
     // Nur sichtbar, wenn neben Deutsch eine Sprache freigegeben ist (oder für die Administration zum Prüfen).

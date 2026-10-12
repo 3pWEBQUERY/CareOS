@@ -29,6 +29,8 @@ export function PageTabs({ moduleId, child }: { moduleId: string; child: string 
   const app = entry ?? moduleById(moduleId);
   if (!app) return null;
   const name = L(app.label);
+  // Richtung des Übergangs: Reiter rechts vom gewählten gleiten von rechts herein, links davon von links.
+  const activeIndex = tabs.indexOf(child);
   return (
     <div className="careos-app-bar" style={appStyle(app.hue)}>
       <span className="careos-app-bar-name">
@@ -37,7 +39,7 @@ export function PageTabs({ moduleId, child }: { moduleId: string; child: string 
       </span>
       {tabs.length > 1 && (
         <nav ref={ref} className="page-tabs" aria-label={`${name}: Seiten`}>
-          {tabs.map((tab) => {
+          {tabs.map((tab, index) => {
             const href = routeFor(moduleId, tab);
             if (!href) return null;
             const badge = badgeFor(moduleId, tab);
@@ -48,7 +50,7 @@ export function PageTabs({ moduleId, child }: { moduleId: string; child: string 
                 href={href}
                 className={tab === child ? "active" : ""}
                 aria-current={tab === child ? "page" : undefined}
-                transitionTypes={["nav-tab"]}
+                transitionTypes={[index < activeIndex ? "nav-tab-back" : "nav-tab-forward"]}
               >
                 {L(tab)}
                 {count > 0 && <em>{count > 99 ? "99+" : count}</em>}

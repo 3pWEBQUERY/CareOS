@@ -1,11 +1,11 @@
 @media (max-width: 960px) {
   .bottom-nav button.active {
     color: white;
-    border-color: rgba(147, 197, 253, 0.48);
+    border-color: rgba(76, 153, 240, 0.182);
     background: rgba(37, 99, 235, 0.78);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.3),
-      inset 0 -7px 15px rgba(10, 50, 132, 0.2),
+      inset 0 -7px 15px rgba(0, 0, 0, 0.36),
       0 5px 16px rgba(37, 99, 235, 0.3);
   }
   .bottom-nav svg {
@@ -35,7 +35,7 @@
     display: grid;
     place-items: center;
     border: 0;
-    border-radius: 6px;
+    border-radius: 12px;
     color: white;
     background: var(--brand);
     box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
@@ -607,10 +607,10 @@
     gap: 2px;
     padding: 6px;
     overflow: visible;
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.011);
     border-radius: 22px;
     background: #0c1f3a;
-    box-shadow: 0 12px 30px rgba(9, 31, 64, 0.35);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
@@ -637,7 +637,7 @@
     top: 4px;
     left: calc(50% + 5px);
     padding: 0 5px;
-    border: 2px solid #0c1f3a;
+    border: 2px solid #f5f7fa;
     border-radius: 999px;
     color: white;
     background: var(--critical);
@@ -658,7 +658,7 @@
   .mobile-nav-menu {
     max-height: calc(100dvh - 90px);
     padding-bottom: 84px;
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.011);
     border-radius: 22px;
     background: #0c1f3a;
     backdrop-filter: none;
@@ -695,19 +695,19 @@
   .mobile-nav-groups > button {
     grid-template-columns: 40px minmax(0, 1fr) auto;
     min-height: 60px;
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.006);
     color: white;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.006);
   }
   .mobile-nav-groups > button.active {
-    border-color: rgba(147, 197, 253, 0.6);
+    border-color: rgba(76, 153, 240, 0.228);
     background: rgba(37, 99, 235, 0.55);
   }
   .mobile-nav-groups strong {
     font-size: 14px;
   }
   .mobile-nav-groups small {
-    color: #bcd0ea;
+    color: #506e95;
     font-size: 11px;
     line-height: 1.35;
   }
@@ -722,7 +722,7 @@
     align-items: center;
     gap: 9px;
     padding: 0 12px;
-    border: 1px solid rgba(147, 197, 253, 0.28);
+    border: 1px solid rgba(76, 153, 240, 0.106);
     border-radius: 14px;
     color: white;
     background: rgba(37, 99, 235, 0.3);
@@ -757,8 +757,8 @@
   }
   /* Tabs: the active one stays in view, the edge shows that more tabs follow. */
   .page-tabs {
-    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
-    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #f7f7f7 calc(100% - 28px), transparent);
+    -webkit-mask-image: linear-gradient(90deg, #f7f7f7 calc(100% - 28px), transparent);
   }
   .page-tabs a {
     min-height: 38px;

@@ -8,14 +8,14 @@
   margin: 0 0 16px;
   padding: 14px 16px;
   border: 1px dashed var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: #fbfcfe;
+  background: var(--glass-surface);
   font-size: 12px;
 }
 .restraints-error {
   border-style: solid;
-  color: #a43b2d;
+  color: #e29e95;
   background: var(--critical-soft);
 }
 .restraint-badges {
@@ -66,8 +66,8 @@
   gap: 3px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fbfcfe;
+  border-radius: 12px;
+  background: var(--glass-surface);
   font-size: 12px;
 }
 .restraint-reviews small {
@@ -88,8 +88,8 @@
 .restraints-ended {
   margin-top: 16px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .restraints-ended summary {
   padding: 12px 16px;
@@ -144,7 +144,7 @@
 .advance-care-representative {
   display: grid;
   gap: 7px;
-  color: #455b70;
+  color: #bac8d5;
   font-size: 10px;
   font-weight: 730;
 }
@@ -239,7 +239,7 @@
   gap: 4px 12px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 12px;
 }
 .quality-indicator-residents a {
@@ -325,7 +325,7 @@
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .visit-resident li p,
 .visit-resolved li p {
@@ -345,7 +345,7 @@
   gap: 2px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .visit-resolved li span {
   color: var(--muted);
@@ -361,14 +361,14 @@
 .visit-answer-question p {
   margin: 0;
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
   font-size: 13px;
   white-space: pre-wrap;
 }
 .visit-sheet h2 span {
   margin-left: 8px;
-  color: #5f6f86;
+  color: #a6b0c0;
   font-weight: 600;
   text-transform: none;
   letter-spacing: 0;
@@ -379,11 +379,11 @@
 .visit-sheet-answer {
   width: 38%;
   height: 52px;
-  border-left: 1px solid #e2e8f0;
+  border-left: 1px solid rgba(255, 255, 255, 0.096);
 }
 .visit-sheet-empty {
   margin: 18px 0;
-  color: #5f6f86;
+  color: #a6b0c0;
 }
 @media (max-width: 760px) {
   .visit-resident li {
@@ -442,7 +442,7 @@
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .service-records li > div,
 .service-suggestion-group li > div {
@@ -637,7 +637,7 @@
   gap: 12px 16px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .isolation-person {
   display: grid;
@@ -682,7 +682,7 @@
   gap: 2px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .hygiene-history strong {
   font-size: 13px;
@@ -757,7 +757,7 @@
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .activity-card.cancelled {
   background: var(--surface-soft);
@@ -818,7 +818,7 @@
   gap: 8px 12px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
 }
 .participation-person {
@@ -933,13 +933,13 @@
   height: 6px;
   margin-bottom: 12px;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface-soft);
 }
 .occupancy-bar i {
   display: block;
   height: 100%;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand);
 }
 .occupancy-rooms,
@@ -959,7 +959,7 @@
   gap: 8px 12px;
   padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .occupancy-rooms li.inactive {
   background: var(--surface-soft);
@@ -986,7 +986,7 @@
 }
 .occupancy-occupants span {
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand-soft);
   color: var(--brand-dark);
   font-size: 12px;
@@ -1007,7 +1007,7 @@
   gap: 4px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .occupancy-planned li > div:first-child {
   display: grid;
@@ -1077,7 +1077,7 @@
   min-height: 96px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 400;
@@ -1112,7 +1112,7 @@
   margin: 8px 0;
   padding: 10px 12px;
   border: 1px solid var(--critical);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--critical-soft);
   color: var(--critical);
   font-size: 13px;
@@ -1127,7 +1127,7 @@
 }
 .emediplan-hint {
   padding: 10px 12px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--attention-soft);
   color: var(--ink);
 }
@@ -1146,7 +1146,7 @@
   min-height: 38px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .emediplan-line.done {
   background: var(--surface-soft);
@@ -1190,7 +1190,7 @@
 .emediplan-video {
   width: 100%;
   max-height: 60vh;
-  border-radius: 6px;
+  border-radius: 12px;
   background: #0f172a;
   object-fit: cover;
 }
@@ -1229,7 +1229,7 @@
   gap: 3mm;
   height: 37mm;
   padding: 3mm;
-  border: 1px dashed #c9d3df;
+  border: 1px dashed rgba(255, 255, 255, 0.133);
   break-inside: avoid;
 }
 .room-label-code {
@@ -1328,7 +1328,7 @@
   font-variant-numeric: tabular-nums;
 }
 .repositioning-skin.notable {
-  color: #a43b2d;
+  color: #e29e95;
   font-weight: 650;
 }
 .repositioning-plan dl {
@@ -1375,7 +1375,7 @@
   gap: 2px 16px;
   margin: 0 0 6px;
   padding: 6px 0;
-  border-bottom: 1px solid #e5eaf0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.094);
   break-inside: avoid;
   font-size: 10.5px;
 }
@@ -1420,7 +1420,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .death-checklist li:last-child {
   border-bottom: 0;
@@ -1431,8 +1431,8 @@
   width: 22px;
   height: 22px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .death-checklist li.done .death-checklist-mark {
   border-color: var(--success);
@@ -1460,7 +1460,7 @@
   gap: 5px;
   padding: 0 9px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 11px;
@@ -1476,7 +1476,7 @@
 .evacuation-sheet {
   max-width: 190mm;
   margin: 0 auto 10mm;
-  color: #000;
+  color: #f7f7f7;
 }
 .evacuation-sheet + .evacuation-sheet {
   break-before: page;
@@ -1505,19 +1505,19 @@
 .evacuation-sheet th,
 .evacuation-sheet td {
   padding: 2.2mm 2mm;
-  border: 1px solid #9aa7b4;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   text-align: left;
   vertical-align: top;
 }
 .evacuation-sheet thead th {
-  background: #eef2f6;
+  background: rgba(255, 255, 255, 0.062);
   font-weight: 700;
 }
 .evacuation-sheet tr {
   break-inside: avoid;
 }
 .evacuation-sheet tr.absent td {
-  color: #5b6b7b;
+  color: #afb9c4;
 }
 .evacuation-sheet td.mobility-wheelchair,
 .evacuation-sheet td.mobility-bedridden {
@@ -1534,7 +1534,7 @@
   display: inline-block;
   width: 5mm;
   height: 5mm;
-  border: 1px solid #000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 /* Diagnosen (Stammdaten): Liste wie die Checkliste, ohne Häkchen; Code als kleines Kennzeichen. */
 .diagnosis-list li {
@@ -1547,7 +1547,7 @@
   display: inline-block;
   margin-left: 6px;
   padding: 1px 6px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 11px;
@@ -1598,7 +1598,7 @@
   min-height: 36px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .vaccination-unit + .vaccination-unit {
   margin-top: 12px;
@@ -1627,7 +1627,7 @@
   justify-content: space-between;
   gap: 4px 10px;
   padding: 7px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   font-size: 12.5px;
 }
 .vaccination-unit li:last-child {
@@ -1665,16 +1665,16 @@
 /* Einwilligungen: Stand je Thema (Akte) und Übersicht je Wohnbereich. */
 .diagnosis-code.consent-refused,
 .diagnosis-code.consent-revoked {
-  color: #a43b2d;
+  color: #e29e95;
   background: var(--critical-soft);
 }
 .diagnosis-code.consent-missing {
   color: var(--muted);
-  background: #eef2f6;
+  background: rgba(255, 255, 255, 0.062);
 }
 .consent-row.refused > small,
 .consent-row.revoked > small {
-  color: #a43b2d;
+  color: #e29e95;
   font-weight: 700;
 }
 .consent-row.granted > small {
@@ -1707,7 +1707,7 @@
   align-items: start;
   gap: 8px 16px;
   padding: 14px 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
 }
 .device-list > ul > li:last-child {
   border-bottom: 0;
@@ -1726,14 +1726,14 @@
   font-size: 12px;
 }
 .device-list li.due .device-due {
-  color: #9a5b00;
+  color: #f9c985;
   font-weight: 700;
 }
 .device-list li.retired strong {
   color: var(--muted);
 }
 .device-defect {
-  color: #a43b2d !important;
+  color: #e29e95 !important;
 }
 .device-actions {
   display: flex;
@@ -1757,7 +1757,7 @@
 }
 /* Kühlschrank-Temperatur: letzter Wert ausserhalb der Grenzen der Einrichtung. */
 .diagnosis-code.fridge-outside {
-  color: #a43b2d;
+  color: #e29e95;
   background: var(--critical-soft);
 }
 /* Fahrdienst: Tagwahl (Heute, Morgen, Datum) über der Tagesliste. */
@@ -1798,12 +1798,12 @@
 }
 /* Rückmeldungen & Beschwerden: Art farbig, Text vollständig, Auswertung als schlichte Tabellen. */
 .diagnosis-code.feedback-complaint {
-  color: #a43b2d;
+  color: #e29e95;
   background: var(--critical-soft);
 }
 .diagnosis-code.feedback-praise {
-  color: #1f7a4d;
-  background: #e8f6ee;
+  color: #99e5bf;
+  background: rgba(255, 255, 255, 0.071);
 }
 .device-list small.feedback-text {
   color: var(--ink);
@@ -1853,12 +1853,12 @@
 .feedback-table th,
 .feedback-table td {
   padding: 7px 8px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   text-align: left;
 }
 .feedback-table thead th {
   color: var(--muted);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 11px;
 }
 .feedback-table .number {
@@ -1887,7 +1887,7 @@
 }
 .inventory-sheet td small {
   display: block;
-  color: #4b5563;
+  color: #c3c9d2;
 }
 .inventory-signatures {
   margin-top: 8mm;
@@ -1902,7 +1902,7 @@
 }
 .inventory-signatures span {
   padding-top: 2mm;
-  border-top: 1px solid #000;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 /* Bild bei der Aufnahme: Vorschau wie in der Akte (rund, Kamera-Zeichen), daneben Hinweis und Knöpfe. */
 .intake-photo {
@@ -1912,8 +1912,8 @@
   gap: 14px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fbfcfe;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .intake-photo .record-photo-trigger {
   width: 64px;
@@ -1936,7 +1936,7 @@
   object-position: center 30%;
 }
 .intake-photo .record-photo-trigger:focus-visible {
-  outline: 3px solid #bfdbfe;
+  outline: 3px solid rgba(76, 149, 240, 0.38);
   outline-offset: 3px;
 }
 .intake-photo .record-photo-trigger:disabled {
@@ -1960,7 +1960,7 @@
   font-size: 12px;
 }
 .intake-photo small.intake-photo-error {
-  color: #a43b2d;
+  color: #e29e95;
 }
 .intake-photo-actions {
   display: flex;
@@ -1983,7 +1983,7 @@
 }
 .kitchen-sheet td small {
   display: block;
-  color: #5b6b7b;
+  color: #afb9c4;
   font-size: 12px;
 }
 .kitchen-sheet td.kitchen-allergies {

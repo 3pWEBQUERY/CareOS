@@ -12,15 +12,15 @@
   gap: 9px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
 .profile-unit-options button:hover,
 .profile-unit-options button.active {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .profile-unit-options button strong,
@@ -52,9 +52,9 @@
   gap: 9px;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: #f8fafb;
+  background: rgba(255, 255, 255, 0.04);
   text-align: left;
   cursor: pointer;
 }
@@ -68,9 +68,9 @@ kbd {
   padding: 2px 6px;
   border: 1px solid var(--line);
   border-bottom-width: 2px;
-  border-radius: 6px;
-  color: #71848a;
-  background: white;
+  border-radius: 12px;
+  color: #a1aeb2;
+  background: var(--glass-surface);
   font-size: 11px;
 }
 .icon-button {
@@ -80,13 +80,13 @@ kbd {
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .icon-button:hover {
   color: var(--brand);
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .icon-button svg {
@@ -98,9 +98,9 @@ kbd {
   position: absolute;
   top: 7px;
   right: 7px;
-  border: 2px solid white;
+  border: 2px solid rgba(255, 255, 255, 0.08);
   box-sizing: content-box;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--critical);
 }
 .profile {
@@ -115,8 +115,8 @@ kbd {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #1d4ed8;
-  background: #dbeafe;
+  color: #84a0ee;
+  background: rgba(76, 146, 240, 0.18);
   font-size: 13px;
   font-weight: 780;
 }
@@ -131,14 +131,14 @@ kbd {
   gap: 9px;
   padding: 5px 7px;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 12px;
   background: transparent;
   text-align: left;
   cursor: pointer;
 }
 .profile-trigger:hover,
 .profile-trigger.open {
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .profile-trigger .profile-caret {
@@ -164,9 +164,9 @@ kbd {
   gap: 3px;
   padding: 7px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 18px 42px rgba(23, 54, 64, 0.18);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.328);
   animation: rise-in 160ms ease;
 }
 .profile-dropdown button {
@@ -177,7 +177,7 @@ kbd {
   gap: 9px;
   padding: 0 9px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   font-size: 13px;
@@ -195,7 +195,7 @@ kbd {
   height: 29px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -207,12 +207,12 @@ kbd {
   width: 14px;
   height: 14px;
   margin-left: auto;
-  color: #9aabb9;
+  color: #6d869a;
 }
 .profile-dropdown button.logout {
   margin-top: 4px;
-  border-top: 1px solid #edf1f5;
-  border-radius: 0 0 6px 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.082);
+  border-radius: 0 0 12px 12px;
   color: var(--critical);
 }
 .profile-dropdown button.logout .profile-menu-icon {
@@ -221,7 +221,7 @@ kbd {
 }
 .profile-dropdown button.logout:hover,
 .profile-dropdown button.logout:focus-visible {
-  color: #9b3329;
+  color: #e39c95;
   background: var(--critical-soft);
 }
 .profile-overlay {
@@ -273,14 +273,14 @@ kbd {
   height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.022);
+  border-radius: 12px;
   color: white;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.008);
   cursor: pointer;
 }
 .profile-panel-close:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.016);
 }
 .profile-panel-close svg {
   width: 18px;
@@ -306,9 +306,9 @@ kbd {
   gap: 8px;
   padding: 24px 22px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .profile-large-avatar {
   width: 76px;
@@ -349,7 +349,7 @@ kbd {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 10px;
 }
 .profile-summary-meta svg {
@@ -401,9 +401,9 @@ kbd {
   align-items: center;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: #f7f9fc;
+  background: rgba(255, 255, 255, 0.04);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -423,10 +423,10 @@ kbd {
   min-height: 42px;
   padding: 0 11px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   outline: 0;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
 }
@@ -440,7 +440,7 @@ kbd {
 .profile-edit-field textarea:focus,
 .profile-edit-field label input:focus,
 .profile-edit-field label textarea:focus {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 .profile-edit-field-wide {
@@ -462,7 +462,7 @@ kbd {
 }
 .notification-trigger.open {
   color: var(--brand);
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   background: var(--brand-soft);
 }
 .notification-dropdown {
@@ -473,9 +473,9 @@ kbd {
   z-index: 30;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 18px 42px rgba(23, 54, 64, 0.18);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.328);
   animation: rise-in 160ms ease;
 }
 .notification-dropdown-header {
@@ -485,7 +485,7 @@ kbd {
   gap: 12px;
   padding: 16px 17px 14px;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(135deg, #f4f8ff 0%, #ffffff 72%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, var(--glass-surface) 72%);
 }
 .notification-dropdown-header .eyebrow {
   margin: 0 0 3px;
@@ -502,7 +502,7 @@ kbd {
 .notification-header-actions > button {
   padding: 3px 4px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: transparent;
   font-size: 10px;
@@ -515,7 +515,7 @@ kbd {
 }
 .notification-count {
   padding: 5px 8px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: var(--brand-soft);
   font-size: 11px;
@@ -536,8 +536,8 @@ kbd {
   gap: 9px;
   padding: 10px 8px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
-  border-radius: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
+  border-radius: 12px;
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -555,7 +555,7 @@ kbd {
   height: 31px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -573,7 +573,7 @@ kbd {
 }
 .notification-item-icon.stable {
   color: var(--success);
-  background: #e8f5ef;
+  background: rgba(255, 255, 255, 0.072);
 }
 .notification-item-copy {
   min-width: 0;
@@ -612,7 +612,7 @@ kbd {
 .notification-dropdown-footer {
   padding: 8px;
   border-top: 1px solid var(--line);
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .notification-dropdown-footer button {
   width: 100%;
@@ -622,7 +622,7 @@ kbd {
   justify-content: center;
   gap: 6px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand-dark);
   background: transparent;
   font-size: 12px;

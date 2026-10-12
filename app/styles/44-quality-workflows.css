@@ -22,7 +22,7 @@
   margin: 0;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .quality-workflow-step legend {
   padding: 0 4px;

@@ -66,7 +66,7 @@
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .proof-resident li > div {
   display: grid;
@@ -109,7 +109,7 @@
   min-height: 30px;
   padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--brand-dark);
   font-size: 11px;
@@ -128,7 +128,7 @@
   gap: 6px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
 }
 .proof-choices li > small {
   color: var(--muted);

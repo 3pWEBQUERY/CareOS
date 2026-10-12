@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CareOS · Pflegearbeitsplatz",
   description: "Der persönliche digitale Arbeitsplatz für moderne Pflege.",
-  appleWebApp: { capable: true, title: "CareOS", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "CareOS", statusBarStyle: "black-translucent" },
   icons: { apple: "/icons/apple-touch-icon.png" },
 };
 
@@ -30,21 +30,18 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#0b1f3a",
+  themeColor: "#0f1a33",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // suppressHydrationWarning: das Skript unten setzt das dunkle Erscheinungsbild vor der Hydrierung.
+    // suppressHydrationWarning: das Skript unten markiert vor der Hydrierung eine ausstehende Übersetzung.
     <html
       lang="de"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <Script id="carecore-theme" strategy="beforeInteractive">
-          {`try{if(localStorage.getItem("carecore-theme")==="dark")document.documentElement.classList.add("theme-dark")}catch(e){}`}
-        </Script>
         {/* Andere Sprache als Deutsch: Seite kurz verbergen, bis die Übersetzung angewendet ist (höchstens 1,5 s). */}
         <Script id="carecore-language" strategy="beforeInteractive">
           {`try{var l=localStorage.getItem("carecore-language");if(l&&l!=="de"){var d=document.documentElement;d.classList.add("i18n-pending");setTimeout(function(){d.classList.remove("i18n-pending")},1500)}}catch(e){}`}

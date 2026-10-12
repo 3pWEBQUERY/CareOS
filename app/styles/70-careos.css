@@ -29,7 +29,7 @@
 .careos-app-icon-sm {
   width: 32px;
   height: 32px;
-  border-radius: 9px;
+  border-radius: 16px;
 }
 .careos-app-icon-sm svg,
 .careos-app-icon-sm .sidebar-kompass-icon {
@@ -59,7 +59,7 @@
   top: -7px;
   right: -9px;
   padding: 0 5px;
-  border: 2px solid white;
+  border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: 999px;
   color: white;
   background: var(--critical);
@@ -108,15 +108,15 @@
 .careos-dock .careos-dock-button:hover,
 .careos-dock .careos-dock-button:focus-visible {
   color: white;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.008);
 }
 .careos-dock .careos-dock-button.active {
   color: white;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.013);
   box-shadow: inset 3px 0 0 hsl(var(--app-hue) 90% 68%);
 }
 .careos-dock .careos-dock-button:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid rgba(76, 153, 240, 0.38);
   outline-offset: 1px;
 }
 .careos-dock-icon {
@@ -182,7 +182,7 @@
   min-height: 40px;
   padding: 0 16px;
   border-radius: 999px;
-  color: #3d4f66;
+  color: #c3cedb;
   font-size: 13.5px;
   font-weight: 700;
 }
@@ -198,7 +198,7 @@
 }
 .careos-app-bar .page-tabs a.active em {
   color: var(--critical);
-  background: white;
+  background: var(--glass-surface);
 }
 .careos-app-bar + .workspace,
 .careos-app-bar + main {
@@ -297,7 +297,7 @@
   gap: 14px;
   padding: 12px 14px;
   border-color: var(--line);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
 }
 .careos-app-grid.with-hints .careos-app-tile:hover,
@@ -349,7 +349,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -358,7 +358,7 @@
 }
 .careos-home-apps .home-card-head > .careos-home-all:hover,
 .careos-home-apps .home-card-head > .careos-home-all:focus-visible {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .careos-home-all svg {
@@ -388,7 +388,7 @@
   border-radius: 22px;
   color: var(--ink);
   background: var(--bg);
-  box-shadow: 0 30px 80px rgba(8, 23, 45, 0.35);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
   transform: translateX(-50%);
   animation: careos-launcher-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -414,7 +414,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 14px;
   font-weight: 700;
@@ -433,7 +433,7 @@
   padding: 0 16px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: white;
+  background: var(--glass-surface);
 }
 .careos-launcher-search:focus-within {
   border-color: var(--brand);
@@ -483,7 +483,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 13.5px;
   font-weight: 650;
@@ -491,7 +491,7 @@
 }
 .careos-recent button:hover,
 .careos-recent button:focus-visible {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .careos-launcher-empty {
@@ -517,7 +517,7 @@
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 14px;
   font-weight: 650;
@@ -595,7 +595,7 @@
   .careos-bottom-dock .careos-app-icon {
     width: 30px;
     height: 30px;
-    border-radius: 9px;
+    border-radius: 16px;
   }
   .careos-bottom-dock .careos-app-icon svg,
   .careos-bottom-dock button.active .careos-app-icon svg {
@@ -609,8 +609,8 @@
   }
   .careos-bottom-dock button.active {
     color: white;
-    border-color: rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.024);
+    background: rgba(255, 255, 255, 0.013);
     box-shadow: none;
   }
 }

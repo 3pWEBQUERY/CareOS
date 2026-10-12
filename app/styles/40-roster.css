@@ -20,10 +20,10 @@
 .roster-alert {
   margin: 0;
   padding: 10px 14px;
-  border: 1px solid #fcd34d;
-  border-radius: 6px;
-  color: #7c4a03;
-  background: #fffbeb;
+  border: 1px solid #f8d871;
+  border-radius: 12px;
+  color: #f9ca88;
+  background: rgba(240, 208, 76, 0.18);
   font-size: 12px;
   font-weight: 650;
 }
@@ -46,8 +46,8 @@
   gap: 10px 16px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
+  border-radius: 14px;
+  background: var(--glass-surface);
 }
 .roster-nav,
 .roster-filters {
@@ -62,9 +62,9 @@
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
 }
@@ -74,9 +74,9 @@
   display: grid;
   place-items: center;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   cursor: pointer;
 }
 .roster-toolbar .secondary-button {
@@ -109,12 +109,12 @@
   font-weight: 750;
 }
 .roster-status.draft {
-  color: #7c4a03;
-  background: #fef3c7;
+  color: #f9ca88;
+  background: rgba(240, 208, 76, 0.18);
 }
 .roster-status.published {
-  color: #065f46;
-  background: #d1fae5;
+  color: #8cf8d9;
+  background: rgba(80, 236, 156, 0.18);
 }
 .roster-toggle,
 .roster-checkbox {
@@ -144,15 +144,15 @@
   gap: 4px;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   text-align: left;
   cursor: pointer;
 }
 .roster-tile:hover,
 .roster-tile:focus-visible {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .roster-tile svg {
@@ -169,10 +169,10 @@
   font-weight: 650;
 }
 .roster-tile.attention svg {
-  color: #b45309;
+  color: #f8b581;
 }
 .roster-tile.critical svg {
-  color: #be123c;
+  color: #f3849f;
 }
 
 .roster-card {
@@ -198,7 +198,7 @@
   padding: 6px 2px;
   border-bottom: 1px solid var(--line);
   color: var(--muted);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
   font-weight: 650;
   text-align: center;
 }
@@ -213,15 +213,15 @@
 .roster-grid thead th svg {
   width: 10px;
   height: 10px;
-  color: #b45309;
+  color: #f8b581;
 }
 .roster-grid th.weekend,
 .roster-cell.weekend {
-  background: #f5f7fb;
+  background: rgba(255, 255, 255, 0.044);
 }
 .roster-grid th.holiday,
 .roster-cell.holiday {
-  background: #fff7ed;
+  background: rgba(240, 167, 76, 0.18);
 }
 .roster-grid th.today {
   color: white;
@@ -244,8 +244,8 @@
   max-width: 230px;
   padding: 7px 10px;
   border-right: 1px solid var(--line);
-  border-bottom: 1px solid #edf1f7;
-  background: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-surface);
   text-align: left;
 }
 .roster-name-head {
@@ -267,7 +267,7 @@
   font-weight: 600;
 }
 .roster-off-target {
-  color: #b45309;
+  color: #f8b581;
   font-weight: 800;
 }
 .roster-name-tags {
@@ -298,12 +298,12 @@ tr.self .roster-name {
 .roster-cell {
   height: 50px;
   padding: 0;
-  border-bottom: 1px solid #edf1f7;
-  border-right: 1px solid #f1f4f9;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   vertical-align: top;
 }
 .roster-cell.highlight {
-  background: #fef2f2;
+  background: rgba(255, 255, 255, 0.044);
 }
 .roster-cell-inner {
   position: relative;
@@ -319,7 +319,7 @@ tr.self .roster-name {
 }
 .roster-cell-inner.drop-over {
   background: var(--brand-soft);
-  box-shadow: inset 0 0 0 2px #93c5fd;
+  box-shadow: inset 0 0 0 2px rgba(76, 153, 240, 0.38);
 }
 .roster-cell-add {
   position: absolute;
@@ -333,7 +333,7 @@ tr.self .roster-name {
 }
 .roster-cell-inner:hover .roster-cell-add,
 .roster-cell-inner:focus-visible .roster-cell-add {
-  border-color: #bfdbfe;
+  border-color: rgba(76, 149, 240, 0.38);
   color: var(--brand);
 }
 .roster-chip {
@@ -344,11 +344,11 @@ tr.self .roster-name {
   width: 100%;
   min-height: 40px;
   padding: 3px 4px 3px 7px;
-  border: 1px solid color-mix(in srgb, var(--chip-color) 35%, white);
+  border: 1px solid color-mix(in srgb, var(--chip-color) 35%, rgba(255, 255, 255, 0.08));
   border-left: 4px solid var(--chip-color);
   border-radius: 5px;
   color: var(--ink);
-  background: color-mix(in srgb, var(--chip-color) 10%, white);
+  background: color-mix(in srgb, var(--chip-color) 10%, var(--glass-surface));
   text-align: left;
   cursor: grab;
   touch-action: manipulation;
@@ -358,7 +358,7 @@ tr.self .roster-name {
   line-height: 1.1;
 }
 .roster-chip small {
-  color: #334155;
+  color: #d2d9e4;
   font-size: 9px;
   font-weight: 650;
   white-space: nowrap;
@@ -383,14 +383,14 @@ tr.self .roster-name {
   right: 2px;
   display: flex;
   gap: 1px;
-  color: #475569;
+  color: #bfc8d4;
 }
 .roster-chip-badges svg {
   width: 10px;
   height: 10px;
 }
 .roster-chip.has-warning .roster-chip-badges svg:last-child {
-  color: #b45309;
+  color: #f8b581;
 }
 .roster-timeoff {
   justify-self: end;
@@ -400,12 +400,12 @@ tr.self .roster-name {
   font-weight: 800;
 }
 .roster-timeoff.open {
-  color: #7c4a03;
-  background: #fef3c7;
+  color: #f9ca88;
+  background: rgba(240, 208, 76, 0.18);
 }
 .roster-timeoff.approved {
-  color: #065f46;
-  background: #d1fae5;
+  color: #8cf8d9;
+  background: rgba(80, 236, 156, 0.18);
 }
 .roster-grid tfoot th,
 .roster-grid tfoot td {
@@ -413,7 +413,7 @@ tr.self .roster-name {
   bottom: 0;
   z-index: 2;
   border-top: 1px solid var(--line);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
 }
 .roster-grid tfoot th {
   z-index: 3;
@@ -425,15 +425,15 @@ tr.self .roster-name {
   text-align: center;
 }
 .roster-staffing.low {
-  color: #9f1239;
-  background: #ffe4e6 !important;
+  color: #f289a6;
+  background: rgba(240, 76, 88, 0.18) !important;
 }
 .roster-staffing.high {
-  color: #7c4a03;
-  background: #fef3c7 !important;
+  color: #f9ca88;
+  background: rgba(240, 208, 76, 0.18) !important;
 }
 .roster-staffing.ok {
-  color: #065f46;
+  color: #8cf8d9;
 }
 .roster-staffing-name strong {
   font-size: 11px;
@@ -472,8 +472,13 @@ tr.self .roster-name {
 }
 .roster-skeleton span {
   height: 46px;
-  border-radius: 6px;
-  background: linear-gradient(90deg, #f1f5f9, #e8eef6, #f1f5f9);
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.053),
+    rgba(255, 255, 255, 0.071),
+    rgba(255, 255, 255, 0.053)
+  );
   background-size: 200% 100%;
   animation: roster-shimmer 1.4s linear infinite;
 }
@@ -492,7 +497,7 @@ tr.self .roster-name {
 .roster-empty.inline {
   padding: 14px;
   border-bottom: 1px solid var(--line);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
 }
 .roster-empty strong {
   color: var(--ink);
@@ -531,7 +536,7 @@ tr.self .roster-name {
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
   font-size: 12px;
 }
@@ -543,19 +548,19 @@ tr.self .roster-name {
   font-weight: 800;
 }
 .roster-violation.block {
-  border-color: #fecdd3;
-  background: #fff1f2;
+  border-color: rgba(240, 76, 96, 0.38);
+  background: rgba(255, 255, 255, 0.044);
 }
 .roster-violation.block .roster-violation-badge {
   color: white;
   background: #be123c;
 }
 .roster-violation.warn {
-  border-color: #fde68a;
-  background: #fffbeb;
+  border-color: rgba(240, 208, 76, 0.38);
+  background: rgba(240, 208, 76, 0.18);
 }
 .roster-violation.warn .roster-violation-badge {
-  color: #7c4a03;
+  color: #f9ca88;
   background: #fde68a;
 }
 .roster-violation.info .roster-violation-badge {
@@ -570,22 +575,22 @@ tr.self .roster-name {
 .roster-analysis-summary span {
   padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 12px;
 }
 .roster-analysis-summary strong {
   font-size: 16px;
 }
 .roster-analysis-summary .critical {
-  border-color: #fecdd3;
-  color: #9f1239;
+  border-color: rgba(240, 76, 96, 0.38);
+  color: #f289a6;
 }
 .roster-analysis-summary .attention {
-  border-color: #fde68a;
-  color: #7c4a03;
+  border-color: rgba(240, 208, 76, 0.38);
+  color: #f9ca88;
 }
 .roster-analysis-summary .ok {
-  color: #065f46;
+  color: #8cf8d9;
 }
 .roster-reason {
   display: grid;
@@ -597,7 +602,7 @@ tr.self .roster-name {
   min-height: 70px;
   padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font: inherit;
   font-size: 13px;
 }
@@ -646,19 +651,19 @@ tr.self .roster-name {
   display: grid;
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 10px;
 }
 .roster-ai-diff-row {
   display: grid;
   grid-template-columns: 150px repeat(31, minmax(26px, 1fr));
-  border-bottom: 1px solid #edf1f7;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .roster-ai-diff-row > span {
   display: grid;
   place-items: center;
   min-height: 24px;
-  border-right: 1px solid #f1f4f9;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
   font-weight: 700;
 }
 .roster-ai-diff-row > span:first-child {
@@ -668,24 +673,24 @@ tr.self .roster-name {
   white-space: nowrap;
 }
 .roster-ai-diff-row.head {
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
   color: var(--muted);
 }
 .roster-ai-diff .new,
 .roster-legend i.new {
-  color: #065f46;
-  background: #d1fae5;
+  color: #8cf8d9;
+  background: rgba(80, 236, 156, 0.18);
 }
 .roster-ai-diff .dropped,
 .roster-legend i.dropped {
-  color: #9f1239;
-  background: #ffe4e6;
+  color: #f289a6;
+  background: rgba(240, 76, 88, 0.18);
   text-decoration: line-through;
 }
 .roster-ai-diff .kept,
 .roster-legend i.kept {
-  color: #475569;
-  background: #f1f5f9;
+  color: #bfc8d4;
+  background: rgba(255, 255, 255, 0.053);
 }
 .roster-ai-list {
   display: grid;
@@ -696,7 +701,7 @@ tr.self .roster-name {
   font-size: 12px;
 }
 .roster-ai-list li.dropped {
-  color: #9f1239;
+  color: #f289a6;
 }
 .roster-suggestions {
   display: grid;
@@ -710,12 +715,12 @@ tr.self .roster-name {
   gap: 6px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   font-size: 12px;
 }
 .roster-suggestions p {
   margin: 0;
-  color: #334155;
+  color: #d2d9e4;
 }
 .roster-priority {
   justify-self: start;
@@ -729,7 +734,7 @@ tr.self .roster-name {
   background: #be123c;
 }
 .roster-priority.medium {
-  color: #7c4a03;
+  color: #f9ca88;
   background: #fde68a;
 }
 .roster-priority.low {
@@ -742,11 +747,11 @@ tr.self .roster-name {
   justify-content: space-between;
   gap: 10px;
   padding: 6px 8px;
-  border-radius: 6px;
-  background: #f8fafc;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.038);
 }
 .roster-suggestion-action em {
-  color: #9f1239;
+  color: #f289a6;
   font-size: 11px;
 }
 
@@ -762,13 +767,13 @@ tr.self .roster-name {
 .roster-table th,
 .roster-table td {
   padding: 9px 10px;
-  border-bottom: 1px solid #edf1f7;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   text-align: left;
   vertical-align: top;
 }
 .roster-table th {
   color: var(--muted);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
   font-size: 11px;
   font-weight: 700;
 }
@@ -778,11 +783,11 @@ tr.self .roster-name {
   font-variant-numeric: tabular-nums;
 }
 .roster-table .negative {
-  color: #9f1239;
+  color: #f289a6;
   font-weight: 750;
 }
 .roster-table .positive {
-  color: #065f46;
+  color: #8cf8d9;
   font-weight: 750;
 }
 .roster-row-actions {
@@ -805,16 +810,16 @@ tr.self .roster-name {
   font-weight: 750;
 }
 .roster-pill.attention {
-  color: #7c4a03;
-  background: #fef3c7;
+  color: #f9ca88;
+  background: rgba(240, 208, 76, 0.18);
 }
 .roster-pill.critical {
-  color: #9f1239;
-  background: #ffe4e6;
+  color: #f289a6;
+  background: rgba(240, 76, 88, 0.18);
 }
 .roster-pill.ok {
-  color: #065f46;
-  background: #d1fae5;
+  color: #8cf8d9;
+  background: rgba(80, 236, 156, 0.18);
 }
 .roster-section-head {
   display: flex;
@@ -849,14 +854,14 @@ tr.self .roster-name {
   gap: 12px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
+  border-radius: 14px;
+  background: var(--glass-surface);
   font-size: 12px;
   text-align: left;
   cursor: pointer;
 }
 .my-roster-day.today {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   box-shadow: inset 3px 0 0 var(--brand);
 }
 .my-roster-day.free {
@@ -876,8 +881,8 @@ tr.self .roster-name {
   gap: 14px;
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: white;
+  border-radius: 16px;
+  background: var(--glass-surface);
 }
 .my-roster-clock strong {
   display: block;
@@ -902,8 +907,8 @@ tr.self .roster-name {
 .my-roster-totals div {
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 8px;
-  background: white;
+  border-radius: 14px;
+  background: var(--glass-surface);
 }
 .my-roster-totals strong {
   display: block;
@@ -934,11 +939,11 @@ tr.self .roster-name {
   align-items: flex-start;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 14px;
   font-weight: 500;
 }
 .roster-swap-options em {
-  color: #7c4a03;
+  color: #f9ca88;
   font-style: normal;
 }
 
@@ -968,7 +973,7 @@ tr.self .roster-name {
 }
 .roster-cell.selected .roster-cell-inner {
   background: color-mix(in srgb, var(--brand) 9%, transparent);
-  box-shadow: inset 0 0 0 1px #93c5fd;
+  box-shadow: inset 0 0 0 1px rgba(76, 153, 240, 0.38);
 }
 .roster-cell.previewed .roster-cell-inner {
   background: color-mix(in srgb, var(--brand) 16%, transparent);
@@ -995,7 +1000,7 @@ tr.self .roster-name {
   border: 2px solid var(--brand);
   border-radius: 5px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 13px;
   font-weight: 800;
@@ -1010,7 +1015,7 @@ tr.self .roster-name {
   gap: 6px;
   padding: 10px 14px;
   border-bottom: 1px solid var(--line);
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
 }
 .roster-palette-label {
   margin-right: 2px;
@@ -1027,9 +1032,9 @@ tr.self .roster-name {
   gap: 5px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -1037,7 +1042,7 @@ tr.self .roster-name {
 }
 .roster-palette button:hover,
 .roster-palette button.active {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   color: var(--brand-dark);
   background: var(--brand-soft);
 }
@@ -1051,7 +1056,7 @@ tr.self .roster-name {
   font-weight: 800;
 }
 .roster-palette .roster-palette-code.active {
-  background: color-mix(in srgb, var(--chip-color) 16%, white);
+  background: color-mix(in srgb, var(--chip-color) 16%, var(--glass-surface));
 }
 .roster-palette .roster-palette-action {
   margin-left: auto;
@@ -1071,17 +1076,17 @@ tr.self .roster-name {
   z-index: 2;
   min-width: 72px;
   border-left: 1px solid var(--line);
-  background: white;
+  background: var(--glass-surface);
   text-align: right;
 }
 .roster-grid thead th.roster-total-head {
   z-index: 4;
   padding-right: 8px;
-  background: #f8fafc;
+  background: rgba(255, 255, 255, 0.038);
 }
 .roster-total {
   padding: 4px 8px;
-  border-bottom: 1px solid #edf1f7;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
@@ -1170,15 +1175,15 @@ tr.self .roster-name {
   min-height: 34px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--muted);
-  background: white;
+  background: var(--glass-surface);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
 .roster-settings-tabs button.active {
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   color: var(--brand-dark);
   background: var(--brand-soft);
 }
@@ -1201,9 +1206,9 @@ tr.self .roster-name {
   min-height: 38px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 13px;
   font-weight: 500;
@@ -1256,9 +1261,9 @@ tr.self .roster-name {
   min-height: 34px;
   padding: 0 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--ink);
-  background: white;
+  background: var(--glass-surface);
   font: inherit;
   font-size: 12px;
 }
@@ -1282,8 +1287,8 @@ tr.self .roster-name {
 .roster-print {
   min-height: 100vh;
   padding: 16px;
-  color: #0f172a;
-  background: #fff;
+  color: #f5f6fa;
+  background: var(--glass-surface);
 }
 .roster-print-bar {
   display: flex;
@@ -1292,13 +1297,13 @@ tr.self .roster-name {
   gap: 8px 12px;
   margin-bottom: 16px;
   padding: 10px 12px;
-  border: 1px solid #dbe3ee;
-  border-radius: 8px;
-  background: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.104);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.038);
 }
 .roster-print-bar span {
   flex: 1 1 auto;
-  color: #5f6f86;
+  color: #a6b0c0;
   font-size: 12px;
 }
 .roster-print-bar .button-icon {
@@ -1307,7 +1312,7 @@ tr.self .roster-name {
 }
 .roster-print-message {
   margin: 24px 0;
-  color: #475569;
+  color: #bfc8d4;
 }
 .roster-print-sheet > header {
   display: flex;
@@ -1322,14 +1327,14 @@ tr.self .roster-name {
 }
 .roster-print-sheet header p {
   margin: 2px 0 0;
-  color: #475569;
+  color: #bfc8d4;
   font-size: 11px;
 }
 .roster-print-draft {
   padding: 3px 10px;
-  border: 1px solid #f59e0b;
+  border: 1px solid #f8c979;
   border-radius: 999px;
-  color: #92400e;
+  color: #f4b189;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -1343,7 +1348,7 @@ tr.self .roster-name {
 .roster-print-sheet th,
 .roster-print-sheet td {
   padding: 2px 1px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.13);
   text-align: center;
   vertical-align: middle;
 }
@@ -1352,7 +1357,7 @@ tr.self .roster-name {
   display: block;
 }
 .roster-print-sheet thead th span {
-  color: #5f6f86;
+  color: #a6b0c0;
   font-weight: 500;
 }
 .roster-print-sheet .name {
@@ -1365,7 +1370,7 @@ tr.self .roster-name {
 }
 .roster-print-sheet .name small {
   margin-left: 4px;
-  color: #5f6f86;
+  color: #a6b0c0;
   font-weight: 400;
 }
 .roster-print-sheet .total {
@@ -1373,18 +1378,18 @@ tr.self .roster-name {
 }
 .roster-print-sheet td.total small {
   display: block;
-  color: #5f6f86;
+  color: #a6b0c0;
 }
 .roster-print-sheet .weekend,
 .roster-print-sheet .holiday {
-  background: #f1f5f9;
+  background: rgba(255, 255, 255, 0.053);
 }
 .roster-print-sheet .code,
 .roster-print-sheet footer i {
   display: inline-block;
   min-width: 18px;
   padding: 0 2px;
-  border: 1px solid #94a3b8;
+  border: 1px solid #6e829f;
   border-radius: 3px;
   font-style: normal;
   font-weight: 700;
@@ -1394,7 +1399,7 @@ tr.self .roster-name {
   margin-top: 1px;
 }
 .roster-print-sheet tfoot td.low {
-  color: #b91c1c;
+  color: #ed8989;
   font-weight: 700;
 }
 .roster-print-sheet footer {

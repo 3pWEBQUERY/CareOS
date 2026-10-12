@@ -6,10 +6,10 @@
   gap: 18px;
   margin: -4px 0 20px;
   padding: 13px 18px;
-  border: 1px solid #c8d9ef;
-  border-radius: 6px;
-  color: #183b63;
-  background: linear-gradient(105deg, #eaf2ff, #f8fbff 68%);
+  border: 1px solid rgba(105, 151, 211, 0.38);
+  border-radius: 12px;
+  color: #9abee7;
+  background: linear-gradient(105deg, rgba(76, 138, 240, 0.18), var(--glass-surface) 68%);
 }
 .operations-pulse-intro {
   display: flex;
@@ -29,7 +29,7 @@
 }
 .operations-pulse-intro small {
   margin-top: 3px;
-  color: #607793;
+  color: #9babbe;
   font-size: 8px;
 }
 .operations-live-dot {
@@ -37,7 +37,7 @@
   height: 10px;
   border-radius: 50%;
   background: var(--success);
-  box-shadow: 0 0 0 5px #d7f1e5;
+  box-shadow: 0 0 0 5px rgba(111, 205, 162, 0.38);
 }
 .operations-pulse > button {
   display: flex;
@@ -58,7 +58,7 @@
   font-size: 15px;
 }
 .operations-pulse > button small {
-  color: #607793;
+  color: #9babbe;
   font-size: 8px;
 }
 .operations-pulse > button > svg {
@@ -88,9 +88,9 @@
   gap: 5px;
   padding: 17px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
-  box-shadow: 0 5px 18px rgba(23, 54, 64, 0.035);
+  border-radius: 12px;
+  background: var(--glass-surface);
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.096);
 }
 .leadership-kpi-value {
   color: var(--brand-dark);
@@ -148,7 +148,7 @@
   gap: 18px;
   align-items: end;
   padding: 20px 22px 8px;
-  background: repeating-linear-gradient(to top, transparent 0, transparent 44px, #edf2f8 45px);
+  background: repeating-linear-gradient(to top, transparent 0, transparent 44px, rgba(255, 255, 255, 0.061) 45px);
 }
 .leadership-bars > div {
   height: 100%;
@@ -212,7 +212,7 @@
   align-items: center;
   padding: 11px 3px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -222,7 +222,7 @@
   border-bottom: 0;
 }
 .leadership-priority-list button:hover {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .leadership-priority-list strong,
 .leadership-priority-list small {
@@ -251,7 +251,7 @@
   align-items: center;
   padding: 10px 2px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -259,7 +259,7 @@
 }
 .leadership-register-list button:hover,
 .leadership-register-list button.selected {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .leadership-register-list button:last-child {
   border-bottom: 0;
@@ -287,7 +287,7 @@
 }
 .leadership-decision-body > p {
   margin: 0 0 2px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -296,7 +296,7 @@
   justify-content: space-between;
   gap: 10px;
   padding-top: 9px;
-  border-top: 1px solid #edf1f5;
+  border-top: 1px solid rgba(255, 255, 255, 0.082);
 }
 .leadership-decision-body span {
   color: var(--muted);
@@ -341,7 +341,7 @@
   align-items: center;
   padding: 13px 2px;
   border: 0;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   background: transparent;
   text-align: left;
@@ -352,7 +352,7 @@
 }
 .admin-setting-list > button:hover,
 .admin-setting-list > button.selected {
-  background: #f8fbff;
+  background: var(--glass-surface);
 }
 .admin-setting-list .governance-icon {
   width: 38px;
@@ -370,7 +370,7 @@
 }
 .admin-setting-list small {
   margin-top: 5px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 10px;
   line-height: 1.35;
 }
@@ -392,8 +392,8 @@
   top: 2px;
   left: 2px;
   border-radius: 50%;
-  background: white;
-  box-shadow: 0 1px 3px rgba(15, 42, 82, 0.22);
+  background: var(--glass-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.392);
   transition: transform 140ms ease;
 }
 .admin-setting-list .admin-toggle.on {
@@ -432,7 +432,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #4f6478;
+  color: #b3c0cd;
   font-size: 11px;
 }
 .admin-system-card li svg {
@@ -469,7 +469,7 @@
 }
 .leadership-users .admin-users-card,
 .leadership-users .admin-access-card {
-  border-radius: 8px;
+  border-radius: 14px;
 }
 .leadership-users .admin-table-header {
   min-height: 128px;

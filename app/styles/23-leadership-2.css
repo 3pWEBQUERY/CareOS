@@ -14,7 +14,7 @@
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 11px;
-  border-bottom: 1px solid #edf1f5;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.082);
   color: var(--ink);
   font-size: 14px;
 }
@@ -33,16 +33,16 @@
   align-items: start;
   gap: 8px;
   padding: 10px;
-  border: 1px solid #e6edf5;
-  border-radius: 6px;
-  background: #fbfdff;
+  border: 1px solid rgba(255, 255, 255, 0.088);
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .settings-notification-icon {
   width: 30px;
   height: 30px;
   display: grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: 12px;
   color: var(--brand);
   background: var(--brand-soft);
 }
@@ -192,8 +192,8 @@
   position: absolute;
   inset: 0 0 0 auto;
   overflow-y: auto;
-  background: #f7f9fa;
-  box-shadow: -20px 0 60px rgba(5, 27, 35, 0.18);
+  background: rgba(255, 255, 255, 0.043);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.328);
   animation: slide-in 210ms ease;
 }
 .drawer-header {
@@ -208,7 +208,7 @@
   margin-bottom: 22px;
 }
 .drawer-topline span {
-  color: #aac1c6;
+  color: #5f868e;
   font-size: 11px;
   font-weight: 750;
   letter-spacing: 0.05em;
@@ -219,9 +219,9 @@
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.008);
   cursor: pointer;
 }
 .close-button svg {
@@ -243,7 +243,7 @@
 }
 .resident-identity p {
   margin: 5px 0 0;
-  color: #b9cdd1;
+  color: #5b838a;
   font-size: 13px;
 }
 .risk-row {
@@ -254,7 +254,7 @@
 }
 .risk-chip {
   padding: 6px 9px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: #ffe4b3;
   background: rgba(170, 107, 0, 0.24);
   font-size: 11px;
@@ -272,8 +272,8 @@
 .drawer-section {
   padding: 17px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
 }
 .drawer-section h3 {
   margin: 0 0 14px;
@@ -282,7 +282,7 @@
 .clinical-note {
   padding-left: 12px;
   border-left: 3px solid var(--critical);
-  color: #3e535b;
+  color: #cbd7dc;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -305,7 +305,7 @@
   width: 7px;
   height: 7px;
   margin-top: 4px;
-  border-radius: 6px;
+  border-radius: 12px;
   background: var(--brand);
 }
 .drawer-timeline-item p {
@@ -326,15 +326,15 @@
   gap: 7px;
   padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: white;
+  border-radius: 12px;
+  background: var(--glass-surface);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
 .quick-action:hover {
   color: var(--brand-dark);
-  border-color: #93c5fd;
+  border-color: rgba(76, 153, 240, 0.38);
   background: var(--brand-soft);
 }
 .quick-action svg {
@@ -351,10 +351,10 @@
   align-items: center;
   gap: 10px;
   padding: 13px 15px;
-  border-radius: 6px;
+  border-radius: 12px;
   color: white;
   background: #12376b;
-  box-shadow: 0 14px 38px rgba(15, 42, 82, 0.24);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.424);
   font-size: 13px;
   font-weight: 650;
   animation: rise-in 180ms ease;
