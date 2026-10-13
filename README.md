@@ -10,6 +10,23 @@ Symbol und Name der App und ihre Seiten als Reiter – ohne Untermenüs. Die App
 Schritte: `docs/CAREOS-UX.md`. Technische Kennungen (Tabellen `carecore_…`, Variablen `CARECORE_…`, Webhook-Kopfzeilen
 `X-CareCore-…`) behalten den alten Namen, damit bestehende Installationen unverändert weiterlaufen.
 
+## Oberfläche: Glas auf Nachthimmel
+
+CareOS liegt auf einem nächtlichen Wolkenhimmel (`public/backgrounds/night-sky.webp`); Flächen sind dunkles,
+durchscheinendes Glas mit weichen Ecken, Schrift ist hell. Oben links der runde Start-Knopf, in der Mitte die
+meistgenutzten Apps als eine Glas-Pille (die gewählte App hell, die Markierung gleitet beim Wechsel mit), rechts
+„Suchen“, KI, Hinweise und der Avatar (`app/components/top-navigation.tsx`). Darunter die geöffnete App mit ihren
+Reitern sowie Wohnbereich und Bewohner. Startseite und Anmeldung zeigen links eine grosse Uhr und die Begrüssung als
+Sprechblasen.
+
+- **Farben:** Grundwerte, Rahmen und Glas in `app/styles/71-glass.css`. Die älteren Stylesheets wurden einmalig mit
+  `scripts/glass-theme.py` umgestellt; neue Regeln direkt mit den Variablen (`--glass-surface`, `--ink`, `--muted`,
+  `--line`, `--brand` …) schreiben.
+- **Seitenwechsel:** Rahmen und Himmel bleiben stehen; nur der Inhalt gleitet weich und leicht verschwommen herein,
+  richtungsabhängig nach Position in der App-Leiste bzw. bei den Reitern (React `ViewTransition`,
+  `app/components/module-page-shell.tsx`, `app/styles/68-app-frame.css`). Bei „Bewegungen reduzieren“ ohne Animation.
+- **Druck:** schwarz auf weiss ohne Himmel.
+
 ## Lokale Einrichtung
 
 1. `.env.example` als `.env.local` kopieren.

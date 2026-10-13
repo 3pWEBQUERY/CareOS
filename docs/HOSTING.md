@@ -3,31 +3,33 @@
 Neue Kundeninstallation (eigenes Projekt je Einrichtung): siehe `docs/INSTALLATION.md`. Überwachung und Backups:
 `docs/BETRIEB.md`.
 
-CareOS läuft auf Railway (Projekt „feisty-achievement“, Region Europa).
+CareOS läuft auf Railway (Projekt „CareOS“, Region Europa West/Amsterdam), öffentlich unter
+`https://careos-production-9a1c.up.railway.app`.
 
-- **App** (Dienst `carecore`): Next.js aus diesem Repository, Branch `main`. Einstellungen am Dienst in Railway
-  (Settings; `railway.json` liest Railway für neue Dienste nicht mehr):
+- **App** (Dienst `careos`): Next.js aus diesem Repository (`3pWEBQUERY/CareOS`), derzeit Branch
+  `claude/wonderful-einstein-qoxw6t`; nach dem Zusammenführen in den Einstellungen des Dienstes auf `main` umstellen.
+  Einstellungen am Dienst in Railway (Settings; `railway.json` liest Railway für neue Dienste nicht mehr):
   - Build `npm run build`, Start `npm run start`.
   - Pre-Deploy `node database/migrate.mjs` (Zeitlimit 600 s): vor jedem Deploy laufen die Migrationen.
   - Statusprüfung über `/api/health` (120 s), Neustart bei Fehler bis zu 5-mal.
 - **Datenbank** (Dienst `Postgres`): Railway Postgres. Die App verbindet sich über das private Netz
   (`DATABASE_URL=${{Postgres.DATABASE_URL}}`). Der Neon-Treiber im Code bleibt; seine Anfragen beantwortet ein
   Verbindungspool (`database/pg-fetch.mjs`, Paket `pg`). Neon-Datenbanken (`*.neon.tech`) laufen weiter über HTTP.
-- **Medien** (Bucket `sorted-lunchbox`): Fotos der Bewohner, Wundfotos, Dateien und Dokumente sowie das Logo
+- **Medien** (Bucket `careos-media`, Amsterdam): Fotos der Bewohner, Wundfotos, Dateien und Dokumente sowie das Logo
   (`lib/storage.ts`, S3-kompatibel).
   - Der Bucket ist privat; ausgeliefert wird nur über CareOS mit den jeweiligen Rechten.
   - Ohne Bucket (lokal, Tests) bleiben die Inhalte in der Datenbank.
   - Beim Löschen (Foto, Datei, Logo, Akte nach Ablauf der Frist) wird der Inhalt auch im Bucket entfernt.
 - **Erinnerungen und Push** (Dienst `push-dispatch`): Railway Function mit Zeitplan `*/5 * * * *`, ruft
-  `/api/push/dispatch` mit `CRON_SECRET` (Verweis `${{carecore.CRON_SECRET}}`) auf und schreibt den Stand von
-  `/api/health` ins Log.
+  `/api/push/dispatch` unter `CAREOS_URL` (Verweis auf die öffentliche Adresse von `careos`) mit `CRON_SECRET`
+  (Verweis `${{careos.CRON_SECRET}}`) auf und schreibt den Stand von `/api/health` ins Log.
 
-## Variablen des Dienstes `carecore`
+## Variablen des Dienstes `careos`
 
 | Variable                                                                            | Inhalt                                                                                              |
 | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`                                                                      | `${{Postgres.DATABASE_URL}}`                                                                        |
-| `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Verweise auf den Bucket `sorted-lunchbox`                                                           |
+| `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | Verweise auf den Bucket `careos-media`                                                              |
 | `S3_FORCE_PATH_STYLE`                                                               | `false` (Railway Buckets: virtuelle Hosts)                                                          |
 | `CARECORE_MFA_KEY`                                                                  | Serverschlüssel (MFA, Webhooks, Offline-Verschlüsselung, SSO), zufällig erzeugt                     |
 | `CRON_SECRET`                                                                       | Geheimnis für den Push-Auftrag, zufällig erzeugt                                                    |
