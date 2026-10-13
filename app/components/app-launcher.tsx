@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import Link from "next/link";
 import { useAppRouter } from "./app-navigation";
 import { ModuleIcon } from "./module-icon";
 import { useNavigationBadges, useWorkContext, type NavigationBadges } from "./care-context";
@@ -30,7 +31,7 @@ export const openAppLauncher = () => window.dispatchEvent(new Event(APPS_EVENT))
 
 export const appStyle = (hue: number) => ({ "--app-hue": hue }) as CSSProperties;
 
-// Farbiges App-Symbol (weisses Zeichen auf der Farbe der App). Kompass trägt sein eigenes Logo.
+// App-Symbol: dunkle Kachel, darauf das Zeichen leuchtend in der Farbe der App. Kompass trägt sein eigenes Logo.
 export function AppIcon({
   module,
   size = "md",
@@ -40,7 +41,11 @@ export function AppIcon({
 }) {
   return (
     <span className={`careos-app-icon careos-app-icon-${size}`} style={appStyle(module.hue)} aria-hidden="true">
-      {module.id === "rai" ? <span className="sidebar-kompass-icon" /> : <ModuleIcon name={module.icon} />}
+      {module.id === "rai" ? (
+        <span className="sidebar-kompass-icon" />
+      ) : (
+        <ModuleIcon name={module.icon} weight="duotone" />
+      )}
     </span>
   );
 }
@@ -57,69 +62,72 @@ export function useApps() {
   return { groups, terms, ready: Boolean(context) };
 }
 
-type GridProps = {
-  groups: NavGroup[];
+type GridEntry = { module: NavModule; group: NavGroup };
+
+// Alle Apps als Symbol-Raster wie auf einem Tablet: Symbol, darunter der Name, Zähler für Offenes. Dasselbe Raster
+// steht auf dem Startbildschirm und unter „Alle Apps“.
+export function OsAppGrid({
+  entries,
+  terms,
+  badges,
+  onOpen,
+}: {
+  entries: GridEntry[];
   terms: Terms;
   badges: NavigationBadges | null;
-  // Mit kurzer Beschreibung unter dem Namen („Alle Apps“); auf dem Startbildschirm nur der Name.
-  withHints?: boolean;
-  onOpen: (href: string) => void;
-};
-
-export function AppGrid({ groups, terms, badges, withHints = false, onOpen }: GridProps) {
+  onOpen?: () => void;
+}) {
   const L = (label: string) => navigationLabel(label, terms);
-  const router = useAppRouter();
-  // Die Kachel heisst wie die App (übersetzbar); die Beschreibung ist ihre Erläuterung.
-  const hintId = useId();
   return (
-    <div className="careos-app-groups">
-      {groups.map((group) => (
-        <section className="careos-app-group" key={group.id} aria-label={L(group.label)}>
-          <h3>{L(group.label)}</h3>
-          <div className={`careos-app-grid ${withHints ? "with-hints" : ""}`}>
-            {group.modules.map((module) => {
-              const href = appHref(module);
-              if (!href) return null;
-              const count = countOf(badges, module.id);
-              const name = L(module.label);
-              return (
-                <button
-                  className="careos-app-tile"
-                  type="button"
-                  key={module.id}
-                  style={appStyle(module.hue)}
-                  aria-describedby={withHints ? `${hintId}-${module.id}` : undefined}
-                  onPointerEnter={() => router.prefetch(href)}
-                  onFocus={() => router.prefetch(href)}
-                  onClick={() => onOpen(href)}
-                >
-                  <span className="careos-app-tile-icon" aria-hidden="true">
-                    <AppIcon module={module} size="lg" />
-                    {count > 0 && <em className="careos-badge">{count > 99 ? "99+" : count}</em>}
-                  </span>
-                  <span className="careos-app-tile-copy">
-                    <strong>{name}</strong>
-                    {count > 0 && <span className="sr-only"> ({count})</span>}
-                    {withHints && (
-                      <small id={`${hintId}-${module.id}`} aria-hidden="true">
-                        {L(module.hint)}
-                      </small>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      ))}
-    </div>
+    <ul className="os-app-grid">
+      {entries.map(({ module }, index) => {
+        const href = appHref(module);
+        if (!href) return null;
+        const value = countOf(badges, module.id);
+        return (
+          <li key={module.id} style={{ "--i": index } as CSSProperties}>
+            <Link
+              href={href}
+              className="os-app"
+              title={L(module.hint)}
+              transitionTypes={["nav-forward"]}
+              onClick={onOpen}
+            >
+              <span className="os-app-icon">
+                <AppIcon module={module} size="lg" />
+                {value > 0 && <em className="careos-badge">{value > 99 ? "99+" : value}</em>}
+              </span>
+              <span className="os-app-name">
+                {L(module.label)}
+                {value > 0 && <span className="sr-only"> ({value} offen)</span>}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
-const normalize = (value: string) => value.toLocaleLowerCase("de-CH").normalize("NFD").replace(/\p{M}/gu, "");
+// Suche nach App-Namen, Beschreibung, Gruppe und Seiten (Reitern) der App.
+export function useAppSearch(groups: NavGroup[], terms: Terms, query: string) {
+  const entries = useMemo(
+    () => groups.flatMap((group) => group.modules.map((module) => ({ module, group }))),
+    [groups],
+  );
+  const L = (label: string) => navigationLabel(label, terms);
+  const term = normalizeSearch(query.trim());
+  return term
+    ? entries.filter(({ module, group }) =>
+        normalizeSearch([module.label, module.hint, group.label, ...module.children].map(L).join(" ")).includes(term),
+      )
+    : entries;
+}
 
-// „Alle Apps“: alle Apps auf einen Blick, mit Suche und den zuletzt geöffneten Seiten. Am Computer als grosses Fenster,
-// auf dem Handy als Blatt über der unteren Leiste.
+export const normalizeSearch = (value: string) =>
+  value.toLocaleLowerCase("de-CH").normalize("NFD").replace(/\p{M}/gu, "");
+
+// „Alle Apps“: alle Apps auf einen Blick wie im Launchpad, mit Suche und den zuletzt geöffneten Seiten.
 export function AppLauncher() {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -138,29 +146,19 @@ function LauncherSheet({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [recent] = useState<RecentPage[]>(() => readRecentPages());
   useEscapeClose(onClose);
-  const L = (label: string) => navigationLabel(label, terms);
+  const shown = useAppSearch(groups, terms, query);
 
   useEffect(() => {
     document.body.classList.add("mobile-menu-open");
     return () => document.body.classList.remove("mobile-menu-open");
   }, []);
 
-  // Suche nach App-Namen, Beschreibung und Seiten (Reitern) der App.
-  const term = normalize(query.trim());
-  const filtered = term
-    ? groups
-        .map((group) => ({
-          ...group,
-          modules: group.modules.filter((module) =>
-            normalize([module.label, module.hint, group.label, ...module.children].map(L).join(" ")).includes(term),
-          ),
-        }))
-        .filter((group) => group.modules.length)
-    : groups;
   const allowed = new Set(
     groups.flatMap((group) => group.modules.flatMap((m) => m.children.map((c) => `${m.id}:${c}`))),
   );
-  const recentPages = term ? [] : recent.filter((page) => allowed.has(`${page.moduleId}:${page.child}`)).slice(0, 4);
+  const recentPages = query.trim()
+    ? []
+    : recent.filter((page) => allowed.has(`${page.moduleId}:${page.child}`)).slice(0, 4);
   const moduleOf = (id: string) => groups.flatMap((group) => group.modules).find((module) => module.id === id);
 
   function go(href: string) {
@@ -168,72 +166,64 @@ function LauncherSheet({ onClose }: { onClose: () => void }) {
     router.push(href);
   }
 
+  // Launchpad: Vollbild über allem, dahinter verschwommen; ein Klick auf eine freie Stelle schliesst.
   return (
-    <>
-      <div className="careos-launcher-backdrop" role="presentation" onClick={onClose} />
-      <div className="careos-launcher" role="dialog" aria-modal="true" aria-label="Alle Apps">
-        <div className="careos-launcher-head">
-          <div>
-            <p className="eyebrow">CareOS</p>
-            <h2>Alle Apps</h2>
-          </div>
-          <button className="careos-launcher-close" type="button" aria-label="Alle Apps schliessen" onClick={onClose}>
-            <ModuleIcon name="close" />
-            <span>Schliessen</span>
-          </button>
-        </div>
-        <label className="careos-launcher-search">
+    <div
+      className="careos-launchpad"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Alle Apps"
+      onClick={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <div className="careos-launchpad-inner" onClick={(event) => event.target === event.currentTarget && onClose()}>
+        <label className="os-search">
           <ModuleIcon name="search" />
           <input
             type="search"
             value={query}
+            autoFocus
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="App suchen, z. B. Wunden"
+            placeholder="Suchen"
             aria-label="App suchen"
           />
         </label>
-        <div className="careos-launcher-body">
-          {recentPages.length > 0 && (
-            <section className="careos-recent" aria-label="Zuletzt geöffnet">
-              <h3>Zuletzt geöffnet</h3>
-              <div>
-                {recentPages.map((page) => {
-                  const app = moduleOf(page.moduleId);
-                  const href = routeFor(page.moduleId, page.child);
-                  if (!app || !href) return null;
-                  return (
-                    <button type="button" key={`${page.moduleId}:${page.child}`} onClick={() => go(href)}>
-                      <AppIcon module={app} size="sm" />
-                      <span>{moduleLabel(page.moduleId, page.child, terms)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-          {filtered.length ? (
-            <AppGrid groups={filtered} terms={terms} badges={badges} withHints onOpen={go} />
-          ) : (
-            <p className="careos-launcher-empty">Keine App gefunden. Anderes Wort versuchen.</p>
-          )}
-          <div className="careos-launcher-system">
-            <button type="button" onClick={() => go("/c/einstellungen")}>
-              <ModuleIcon name="settings" />
-              Einstellungen
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                openHelp();
-              }}
-            >
-              <ModuleIcon name="help" />
-              Hilfe
-            </button>
-          </div>
+        {recentPages.length > 0 && (
+          <nav className="careos-launchpad-recent" aria-label="Zuletzt geöffnet">
+            {recentPages.map((page) => {
+              const app = moduleOf(page.moduleId);
+              const href = routeFor(page.moduleId, page.child);
+              if (!app || !href) return null;
+              return (
+                <button type="button" key={`${page.moduleId}:${page.child}`} onClick={() => go(href)}>
+                  <AppIcon module={app} size="sm" />
+                  <span>{moduleLabel(page.moduleId, page.child, terms)}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
+        {shown.length ? (
+          <OsAppGrid entries={shown} terms={terms} badges={badges} onOpen={onClose} />
+        ) : (
+          <p className="os-springboard-empty">Keine App gefunden.</p>
+        )}
+        <div className="careos-launchpad-system">
+          <button type="button" onClick={() => go("/c/einstellungen")}>
+            <ModuleIcon name="settings" />
+            Einstellungen
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              openHelp();
+            }}
+          >
+            <ModuleIcon name="help" />
+            Hilfe
+          </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

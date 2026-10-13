@@ -14,7 +14,7 @@ import re
 import sys
 
 # Papier bleibt Papier: Dokumente im Editor und Druckansichten.
-SKIP_FILES = ("62-office-document.css", "62-office-print.css", "71-glass.css")
+SKIP_FILES = ("62-office-document.css", "62-office-print.css", "71-glass.css", "72-os.css")
 
 HEX = r"#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{4}\b|#[0-9a-fA-F]{3}\b"
 FUNC = r"rgba?\([^()]*\)|hsla?\([^()]*\)"

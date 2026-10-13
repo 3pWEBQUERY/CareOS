@@ -201,7 +201,7 @@ body::before {
   color: var(--glass-active-ink);
   background: var(--glass-active);
 }
-.topbar .shortcut-trigger {
+.topbar .shortcut-menu-wrap {
   display: none;
 }
 

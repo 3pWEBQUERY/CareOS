@@ -19,12 +19,15 @@ export function PageTabs({ moduleId, child }: { moduleId: string; child: string 
     .find((item) => item.id === moduleId);
   const tabs = entry?.children ?? moduleById(moduleId)?.children ?? [];
   const ref = useRef<HTMLElement>(null);
-  // On narrow screens the active tab is scrolled into view.
+  // Reichen die Reiter nicht in die Breite, wird nur so weit geblättert, dass der gewählte ganz sichtbar ist.
   useEffect(() => {
     const nav = ref.current;
     const active = nav?.querySelector<HTMLElement>("a.active");
-    if (nav && active && nav.scrollWidth > nav.clientWidth)
-      nav.scrollLeft = active.offsetLeft - nav.clientWidth / 2 + active.offsetWidth / 2;
+    if (!nav || !active || nav.scrollWidth <= nav.clientWidth) return;
+    const start = active.offsetLeft - nav.offsetLeft;
+    const end = start + active.offsetWidth;
+    if (end > nav.scrollLeft + nav.clientWidth - 28) nav.scrollLeft = end - nav.clientWidth + 36;
+    else if (start < nav.scrollLeft) nav.scrollLeft = Math.max(0, start - 8);
   }, [child, tabs.length]);
   const app = entry ?? moduleById(moduleId);
   if (!app) return null;

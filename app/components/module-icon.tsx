@@ -51,9 +51,19 @@ import {
   UsersThree,
   Warning,
   X,
+  type IconWeight,
 } from "@phosphor-icons/react";
 
-export function ModuleIcon({ name, className = "" }: { name: ModuleIconName; className?: string }) {
+export function ModuleIcon({
+  name,
+  className = "",
+  weight = "regular",
+}: {
+  name: ModuleIconName;
+  className?: string;
+  // App-Symbole zeigen das Zeichen zweifarbig (Fläche leicht getönt), sonst als Linie.
+  weight?: IconWeight;
+}) {
   const icons = {
     home: House,
     residents: UsersThree,
@@ -108,7 +118,7 @@ export function ModuleIcon({ name, className = "" }: { name: ModuleIconName; cla
     help: Question,
   };
   const Component = icons[name];
-  return <Component className={className} aria-hidden="true" weight="regular" />;
+  return <Component className={className} aria-hidden="true" weight={weight} />;
 }
 
 export type { ModuleIconName } from "./navigation";

@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react";
 import { ModuleIcon } from "./module-icon";
-import { AppSwitcher, HomeButton } from "./top-navigation";
+import { Pulse } from "@phosphor-icons/react";
+import { openAppLauncher } from "./app-launcher";
+import { Dock, HomeButton, MenubarClock } from "./top-navigation";
 import { ProfilePopover } from "./header-profile-popover";
 import { ResidentPickerPopover } from "./header-resident-picker";
 import { useAppHeader } from "./use-app-header";
@@ -19,7 +21,7 @@ import { HelpPanel } from "./help-panel";
 export default function AppHeader(props: {
   activeModule?: string;
   activeChild?: string;
-  // Kopf der geöffneten App (Name und Reiter), in der zweiten Zeile links neben Wohnbereich und Bewohner.
+  // Kopf der geöffneten App (Name und Reiter): am Computer in der Menüleiste, auf dem Handy unter der Kopfzeile.
   appBar?: ReactNode;
   locationPrimary?: string;
   locationSecondary?: string;
@@ -55,39 +57,49 @@ export default function AppHeader(props: {
       <PersonalAppearance />
       <IdleLogout />
       <HelpPanel />
-      <header className="topbar">
-        <div className="topbar-start">
-          <HomeButton active={props.activeModule === "home"} />
-        </div>
-        <AppSwitcher activeModule={props.activeModule} activeChild={props.activeChild} />
-        <div className="top-actions">
+      <header className="topbar menubar">
+        <div className="menubar-start">
           <button
-            className="search-trigger"
+            className="menubar-logo"
+            type="button"
+            aria-label="Alle Apps"
+            aria-haspopup="dialog"
+            title="Alle Apps"
+            onClick={openAppLauncher}
+          >
+            <Pulse weight="bold" />
+          </button>
+          {props.appBar ?? (
+            <span className="menubar-app">
+              <strong>{props.activeModule === "settings" ? "Einstellungen" : "CareOS"}</strong>
+            </span>
+          )}
+        </div>
+        <div className="menubar-status">
+          <HeaderLocationControl r={r} ref={locationMenuRef} />
+          <HeaderResidentSelector r={r} />
+          <span className="menubar-separator" aria-hidden="true" />
+          <button
+            className="icon-button search-trigger"
             type="button"
             onClick={() => {
               closeMenus();
               onSearch();
             }}
-            aria-label="Globale Suche öffnen"
+            aria-label="Suchen (⌘ K)"
+            title="Suchen (⌘ K)"
             aria-expanded={searchOpen}
           >
             <ModuleIcon name="search" />
-            <span>Suchen</span>
-            <kbd>⌘ K</kbd>
           </button>
           <HeaderAiButton />
           <KeyboardShortcutsMenu />
           <HeaderNotificationMenu r={r} ref={notificationMenuRef} />
+          <MenubarClock />
           <HeaderProfileMenu r={r} ref={profileMenuRef} />
         </div>
       </header>
-      <div className="careos-subbar">
-        {props.appBar}
-        <div className="header-context">
-          <HeaderLocationControl r={r} ref={locationMenuRef} />
-          <HeaderResidentSelector r={r} />
-        </div>
-      </div>
+      <Dock activeModule={props.activeModule} activeChild={props.activeChild} />
       <header className="mobile-top">
         <HomeButton active={props.activeModule === "home"} />
         <div className="mobile-actions">
@@ -101,6 +113,7 @@ export default function AppHeader(props: {
           <HeaderProfileMenu r={r} ref={mobileProfileMenuRef} compact={true} />
         </div>
       </header>
+      {props.appBar && <div className="careos-subbar">{props.appBar}</div>}
       {residentOpen && context && (
         <ResidentPickerPopover
           context={context}

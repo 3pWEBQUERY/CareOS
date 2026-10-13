@@ -60,7 +60,16 @@ export function HeaderLocationControl({
           <span className="location-copy">
             <small>{branding?.organizationName ?? locationPrimary}</small>
             <strong>
-              {selectedArea ? `${selectedArea.name} · ${selectedArea.detail.split(" · ")[0]}` : locationSecondary}
+              {selectedArea ? (
+                <>
+                  {selectedArea.name}
+                  <span className="location-detail"> · {selectedArea.detail.split(" · ")[0]}</span>
+                </>
+              ) : locationSecondary === "…" && context ? (
+                "Gesamtes Haus"
+              ) : (
+                locationSecondary
+              )}
             </strong>
           </span>
         )}

@@ -1,15 +1,24 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useNavigationBadges, useWorkContext } from "./care-context";
 import { ModuleIcon } from "./module-icon";
-import { openAppLauncher } from "./app-launcher";
-import { DOCK_APPS, appHref, moduleBadges, rememberPage, sidebarNavigation } from "./navigation";
+import { AppIcon, openAppLauncher } from "./app-launcher";
+import {
+  DOCK_APPS,
+  appHref,
+  moduleBadges,
+  rememberPage,
+  sidebarNavigation,
+  type ModuleIconName,
+  type NavModule,
+} from "./navigation";
 import { navigationLabel, termsFor } from "@/lib/terminology";
 
-// Oberste Ebene von CareOS: runder Start-Knopf links, in der Mitte die Leiste der meistgenutzten Apps als eine
-// Glas-Pille (die gewählte App hell hinterlegt, die Markierung gleitet beim Wechsel mit), rechts Suche und Profil.
+// Oberste Ebene von CareOS wie bei einem Betriebssystem: oben die Menüleiste (App, Seiten, Status, Uhr), unten das
+// Dock mit den meistgenutzten Apps – Symbol mit Vergrösserung beim Darüberfahren, Punkt unter der geöffneten App,
+// Zähler für Offenes. Auf dem Handy führt der Start-Knopf oben zurück und die untere Leiste ersetzt das Dock.
 
 export function HomeButton({ active }: { active: boolean }) {
   return (
@@ -26,95 +35,96 @@ export function HomeButton({ active }: { active: boolean }) {
   );
 }
 
-type Item = { id: string; label: string; href: string | null; count: number };
+// Symbol einer Systemfunktion (Start, Alle Apps, Einstellungen) im selben Raster wie die App-Symbole.
+export function SystemIcon({ name, size = "md" }: { name: ModuleIconName; size?: "sm" | "md" | "lg" }) {
+  return (
+    <span className={`careos-app-icon careos-app-icon-${size} careos-app-icon-system`} aria-hidden="true">
+      <ModuleIcon name={name} weight="duotone" />
+    </span>
+  );
+}
 
-export function AppSwitcher({ activeModule, activeChild }: { activeModule?: string; activeChild?: string }) {
+type DockEntry = { id: string; label: string; href: string; count: number; module?: NavModule; icon?: ModuleIconName };
+
+export function Dock({ activeModule, activeChild }: { activeModule?: string; activeChild?: string }) {
   const context = useWorkContext();
   const terms = termsFor(context?.terminology);
   const badges = useNavigationBadges();
   const modules = sidebarNavigation(context?.profile.permissions).flatMap((group) => group.modules);
   const count = (moduleId: string) =>
     badges ? moduleBadges(moduleId).reduce((sum, key) => sum + (badges[key] ?? 0), 0) : 0;
-  const items: Item[] = [
-    { id: "home", label: "Start", href: "/c", count: 0 },
-    ...DOCK_APPS.map((id) => modules.find((module) => module.id === id))
-      .filter((module) => !!module)
-      .map((module) => ({
-        id: module.id,
-        label: navigationLabel(module.shortLabel ?? module.label, terms),
-        href: appHref(module),
-        count: count(module.id),
-      })),
+  const apps: DockEntry[] = [
+    { id: "home", label: "Start", href: "/c", count: 0, icon: "home" },
+    ...DOCK_APPS.map((id) => modules.find((module) => module.id === id)).flatMap((module) => {
+      const href = module && appHref(module);
+      return module && href
+        ? [{ id: module.id, label: navigationLabel(module.label, terms), href, count: count(module.id), module }]
+        : [];
+    }),
   ];
-  const inBar = items.some((item) => item.id === activeModule);
-  const activeId = inBar ? activeModule : activeModule && activeModule !== "settings" ? "apps" : undefined;
-  // Richtung des Übergangs: Apps rechts der gewählten gleiten von rechts herein, links davon von links.
-  const activeIndex = activeId === "apps" ? items.length : items.findIndex((item) => item.id === activeId);
+  const activeIndex = apps.findIndex((entry) => entry.id === activeModule);
+  // Eine App ausserhalb des Docks ist offen: „Alle Apps“ trägt dann den Punkt.
+  const otherApp = activeIndex < 0 && !!activeModule && activeModule !== "settings";
 
   // Jede besuchte Seite für „Zuletzt geöffnet“ unter „Alle Apps“ merken.
   useEffect(() => {
     if (activeModule && activeChild) rememberPage(activeModule, activeChild);
   }, [activeModule, activeChild]);
 
-  // Gleitende Markierung unter der gewählten App.
-  const navRef = useRef<HTMLElement>(null);
-  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
-  useLayoutEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return;
-    const measure = () => {
-      const active = nav.querySelector<HTMLElement>("[data-active='true']");
-      setThumb(active ? { left: active.offsetLeft, width: active.offsetWidth } : null);
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(nav);
-    return () => observer.disconnect();
-  }, [activeId, items.length]);
-
   return (
-    <nav ref={navRef} className="careos-switcher" aria-label="Apps">
-      {thumb && (
-        <span
-          className="careos-switcher-thumb"
-          aria-hidden="true"
-          style={{ "--thumb-x": `${thumb.left}px`, "--thumb-w": `${thumb.width}px` } as CSSProperties}
-        />
-      )}
-      {items.map((item, index) =>
-        item.href ? (
+    <nav className="careos-dock" aria-label="Dock">
+      <div className="careos-dock-shelf">
+        {apps.map((entry, index) => (
           <Link
-            key={item.id}
-            href={item.href}
-            className="careos-switcher-item"
-            data-active={activeId === item.id}
-            aria-current={activeId === item.id ? "page" : undefined}
+            key={entry.id}
+            href={entry.href}
+            className="careos-dock-item"
+            data-running={entry.id === activeModule}
+            aria-current={entry.id === activeModule ? "page" : undefined}
             transitionTypes={[index < activeIndex ? "nav-back" : "nav-forward"]}
           >
-            {item.label}
-            {item.count > 0 && (
-              <em className="careos-switcher-count" aria-label={`${item.count} offen`}>
-                {item.count > 99 ? "99+" : item.count}
-              </em>
-            )}
+            <span className="careos-dock-tile">
+              {entry.module ? <AppIcon module={entry.module} /> : <SystemIcon name={entry.icon ?? "home"} />}
+              {entry.count > 0 && <em className="careos-badge">{entry.count > 99 ? "99+" : entry.count}</em>}
+            </span>
+            <span className="careos-dock-label">
+              {entry.label}
+              {entry.count > 0 && <span className="sr-only"> ({entry.count} offen)</span>}
+            </span>
           </Link>
-        ) : null,
-      )}
-      <button
-        type="button"
-        className="careos-switcher-item"
-        data-active={activeId === "apps"}
-        aria-haspopup="dialog"
-        onClick={openAppLauncher}
-      >
-        Alle Apps
-      </button>
+        ))}
+        <span className="careos-dock-divider" aria-hidden="true" />
+        <button
+          type="button"
+          className="careos-dock-item"
+          data-running={otherApp}
+          aria-haspopup="dialog"
+          onClick={openAppLauncher}
+        >
+          <span className="careos-dock-tile">
+            <SystemIcon name="apps" />
+          </span>
+          <span className="careos-dock-label">Alle Apps</span>
+        </button>
+        <Link
+          href="/c/einstellungen"
+          className="careos-dock-item"
+          data-running={activeModule === "settings"}
+          aria-current={activeModule === "settings" ? "page" : undefined}
+          transitionTypes={["nav-forward"]}
+        >
+          <span className="careos-dock-tile">
+            <SystemIcon name="settings" />
+          </span>
+          <span className="careos-dock-label">Einstellungen</span>
+        </Link>
+      </div>
     </nav>
   );
 }
 
 // Uhrzeit, genau auf den Minutenwechsel; erst im Browser gesetzt (keine abweichende Zeit aus dem Server-Rendern).
-function useClock() {
+export function useClock() {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -130,7 +140,25 @@ function useClock() {
 }
 
 // Zeitzone wie Begrüssung und Dienstzeiten der Startseite.
-const ZONE = "Europe/Zurich";
+export const ZONE = "Europe/Zurich";
+
+export const formatTime = (date: Date) =>
+  new Intl.DateTimeFormat("de-CH", { hour: "2-digit", minute: "2-digit", timeZone: ZONE }).format(date);
+
+// Uhr in der Menüleiste: „Di 13. Okt.  10:15“.
+export function MenubarClock() {
+  const now = useClock();
+  if (!now) return <span className="menubar-clock" aria-hidden="true" />;
+  const day = new Intl.DateTimeFormat("de-CH", { weekday: "short", day: "numeric", month: "short", timeZone: ZONE })
+    .format(now)
+    .replace(",", "");
+  return (
+    <span className="menubar-clock" role="timer" aria-label={`${day}, ${formatTime(now)} Uhr`}>
+      <span>{day}</span>
+      <strong>{formatTime(now)}</strong>
+    </span>
+  );
+}
 
 // Grosse Uhr wie auf einem Sperrbildschirm: Wochentag, Datum, Uhrzeit untereinander.
 export function SideClock({ className = "" }: { className?: string }) {
@@ -138,7 +166,7 @@ export function SideClock({ className = "" }: { className?: string }) {
   if (!now) return <div className={`careos-clock ${className}`} aria-hidden="true" />;
   const weekday = new Intl.DateTimeFormat("de-CH", { weekday: "short", timeZone: ZONE }).format(now).replace(".", "");
   const date = new Intl.DateTimeFormat("de-CH", { day: "numeric", month: "short", timeZone: ZONE }).format(now);
-  const time = new Intl.DateTimeFormat("de-CH", { hour: "2-digit", minute: "2-digit", timeZone: ZONE }).format(now);
+  const time = formatTime(now);
   return (
     <div className={`careos-clock ${className}`} role="timer" aria-label={`${weekday}, ${date}, ${time} Uhr`}>
       <span>{weekday}</span>
