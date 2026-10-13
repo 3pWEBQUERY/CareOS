@@ -38,38 +38,44 @@ mit Demodaten.
 
 ### Startbildschirm
 
-Begrüssung, darunter **„Meine Apps“**: alle Apps, die die Person nutzen darf, als grosse farbige Kacheln, gruppiert
-wie der Arbeitstag. Eine rote Zahl an einer App heisst: Hier wartet etwas (offene Aufgaben, überfällige Gaben,
-Übergaben, ungelesene Nachrichten). Darunter folgen wie bisher Notizen, „Heute wichtig“, Tagesliste usw. Alles lässt
-sich unter „Startseite anpassen“ verschieben oder ausblenden.
+Wie auf einem Tablet: links gross die Uhr mit Datum und Begrüssung, darunter zwei Widgets – **„Mein Dienst“**
+(Dienstzeit und Wohnbereich, eingecheckt oder geplant, Fortschritt der Aufgaben, Zähler für Aufgaben, Übergaben und
+Nachrichten) und **„Als Nächstes“** (die nächsten offenen Punkte des Dienstes mit Uhrzeit). Rechts alle Apps, die die
+Person nutzen darf, als Symbole mit Namen und ein Suchfeld. Eine rote Zahl an einer App heisst: Hier wartet etwas.
+Auf dem Handy stehen Uhr und Apps zuerst, die Widgets darunter.
 
-### Die Leiste
+### Menüleiste (Computer)
 
-Am Computer links, auf dem Handy unten. Jeder Knopf: farbiges Symbol **und** Name darunter.
+Oben über die ganze Breite: links das CareOS-Zeichen (öffnet „Alle Apps“), daneben Symbol und Name der geöffneten App
+(„Wo bin ich?“) und ihre Seiten als Menüpunkte – die gewählte Seite ist hinterlegt. Rechts der Status: Wohnbereich,
+Bewohner, Suche (⌘ K), KI, Hinweise, Uhr und Profil.
 
-| Computer (links) | Handy (unten) |
-| ---------------- | ------------- |
-| Start            | Start         |
-| Mein Dienst      | Bewohner      |
-| Bewohner         | Doku          |
-| Doku             | Medikamente   |
-| Medikamente      | Alle Apps     |
-| Aufgaben         |               |
-| Nachrichten      |               |
-| Alle Apps        |               |
-| Einstellungen    |               |
-| Hilfe            |               |
+### Dock (Computer) und untere Leiste (Handy)
+
+Am Computer unten das Dock, auf dem Handy die untere Leiste. Immer dieselben Apps in derselben Reihenfolge; das Dock
+zeigt beim Darüberfahren den Namen, ein Punkt markiert die geöffnete App.
+
+| Dock (Computer) | Handy (unten) |
+| --------------- | ------------- |
+| Start           | Start         |
+| Mein Dienst     | Bewohner      |
+| Bewohner        | Doku          |
+| Dokumentation   | Medikamente   |
+| Medikamente     | Alle Apps     |
+| Aufgaben        |               |
+| Nachrichten     |               |
+| Alle Apps       |               |
+| Einstellungen   |               |
 
 ### „Alle Apps“
 
-Öffnet sich aus der Leiste (oder mit der Taste **L**). Zeigt jede App mit Symbol, Name und einem kurzen Satz, oben die
-zuletzt geöffneten Seiten und ein Suchfeld („btm“ findet die App Medikamente, weil „BtM-Kontrolle“ eine ihrer Seiten
-ist). Unten: Einstellungen und Hilfe.
+Öffnet sich aus dem Dock, über das CareOS-Zeichen (oder mit der Taste **L**) als Launchpad im Vollbild: alle Apps als
+Symbole, oben ein Suchfeld („btm“ findet die App Medikamente, weil „BtM-Kontrolle“ eine ihrer Seiten ist) und die
+zuletzt geöffneten Seiten. Unten: Einstellungen und Hilfe. Ein Klick auf eine freie Stelle oder Esc schliesst.
 
-### Kopf jeder App
+### App-Symbole
 
-Oben auf jeder Seite stehen Symbol und Name der App („Wo bin ich?“), daneben die Seiten der App als grosse Knöpfe.
-Die gewählte Seite ist in der Farbe der App gefüllt.
+Dunkle Kachel, darauf das Zeichen leuchtend in der Farbe der App (Start, Alle Apps und Einstellungen in Graphit).
 
 ### Die Apps
 
@@ -105,7 +111,7 @@ hat. Die Bezeichnung der Einrichtung (Bewohner, Patienten, Klienten) gilt in all
 
 - **Name:** CareCore heisst jetzt **CareOS** (Anmeldung, Titel, Hilfe, E-Mails, Dokumente). Die Unter-Marken
   („CareCore Med“, „CareCore Shift“ …) sind durch die Namen der Apps ersetzt.
-- **Leiste:** beschriftete App-Leiste statt Symbolleiste mit Ausklappmenüs.
+- **Leiste:** Menüleiste oben und Dock unten (Handy: untere Leiste) statt Symbolleiste mit Ausklappmenüs.
 - **Alle Apps:** neue Übersicht mit Beschreibung, Suche und zuletzt geöffneten Seiten (ersetzt Ausklappmenüs und
   Handy-Menü).
 - **Startseite:** „Meine Apps“ statt „Schnellzugriff“; „Startseite anpassen“ statt „Arbeitsplatz bearbeiten“.

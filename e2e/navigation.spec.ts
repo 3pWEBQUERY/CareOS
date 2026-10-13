@@ -77,8 +77,7 @@ test("Bezeichnung der betreuten Personen umstellen: Patient", async ({ page }) =
     await expect(page.locator(".toast")).toContainText("Bezeichnung „Patient“ gespeichert");
     await expect(options.getByRole("button", { name: "Patient" })).toHaveAttribute("aria-pressed", "true");
 
-    await page.goto("/c");
-    await expect(page.locator(".summary-label").first()).toHaveText("Patienten zugeteilt");
+    await page.goto("/c/bewohner");
     await expect(page.locator(".resident-context-copy small").first()).toHaveText("Patient");
     await page.goto("/c/bewohner");
     await expect(page.getByRole("heading", { level: 1, name: "Patienten" })).toBeVisible();
@@ -93,43 +92,45 @@ test("Bezeichnung der betreuten Personen umstellen: Patient", async ({ page }) =
   expect(errors).toEqual([]);
 });
 
-// CareOS: die Leiste zeigt jede App mit Symbol und Namen; „Alle Apps“ öffnet alle Apps mit kurzer Beschreibung.
-// CareOS Kompass ist ein eigener Bereich gleich nach Bewohner & Pflege, mit eigenem Logo.
-test("CareOS: Leiste mit Namen, „Alle Apps“ mit Suche, Kompass nach Bewohner & Pflege", async ({ page }) => {
+// CareOS: das Dock zeigt die meistgenutzten Apps mit Namen; „Alle Apps“ öffnet das Launchpad mit allen Apps und Suche.
+// CareOS Kompass steht gleich nach den Apps von Bewohner & Pflege, mit eigenem Logo.
+test("CareOS: Dock mit Namen, Launchpad mit Suche, Kompass nach Bewohner & Pflege", async ({ page }) => {
   await login(page, ADMIN);
   const errors = watchErrors(page);
   await page.goto("/c");
-  const dock = page.getByRole("complementary", { name: "Hauptnavigation" });
-  // Jeder Knopf der Leiste hat einen sichtbaren Namen, nicht nur ein Symbol.
-  for (const name of ["Start", "Mein Dienst", "Bewohner", "Doku", "Medikamente", "Alle Apps"])
-    await expect(dock.locator(".careos-dock-label", { hasText: new RegExp(`^${name}$`) })).toBeVisible();
+  const dock = page.getByRole("navigation", { name: "Dock" });
+  // Jeder Knopf des Docks hat einen Namen, nicht nur ein Symbol.
+  for (const name of ["Start", "Mein Dienst", "Bewohner", "Dokumentation", "Medikamente"])
+    await expect(dock.getByRole("link", { name, exact: true })).toBeVisible();
+  await expect(dock.getByRole("button", { name: "Alle Apps" })).toBeVisible();
 
   await dock.getByRole("button", { name: "Alle Apps" }).click();
   const launcher = page.getByRole("dialog", { name: "Alle Apps" });
   await expect(launcher).toBeVisible();
-  const groups = await launcher
-    .locator(".careos-app-group > h3")
-    .evaluateAll((nodes) => nodes.map((node) => node.textContent));
-  expect(groups[groups.indexOf("Bewohner & Pflege") + 1]).toBe("CareOS Kompass");
-  const kompass = launcher.getByRole("button", { name: "Kompass", exact: true });
+  const names = await launcher.locator(".os-app-name").evaluateAll((nodes) => nodes.map((node) => node.textContent));
+  expect(names[names.indexOf("Aktivitäten") + 1]).toBe("Kompass");
+  const kompass = launcher.getByRole("link", { name: "Kompass", exact: true });
   await expect(kompass.locator(".sidebar-kompass-icon")).toBeVisible();
-  await expect(kompass).toContainText("Pflegebedarf abklären");
+  await expect(kompass).toHaveAttribute("title", /Pflegebedarf abklären/);
 
   // Suche: nur passende Apps, auch über die Seiten einer App.
   await launcher.getByRole("searchbox", { name: "App suchen" }).fill("btm");
-  await expect(launcher.locator(".careos-app-tile")).toHaveCount(1);
-  await expect(launcher.getByRole("button", { name: /^Medikamente/ })).toBeVisible();
+  await expect(launcher.locator(".os-app")).toHaveCount(1);
+  await expect(launcher.getByRole("link", { name: /^Medikamente/ })).toBeVisible();
   await launcher.getByRole("searchbox", { name: "App suchen" }).fill("");
 
   await kompass.click();
   await expect(page).toHaveURL(/\/c\/kompass$/);
   await expect(launcher).toHaveCount(0);
-  // Kopf der App: Symbol und Name, „Alle Apps“ ist in der Leiste markiert (Kompass steht nicht in der Leiste).
-  await expect(page.locator(".careos-app-bar-name")).toHaveText("Kompass");
-  await expect(dock.getByRole("button", { name: "Alle Apps" })).toHaveClass(/active/);
+  // Menüleiste: Symbol und Name der App; „Alle Apps“ trägt im Dock den Punkt (Kompass steht nicht im Dock).
+  await expect(page.locator(".menubar .careos-app-bar-name")).toHaveText("Kompass");
+  await expect(dock.getByRole("button", { name: "Alle Apps" })).toHaveAttribute("data-running", "true");
 
   // Taste L öffnet „Alle Apps“, Escape schliesst.
-  await page.locator("body").click({ position: { x: 600, y: 600 } });
+  await page
+    .locator("main")
+    .first()
+    .click({ position: { x: 20, y: 20 } });
   await page.keyboard.press("l");
   await expect(launcher).toBeVisible();
   await page.keyboard.press("Escape");

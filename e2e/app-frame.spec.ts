@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { ADMIN, login, watchErrors } from "./support";
 
-// Der Arbeitsplatz wirkt wie eine einzige Anwendung: Seitenleiste und Kopfzeile bleiben beim Seitenwechsel dieselben
+// Der Arbeitsplatz wirkt wie eine einzige Anwendung: Menüleiste und Dock bleiben beim Seitenwechsel dieselben
 // Elemente (kein Neuaufbau, kein Neuladen), nur der Inhalt wechselt. Druckansichten stehen ohne Rahmen.
 
 test("Rahmen bleibt beim Wechsel zwischen Reitern, Bereichen und Startseite stehen", async ({ page }) => {
@@ -9,10 +9,10 @@ test("Rahmen bleibt beim Wechsel zwischen Reitern, Bereichen und Startseite steh
   const errors = watchErrors(page);
   await page.goto("/c/pflegeplanung");
   await expect(page.getByRole("heading", { name: "Pflegeplanung", level: 1 })).toBeVisible();
-  // Merker an Seitenleiste, Kopfzeile und Fenster: Sie überleben nur, wenn nichts neu aufgebaut oder geladen wird.
+  // Merker an Dock, Menüleiste und Fenster: Sie überleben nur, wenn nichts neu aufgebaut oder geladen wird.
   await page.evaluate(() => {
     const marks = window as unknown as Record<string, unknown>;
-    marks.frameSidebar = document.querySelector(".sidebar");
+    marks.frameDock = document.querySelector(".careos-dock");
     marks.frameHeader = document.querySelector(".topbar");
     marks.frameAlive = true;
   });
@@ -21,7 +21,7 @@ test("Rahmen bleibt beim Wechsel zwischen Reitern, Bereichen und Startseite steh
       const marks = window as unknown as Record<string, unknown>;
       return (
         marks.frameAlive === true &&
-        marks.frameSidebar === document.querySelector(".sidebar") &&
+        marks.frameDock === document.querySelector(".careos-dock") &&
         marks.frameHeader === document.querySelector(".topbar")
       );
     });
@@ -38,11 +38,12 @@ test("Rahmen bleibt beim Wechsel zwischen Reitern, Bereichen und Startseite steh
   ).toHaveAttribute("aria-current", "page");
   expect(await sameFrame()).toBe(true);
 
-  // Startseite über die Seitenleiste und zurück in einen anderen Bereich über einen Link.
-  await page.getByRole("complementary", { name: "Hauptnavigation" }).getByRole("button", { name: "Start" }).click();
+  // Startseite über das Dock und weiter in einen anderen Bereich.
+  const dock = page.getByRole("navigation", { name: "Dock" });
+  await dock.getByRole("link", { name: "Start" }).click();
   await expect(page).toHaveURL(/\/c$/);
   expect(await sameFrame()).toBe(true);
-  await page.getByRole("button", { name: "Einstellungen", exact: true }).first().click();
+  await dock.getByRole("link", { name: "Einstellungen", exact: true }).click();
   await expect(page).toHaveURL(/\/c\/einstellungen/);
   expect(await sameFrame()).toBe(true);
 
@@ -77,6 +78,6 @@ test("Handy: untere Menüleiste bleibt beim Seitenwechsel stehen und wird nicht 
 test("Druckansicht steht ohne Rahmen", async ({ page }) => {
   await login(page, ADMIN);
   await page.goto("/c/ernaehrung/kuechenliste");
-  await expect(page.locator(".sidebar")).toHaveCount(0);
+  await expect(page.locator(".careos-dock")).toHaveCount(0);
   await expect(page.locator(".topbar")).toHaveCount(0);
 });

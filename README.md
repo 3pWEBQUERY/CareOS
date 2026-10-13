@@ -13,11 +13,14 @@ Schritte: `docs/CAREOS-UX.md`. Technische Kennungen (Tabellen `carecore_…`, Va
 ## Oberfläche: Glas auf Nachthimmel
 
 CareOS liegt auf einem nächtlichen Wolkenhimmel (`public/backgrounds/night-sky.webp`); Flächen sind dunkles,
-durchscheinendes Glas mit weichen Ecken, Schrift ist hell. Oben links der runde Start-Knopf, in der Mitte die
-meistgenutzten Apps als eine Glas-Pille (die gewählte App hell, die Markierung gleitet beim Wechsel mit), rechts
-„Suchen“, KI, Hinweise und der Avatar (`app/components/top-navigation.tsx`). Darunter die geöffnete App mit ihren
-Reitern sowie Wohnbereich und Bewohner. Startseite und Anmeldung zeigen links eine grosse Uhr und die Begrüssung als
-Sprechblasen.
+durchscheinendes Glas mit weichen Ecken, Schrift ist hell. Bedient wird es wie ein Betriebssystem
+(`app/components/top-navigation.tsx`, `app/styles/72-os.css`):
+
+- **Menüleiste** oben: CareOS-Zeichen (öffnet „Alle Apps“), geöffnete App mit ihren Seiten, rechts Wohnbereich,
+  Bewohner, Suche, KI, Hinweise, Uhr und Profil.
+- **Dock** unten mit den meistgenutzten Apps (Vergrösserung beim Darüberfahren, Punkt unter der geöffneten App).
+- **Startbildschirm** mit Uhr, den Widgets „Mein Dienst“ und „Als Nächstes“ und allen Apps mit Suche;
+  **„Alle Apps“** als Launchpad im Vollbild. Anmeldung mit grosser Uhr und Begrüssung als Sprechblasen.
 
 - **Farben:** Grundwerte, Rahmen und Glas in `app/styles/71-glass.css`. Die älteren Stylesheets wurden einmalig mit
   `scripts/glass-theme.py` umgestellt; neue Regeln direkt mit den Variablen (`--glass-surface`, `--ink`, `--muted`,

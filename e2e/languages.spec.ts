@@ -39,14 +39,14 @@ test("Sprachen: Text prüfen, Sprache freigeben, als Mitarbeiterin Englisch wäh
   await staff.locator(".settings-detail").getByRole("combobox", { name: "Sprache" }).click();
   await staff.getByRole("option", { name: "English" }).click();
   await expect(staff.locator("html")).toHaveAttribute("lang", "en");
-  // Seitenleiste: Beschriftung der Knöpfe (aria-label) übersetzt; der ungeprüfte Entwurf bleibt Deutsch.
-  const sidebar = staff.getByRole("complementary", { name: "Hauptnavigation" });
-  await expect(sidebar.getByRole("button", { name: "My shift" }).first()).toBeVisible();
-  await expect(sidebar.getByRole("button", { name: "Mein Dienst", exact: true })).toHaveCount(0);
+  // Dock: Namen der Apps übersetzt; der ungeprüfte Entwurf bleibt Deutsch.
+  const dock = staff.locator(".careos-dock");
+  await expect(dock.getByRole("link", { name: "My shift" }).first()).toBeVisible();
+  await expect(dock.getByRole("link", { name: "Mein Dienst", exact: true })).toHaveCount(0);
   // Bleibt nach dem Neuladen.
   await staff.reload();
   await expect(staff.locator("html")).toHaveAttribute("lang", "en");
-  await expect(sidebar.getByRole("button", { name: "My shift" }).first()).toBeVisible();
+  await expect(dock.getByRole("link", { name: "My shift" }).first()).toBeVisible();
   await staff.goto("/c/medikation");
   await expect(staff.getByRole("heading", { name: "Medikamentenplan" })).toBeVisible();
   expect(await staff.locator("body").innerText()).not.toContain("Medication");

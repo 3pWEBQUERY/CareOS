@@ -177,24 +177,21 @@ test("Branding: Logo der Einrichtung hochladen und in der Kopfzeile sehen", asyn
     await expect(page.locator(".toast")).toContainText("Logo gespeichert");
     await expect(card.getByRole("img", { name: "Aktuelles Logo" })).toBeVisible();
     await page.reload();
-    await expect(page.locator(".location-icon.has-logo img").first()).toBeVisible();
-    // Auch in der Sidebar: als App-Icon-Kachel statt des CareOS-Zeichens.
-    const sidebarLogo = page.locator(".sidebar-rail-head .brand-mark-app img");
-    await expect(sidebarLogo).toBeVisible();
-    await expect(sidebarLogo).toHaveAttribute("src", /\/api\/branding\/logo\?v=/);
+    // In der Menüleiste beim Wohnbereich statt des Gebäude-Symbols.
+    const menubarLogo = page.locator(".menubar .location-icon.has-logo img");
+    await expect(menubarLogo).toBeVisible();
+    await expect(menubarLogo).toHaveAttribute("src", /\/api\/branding\/logo\?v=/);
 
-    // Beim Neuladen blitzen weder das CareOS-Zeichen noch das Gebäude-Symbol kurz auf: ab dem ersten Bild
-    // festhalten, was Sidebar und Kopfzeile zeigen.
+    // Beim Neuladen blitzt das Gebäude-Symbol nicht kurz auf: ab dem ersten Bild festhalten, was die Kopfzeile zeigt.
     await page.addInitScript(() => {
       const seen: string[] = [];
       (window as unknown as { brandingSeen: string[] }).brandingSeen = seen;
       new MutationObserver(() => {
-        if (document.querySelector('.sidebar-rail-head img[src*="carecore-sidebar-logo"]')) seen.push("carecore");
         if (document.querySelector(".location-icon svg")) seen.push("building");
       }).observe(document, { childList: true, subtree: true, attributes: true });
     });
     await page.reload();
-    await expect(sidebarLogo).toBeVisible();
+    await expect(menubarLogo).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { brandingSeen: string[] }).brandingSeen)).toEqual([]);
 
     await card.getByRole("button", { name: "Logo entfernen" }).click();

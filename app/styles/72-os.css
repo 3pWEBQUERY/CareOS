@@ -301,10 +301,35 @@
   width: 16px;
   height: 16px;
 }
+/* Nur optisch ausgeblendet: Die Beschriftung bleibt Teil des Namens für Screenreader. */
 .menubar .location-copy small,
 .menubar .resident-context-copy small,
+.menubar .resident-context-nav small {
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.menubar .resident-context-wrap {
+  display: flex;
+  align-items: center;
+}
 .menubar .resident-context-nav {
-  display: none;
+  gap: 0;
+}
+.menubar .resident-context-nav button {
+  width: 22px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  background: transparent;
+}
+.menubar .resident-context-nav button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
 }
 .menubar .location-copy strong,
 .menubar .resident-context-copy strong {
@@ -370,9 +395,16 @@
   }
 }
 @media (max-width: 1280px) {
-  .menubar-clock > span,
-  .menubar .resident-context-copy {
+  .menubar-clock > span {
     display: none;
+  }
+  .menubar .resident-context-copy {
+    width: 1px;
+    height: 1px;
+    position: absolute;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .menubar-clock {
     min-width: 0;

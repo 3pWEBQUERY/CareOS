@@ -7,8 +7,7 @@ const PAGES: Array<[string, string, boolean]> = [
   ["/c/pflegedokumentation/visite", ".visit-resident h3 a", true],
   ["/c/pflegedokumentation/nachweis", ".proof-resident h2 a", false],
   ["/c/alltag/teilnahme", ".participation-report .services-report-table td > a", true],
-  ["/c", ".home-news-foot button", true],
-  ["/c", ".home-notes-empty button", false],
+  ["/c", ".os-counters a", false],
   ["/c/betrieb/uebergabe", ".handover-event-list article > button", false],
   ["/c/leitung/teamleitung/aufgaben", ".teamlead-task-card button", true],
 ];

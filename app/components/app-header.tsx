@@ -86,7 +86,7 @@ export default function AppHeader(props: {
               closeMenus();
               onSearch();
             }}
-            aria-label="Suchen (⌘ K)"
+            aria-label="Globale Suche öffnen"
             title="Suchen (⌘ K)"
             aria-expanded={searchOpen}
           >
