@@ -30,9 +30,9 @@ test("FBM: Massnahme erfassen, Erinnerung in der Tagesliste, überprüfen und be
   await expect(card).toContainText("Vertretung nicht informiert");
   await expect(card).toContainText("Laura Leitung, Pflegedienstleitung");
 
-  // Die Tagesliste erinnert an beides.
+  // Die Tagesliste (Mein Dienst) erinnert an beides.
   await page.keyboard.press("Escape");
-  await page.goto("/c");
+  await page.goto("/c/betrieb/tagesliste");
   const worklist = page.locator(".worklist-card");
   await expect(worklist).toContainText("FBM überprüfen");
   await expect(worklist).toContainText("Vertretung über FBM informieren");

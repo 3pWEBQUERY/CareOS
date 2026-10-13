@@ -157,7 +157,7 @@ function UpNextWidget({ items }: { items: TimelineItem[] | null }) {
     .slice(0, 4);
   return (
     <article className="os-widget os-widget-next" aria-busy={!items}>
-      <Link className="os-widget-head" href={shiftHref}>
+      <Link className="os-widget-head" href={routeFor("shift", "Tagesliste") ?? shiftHref}>
         <span>Als Nächstes</span>
         <ModuleIcon name="chevron" className="os-widget-chevron" />
       </Link>

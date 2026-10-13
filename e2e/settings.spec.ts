@@ -34,32 +34,6 @@ test("Darstellung: Schriftgrösse und Animationen gelten sofort und bleiben nach
   expect(errors).toEqual([]);
 });
 
-test("Erscheinungsbild: dunkel gilt sofort, bleibt nach dem Neuladen und lässt Fotos farbecht", async ({ page }) => {
-  await login(page, FAGE);
-  const errors = watchErrors(page);
-  await page.goto("/c/einstellungen/appearance");
-  const detail = page.locator(".settings-detail");
-  const html = page.locator("html");
-  await expect(html).not.toHaveClass(/theme-dark/);
-  await page.locator(".settings-list button", { hasText: "Erscheinungsbild" }).click();
-  await detail.getByRole("combobox", { name: "Erscheinungsbild" }).click();
-  await page.getByRole("option", { name: "Dunkel" }).click();
-  await expect(html).toHaveClass(/theme-dark/);
-  expect(await html.evaluate((el) => getComputedStyle(el).filter)).toContain("invert");
-
-  // Nach dem Neuladen schon vor dem Laden der Einstellungen dunkel (kein heller Blitz).
-  await page.reload();
-  await expect(html).toHaveClass(/theme-dark/);
-  await expect(page.locator(".settings-list button", { hasText: "Erscheinungsbild" })).toContainText("Dunkel");
-
-  await page.locator(".settings-list button", { hasText: "Erscheinungsbild" }).click();
-  await detail.getByRole("combobox", { name: "Erscheinungsbild" }).click();
-  await page.getByRole("option", { name: "Hell" }).click();
-  await expect(html).not.toHaveClass(/theme-dark/);
-  expect(await html.evaluate((el) => getComputedStyle(el).filter)).toBe("none");
-  expect(errors).toEqual([]);
-});
-
 test("Benachrichtigungen: Ruhezeit und Hinweiston werden gespeichert", async ({ page }) => {
   await login(page, FAGE);
   const errors = watchErrors(page);

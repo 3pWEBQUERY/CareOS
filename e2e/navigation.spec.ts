@@ -36,11 +36,11 @@ for (const entry of pages)
     expect(errors).toEqual([]);
   });
 
-// Startseite: Tagesliste nach Kritisch / Wichtig / Routine gegliedert; Zahl im Filter = gezeigte Punkte.
+// Mein Dienst › Tagesliste nach Kritisch / Wichtig / Routine gegliedert; Zahl im Filter = gezeigte Punkte.
 test("Tagesliste gliedert nach Kritisch, Wichtig und Routine", async ({ page }) => {
   await login(page, ADMIN);
   const errors = watchErrors(page);
-  await page.goto("/c");
+  await page.goto("/c/betrieb/tagesliste");
   const filters = page.getByRole("group", { name: "Tagesliste filtern" });
   await expect(filters.getByRole("button", { name: /^Alle \d+$/ })).toBeVisible();
   const items = page.locator(".worklist-card .worklist-item");
@@ -100,8 +100,9 @@ test("CareOS: Dock mit Namen, Launchpad mit Suche, Kompass nach Bewohner & Pfleg
   await page.goto("/c");
   const dock = page.getByRole("navigation", { name: "Dock" });
   // Jeder Knopf des Docks hat einen Namen, nicht nur ein Symbol.
+  // Name der App, bei offenen Punkten gefolgt von der Zahl („Medikamente (3 offen)“).
   for (const name of ["Start", "Mein Dienst", "Bewohner", "Dokumentation", "Medikamente"])
-    await expect(dock.getByRole("link", { name, exact: true })).toBeVisible();
+    await expect(dock.getByRole("link", { name: new RegExp(`^${name}( \\(\\d+ offen\\))?$`) })).toBeVisible();
   await expect(dock.getByRole("button", { name: "Alle Apps" })).toBeVisible();
 
   await dock.getByRole("button", { name: "Alle Apps" }).click();

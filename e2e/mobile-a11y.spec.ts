@@ -38,7 +38,7 @@ test.describe("Handy-Ansicht (390 px)", () => {
     await expect(menu).toHaveCount(0);
     await menuButton.tap();
     await menu
-      .getByRole("button", { name: /Wunden/ })
+      .getByRole("link", { name: /Wunden/ })
       .first()
       .tap();
     await expect(page).toHaveURL(/\/c\/wundmanagement/);

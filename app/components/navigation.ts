@@ -91,7 +91,7 @@ export const navigation: NavGroup[] = [
         icon: "shift",
         hue: 24,
         hint: "Mein Tag, Übergabe und was seit dem letzten Dienst passiert ist",
-        children: ["Heute", "Übergabe", "Seit letztem Dienst", "Verlauf"],
+        children: ["Heute", "Tagesliste", "Übergabe", "Seit letztem Dienst", "Verlauf"],
       },
       {
         id: "tasks",
@@ -379,6 +379,7 @@ export const navigation: NavGroup[] = [
 const routes: Record<string, Record<string, string>> = {
   shift: {
     Heute: "/betrieb/schicht",
+    Tagesliste: "/betrieb/tagesliste",
     Übergabe: "/betrieb/uebergabe",
     "Seit letztem Dienst": "/betrieb/uebergabe/letzter-dienst",
     Verlauf: "/betrieb/schicht/verlauf",
