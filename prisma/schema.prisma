@@ -482,6 +482,8 @@ model SwapRequest {
   createdAt    DateTime       @default(now())
   decidedById  String?
   decidedAt    DateTime?
+  /// Schedule: Zeitpunkt, an dem die übernehmende Person zugesagt hat (danach Freigabe durch Leitung).
+  acceptedAt   DateTime?
 
   shift Shift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
 }
@@ -1133,6 +1135,8 @@ model DocumentVersion {
   authorId     String
   approvedById String?
   approvedAt   DateTime?
+  /// Zur Freigabe eingereicht (Docs). Ohne approvedAt und ohne submittedAt = Entwurf.
+  submittedAt  DateTime?
   createdAt    DateTime  @default(now())
   document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
 

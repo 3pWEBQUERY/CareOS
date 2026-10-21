@@ -76,6 +76,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <I18nProvider locale={ctx.locale} terminology={ctx.terminology} messages={dictionary(ctx.locale)}>
+      {/* Branding (Admin → Organisation): Akzentfarbe nur für die helle Darstellung, Wert ist validiert (#RRGGBB, Kontrast ≥ 4.5:1). */}
+      {org.brandColor && /^#[0-9a-fA-F]{6}$/.test(org.brandColor) && (
+        <style>{brandCss(org.brandColor)}</style>
+      )}
       <a className="skip" href="#main">{t('common.skipToContent')}</a>
       <div className="app">
         <header className="topbar">
@@ -108,6 +112,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <LiveUpdates userId={user.id} />
     </I18nProvider>
   )
+}
+
+function brandCss(c: string) {
+  const vars = `--accent:${c};--accent-hover:color-mix(in srgb, ${c} 82%, #000);--accent-soft:color-mix(in srgb, ${c} 14%, #fff)`
+  return `:root[data-theme="light"]{${vars}}@media (prefers-color-scheme: light){:root[data-theme="system"]{${vars}}}`
 }
 
 async function unreadConversations(userId: string) {

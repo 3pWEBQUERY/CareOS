@@ -114,7 +114,7 @@ a { color: var(--accent) }
 .ctx select { border: 0; background: none; padding: 0; font-weight: 500; max-width: 280px; cursor: pointer }
 .search-btn { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 220px; flex: 0 1 300px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); padding: 6px 8px 6px 10px; color: var(--fg-3); text-align: left }
 .search-btn:hover { border-color: var(--line-strong) }
-.search-btn span { flex: 1 }
+.search-btn span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 kbd { font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); padding: 0 5px; color: var(--fg-2); background: var(--surface) }
 .shift { display: flex; align-items: center; gap: 8px; font-size: 13px; white-space: nowrap }
 .shift .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok) }
@@ -655,3 +655,181 @@ dialog.dlg::backdrop { background: var(--scrim) }
 .more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px }
 .more-grid a { display: flex; align-items: center; gap: 10px; padding: 14px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--fg); text-decoration: none; font-weight: 500 }
 .more-grid a:hover { border-color: var(--line-strong) }
+
+/* ───────── CareOS Docs & Learn (nur Tokens, hell + dunkel) ───────── */
+.docs-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start }
+.prose ul, .prose ol { padding-left: 1.4em }
+.prose li + li { margin-top: .2em }
+.prose pre { background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; overflow-x: auto; margin: .8em 0 }
+.prose pre code { background: none; padding: 0 }
+.diff { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.55; overflow-x: auto; padding: 4px 0 }
+.diff-line { display: grid; grid-template-columns: 24px minmax(0, 1fr) }
+.diff-line .diff-op { text-align: center; color: var(--fg-3); user-select: none }
+.diff-line .diff-text { white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 10px }
+.diff-line.add { background: var(--ok-soft) }
+.diff-line.add .diff-op { color: var(--ok); font-weight: 600 }
+.diff-line.del { background: var(--crit-soft) }
+.diff-line.del .diff-op { color: var(--crit); font-weight: 600 }
+.diff-line.del .diff-text { color: var(--fg-2); text-decoration: line-through; text-decoration-color: var(--crit) }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); cursor: pointer; min-height: 40px }
+.opt input { margin: 3px 0 0; accent-color: var(--accent); flex: none }
+.opt:hover { border-color: var(--line-strong) }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft) }
+.cm { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 1.3; white-space: nowrap; padding: 2px 6px; border-radius: var(--r-sm); border: 1px solid transparent }
+.cm.valid { background: var(--ok-soft); color: var(--ok) }
+.cm.expiring { background: var(--warn-soft); color: var(--warn) }
+.cm.expired, .cm.overdue { background: var(--crit-soft); color: var(--crit) }
+.cm.missing { border: 1px dashed var(--line-strong); color: var(--fg-3) }
+.cm.na { color: var(--line-strong) }
+.matrix th:first-child, .matrix td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface) }
+.matrix thead th:first-child { background: var(--surface-2) }
+.matrix td, .matrix th { white-space: nowrap }
+.matrix tfoot th, .matrix tfoot td { border-top: 1px solid var(--line-strong); background: var(--surface-2); vertical-align: top }
+.matrix tbody th { font-weight: 500 }
+.video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: var(--r); background: var(--sunken) }
+.steps li[data-state="locked"] { color: var(--line-strong) }
+@media (max-width: 920px) {
+  .docs-layout { grid-template-columns: minmax(0, 1fr) }
+}
+
+/* ───────── CareOS Plan, Assess, Wounds, Nutrition (nur Tokens, hell + dunkel) ───────── */
+.ws-pre { white-space: pre-wrap; overflow-wrap: anywhere }
+.steps .step-btn { border: 0; background: none; padding: 0; margin: 0; color: inherit; font: inherit; text-align: left; display: flex; flex-direction: column; gap: 2px; width: 100%; cursor: pointer; min-height: 36px }
+.steps .step-btn:disabled { cursor: not-allowed }
+.steps .step-btn > span:last-child { overflow-wrap: anywhere; hyphens: auto }
+.day-chip { min-width: 46px; min-height: 36px; text-align: center }
+.care-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 6px }
+.care-opts.nrs { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)) }
+.care-opts .opt { align-items: center; min-height: 44px }
+.care-opts .opt input { margin: 0; width: 18px; height: 18px }
+.care-opts .opt .pts { margin-left: auto; font-family: var(--font-mono); font-size: 12px; color: var(--fg-3) }
+.care-q + .care-q { border-top: 1px solid var(--line); padding-top: 12px }
+.care-q legend, .care-q > .lbl { margin-bottom: 6px }
+.care-q[data-missing="true"] > legend { color: var(--warn) }
+.legend i.bar { height: 8px; border: 0; background: var(--accent); vertical-align: -1px }
+.legend i.bar.crit { background: var(--crit) }
+.legend i.bar.muted { background: var(--line-strong) }
+.legend i.tg { border-top: 2px dashed var(--ok) }
+.chart .barval { fill: var(--fg-2); font-family: var(--font-mono); font-size: 9.5px }
+.chart .barval.crit { fill: var(--crit) }
+.thumbs { display: flex; gap: 6px; flex-wrap: wrap }
+.thumbs a { display: block; line-height: 0; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; background: var(--sunken) }
+.thumbs img { width: 56px; height: 56px; object-fit: cover }
+.seg.portion button { min-width: 44px; min-height: 34px; font-family: var(--font-mono) }
+.seg.portion button[aria-pressed="true"] { font-weight: 600 }
+.quick-ml { display: flex; gap: 6px; flex-wrap: wrap }
+.quick-ml .btn { font-family: var(--font-mono); min-width: 72px }
+.photo-in:focus-visible + .btn { outline: 2px solid var(--accent); outline-offset: 1px }
+@media (max-width: 720px) {
+  .day-chip, .seg.portion button { min-height: 40px }
+  .quick-ml .btn { flex: 1 1 calc(50% - 6px); min-height: 44px }
+}
+
+/* ───────── CareOS Insights & Quality (nur Tokens, hell + dunkel) ───────── */
+.ins-card { display: flex; flex-direction: column; gap: 6px; margin: 0; padding-bottom: 10px }
+.ins-span { grid-column: 1 / -1 }
+.chart .ins-hit { fill: transparent }
+.chart .ins-col:hover .barfill { opacity: .78 }
+.chart .ins-col:hover .ins-hit { fill: var(--surface-2); fill-opacity: .6 }
+.chart .ins-base { stroke: var(--line-strong); stroke-width: 1 }
+.ins-table > summary { cursor: pointer; display: inline-block; list-style: none; min-height: 28px; line-height: 28px }
+.ins-table > summary::-webkit-details-marker { display: none }
+.ins-table > summary::before { content: "▸ "; font-size: 10px }
+.ins-table[open] > summary::before { content: "▾ " }
+.ins-meters { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px }
+.ins-meters li { display: grid; grid-template-columns: minmax(90px, 38%) minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 13px }
+.ins-meters .ins-mv { text-align: right; white-space: nowrap }
+.ins-stack { display: flex; gap: 2px; height: 10px; border-radius: 2px; overflow: hidden }
+.ins-stack i { display: block; min-width: 3px; background: var(--line-strong) }
+.ins-stack i.ok { background: var(--ok) }
+.ins-stack i.accent { background: var(--accent) }
+.ins-stack i.warn { background: var(--warn) }
+.ins-stack i.crit { background: var(--crit) }
+.ins-key { display: inline-block; width: 9px; height: 9px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; background: var(--line-strong) }
+.ins-key.ok { background: var(--ok) } .ins-key.accent { background: var(--accent) } .ins-key.warn { background: var(--warn) } .ins-key.crit { background: var(--crit) }
+
+.cov { border-collapse: separate; border-spacing: 2px; font-size: 12px }
+.cov th { font-family: var(--font-cond); font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--fg-3); text-align: center; padding: 2px 4px; white-space: nowrap }
+.cov th[scope="row"] { text-align: left; padding-right: 8px }
+.cov td { font-family: var(--font-mono); text-align: center; padding: 4px 2px; min-width: 34px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--fg-2) }
+.cov td.ok { background: var(--ok-soft); color: var(--ok) }
+.cov td.warn { background: var(--warn-soft); color: var(--warn); font-weight: 500 }
+.cov td.crit { background: var(--crit-soft); color: var(--crit); font-weight: 600 }
+@media (max-width: 720px) {
+  .ins-meters li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px }
+  .ins-meters li .bar { grid-column: 1 / -1; grid-row: 2 }
+}
+
+/* ───────── Bewohnerakte: Resident 360 Trends (Agent Residents) ───────── */
+.trend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); clip-path: inset(0 1px 1px 0) }
+.trend { padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line) }
+.trend .val { font-size: 17px; font-weight: 500; line-height: 1.15 }
+.trend .val small { font-size: 12px; font-weight: 400 }
+.trend .spark { margin-top: 2px }
+@media (max-width: 720px) { .q-filters { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+
+/* ───────── CareOS Team, Chat, Schedule (nur Tokens, hell + dunkel) ───────── */
+.team-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 16px; align-items: start }
+@media (max-width: 1100px) { .team-grid { grid-template-columns: minmax(0, 1fr) } }
+/* Chat */
+.chat-list .li[aria-current="page"] { background: var(--accent-soft) }
+.chat-list .li { align-items: center }
+.chat-head { flex-wrap: nowrap; background: var(--surface-2) }
+.chat-head h2 { font-size: 15px }
+.chat-back { display: none }
+.chat-notice { margin: 8px 12px 0; padding: 6px 10px }
+.chat-members { border-bottom: 1px solid var(--line); max-height: 260px; overflow: auto; background: var(--surface) }
+.chat-day { display: flex; justify-content: center; padding: 4px 0 }
+.chat-day .lbl { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 1px 8px }
+.chat-files { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px }
+.chat-files .chip { display: inline-flex; align-items: center; gap: 4px }
+.msg .mh { flex-wrap: wrap }
+.msg .mact { display: inline-flex; gap: 4px; align-items: center; margin-left: 6px; visibility: hidden }
+.msg:hover .mact, .msg:focus-within .mact { visibility: visible }
+.msg .mact .react-add { border: 1px dashed var(--line-strong); background: var(--surface); border-radius: var(--r-sm); padding: 0 6px; font-size: 12px; color: var(--fg-2); line-height: 18px }
+.msg .mact .react-add:hover { border-style: solid; border-color: var(--accent); color: var(--accent) }
+.msg .reacts button { color: var(--fg-2); line-height: 20px }
+.msg .reacts button[aria-pressed="true"] { color: var(--accent) }
+.msg.mine .av { background: var(--accent); color: var(--accent-fg) }
+.mention-pop { top: auto; bottom: calc(100% + 6px); left: 12px; right: auto; width: min(360px, calc(100vw - 48px)) }
+@media (hover: none) { .msg .mact { visibility: visible } }
+@media (max-width: 920px) {
+  .chat-back { display: inline-flex }
+  .chat { min-height: 60vh }
+}
+/* Dienstplan */
+.cal > .rh { background: var(--surface) }
+.cal-cell { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; position: relative }
+.cal > .cal-sep { border-top: 1px solid var(--line-strong) }
+.sh-btn { cursor: pointer; font: inherit; font-family: var(--font-mono); font-size: 12px }
+.sh-btn:hover { border-color: currentColor }
+.cal-add { border: 1px dashed var(--line-strong); background: none; color: var(--fg-3); border-radius: var(--r-sm); font-family: var(--font-mono); font-size: 12px; line-height: 18px; padding: 0 7px; opacity: 0 }
+.cal-cell:hover .cal-add, .cal-add:focus-visible { opacity: 1 }
+.cal-add:hover { border-color: var(--accent); color: var(--accent) }
+@media (hover: none) { .cal-add { opacity: .6 } }
+.cov { font-size: 11px; padding: 1px 5px; border-radius: var(--r-sm); background: var(--ok-soft); color: var(--ok); white-space: nowrap }
+.cov.under { background: var(--crit-soft); color: var(--crit) }
+.cov.ok { background: var(--ok-soft); color: var(--ok) }
+.month-head { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 0 4px }
+.month-head .lbl { padding: 0 6px }
+.month > div .sh { align-self: flex-start; max-width: 100%; overflow: hidden }
+.month a.sh { text-decoration: none }
+.month-time { font-size: 10px; opacity: .8 }
+@media (max-width: 560px) { .month-time { display: none } .month > div { min-height: 58px; padding: 3px } .month .sh { padding: 1px 3px; font-size: 11px } }
+/* ───────── CareOS Med / Tasks / Handover (Ergänzung) ───────── */
+.round-line > .round-act { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; min-width: 340px }
+.round-res.done { border-color: var(--ok) }
+.round-res.done > header { background: var(--ok-soft) }
+.mar tbody th .drug.stopped, .stable .drug.stopped { text-decoration: line-through; text-decoration-color: var(--line-strong) }
+@media (max-width: 720px) {
+  .round-line > .round-act { min-width: 0; grid-column: 1 / -1; justify-content: stretch }
+  .round-line > .round-act .btn.lg { flex: 1 1 0; padding-inline: 8px }
+}
+
+/* Shell: Topbar auf schmalen Bildschirmen */
+@media (max-width: 720px) {
+  .topbar { gap: 8px 10px; padding: 8px 10px }
+  .search-btn { min-width: 0; width: 100%; flex: 1 1 100% }
+  .search-btn kbd { display: none }
+  .topbar .shift { margin-left: auto }
+}

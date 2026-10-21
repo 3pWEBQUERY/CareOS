@@ -1,0 +1,114 @@
+import Link from 'next/link'
+import { db } from '@/lib/db'
+import { getCtx } from '@/lib/context'
+import { addDays, fmtRel } from '@/lib/time'
+import { countOrgAdmins } from '@/lib/admin'
+import { ADMIN_SECTIONS } from './sections'
+
+export const metadata = { title: 'Admin' }
+
+export default async function AdminHome() {
+  const ctx = await getCtx()
+  const { t, org } = ctx
+  const now = new Date()
+  const sections = ADMIN_SECTIONS.filter((s) => ctx.can(s.perm))
+  const [users, inactive, noMfa, roles, units, residents, audit24, tokens, hooks, failed, admins, recent] = await Promise.all([
+    db.user.count({ where: { orgId: org.id, active: true } }),
+    db.user.count({ where: { orgId: org.id, active: false } }),
+    db.user.count({ where: { orgId: org.id, active: true, mfaEnabled: false } }),
+    db.role.count({ where: { orgId: org.id } }),
+    db.unit.count({ where: { orgId: org.id } }),
+    db.resident.count({ where: { orgId: org.id, status: { in: ['active', 'absent'] } } }),
+    db.auditLog.count({ where: { orgId: org.id, at: { gte: addDays(now, -1) } } }),
+    db.apiToken.count({ where: { orgId: org.id, revokedAt: null } }),
+    db.webhook.count({ where: { orgId: org.id, active: true } }),
+    db.auditLog.count({ where: { orgId: org.id, action: { in: ['auth.login_failed', 'auth.mfa_failed'] }, at: { gte: addDays(now, -1) } } }),
+    countOrgAdmins(db, org.id),
+    ctx.can('admin.audit')
+      ? db.auditLog.findMany({ where: { orgId: org.id, OR: [{ action: { startsWith: 'admin.' } }, { action: { startsWith: 'auth.' } }, { action: { startsWith: 'api.' } }] }, orderBy: { at: 'desc' }, take: 8 })
+      : Promise.resolve([]),
+  ])
+  const people = await db.user.findMany({ where: { id: { in: recent.map((r) => r.userId).filter((x): x is string => !!x) } }, select: { id: true, firstName: true, lastName: true } })
+  const who = (id: string | null) => {
+    const p = people.find((u) => u.id === id)
+    return p ? `${p.firstName} ${p.lastName}` : t('admin.audit.system')
+  }
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+
+  return (
+    <main className="panel main">
+      <div className="view-head">
+        <div>
+          <span className="lbl">{org.name}</span>
+          <h1>{t('admin.title')}</h1>
+          <p className="sub">{t('admin.overview.sub')}</p>
+        </div>
+      </div>
+      <div className="scroll">
+        <div className="tabpanel">
+          <div className="metrics">
+            <Link className="metric" href={ctx.can('admin.users') ? '/admin/users' : '/admin'}>
+              <span className="lbl">{t('admin.overview.users')}</span>
+              <span className="val">{users}{inactive > 0 && <small> · {t('admin.overview.inactive', { n: inactive })}</small>}</span>
+            </Link>
+            <div className="metric">
+              <span className="lbl">{t('admin.overview.noMfa')}</span>
+              <span className={'val' + (noMfa ? ' warn' : '')}>{noMfa}</span>
+            </div>
+            <div className="metric">
+              <span className="lbl">{t('admin.overview.admins')}</span>
+              <span className={'val' + (admins < 2 ? ' warn' : '')}>{admins}</span>
+            </div>
+            <div className="metric">
+              <span className="lbl">{t('admin.overview.structure')}</span>
+              <span className="val">{units} <small>{t('admin.overview.unitsLabel')}</small> · {residents} <small>{t('admin.overview.residentsLabel')}</small></span>
+            </div>
+            <div className="metric">
+              <span className="lbl">{t('admin.overview.audit24')}</span>
+              <span className="val">{audit24}{failed > 0 && <small className="crit-text"> · {t('admin.overview.failedLogins', { n: failed })}</small>}</span>
+            </div>
+            <div className="metric">
+              <span className="lbl">{t('admin.overview.api')}</span>
+              <span className="val">{tokens} <small>{t('admin.overview.tokens')}</small> · {hooks} <small>{t('admin.overview.webhooks')}</small></span>
+            </div>
+          </div>
+          {admins < 2 && <div className="alert warn"><span className="grow">{t('admin.overview.singleAdmin')}</span></div>}
+
+          <div className="grid-2">
+            <section className="card" aria-labelledby="adm-sections">
+              <div className="card-head"><h2 id="adm-sections">{t('admin.overview.sections')}</h2><span className="small muted">{t('admin.overview.roles', { n: roles })}</span></div>
+              <ul className="list">
+                {sections.map((s) => (
+                  <li key={s.key}>
+                    <Link className="li" href={s.href}>
+                      <div className="grow"><div>{t('admin.nav.' + s.key)}</div><div className="small muted">{t('admin.nav.' + s.key + 'Hint')}</div></div>
+                      <span className="tag outline">{s.perm}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+            {ctx.can('admin.audit') && (
+              <section className="card" aria-labelledby="adm-recent">
+                <div className="card-head"><h2 id="adm-recent">{t('admin.overview.recent')}</h2><Link className="linkbtn small" href="/admin/audit">{t('admin.overview.allAudit')}</Link></div>
+                {recent.length ? (
+                  <ul className="list">
+                    {recent.map((r) => (
+                      <li key={String(r.id)}>
+                        <div className="li">
+                          <span className="mono small muted nowrap" style={{ width: 96 }}>{rel(r.at)}</span>
+                          <div className="grow"><div className="mono small">{r.action}</div><div className="small muted">{who(r.userId)} · {r.entityType}</div></div>
+                          {(r.action.endsWith('_failed') || r.action.includes('failed')) && <span className="tag crit">{t('admin.audit.failed')}</span>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <div className="card-body small muted">{t('admin.audit.empty')}</div>}
+              </section>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}

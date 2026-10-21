@@ -1,0 +1,181 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import Link from 'next/link'
+import { useT } from '@/i18n/client'
+import { toast } from '@/components/toast'
+import { Dialog } from '@/components/ui/Dialog'
+import { ActionForm } from '@/components/ui/ActionForm'
+import { acknowledgeAction, aiDecisionAction, aiSummaryAction, saveEntryAction, submitHandoverAction } from '@/app/(app)/handover/actions'
+import { isKey, useCall } from '@/components/meds/shared'
+
+export type HoItem = { text: string; time?: string; tone?: 'c' | 'w' | ''; muted?: boolean }
+export type HoBlockDto = {
+  resident: { id: string; name: string; room: string | null; meta: string; allergies: string[] }
+  cols: { happened: HoItem[]; done: HoItem[]; watch: HoItem[]; open: HoItem[] }
+  more: { happened: number; done: number; watch: number; open: number }
+  entry: { watch: string | null; open: string | null; important: boolean; author: string | null } | null
+  acked: string | null
+  others: string[]
+}
+type Target = { shiftCode: string; date: string }
+
+const COLS = ['happened', 'done', 'watch', 'open'] as const
+
+/** Übergabekarte einer Person: vier Fragen (PRD §11.2), Übernehmen, Ergänzen. */
+export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; target: Target; canAck: boolean; canEdit: boolean }) {
+  const t = useT()
+  const { pending, call } = useCall()
+  const [edit, setEdit] = useState(false)
+  const important = !!b.entry?.important
+  const acked = !!b.acked
+  return (
+    <section className={'ho' + (acked ? ' acked' : important ? ' important' : '')} aria-labelledby={'ho-' + b.resident.id}>
+      <div className="ho-head">
+        {b.resident.room && <span className="room">{b.resident.room}</span>}
+        <Link className="linkbtn" href={`/residents/${b.resident.id}`} id={'ho-' + b.resident.id}><strong>{b.resident.name}</strong></Link>
+        {b.resident.meta && <span className="small muted">{b.resident.meta}</span>}
+        {b.resident.allergies.map((a) => <span key={a} className="flag crit">{t('residents.banner.allergy', { name: a })}</span>)}
+        {important && <span className="tag warn">{t('tasks.handover.important')}</span>}
+        <div className="push">
+          {canEdit && <button type="button" className="btn sm ghost" onClick={() => setEdit(true)}>{t(b.entry ? 'tasks.handover.entry.edit' : 'tasks.handover.entry.add')}</button>}
+          {canAck && (
+            <button type="button" className={'btn sm' + (important && !acked ? ' primary' : '')} aria-pressed={acked} disabled={acked || pending}
+              onClick={() => call(acknowledgeAction, { ...target, residentId: b.resident.id })}>
+              {acked ? '✓ ' + t('tasks.handover.acked', { time: b.acked ?? '' }) : t(important ? 'tasks.handover.ackImportant' : 'tasks.handover.ack')}
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="ho-body">
+        {COLS.map((c) => (
+          <div className="ho-col" key={c}>
+            <span className="lbl">{t('tasks.handover.cols.' + c)}</span>
+            {b.cols[c].length ? (
+              <ul>
+                {b.cols[c].map((i, k) => (
+                  <li key={k} className={(i.tone ?? '') + (i.muted ? ' muted' : '')}>
+                    {i.time && <span className="mono small">{i.time}</span>} {i.text}
+                  </li>
+                ))}
+                {b.more[c] > 0 && <li className="muted small">{t('common.notifications.more', { n: b.more[c] })}</li>}
+              </ul>
+            ) : (
+              <span className="none">{t('tasks.handover.empty.' + c)}</span>
+            )}
+          </div>
+        ))}
+      </div>
+      {(b.entry?.author || b.others.length > 0) && (
+        <div className="ho-foot small muted row" style={{ gap: 16 }}>
+          {b.entry?.author && <span>{t('tasks.handover.entry.by', { by: b.entry.author })}</span>}
+          {b.others.length > 0 && <span>{t('tasks.handover.ackedBy', { list: b.others.join(', ') })}</span>}
+        </div>
+      )}
+      {edit && (
+        <Dialog open onClose={() => setEdit(false)} title={t('tasks.handover.entry.title')} context={<><strong>{b.resident.name}</strong>{b.resident.room && <span className="mono">{t('meds.roomShort', { room: b.resident.room })}</span>}</>}>
+          <ActionForm action={saveEntryAction} onDone={(r) => r.ok && setEdit(false)} reset={false}>
+            <input type="hidden" name="shiftCode" value={target.shiftCode} />
+            <input type="hidden" name="date" value={target.date} />
+            <input type="hidden" name="residentId" value={b.resident.id} />
+            <label className="fld">
+              <span className="lbl">{t('tasks.handover.cols.watch')}</span>
+              <textarea className="field" name="watch" rows={3} defaultValue={b.entry?.watch ?? ''} placeholder={t('tasks.handover.entry.watchPh')} />
+            </label>
+            <label className="fld">
+              <span className="lbl">{t('tasks.handover.cols.open')}</span>
+              <textarea className="field" name="open" rows={3} defaultValue={b.entry?.open ?? ''} placeholder={t('tasks.handover.entry.openPh')} />
+            </label>
+            <label className="check"><input type="checkbox" name="important" defaultChecked={important} />{t('tasks.handover.entry.important')}</label>
+            <p className="small muted" style={{ margin: 0 }}>{t('tasks.handover.entry.importantHint')}</p>
+            <div className="form-actions">
+              <span className="spacer" />
+              <button type="button" className="btn" onClick={() => setEdit(false)}>{t('common.cancel')}</button>
+              <button type="submit" className="btn primary">{t('common.save')}</button>
+            </div>
+          </ActionForm>
+        </Dialog>
+      )}
+    </section>
+  )
+}
+
+/** Aktionen der ganzen Übergabe: Alle übernehmen, Abschliessen, KI-Zusammenfassung. */
+export function HandoverActions({ target, since, canAck, canAckAll, ackAllBlocked, allAcked, canSubmit, submitted, note, aiAvailable, canWrite }: {
+  target: Target
+  since: boolean
+  canAck: boolean
+  canAckAll: boolean
+  ackAllBlocked: number
+  allAcked: boolean
+  canSubmit: boolean
+  submitted: boolean
+  note: string | null
+  aiAvailable: boolean
+  canWrite: boolean
+}) {
+  const t = useT()
+  const { pending, call } = useCall()
+  const [submit, setSubmit] = useState(false)
+  const [ai, setAi] = useState<{ id: string; text: string } | null>(null)
+  const [aiPending, startAi] = useTransition()
+  const runAi = () => startAi(async () => {
+    const f = new FormData()
+    f.set('shiftCode', target.shiftCode)
+    f.set('date', target.date)
+    f.set('since', since ? '1' : '')
+    const r = await aiSummaryAction(f)
+    if (r.ok && r.data) setAi(r.data)
+    else if (!r.ok) toast(isKey(r.error) ? t(r.error) : r.error, { kind: 'crit' })
+  })
+  const decide = (accept: boolean) => {
+    if (!ai) return
+    call(aiDecisionAction, { ...target, aiId: ai.id, accept: accept ? '1' : '', text: ai.text }, () => setAi(null), !accept)
+  }
+  return (
+    <>
+      <div className="row">
+        {aiAvailable && (
+          <button type="button" className="btn" onClick={runAi} disabled={aiPending} data-loading={aiPending || undefined}>
+            {aiPending ? t('common.ai.generating') : t('tasks.handover.ai.button')}
+          </button>
+        )}
+        {canSubmit && !submitted && <button type="button" className="btn" onClick={() => setSubmit(true)}>{t('tasks.handover.submit.button')}</button>}
+        {canAck && canAckAll && (
+          <button type="button" className="btn primary" disabled={pending || allAcked || ackAllBlocked > 0} title={ackAllBlocked ? t('tasks.handover.ackAllBlocked', { n: ackAllBlocked }) : undefined}
+            onClick={() => call(acknowledgeAction, { ...target, residentId: '' })}>
+            {allAcked ? '✓ ' + t('tasks.handover.allAcked') : t('tasks.handover.ackAll')}
+          </button>
+        )}
+      </div>
+      {ai && (
+        <div className="ai-box" style={{ flexBasis: '100%' }} role="region" aria-label={t('tasks.handover.ai.button')}>
+          <div className="ai-head"><span className="tag violet">{t('common.ai.badge')}</span><span>{t('common.ai.disclaimer')}</span></div>
+          <textarea className="ai-text field" rows={Math.min(16, 3 + ai.text.split('\n').length)} value={ai.text} onChange={(e) => setAi({ ...ai, text: e.target.value })} aria-label={t('tasks.handover.ai.button')} />
+          <div className="row">
+            {canWrite && !submitted && <button type="button" className="btn sm primary" disabled={pending} onClick={() => decide(true)}>{t('tasks.handover.ai.accept')}</button>}
+            <button type="button" className="btn sm" disabled={pending} onClick={() => decide(false)}>{t('common.ai.discard')}</button>
+          </div>
+        </div>
+      )}
+      {submit && (
+        <Dialog open onClose={() => setSubmit(false)} title={t('tasks.handover.submit.title')}>
+          <ActionForm action={submitHandoverAction} onDone={(r) => r.ok && setSubmit(false)} confirm="tasks.handover.submit.confirm">
+            <input type="hidden" name="shiftCode" value={target.shiftCode} />
+            <input type="hidden" name="date" value={target.date} />
+            <p className="small fg2" style={{ margin: 0 }}>{t('tasks.handover.submit.hint')}</p>
+            <label className="fld">
+              <span className="lbl">{t('tasks.handover.submit.note')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
+              <textarea className="field" name="note" rows={5} defaultValue={note ?? ''} placeholder={t('tasks.handover.submit.notePh')} />
+            </label>
+            <div className="form-actions">
+              <span className="spacer" />
+              <button type="button" className="btn" onClick={() => setSubmit(false)}>{t('common.cancel')}</button>
+              <button type="submit" className="btn primary">{t('tasks.handover.submit.button')}</button>
+            </div>
+          </ActionForm>
+        </Dialog>
+      )}
+    </>
+  )
+}
