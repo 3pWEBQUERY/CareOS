@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="de" data-theme="light">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Offline · CareOS</title>
+<style>
+:root{--bg:#EEF1F2;--surface:#fff;--line:#D5DCDF;--fg:#13202A;--fg-3:#6C7B84;--accent:#0B5F74}
+@media (prefers-color-scheme:dark){:root{--bg:#0D1317;--surface:#141C21;--line:#26323A;--fg:#E3EAED;--fg-3:#7B8A92;--accent:#5DB3C8}}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,sans-serif;padding:16px}
+main{max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:20px}
+h1{font-size:18px;margin:0 0 8px}p{margin:0 0 12px;color:var(--fg-3)}button{font:inherit;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:5px;padding:8px 14px}
+</style>
+</head>
+<body><main>
+<h1>Keine Verbindung</h1>
+<p>CareOS ist im Moment nicht erreichbar. Bitte WLAN prüfen. Bereits erfasste, noch nicht gespeicherte Eingaben bleiben im geöffneten Fenster erhalten.</p>
+<button onclick="location.reload()">Erneut versuchen</button>
+</main></body></html>

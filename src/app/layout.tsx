@@ -13,6 +13,7 @@ import '@fontsource/ibm-plex-sans-condensed/latin-600.css'
 import '@fontsource/ibm-plex-mono/latin-400.css'
 import '@fontsource/ibm-plex-mono/latin-500.css'
 import './globals.css'
+import { ServiceWorker } from '@/components/shell/ServiceWorker'
 
 export const metadata: Metadata = {
   title: { default: 'CareOS', template: '%s · CareOS' },
@@ -39,7 +40,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const lang = session?.user.locale ?? pickLocale(jar.get('careos_locale')?.value ?? (await headers()).get('accept-language'))
   return (
     <html lang={lang} data-theme={theme} suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   )
 }
