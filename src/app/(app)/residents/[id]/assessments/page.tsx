@@ -62,7 +62,7 @@ export default async function AssessmentsPage({ params, searchParams }: { params
               <th>{t('care.assessments.colDate')}</th>
               <th>{t('care.assessments.colNext')}</th>
               <th>{t('care.assessments.colTrend')}</th>
-              <th><span className="sr-only">{t('care.plan.colActions')}</span></th>
+              <th className="care-act-col"><span className="sr-only">{t('care.plan.colActions')}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -73,11 +73,18 @@ export default async function AssessmentsPage({ params, searchParams }: { params
               const due = last ? dueLabel(last.nextDue) : null
               const name = assessmentLabel(t, d.key, d.name)
               const trend = list.slice(0, 8).reverse().map((a) => a.score).filter((v): v is number => v != null)
+              const perform = canWrite ? (
+                <PerformAssessment
+                  residentId={r.id} def={d} name={name} contextLabel={contextLabel} planHref={planHref}
+                  nextDueLabel={d.intervalDays ? t('care.assessments.nextDueHint', { date: fmtDate(addDays(now, d.intervalDays), locale) }) : null}
+                />
+              ) : null
               return (
                 <tr key={d.key} className={due?.cls === 'crit-text' ? 'over' : undefined}>
                   <td>
                     <Link href={`/residents/${r.id}/assessments?k=${d.key}`} scroll={false} style={{ fontWeight: 500, color: 'inherit' }}>{name}</Link>
                     <div className="small muted">{d.description}</div>
+                    {perform && <div className="care-act-inline" style={{ marginTop: 6 }}>{perform}</div>}
                   </td>
                   <td>
                     {last ? (
@@ -93,16 +100,7 @@ export default async function AssessmentsPage({ params, searchParams }: { params
                   <td className="num nowrap">{last ? fmtDate(last.at, locale) : '–'}</td>
                   <td className={'nowrap ' + (due?.cls ?? '')}>{due ? due.text : '–'}</td>
                   <td style={{ width: 110 }}>{trend.length > 1 ? <Spark values={trend} label={t('care.assessments.chartAria', { name })} /> : <span className="muted">–</span>}</td>
-                  <td>
-                    {canWrite && (
-                      <div className="row" style={{ justifyContent: 'flex-end' }}>
-                      <PerformAssessment
-                        residentId={r.id} def={d} name={name} contextLabel={contextLabel} planHref={planHref}
-                        nextDueLabel={d.intervalDays ? t('care.assessments.nextDueHint', { date: fmtDate(addDays(now, d.intervalDays), locale) }) : null}
-                      />
-                      </div>
-                    )}
-                  </td>
+                  <td className="care-act-col">{perform && <div className="row" style={{ justifyContent: 'flex-end' }}>{perform}</div>}</td>
                 </tr>
               )
             })}

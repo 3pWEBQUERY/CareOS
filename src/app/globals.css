@@ -720,7 +720,10 @@ dialog.dlg::backdrop { background: var(--scrim) }
 .quick-ml { display: flex; gap: 6px; flex-wrap: wrap }
 .quick-ml .btn { font-family: var(--font-mono); min-width: 72px }
 .photo-in:focus-visible + .btn { outline: 2px solid var(--accent); outline-offset: 1px }
+.care-act-inline { display: none }
 @media (max-width: 720px) {
+  .care-act-inline { display: block }
+  .care-act-col { display: none }
   .day-chip, .seg.portion button { min-height: 40px }
   .quick-ml .btn { flex: 1 1 calc(50% - 6px); min-height: 44px }
 }
