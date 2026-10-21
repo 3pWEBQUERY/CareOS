@@ -40,8 +40,7 @@ export async function updateBrandingAction(form: FormData): Promise<ActionResult
     const ctx = await getCtx()
     assertCan(ctx, 'admin.org')
     const brandName = fd(form, 'brandName').slice(0, 40) || null
-    let brandColor: string | null = fd(form, 'brandColor').toUpperCase() || null
-    if (fdBool(form, 'resetColor')) brandColor = null
+    const brandColor: string | null = fd(form, 'brandColor').toUpperCase() || null
     if (brandColor) {
       if (!HEX_RE.test(brandColor)) return { ok: false, error: 'admin.org.badColor', field: 'brandColor' }
       const ratio = contrastRatio(brandColor, '#FFFFFF')
@@ -51,6 +50,17 @@ export async function updateBrandingAction(form: FormData): Promise<ActionResult
     await db.organization.update({ where: { id: ctx.org.id }, data: { brandName, brandColor } })
     await audit(ctx, { action: 'admin.org.branding', entityType: 'Organization', entityId: ctx.org.id, before, after: { brandName, brandColor } })
     refresh()
+  })
+}
+
+export async function resetBrandColorAction(): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    assertCan(ctx, 'admin.org')
+    await db.organization.update({ where: { id: ctx.org.id }, data: { brandColor: null } })
+    await audit(ctx, { action: 'admin.org.branding', entityType: 'Organization', entityId: ctx.org.id, before: { brandColor: ctx.org.brandColor }, after: { brandColor: null } })
+    refresh()
+    return { ok: true, message: 'admin.org.colorReset' }
   })
 }
 

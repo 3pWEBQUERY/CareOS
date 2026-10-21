@@ -10,7 +10,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { BrandColorField } from './BrandColor'
-import { removeLogoAction, updateBrandingAction, updateOrgAction, uploadLogoAction } from './actions'
+import { removeLogoAction, resetBrandColorAction, updateBrandingAction, updateOrgAction, uploadLogoAction } from './actions'
 
 export const metadata = { title: 'Admin · Organisation' }
 
@@ -83,7 +83,7 @@ export default async function OrgPage() {
                 </div>
                 <div className="form-actions">
                   <Submit>{t('common.save')}</Submit>
-                  {org.brandColor && <Submit className="btn ghost" name="resetColor" value="true">{t('admin.org.resetColor')}</Submit>}
+                  {org.brandColor && <ActBtn action={resetBrandColorAction} className="btn ghost">{t('admin.org.resetColor')}</ActBtn>}
                 </div>
               </ActionForm>
               <div className="stack-sm">
