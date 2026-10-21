@@ -12,6 +12,7 @@ import { encrypt, decrypt } from '@/lib/crypto'
 import { newMfaSecret, verifyTotp } from '@/lib/auth/mfa'
 import { hashPassword, passwordProblem, verifyPassword } from '@/lib/auth/password'
 import { LOCALES } from '@/i18n/core'
+import { normalizeTheme } from '@/lib/theme'
 
 const MFA_SETUP = 'mfa_setup'
 
@@ -43,7 +44,7 @@ export async function setLocaleAction(locale: string): Promise<ActionResult> {
 export async function auditThemeAction(theme: string): Promise<ActionResult> {
   return run(async () => {
     const ctx = await getCtx()
-    await audit(ctx, { action: 'profile.theme', entityType: 'User', entityId: ctx.user.id, before: { theme: ctx.user.theme }, after: { theme } })
+    await audit(ctx, { action: 'profile.theme', entityType: 'User', entityId: ctx.user.id, before: { theme: ctx.user.theme }, after: { theme: normalizeTheme(theme) } })
   })
 }
 

@@ -144,7 +144,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       <EffectChecks items={effects} canRecord={canAdminister} resident={resident} />
       <PrnTable items={prnItems} recent={recent} canGive={canAdminister} resident={resident} colleagues={colleagues} />
 
-      <Orders orders={orderDtos} canEdit={canEdit} resident={resident} defaultSlots={slotsOf(orders.filter((o) => o.active)).length ? slotsOf(orders.filter((o) => o.active)) : DEFAULT_SLOTS} defaultPrescriber={r.physician} todayKey={dateKey(today)} />
+      <Orders orders={orderDtos} canEdit={canEdit} resident={resident} defaultSlots={[...new Set([...DEFAULT_SLOTS, ...slotsOf(orders.filter((o) => o.active))])].sort()} defaultPrescriber={r.physician} todayKey={dateKey(today)} />
 
       <section className="card" aria-labelledby="ia">
         <div className="card-head">

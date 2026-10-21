@@ -40,6 +40,17 @@ function escalationError(ctx: Ctx, targetUserId: string, permissions: string[]):
   return null
 }
 
+/**
+ * Ohne admin.roles darf niemand Konten verwalten, deren Rechte über die eigenen hinausgehen
+ * (sonst wäre z. B. über «Passwort zurücksetzen» eine Kontoübernahme der Systemadministration möglich).
+ */
+async function manageError(ctx: Ctx, targetUserId: string): Promise<string | null> {
+  if (ctx.can('admin.roles')) return null
+  const rows = await db.roleAssignment.findMany({ where: { userId: targetUserId }, include: { role: { select: { permissions: true } } } })
+  const perms = new Set(rows.flatMap((r) => r.role.permissions))
+  return [...perms].some((p) => !holdsOrgWide(ctx, p)) ? 'admin.users.outranks' : null
+}
+
 /** Einmal-Link zum Setzen eines Passworts (Einladung oder Zurücksetzen). Nur der Hash wird gespeichert. */
 async function issueLink(userId: string, kind: 'invite' | 'reset') {
   const token = randomToken(32)
@@ -96,7 +107,9 @@ export async function createUserAction(form: FormData): Promise<ActionResult<{ i
       const esc = escalationError(ctx, '', role.permissions)
       if (esc) return { ok: false, error: esc, field: 'roleId' }
     }
-    const scopeUnit = role && u.primaryUnitId && fd(form, 'roleScope') === 'unit' ? u.primaryUnitId : null
+    const wantsUnit = fd(form, 'roleScope') === 'unit'
+    if (role && wantsUnit && !u.primaryUnitId) return { ok: false, error: 'admin.users.scopeNeedsUnit', field: 'primaryUnitId' }
+    const scopeUnit = role && wantsUnit ? u.primaryUnitId : null
     const created = await db.user.create({ data: { ...u, orgId: ctx.org.id, passwordHash, active: true } })
     if (role) await db.roleAssignment.create({ data: { userId: created.id, roleId: role.id, unitId: scopeUnit } })
     await audit(ctx, { action: 'admin.user.create', entityType: 'User', entityId: created.id, after: { ...safe(created), role: role?.key ?? null, roleUnitId: scopeUnit, mode } })
@@ -113,6 +126,8 @@ export async function updateUserAction(form: FormData): Promise<ActionResult> {
     const id = fd(form, 'id')
     const before = await userInOrg(ctx, id)
     if (!before) return { ok: false, error: 'common.notFound' }
+    const outranks = await manageError(ctx, id)
+    if (outranks) return { ok: false, error: outranks }
     const u = parseUserFields(form)
     const err = await validateUser(ctx, u, id)
     if (err) return err
@@ -128,6 +143,8 @@ export async function setUserActiveAction(id: string, active: boolean): Promise<
     if (id === ctx.user.id) return { ok: false, error: 'admin.users.notSelf' }
     const before = await userInOrg(ctx, id)
     if (!before) return { ok: false, error: 'common.notFound' }
+    const outranks = await manageError(ctx, id)
+    if (outranks) return { ok: false, error: outranks }
     try {
       await guardLastAdmin(ctx.org.id, async (tx) => {
         await tx.user.update({ where: { id }, data: { active } })
@@ -151,6 +168,8 @@ export async function resetPasswordAction(form: FormData): Promise<ActionResult<
     if (id === ctx.user.id) return { ok: false, error: 'admin.users.useProfile' }
     const u = await userInOrg(ctx, id)
     if (!u) return { ok: false, error: 'common.notFound' }
+    const outranks = await manageError(ctx, id)
+    if (outranks) return { ok: false, error: outranks }
     const mode = fd(form, 'mode') === 'password' ? 'password' : 'link'
     let secret: string | undefined
     if (mode === 'password') {
@@ -174,6 +193,8 @@ export async function resetMfaAction(id: string): Promise<ActionResult> {
     if (id === ctx.user.id) return { ok: false, error: 'admin.users.useProfile' }
     const u = await userInOrg(ctx, id)
     if (!u) return { ok: false, error: 'common.notFound' }
+    const outranks = await manageError(ctx, id)
+    if (outranks) return { ok: false, error: outranks }
     await db.$transaction([
       db.user.update({ where: { id }, data: { mfaEnabled: false, mfaSecret: null } }),
       db.session.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } }),
@@ -189,6 +210,8 @@ export async function revokeUserSessionsAction(id: string): Promise<ActionResult
     const ctx = await admin()
     const u = await userInOrg(ctx, id)
     if (!u) return { ok: false, error: 'common.notFound' }
+    const outranks = await manageError(ctx, id)
+    if (outranks) return { ok: false, error: outranks }
     const r = await db.session.updateMany({ where: { userId: id, revokedAt: null, id: { not: ctx.sessionId } }, data: { revokedAt: new Date() } })
     await audit(ctx, { action: 'admin.user.sessions_revoked', entityType: 'User', entityId: id, context: { count: r.count } })
     refresh()
@@ -231,6 +254,8 @@ export async function removeAssignmentAction(id: string): Promise<ActionResult> 
     const a = await db.roleAssignment.findFirst({ where: { id, user: { orgId: ctx.org.id } }, include: { role: true } })
     if (!a) return { ok: false, error: 'common.notFound' }
     if (a.userId === ctx.user.id && !ctx.can('admin.roles')) return { ok: false, error: 'admin.users.selfRoles' }
+    const outranks = await manageError(ctx, a.userId)
+    if (outranks) return { ok: false, error: outranks }
     try {
       await guardLastAdmin(ctx.org.id, (tx) => tx.roleAssignment.delete({ where: { id } }))
     } catch (e) {

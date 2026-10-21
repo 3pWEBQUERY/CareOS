@@ -39,9 +39,9 @@ export default async function ProfilePage() {
   return (
     <main className="panel main" style={{ flex: 1 }}>
       <div className="view-head">
-        <div className="row" style={{ gap: 12 }}>
+        <div className="row" style={{ gap: 12, flexWrap: 'nowrap', minWidth: 0 }}>
           <span className="av" style={{ width: 40, height: 40, fontSize: 15 }} aria-hidden="true">{user.initials}</span>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <span className="lbl">{t('profile.title')}</span>
             <h1>{user.firstName} {user.lastName}</h1>
             <p className="sub">{[user.jobTitle, user.email].filter(Boolean).join(' · ')}</p>

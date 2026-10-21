@@ -169,7 +169,12 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
 }) {
   const t = useT()
   const [kind, setKind] = useState<OrderDto['kind']>(order?.kind ?? 'regular')
-  const base = order && order.kind !== 'prn' ? order.times.map((tm, i) => [tm, order.doses[i] === '0' ? '' : order.doses[i]] as const) : defaultSlots.map((s) => [s, ''] as const)
+  const own = order && order.kind !== 'prn' ? order.times : []
+  const base = [...new Set([...defaultSlots, ...own])].sort().map((tm) => {
+    const i = own.indexOf(tm)
+    const d = i >= 0 && order ? order.doses[i] : ''
+    return [tm, d === '0' ? '' : d] as const
+  })
   const rows = [...base, ...Array.from({ length: Math.max(0, 6 - base.length) }, () => ['', ''] as const)].slice(0, 6)
   return (
     <Dialog open onClose={onClose} title={t(order ? 'meds.orders.editTitle' : 'meds.orders.newTitle')} context={<ResidentContext r={resident} />} wide>

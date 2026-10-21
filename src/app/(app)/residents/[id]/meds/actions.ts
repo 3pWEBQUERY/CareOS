@@ -10,7 +10,7 @@ import { emit } from '@/lib/events'
 import { hasPermission, type Grant } from '@/lib/permissions'
 import { verifyPassword } from '@/lib/auth/password'
 import { rateLimit } from '@/lib/rate-limit'
-import { invalidateTaskGeneration } from '@/lib/tasks'
+import { ensureTasksForDay, invalidateTaskGeneration } from '@/lib/tasks'
 import { addDays, addMinutes, atTime, hm, parseDateKey, startOfDay } from '@/lib/time'
 import { doseUnits, EFFECT_CHECK_MIN, hasDose, medAppliesAt, prnStatus, slotKey, syncSlotTask } from '@/lib/medication'
 
@@ -318,6 +318,8 @@ export async function stopOrderAction(form: FormData): Promise<ActionResult> {
 async function afterOrderChange(ctx: Ctx, r: Resident, times: string[]) {
   invalidateTaskGeneration(r.unitId)
   const today = startOfDay()
+  // Tagesaufgaben sofort neu erzeugen und abgleichen: Zeitpunkte vor Beginn bzw. nach dem Absetzen entfallen.
+  await ensureTasksForDay(r.unitId, today)
   for (const time of new Set(times)) await syncSlotTask(r, today, time, ctx.user.id, ctx.t('meds.orderStoppedNote'))
   await emit({ orgId: ctx.org.id, type: 'medication.changed', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id })
   refresh()

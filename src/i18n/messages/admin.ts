@@ -3,6 +3,7 @@ import { defineMessages } from '../core'
 export default defineMessages({
   de: {
     title: 'CareOS Admin',
+    mfaRequired: { title: 'Zwei-Faktor-Authentisierung erforderlich', text: 'Ihre Organisation verlangt für den Admin-Bereich einen zweiten Faktor. Richten Sie diesen im Profil ein (Authenticator-App oder Passkey):' },
     nav: {
       overview: 'Übersicht',
       overviewHint: 'Kennzahlen und letzte Ereignisse',
@@ -178,6 +179,7 @@ export default defineMessages({
       noRole: 'Keine – später zuweisen',
       scope: 'Geltungsbereich',
       scopePrimaryUnit: 'Nur Stammbereich',
+      scopeNeedsUnit: 'Für «Nur Stammbereich» bitte einen Stammbereich wählen.',
       scopeOrg: 'Ganze Organisation',
       access: 'Zugang',
       modeInvite: 'Einladungslink erzeugen (empfohlen)',
@@ -223,6 +225,7 @@ export default defineMessages({
       selfRoles: 'Eigene Rollen dürfen nur mit der Berechtigung «Rollen und Berechtigungen» geändert werden.',
       escalation: 'Diese Rolle enthält Berechtigungen, die Sie selbst nicht organisationsweit besitzen.',
       escalationHint: 'Nur Rollen innerhalb Ihrer eigenen Rechte',
+      outranks: 'Diese Person hat Berechtigungen, die Sie selbst nicht besitzen. Änderungen am Konto sind nur mit «Rollen und Berechtigungen» möglich.',
       pickQualification: 'Bitte eine Qualifikation wählen.',
       pickQualificationLabel: 'Qualifikation wählen …',
       validUntil: 'Gültig bis',
@@ -526,6 +529,7 @@ export default defineMessages({
   },
   fr: {
     title: 'CareOS Admin',
+    mfaRequired: { title: 'Double authentification requise', text: 'Votre organisation exige un second facteur pour l’administration. Configurez-le dans le profil (application d’authentification ou passkey) :' },
     nav: {
       overview: 'Aperçu',
       overviewHint: 'Indicateurs et derniers événements',
@@ -701,6 +705,7 @@ export default defineMessages({
       noRole: 'Aucun – attribuer plus tard',
       scope: 'Périmètre',
       scopePrimaryUnit: 'Unité principale seulement',
+      scopeNeedsUnit: 'Pour « Unité principale seulement », veuillez choisir une unité principale.',
       scopeOrg: 'Toute l’organisation',
       access: 'Accès',
       modeInvite: 'Générer un lien d’invitation (recommandé)',
@@ -746,6 +751,7 @@ export default defineMessages({
       selfRoles: 'Vos propres rôles ne peuvent être modifiés qu’avec l’autorisation « Rôles et autorisations ».',
       escalation: 'Ce rôle contient des autorisations que vous ne possédez pas vous-même pour toute l’organisation.',
       escalationHint: 'Uniquement des rôles dans vos propres droits',
+      outranks: 'Cette personne a des autorisations que vous ne possédez pas. Les modifications du compte nécessitent « Rôles et autorisations ».',
       pickQualification: 'Veuillez choisir une qualification.',
       pickQualificationLabel: 'Choisir une qualification …',
       validUntil: 'Valable jusqu’au',
@@ -1049,6 +1055,7 @@ export default defineMessages({
   },
   it: {
     title: 'CareOS Admin',
+    mfaRequired: { title: 'Doppia autenticazione richiesta', text: 'La sua organizzazione richiede un secondo fattore per l’amministrazione. Lo configuri nel profilo (app di autenticazione o passkey):' },
     nav: {
       overview: 'Panoramica',
       overviewHint: 'Indicatori e ultimi eventi',
@@ -1224,6 +1231,7 @@ export default defineMessages({
       noRole: 'Nessuno – assegnare più tardi',
       scope: 'Ambito',
       scopePrimaryUnit: 'Solo reparto principale',
+      scopeNeedsUnit: 'Per «Solo reparto principale» scegliere un reparto principale.',
       scopeOrg: 'Intera organizzazione',
       access: 'Accesso',
       modeInvite: 'Generare un link d’invito (consigliato)',
@@ -1269,6 +1277,7 @@ export default defineMessages({
       selfRoles: 'I propri ruoli possono essere modificati solo con l’autorizzazione «Ruoli e autorizzazioni».',
       escalation: 'Questo ruolo contiene autorizzazioni che lei stesso non possiede per l’intera organizzazione.',
       escalationHint: 'Solo ruoli entro i propri diritti',
+      outranks: 'Questa persona ha autorizzazioni che lei non possiede. Le modifiche all’account richiedono «Ruoli e autorizzazioni».',
       pickQualification: 'Scegliere una qualifica.',
       pickQualificationLabel: 'Scegliere una qualifica …',
       validUntil: 'Valido fino al',
@@ -1572,6 +1581,7 @@ export default defineMessages({
   },
   en: {
     title: 'CareOS Admin',
+    mfaRequired: { title: 'Two-factor authentication required', text: 'Your organisation requires a second factor for the admin area. Set it up in your profile (authenticator app or passkey):' },
     nav: {
       overview: 'Overview',
       overviewHint: 'Key figures and recent events',
@@ -1747,6 +1757,7 @@ export default defineMessages({
       noRole: 'None – assign later',
       scope: 'Scope',
       scopePrimaryUnit: 'Home unit only',
+      scopeNeedsUnit: 'For “Home unit only”, please choose a home unit.',
       scopeOrg: 'Whole organisation',
       access: 'Access',
       modeInvite: 'Generate invitation link (recommended)',
@@ -1792,6 +1803,7 @@ export default defineMessages({
       selfRoles: 'Your own roles can only be changed with the permission “Roles and permissions”.',
       escalation: 'This role contains permissions you do not hold organisation-wide yourself.',
       escalationHint: 'Only roles within your own rights',
+      outranks: 'This person holds permissions you do not have. Changing this account requires “Roles and permissions”.',
       pickQualification: 'Please choose a qualification.',
       pickQualificationLabel: 'Choose qualification …',
       validUntil: 'Valid until',
