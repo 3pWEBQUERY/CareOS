@@ -67,7 +67,10 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       }
     })
     .filter((row) => row.cells.some(Boolean))
-  const slots = slotTimes.map((time) => ({ time, key: slotKey(time) }))
+  // Nur Spalten mit mindestens einer Dosis (abgesetzte Verordnungen hinterlassen sonst leere Zeitpunkte).
+  const keep = slotTimes.map((_, i) => rows.some((row) => row.cells[i]))
+  for (const row of rows) row.cells = row.cells.filter((_, i) => keep[i])
+  const slots = slotTimes.filter((_, i) => keep[i]).map((time) => ({ time, key: slotKey(time) }))
 
   // Reserve
   const prnItems: PrnDto[] = prnMeds.filter((m) => medAppliesAt(m, now)).map((m) => {
@@ -130,7 +133,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
 
       {rows.length ? (
         <>
-          <MarTable rows={rows} slots={slots} day={dateKey(day)} editable={editable} resident={resident} colleagues={colleagues} nowMs={now.getTime()} />
+          <MarTable rows={rows} slots={slots} day={dateKey(day)} editable={editable} resident={resident} colleagues={colleagues} />
           <p className="small muted" style={{ margin: 0 }}>{t(editable ? 'meds.mar.hint' : canAdminister ? 'meds.mar.hintLocked' : 'meds.mar.hintReadOnly')}</p>
         </>
       ) : (

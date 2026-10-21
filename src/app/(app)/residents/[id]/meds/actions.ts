@@ -320,7 +320,7 @@ async function afterOrderChange(ctx: Ctx, r: Resident, times: string[]) {
   const today = startOfDay()
   // Tagesaufgaben sofort neu erzeugen und abgleichen: Zeitpunkte vor Beginn bzw. nach dem Absetzen entfallen.
   await ensureTasksForDay(r.unitId, today)
-  for (const time of new Set(times)) await syncSlotTask(r, today, time, ctx.user.id, ctx.t('meds.orderStoppedNote'))
+  for (const day of [today, addDays(today, 1)]) for (const time of new Set(times)) await syncSlotTask(r, day, time, ctx.user.id, ctx.t('meds.orderStoppedNote'))
   await emit({ orgId: ctx.org.id, type: 'medication.changed', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id })
   refresh()
 }

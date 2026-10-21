@@ -60,7 +60,8 @@ export async function ensureTasksForDay(unitId: string, day = new Date()) {
     for (const m of r.medications) {
       if (m.endDate && m.endDate < startOfDay(day)) continue
       m.times.forEach((time, i) => {
-        if (m.doses[i] && m.doses[i] !== '0') slots.add(time)
+        // Kein Zeitpunkt vor Beginn der Verordnung (z. B. Verordnung um 23:50 erfasst → kein 21:00-Slot).
+        if (m.doses[i] && m.doses[i] !== '0' && atTime(day, time) >= m.startDate) slots.add(time)
       })
     }
     for (const time of slots) {

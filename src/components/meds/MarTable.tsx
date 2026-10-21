@@ -17,14 +17,13 @@ export function stateLabel(t: (k: string) => string, c: CellDto) {
 }
 
 /** Abgabeliste (MAR) eines Tages wie im Stationsarbeitsplatz: Klick quittiert, zweiter Klick verweigert, dritter öffnet wieder. */
-export function MarTable({ rows, slots, day, editable, resident, colleagues, nowMs }: {
+export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
   rows: MarRowDto[]
   slots: Slot[]
   day: string
   editable: boolean
   resident: ResidentCtxDto
   colleagues: ColleagueDto[]
-  nowMs: number
 }) {
   const t = useT()
   const { pending, call } = useCall()
@@ -37,11 +36,12 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues, now
     if (next === 'given' && row.requiresDoubleCheck) return setDlg({ row, time: c.time, status: 'given' })
     if (next === 'given') {
       const [h, m] = c.time.split(':').map(Number)
-      const slotAt = new Date(nowMs)
+      const nowAt = Date.now()
+      const slotAt = new Date(nowAt)
       const [y, mo, d] = day.split('-').map(Number)
       slotAt.setFullYear(y, mo - 1, d)
       slotAt.setHours(h, m, 0, 0)
-      if (slotAt.getTime() - nowMs > 60 * 60_000 && !window.confirm(t('meds.confirmEarly', { time: c.time }))) return
+      if (slotAt.getTime() - nowAt > 60 * 60_000 && !window.confirm(t('meds.confirmEarly', { time: c.time }))) return
     }
     call(setDoseAction, { medicationId: row.id, day, time: c.time, status: next, expectedId: c.adminId })
   }
@@ -61,7 +61,7 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues, now
             {rows.map((row) => (
               <tr key={row.id}>
                 <th scope="row">
-                  <div className="drug" style={row.stoppedAt ? { textDecoration: 'line-through', textDecorationColor: 'var(--line-strong)' } : undefined}>{row.name}</div>
+                  <div className={'drug' + (row.stoppedAt ? ' stopped' : '')}>{row.name}</div>
                   <div className="drug-sub">
                     {[row.form, row.route, row.indication].filter(Boolean).join(' · ')}
                   </div>

@@ -63,9 +63,3 @@ export function FourEyes({ colleagues }: { colleagues: ColleagueDto[] }) {
     </fieldset>
   )
 }
-
-export const fmtHm = (iso: string | null) => {
-  if (!iso) return ''
-  const d = new Date(iso)
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
-}

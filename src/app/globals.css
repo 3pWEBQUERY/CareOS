@@ -826,7 +826,7 @@ dialog.dlg::backdrop { background: var(--scrim) }
 .round-line > .round-act { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; min-width: 340px }
 .round-res.done { border-color: var(--ok) }
 .round-res.done > header { background: var(--ok-soft) }
-.mar tbody th .drug.stopped, .stable .drug.stopped { text-decoration: line-through; text-decoration-color: var(--line-strong) }
+.drug.stopped { text-decoration: line-through; text-decoration-color: var(--line-strong) }
 @media (max-width: 720px) {
   .round-line > .round-act { min-width: 0; grid-column: 1 / -1; justify-content: stretch }
   .round-line > .round-act .btn.lg { flex: 1 1 0; padding-inline: 8px }

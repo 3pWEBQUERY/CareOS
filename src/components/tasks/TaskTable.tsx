@@ -298,7 +298,7 @@ export function CreateTask({ initialOpen, residents, staff, categories, todayKey
               </label>
               <label className="fld">
                 <span className="lbl">{t('tasks.col.category')}</span>
-                <input className="field" name="category" list="task-cats" defaultValue={categories[0] ?? ''} />
+                <input className="field" name="category" list="task-cats" defaultValue="" placeholder={t('tasks.categoryDefault')} />
                 <datalist id="task-cats">{categories.map((c) => <option key={c} value={c} />)}</datalist>
               </label>
               <label className="fld">

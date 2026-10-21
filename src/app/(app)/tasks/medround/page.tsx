@@ -27,7 +27,7 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
     db.medicationAdministration.findMany({ where: { residentId: { in: rIds }, scheduledFor: { gte: day, lt: addDays(day, 1) }, voidedAt: null } }),
     editable ? usersWithPermission(ctx.org.id, 'resident.medication.doublecheck', unit.id) : Promise.resolve([] as string[]),
   ])
-  const slots = slotsOf(meds)
+  const slots = slotsOf(meds).filter((s) => meds.some((m) => cellsFor(m, [s], day, admins, now)[0]))
 
   // Gewählter oder aktueller Zeitpunkt: der späteste Zeitpunkt bis 90 Min. voraus, sonst der nächste.
   const openAt = (time: string) => meds.some((m) => cellsFor(m, [time], day, admins, now)[0]?.state === 'open' && cellsFor(m, [time], day, admins, now)[0]?.applicable)

@@ -143,7 +143,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                   residents={residents.map((r) => ({ id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null }))}
                   staff={staff}
                   categories={cats}
-                  todayKey={dateKey(now)}
+                  todayKey={dateKey(nextHour)}
                   defaultTime={hm(nextHour)}
                   meId={user.id}
                 />

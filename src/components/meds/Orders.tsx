@@ -81,7 +81,7 @@ export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescri
               {list.map((o) => (
                 <tr key={o.id} style={o.active ? undefined : { color: 'var(--fg-3)' }}>
                   <td>
-                    <div className="drug" style={o.active ? undefined : { textDecoration: 'line-through', textDecorationColor: 'var(--line-strong)' }}>{o.name}</div>
+                    <div className={'drug' + (o.active ? '' : ' stopped')}>{o.name}</div>
                     <div className="drug-sub">{[o.form, o.route, o.indication].filter(Boolean).join(' · ')}</div>
                     {o.notes && <div className="small fg2">{o.notes}</div>}
                     <div className="row" style={{ gap: 4, marginTop: 3 }}>

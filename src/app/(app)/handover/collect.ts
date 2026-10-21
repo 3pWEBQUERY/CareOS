@@ -52,8 +52,10 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
   })
   const rIds = residents.map((r) => r.id)
   const until = to < now ? to : now
-  const days = [startOfDay(from)]
-  if (!sameDay(from, to)) days.push(startOfDay(to))
+  // Nicht dokumentierte Dosen gelten nur 24 h als "offen"; ältere Lücken gehören nicht in die Übergabe.
+  const doseFrom = new Date(Math.max(from.getTime(), now.getTime() - 24 * 3600_000))
+  const days: Date[] = []
+  for (let d = startOfDay(doseFrom); d < to && days.length < 3; d = addDays(d, 1)) days.push(d)
 
   const [observations, vitals, limits, incidents, medIssues, prnGiven, tasks, woundEntries, intake, appointments, assessments, entries, prevHandover, users] = await Promise.all([
     db.observation.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: until }, correctedBy: { none: {} }, category: { not: 'handover' } }, orderBy: { at: 'asc' } }),
@@ -72,7 +74,7 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
     db.user.findMany({ where: { orgId: ctx.org.id }, select: { id: true, initials: true } }),
   ])
   let doses: Awaited<ReturnType<typeof openDoses>> = []
-  for (const d of days) doses = doses.concat(await openDoses(rIds, d, now, { from, to, includeUpcoming: true }))
+  for (const d of days) doses = doses.concat(await openDoses(rIds, d, now, { from: doseFrom, to, includeUpcoming: true }))
   const ini = (id: string | null) => (id ? users.find((u) => u.id === id)?.initials ?? '' : '')
   const prevEntries = prevHandover?.entries ?? []
   const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d) + ' ' + hm(d))
