@@ -95,7 +95,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
         </div>
         <div className="row">
           <Link className="btn ghost sm" href={prevHref} aria-label={t('tasks.handover.prevShift')} title={t('tasks.handover.prevShift')}>‹</Link>
-          <nav className="seg" aria-label={t('tasks.handover.shift')}>
+          <nav className="seg seg-x" aria-label={t('tasks.handover.shift')}>
             {types.map((s) => {
               const o = latestOf(s.code)
               const active = s.code === sel.def.code && sameDay(startOfDay(o.start), shiftDay)

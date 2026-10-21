@@ -118,7 +118,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           <h1>{t('tasks.title')}</h1>
           <p className="sub">{winLabel}</p>
         </div>
-        <div className="seg" role="group" aria-label={t('tasks.filter.label')}>
+        <div className="seg seg-x" role="group" aria-label={t('tasks.filter.label')}>
           {FILTERS.map((f) => (
             <Link key={f} href={q({ f: f === 'open' ? null : f })} aria-current={filter === f ? 'page' : undefined} scroll={false}>{t('tasks.filter.' + f)}</Link>
           ))}
@@ -127,7 +127,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       <div className="scroll">
         <div className="tabpanel">
           <div className="row-between">
-            <nav className="seg" aria-label={t('tasks.shift.label')}>
+            <nav className="seg seg-x" aria-label={t('tasks.shift.label')}>
               {types.map((s) => (
                 <Link key={s.code} href={q({ s: s.code === running?.code ? null : s.code })} aria-current={code === s.code ? 'page' : undefined} scroll={false}>
                   {s.name}{running?.code === s.code ? ' · ' + t('tasks.shift.now') : ''}

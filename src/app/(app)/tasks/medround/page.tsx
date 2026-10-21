@@ -66,7 +66,7 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
         </div>
         <div className="row">
           {slots.length > 0 && (
-            <nav className="seg" aria-label={t('meds.round.slot')}>
+            <nav className="seg seg-x" aria-label={t('meds.round.slot')}>
               {slots.map((s) => <Link key={s} href={`/tasks/medround?slot=${s}`} aria-current={s === slot ? 'page' : undefined} scroll={false}>{t('meds.slots.' + slotKey(s))} <span className="mono">{s}</span></Link>)}
             </nav>
           )}

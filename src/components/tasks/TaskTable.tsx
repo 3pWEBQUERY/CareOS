@@ -87,8 +87,8 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
               <th>{t('tasks.col.time')}</th>
               <th>{t('tasks.col.resident')}</th>
               <th>{t('tasks.col.task')}</th>
-              <th>{t('tasks.col.category')}</th>
-              <th>{t('tasks.col.assignee')}</th>
+              <th className="hide-sm">{t('tasks.col.category')}</th>
+              <th className="hide-sm">{t('tasks.col.assignee')}</th>
               <th className="right">{t('tasks.col.complete')}</th>
             </tr>
           </thead>
@@ -124,8 +124,8 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
                     {row.note && <div className="small fg2">{t('tasks.noteLabel')}: {row.note}</div>}
                     {row.completed && <div className="small muted">{row.completed}</div>}
                   </td>
-                  <td><span className={'tag ' + row.catTone}>{row.category}</span></td>
-                  <td className="nowrap">
+                  <td className="hide-sm"><span className={'tag ' + row.catTone}>{row.category}</span></td>
+                  <td className="nowrap hide-sm">
                     {row.assignee ? <span className="row" style={{ gap: 6 }}><span className="av sm">{row.assignee.initials}</span><span className="small">{row.assignee.id === meId ? t('tasks.me') : row.assignee.name}</span></span> : <span className="small muted">–</span>}
                   </td>
                   <td className="right nowrap">

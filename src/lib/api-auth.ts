@@ -74,6 +74,7 @@ export async function readJson(req: Request): Promise<unknown> {
 }
 
 export const clampInt = (v: string | null, def: number, min: number, max: number) => {
+  if (v == null || v.trim() === '') return def
   const n = Number(v)
   return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : def
 }

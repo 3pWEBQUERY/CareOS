@@ -90,8 +90,6 @@ export const SUGGESTION_RULES: Record<string, SuggestionRule> = {
   woundcare: { key: 'woundcare', domain: 'skin', category: 'Behandlungspflege', times: ['09:00'], weekdays: [], durationMin: 20 },
 }
 
-export type SuggestionSource = { assessmentKey: string; assessmentId: string; score: number | null; level: Level | null } | { wound: string }
-
 /** Ermittelt passende Regeln aus den letzten Assessments und offenen Wunden. */
 export function suggestionKeys(latest: Map<string, { id: string; score: number | null; level: Level | null }>, openWounds: { id: string }[]) {
   const out: { rule: SuggestionRule; reason: { kind: 'assessment'; key: string; score: number | null } | { kind: 'wound' }; sourceId: string }[] = []

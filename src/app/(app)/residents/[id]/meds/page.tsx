@@ -107,7 +107,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       <div className="sec-head">
         <h2 className="sec">{t('meds.mar.title', { date: fmtDayMonth(day) })}{!isToday && <span className="tag outline" style={{ marginLeft: 8, verticalAlign: 2 }}>{t(day < today ? 'meds.mar.past' : 'meds.mar.future')}</span>}</h2>
         <div className="row">
-          <nav className="seg" aria-label={t('meds.mar.dayNav')}>
+          <nav className="seg seg-x" aria-label={t('meds.mar.dayNav')}>
             <Link href={dayHref(addDays(day, -1))} scroll={false}>‹ {t('meds.mar.prevDay')}</Link>
             <Link href={base} scroll={false} aria-current={isToday ? 'page' : undefined}>{t('meds.mar.today')}</Link>
             <Link href={dayHref(addDays(day, 1))} scroll={false}>{t('meds.mar.nextDay')} ›</Link>

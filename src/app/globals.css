@@ -839,3 +839,8 @@ dialog.dlg::backdrop { background: var(--scrim) }
   .search-btn kbd { display: none }
   .topbar .shift { margin-left: auto }
 }
+.seg-x { max-width: 100%; overflow-x: auto; scrollbar-width: none }
+@media (max-width: 720px) {
+  .mar tbody th { min-width: 140px }
+  .stable .hide-sm { display: none }
+}
