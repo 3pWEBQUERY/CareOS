@@ -834,8 +834,8 @@ dialog.dlg::backdrop { background: var(--scrim) }
 
 /* Shell: Topbar auf schmalen Bildschirmen */
 @media (max-width: 720px) {
-  .topbar { gap: 8px 10px; padding: 8px 10px }
-  .search-btn { min-width: 0; width: 100%; flex: 1 1 100% }
+  .topbar { gap: 8px 10px; padding: 8px 10px; flex-wrap: wrap }
+  .search-btn { min-width: 0; width: 100%; flex: 1 1 100%; order: 5; margin-left: 0 }
   .search-btn kbd { display: none }
   .topbar .shift { margin-left: auto }
 }

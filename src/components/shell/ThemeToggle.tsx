@@ -10,7 +10,19 @@ export function ThemeToggle() {
   const t = useT()
   const [, start] = useTransition()
   const [dark, setDark] = useState(false)
-  useEffect(() => setDark(isDark()), [])
+  useEffect(() => {
+    setDark(isDark())
+    // Auch Änderungen aus dem Profil (oder der Systemeinstellung) sofort übernehmen.
+    const mo = new MutationObserver(() => setDark(isDark()))
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    const mq = matchMedia('(prefers-color-scheme: dark)')
+    const onMq = () => setDark(isDark())
+    mq.addEventListener('change', onMq)
+    return () => {
+      mo.disconnect()
+      mq.removeEventListener('change', onMq)
+    }
+  }, [])
   function isDark() {
     const v = document.documentElement.dataset.theme
     return v === 'dark' || (v === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)

@@ -19,8 +19,8 @@ export default async function HomePage() {
 
   const mine = await myShiftNow(user.id, ctx.org.id, now)
   const station = await runningShift(ctx.org.id, now)
-  const window = mine ? mine.bounds : station ? { start: station.start, end: station.end } : { start: startOfDay(now), end: addDays(startOfDay(now), 1) }
-  const shiftLabel = mine ? `${mine.shiftType.name} · ${mine.shiftType.start}–${mine.shiftType.end}` : station ? `${t('home.stationShift')}: ${station.name} · ${station.start}–${station.end}` : null
+  const window = mine ? mine.bounds : station ? { start: station.from, end: station.to } : { start: startOfDay(now), end: addDays(startOfDay(now), 1) }
+  const shiftLabel = mine ? `${mine.running ? '' : t('home.laterToday') + ': '}${mine.shiftType.name} · ${mine.shiftType.start}–${mine.shiftType.end}` : station ? `${t('home.stationShift')}: ${station.name} · ${station.start}–${station.end}` : null
 
   const canClinical = unit && ctx.canHere('resident.read')
   if (unit && ctx.canHere('task.read')) {

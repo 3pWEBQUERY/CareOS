@@ -35,7 +35,8 @@ export async function runningShift(orgId: string, now = new Date()) {
   const types = await shiftTypes(orgId)
   const s = shiftAt(types, now)
   if (!s) return null
-  return { ...s, ...currentShiftBounds(s, now) }
+  const b = currentShiftBounds(s, now)
+  return { ...s, from: b.start, to: b.end }
 }
 
 /**

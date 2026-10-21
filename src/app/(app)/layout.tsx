@@ -83,7 +83,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <a className="skip" href="#main">{t('common.skipToContent')}</a>
       <div className="app">
         <header className="topbar">
-          <Link href="/" style={{ textDecoration: 'none' }} aria-label="CareOS Home"><Brand name={org.brandName} /></Link>
+          <Link href="/" style={{ textDecoration: 'none' }} aria-label="CareOS Home"><Brand name={org.brandName} logoUrl={org.logoFileId ? `/api/files/${org.logoFileId}` : null} /></Link>
           <div className="ctx">
             <UnitSwitcher units={units} current={ctx.unit?.id ?? null} label={t('nav.areas')} />
             <span>{org.name}{ctx.unit ? ` · ${t('home.residentCount', { n: residentCount })}` : ''}</span>

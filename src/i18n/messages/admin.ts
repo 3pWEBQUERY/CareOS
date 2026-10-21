@@ -69,7 +69,7 @@ export default defineMessages({
       timezone: 'Zeitzone',
       badTimezone: 'Unbekannte Zeitzone. Beispiel: Europe/Zurich',
       dataRegion: 'Datenstandort',
-      dataRegionHint: 'Hosting-Standort der Daten (PRD §36). Änderungen erfordern eine Migration durch den Betrieb.',
+      dataRegionHint: 'Hosting-Standort der Daten. Änderungen erfordern eine Migration durch den Betrieb.',
       regions: { ch_zurich: 'Schweiz – Zürich', ch_geneva: 'Schweiz – Genf', eu_central: 'EU – Frankfurt', eu_west: 'EU – Irland', on_premise: 'Eigenes Rechenzentrum' },
       requireMfa: 'Zwei-Faktor-Authentisierung für alle Personen mit Admin-Rechten verlangen',
       branding: 'Branding',
@@ -240,7 +240,7 @@ export default defineMessages({
       qualificationInUse: 'Die Qualifikation ist noch Personen zugeordnet.',
     },
     roles: {
-      sub: 'Standardrollen nach PRD §34 und eigene Rollen mit granularen Berechtigungen',
+      sub: 'Standardrollen und eigene Rollen mit granularen Berechtigungen',
       create: 'Rolle erstellen',
       name: 'Name',
       description: 'Beschreibung',
@@ -408,7 +408,7 @@ export default defineMessages({
       moderationHint: 'Moderation (Beiträge ausblenden, anheften) ist mit der Berechtigung «Channels moderieren» möglich.',
     },
     audit: {
-      sub: 'Wer hat wann was geändert – mit vorherigem und neuem Wert (PRD §35)',
+      sub: 'Wer hat wann was geändert – mit vorherigem und neuem Wert',
       immutable: 'Einträge sind unveränderbar: Ändern und Löschen sind in der Datenbank technisch gesperrt.',
       exportCsv: 'CSV exportieren',
       user: 'Person',
@@ -496,7 +496,7 @@ export default defineMessages({
       none: 'Noch keine Webhooks.',
     },
     integrations: {
-      sub: 'API-Zugänge, Webhooks und Anbindungen an Umsysteme (PRD §40, §41)',
+      sub: 'API-Zugänge, Webhooks und Anbindungen an Umsysteme',
       tabs: { api: 'API-Tokens', webhooks: 'Webhooks', integrations: 'Schnittstellen', export: 'Datenexport' },
       hint: 'Verzeichnis der angebundenen Umsysteme. Die Konfiguration dokumentiert Endpunkte und Zuständigkeiten; die Anbindung selbst erfolgt über die Integration Layer.',
       create: 'Schnittstelle erfassen',
@@ -596,7 +596,7 @@ export default defineMessages({
       timezone: 'Fuseau horaire',
       badTimezone: 'Fuseau horaire inconnu. Exemple : Europe/Zurich',
       dataRegion: 'Lieu d’hébergement',
-      dataRegionHint: 'Lieu d’hébergement des données (PRD §36). Un changement nécessite une migration par l’exploitation.',
+      dataRegionHint: 'Lieu d’hébergement des données. Un changement nécessite une migration par l’exploitation.',
       regions: { ch_zurich: 'Suisse – Zurich', ch_geneva: 'Suisse – Genève', eu_central: 'UE – Francfort', eu_west: 'UE – Irlande', on_premise: 'Centre de données propre' },
       requireMfa: 'Exiger la double authentification pour toutes les personnes ayant des droits d’administration',
       branding: 'Image de marque',
@@ -767,7 +767,7 @@ export default defineMessages({
       qualificationInUse: 'Cette qualification est encore attribuée à des personnes.',
     },
     roles: {
-      sub: 'Rôles standard selon PRD §34 et rôles propres avec autorisations granulaires',
+      sub: 'Rôles standard et rôles propres avec autorisations granulaires',
       create: 'Créer un rôle',
       name: 'Nom',
       description: 'Description',
@@ -935,7 +935,7 @@ export default defineMessages({
       moderationHint: 'La modération (masquer, épingler des publications) est possible avec l’autorisation « Modérer les canaux ».',
     },
     audit: {
-      sub: 'Qui a modifié quoi et quand – avec ancienne et nouvelle valeur (PRD §35)',
+      sub: 'Qui a modifié quoi et quand – avec ancienne et nouvelle valeur',
       immutable: 'Les entrées sont inaltérables : modification et suppression sont techniquement bloquées dans la base de données.',
       exportCsv: 'Exporter en CSV',
       user: 'Personne',
@@ -1023,7 +1023,7 @@ export default defineMessages({
       none: 'Aucun webhook.',
     },
     integrations: {
-      sub: 'Accès API, webhooks et connexions aux systèmes tiers (PRD §40, §41)',
+      sub: 'Accès API, webhooks et connexions aux systèmes tiers',
       tabs: { api: 'Jetons API', webhooks: 'Webhooks', integrations: 'Interfaces', export: 'Export de données' },
       hint: 'Répertoire des systèmes connectés. La configuration documente points d’accès et responsabilités ; la connexion elle-même passe par la couche d’intégration.',
       create: 'Saisir une interface',
@@ -1123,7 +1123,7 @@ export default defineMessages({
       timezone: 'Fuso orario',
       badTimezone: 'Fuso orario sconosciuto. Esempio: Europe/Zurich',
       dataRegion: 'Sede dei dati',
-      dataRegionHint: 'Luogo di hosting dei dati (PRD §36). Una modifica richiede una migrazione da parte dell’esercizio.',
+      dataRegionHint: 'Luogo di hosting dei dati. Una modifica richiede una migrazione da parte dell’esercizio.',
       regions: { ch_zurich: 'Svizzera – Zurigo', ch_geneva: 'Svizzera – Ginevra', eu_central: 'UE – Francoforte', eu_west: 'UE – Irlanda', on_premise: 'Centro dati proprio' },
       requireMfa: 'Richiedere la doppia autenticazione per tutte le persone con diritti di amministrazione',
       branding: 'Branding',
@@ -1294,7 +1294,7 @@ export default defineMessages({
       qualificationInUse: 'La qualifica è ancora assegnata a persone.',
     },
     roles: {
-      sub: 'Ruoli standard secondo PRD §34 e ruoli propri con autorizzazioni granulari',
+      sub: 'Ruoli standard e ruoli propri con autorizzazioni granulari',
       create: 'Creare un ruolo',
       name: 'Nome',
       description: 'Descrizione',
@@ -1462,7 +1462,7 @@ export default defineMessages({
       moderationHint: 'La moderazione (nascondere, fissare contributi) è possibile con l’autorizzazione «Moderare i canali».',
     },
     audit: {
-      sub: 'Chi ha modificato cosa e quando – con valore precedente e nuovo (PRD §35)',
+      sub: 'Chi ha modificato cosa e quando – con valore precedente e nuovo',
       immutable: 'Le voci sono inalterabili: modifica ed eliminazione sono bloccate tecnicamente nel database.',
       exportCsv: 'Esportare CSV',
       user: 'Persona',
@@ -1550,7 +1550,7 @@ export default defineMessages({
       none: 'Nessun webhook.',
     },
     integrations: {
-      sub: 'Accessi API, webhook e collegamenti a sistemi terzi (PRD §40, §41)',
+      sub: 'Accessi API, webhook e collegamenti a sistemi terzi',
       tabs: { api: 'Token API', webhooks: 'Webhook', integrations: 'Interfacce', export: 'Esportazione dati' },
       hint: 'Elenco dei sistemi collegati. La configurazione documenta endpoint e responsabilità; il collegamento avviene tramite il livello di integrazione.',
       create: 'Registrare un’interfaccia',
@@ -1650,7 +1650,7 @@ export default defineMessages({
       timezone: 'Time zone',
       badTimezone: 'Unknown time zone. Example: Europe/Zurich',
       dataRegion: 'Data location',
-      dataRegionHint: 'Hosting location of the data (PRD §36). Changes require a migration by operations.',
+      dataRegionHint: 'Hosting location of the data. Changes require a migration by operations.',
       regions: { ch_zurich: 'Switzerland – Zurich', ch_geneva: 'Switzerland – Geneva', eu_central: 'EU – Frankfurt', eu_west: 'EU – Ireland', on_premise: 'Own data centre' },
       requireMfa: 'Require two-factor authentication for everyone with admin rights',
       branding: 'Branding',
@@ -1821,7 +1821,7 @@ export default defineMessages({
       qualificationInUse: 'The qualification is still assigned to people.',
     },
     roles: {
-      sub: 'Standard roles per PRD §34 and custom roles with granular permissions',
+      sub: 'Standard roles and custom roles with granular permissions',
       create: 'Create role',
       name: 'Name',
       description: 'Description',
@@ -1989,7 +1989,7 @@ export default defineMessages({
       moderationHint: 'Moderation (hide, pin posts) is available with the permission “Moderate channels”.',
     },
     audit: {
-      sub: 'Who changed what and when – with previous and new value (PRD §35)',
+      sub: 'Who changed what and when – with previous and new value',
       immutable: 'Entries are immutable: updates and deletions are technically blocked in the database.',
       exportCsv: 'Export CSV',
       user: 'Person',
@@ -2077,7 +2077,7 @@ export default defineMessages({
       none: 'No webhooks yet.',
     },
     integrations: {
-      sub: 'API access, webhooks and connections to other systems (PRD §40, §41)',
+      sub: 'API access, webhooks and connections to other systems',
       tabs: { api: 'API tokens', webhooks: 'Webhooks', integrations: 'Interfaces', export: 'Data export' },
       hint: 'Directory of connected systems. The configuration documents endpoints and responsibilities; the connection itself runs through the integration layer.',
       create: 'Add interface',

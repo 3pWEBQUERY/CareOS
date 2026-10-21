@@ -120,11 +120,13 @@ export async function seedDemo(client: PrismaClient = db) {
     if (d === 0) {
       // Anna arbeitet heute: Schicht passend zur aktuellen Uhrzeit, damit die Ansicht "Meine Schicht" lebt.
       const code = nowMin >= 1365 || nowMin < 420 ? 'N' : nowMin >= 885 ? 'S' : 'F'
-      await client.shift.deleteMany({ where: { userId: U.AM, date: dbDate(day) } })
-      await client.shift.create({ data: { unitId: wg2.id, userId: U.AM, shiftTypeId: st[code], date: dbDate(code === 'N' && nowMin < 420 ? addDays(day, -1) : day) } })
-      // Letzter Dienst gestern
-      await client.shift.deleteMany({ where: { userId: U.AM, date: dbDate(addDays(day, -1)) } })
-      await client.shift.create({ data: { unitId: wg2.id, userId: U.AM, shiftTypeId: st.F, date: dbDate(addDays(day, -1)) } })
+      // Nachtdienst nach Mitternacht gehört zum Vortag
+      const current = code === 'N' && nowMin < 420 ? addDays(day, -1) : day
+      const previous = addDays(current, -1)
+      await client.shift.deleteMany({ where: { userId: U.AM, date: { in: [dbDate(day), dbDate(current), dbDate(previous)] } } })
+      await client.shift.create({ data: { unitId: wg2.id, userId: U.AM, shiftTypeId: st[code], date: dbDate(current) } })
+      // Letzter Dienst: Frühdienst am Tag davor
+      await client.shift.create({ data: { unitId: wg2.id, userId: U.AM, shiftTypeId: st.F, date: dbDate(previous) } })
     }
   }
   for (const d of [3, 9, 16]) await client.shift.create({ data: { unitId: wg2.id, shiftTypeId: st[d === 9 ? 'N' : 'S'], date: dbDate(addDays(today, d)), status: 'open', requiredQualification: 'Pflegefachperson HF' } })
@@ -269,7 +271,7 @@ export async function seedDemo(client: PrismaClient = db) {
       const m = await client.medication.create({
         data: {
           residentId: res.id, name, form, indication: ind, route: form.includes('s.c.') ? 's.c.' : 'p.o.', kind: 'regular', times: SLOTS, doses: dose.map(String),
-          prescriber: r.gp, createdById: U.DS, startDate: addDays(today, -90), requiresDoubleCheck: name.includes('Morphin') || name.includes('Insulin'),
+          prescriber: r.gp, createdById: U.DS, startDate: addDays(today, -90), createdAt: addDays(today, -90), requiresDoubleCheck: name.includes('Morphin') || name.includes('Insulin'),
           stock: 20 + Math.floor(R() * 60), stockUnit: 'Stk.',
         },
       })
@@ -277,19 +279,22 @@ export async function seedDemo(client: PrismaClient = db) {
     }
     for (const [name, dose, ind, max] of r.reserve) {
       await client.medication.create({
-        data: { residentId: res.id, name, form: dose, indication: ind, kind: 'prn', prnDose: dose, prnMaxPerDay: max, prnMinIntervalH: 4, route: dose.includes('s.c.') ? 's.c.' : 'p.o.', times: [], doses: [], prescriber: r.gp, createdById: U.DS, startDate: addDays(today, -60), stock: 10, stockUnit: 'Stk.' },
+        data: { residentId: res.id, name, form: dose, indication: ind, kind: 'prn', prnDose: dose, prnMaxPerDay: max, prnMinIntervalH: 4, route: dose.includes('s.c.') ? 's.c.' : 'p.o.', times: [], doses: [], prescriber: r.gp, createdById: U.DS, startDate: addDays(today, -60), createdAt: addDays(today, -60), stock: 10, stockUnit: 'Stk.' },
       })
     }
-    // Abgaben heute für vergangene Zeitpunkte
-    for (const [mi, [, , , dose]] of r.meds.entries()) {
-      for (const [si, time] of SLOTS.entries()) {
-        const d = dose[si]
-        if (!d || d === '0' || d === 0) continue
-        if (toMin(time) >= nowMin - 30) continue
-        const refused = r.refused && r.refused[0] === mi && r.refused[1] === si
-        await client.medicationAdministration.create({
-          data: { medicationId: medIds[mi], residentId: res.id, scheduledFor: at(today, time), status: refused ? 'refused' : 'given', dose: String(d), at: new Date(at(today, time).getTime() + (2 + Math.floor(R() * 12)) * 60_000), byId: U[SI[(i + si + mi) % 3]], note: refused ? 'Lehnt Einnahme ab, später nochmals angeboten.' : null },
-        })
+    // Abgaben gestern (vollständig) und heute für vergangene Zeitpunkte
+    for (const dayOff of [-1, 0]) {
+      const day = addDays(today, dayOff)
+      for (const [mi, [, , , dose]] of r.meds.entries()) {
+        for (const [si, time] of SLOTS.entries()) {
+          const d = dose[si]
+          if (!d || d === '0' || d === 0) continue
+          if (dayOff === 0 && toMin(time) >= nowMin - 30) continue
+          const refused = dayOff === 0 && r.refused && r.refused[0] === mi && r.refused[1] === si
+          await client.medicationAdministration.create({
+            data: { medicationId: medIds[mi], residentId: res.id, scheduledFor: at(day, time), status: refused ? 'refused' : 'given', dose: String(d), at: new Date(at(day, time).getTime() + (2 + Math.floor(R() * 12)) * 60_000), byId: U[SI[(i + si + mi) % 3]], note: refused ? 'Lehnt Einnahme ab, später nochmals angeboten.' : null },
+          })
+        }
       }
     }
 
@@ -329,29 +334,34 @@ export async function seedDemo(client: PrismaClient = db) {
 
   // Tagesaufgaben heute erzeugen und Vergangenes quittieren (wie im Entwurf)
   const ivs = await client.intervention.findMany({ where: { resident: { unitId: wg2.id } }, include: { resident: true } })
+  // Gestern vollständig quittiert, heute bis vor 30 Minuten (unabhängig davon, wann der Seed läuft)
   let n = 0
-  for (const iv of ivs) {
-    const raw = RAW.find((x) => x.room && residentIds[x.room] === iv.residentId)!
-    for (const time of iv.times) {
-      const done = toMin(time) < nowMin - 30 && !raw.keepOpen.includes(time)
-      await client.task.create({
-        data: {
-          orgId: org.id, unitId: wg2.id, residentId: iv.residentId, title: iv.title, category: iv.category, dueAt: at(today, time), durationMin: iv.durationMin,
-          source: 'careplan', sourceId: iv.id, status: done ? 'done' : 'planned', completedById: done ? U[SI[n++ % 3]] : null,
-          completedAt: done ? new Date(at(today, time).getTime() + (4 + Math.floor(R() * 14)) * 60_000) : null,
-        },
-      })
+  for (const dayOff of [-1, 0]) {
+    const day = addDays(today, dayOff)
+    const isDone = (time: string, keepOpen: string[] = []) => dayOff < 0 || (toMin(time) < nowMin - 30 && !keepOpen.includes(time))
+    for (const iv of ivs) {
+      const raw = RAW.find((x) => x.room && residentIds[x.room] === iv.residentId)!
+      for (const time of iv.times) {
+        const done = isDone(time, raw.keepOpen)
+        await client.task.create({
+          data: {
+            orgId: org.id, unitId: wg2.id, residentId: iv.residentId, title: iv.title, category: iv.category, dueAt: at(day, time), durationMin: iv.durationMin,
+            source: 'careplan', sourceId: iv.id, status: done ? 'done' : 'planned', completedById: done ? U[SI[n++ % 3]] : null,
+            completedAt: done ? new Date(at(day, time).getTime() + (4 + Math.floor(R() * 14)) * 60_000) : null,
+          },
+        })
+      }
     }
-  }
-  // Medikamenten-Slots
-  for (const [room, rid] of Object.entries(residentIds)) {
-    const raw = RAW.find((x) => x.room === room)!
-    for (const [si, time] of SLOTS.entries()) {
-      if (!raw.meds.some((m) => m[3][si] && m[3][si] !== '0' && m[3][si] !== 0)) continue
-      const done = toMin(time) < nowMin - 30
-      await client.task.create({
-        data: { orgId: org.id, unitId: wg2.id, residentId: rid, title: 'medication.slot', category: 'Medikation', dueAt: at(today, time), durationMin: 5, source: 'medication', sourceId: `${rid}:${time}`, status: done ? 'done' : 'planned', completedById: done ? U.LR : null, completedAt: done ? at(today, time) : null },
-      })
+    // Medikamenten-Slots
+    for (const [room, rid] of Object.entries(residentIds)) {
+      const raw = RAW.find((x) => x.room === room)!
+      for (const [si, time] of SLOTS.entries()) {
+        if (!raw.meds.some((m) => m[3][si] && m[3][si] !== '0' && m[3][si] !== 0)) continue
+        const done = isDone(time)
+        await client.task.create({
+          data: { orgId: org.id, unitId: wg2.id, residentId: rid, title: 'medication.slot', category: 'Medikation', dueAt: at(day, time), durationMin: 5, source: 'medication', sourceId: `${rid}:${time}`, status: done ? 'done' : 'planned', completedById: done ? U.LR : null, completedAt: done ? at(day, time) : null },
+        })
+      }
     }
   }
   await client.task.create({ data: { orgId: org.id, unitId: wg2.id, residentId: residentIds['208'], title: 'Coiffeur-Termin bestätigen', category: 'Organisation', dueAt: at(today, '16:00'), durationMin: 5, source: 'manual', createdById: U.MK, priority: 'routine' } })

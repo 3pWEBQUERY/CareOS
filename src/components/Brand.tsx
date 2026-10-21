@@ -9,10 +9,10 @@ export function BrandMark({ size = 22 }: { size?: number }) {
   )
 }
 
-export function Brand({ name }: { name?: string | null }) {
+export function Brand({ name, logoUrl }: { name?: string | null; logoUrl?: string | null }) {
   return (
     <span className="brand">
-      <BrandMark />
+      {logoUrl ? <img src={logoUrl} alt="" height={22} style={{ height: 22, width: 'auto', borderRadius: 3 }} /> : <BrandMark />}
       {name ? <span>{name}</span> : <span>Care<b>OS</b></span>}
     </span>
   )
