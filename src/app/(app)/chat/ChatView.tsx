@@ -314,6 +314,7 @@ function Composer({ convId, members }: { convId: string; members: Member[] }) {
         value={text}
         placeholder={t('team.chat.placeholder')}
         aria-label={t('team.chat.placeholder')}
+        title={t('team.chat.composerHint')}
         onChange={(e) => { setText(e.target.value); detect(e.target.value, e.target.selectionStart) }}
         onKeyDown={(e) => {
           if (matches.length) {

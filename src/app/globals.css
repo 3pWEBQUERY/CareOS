@@ -784,7 +784,8 @@ dialog.dlg::backdrop { background: var(--scrim) }
 .chat-files { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px }
 .chat-files .chip { display: inline-flex; align-items: center; gap: 4px }
 .msg .mh { flex-wrap: wrap }
-.msg .mact { display: inline-flex; gap: 4px; align-items: center; margin-left: 6px; visibility: hidden }
+.msg { position: relative }
+.msg .mact { display: inline-flex; gap: 4px; align-items: center; visibility: hidden; position: absolute; right: 0; top: -2px; background: var(--surface); padding: 0 0 0 6px }
 .msg:hover .mact, .msg:focus-within .mact { visibility: visible }
 .msg .mact .react-add { border: 1px dashed var(--line-strong); background: var(--surface); border-radius: var(--r-sm); padding: 0 6px; font-size: 12px; color: var(--fg-2); line-height: 18px }
 .msg .mact .react-add:hover { border-style: solid; border-color: var(--accent); color: var(--accent) }
@@ -792,13 +793,15 @@ dialog.dlg::backdrop { background: var(--scrim) }
 .msg .reacts button[aria-pressed="true"] { color: var(--accent) }
 .msg.mine .av { background: var(--accent); color: var(--accent-fg) }
 .mention-pop { top: auto; bottom: calc(100% + 6px); left: 12px; right: auto; width: min(360px, calc(100vw - 48px)) }
-@media (hover: none) { .msg .mact { visibility: visible } }
+@media (hover: none) { .msg .mact { visibility: visible; position: static; margin-left: 6px } }
 @media (max-width: 920px) {
   .chat-back { display: inline-flex }
   .chat { min-height: 60vh }
 }
 /* Dienstplan */
-.cal > .rh { background: var(--surface) }
+.cal > .rh { background: var(--surface); position: sticky; left: 0; z-index: 1 }
+.cal > .ch.rh { background: var(--surface-2) }
+@media (max-width: 720px) { .cal { grid-template-columns: 132px repeat(7, minmax(76px, 1fr)); min-width: 664px } }
 .cal-cell { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; position: relative }
 .cal > .cal-sep { border-top: 1px solid var(--line-strong) }
 .sh-btn { cursor: pointer; font: inherit; font-family: var(--font-mono); font-size: 12px }

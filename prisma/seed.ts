@@ -450,8 +450,9 @@ export async function seedDemo(client: PrismaClient = db) {
   await client.acknowledgement.createMany({ data: ['LR', 'DS', 'BG'].map((k) => ({ userId: U[k], subjectType: 'document', subjectId: hypo.id, version: '3.0' })) })
 
   // Schulungen
+  const CARE_ROLES = ['care_assistant', 'nurse', 'specialist', 'ward_lead', 'nursing_director']
   const course = async (title: string, category: string, mandatory: boolean, validity: number | null, minutes: number, modules: { kind: string; title: string; body?: string; quiz?: unknown }[]) => {
-    const c = await client.course.create({ data: { orgId: org.id, title, category, mandatory, validityMonths: validity, estMinutes: minutes, description: modules[0]?.body?.slice(0, 160) } })
+    const c = await client.course.create({ data: { orgId: org.id, title, category, mandatory, validityMonths: validity, estMinutes: minutes, description: modules[0]?.body?.slice(0, 160), audienceRoles: mandatory ? CARE_ROLES : [] } })
     for (const [i, m] of modules.entries()) await client.courseModule.create({ data: { courseId: c.id, order: i, kind: m.kind, title: m.title, body: m.body, quiz: m.quiz as Prisma.InputJsonValue } })
     return c
   }

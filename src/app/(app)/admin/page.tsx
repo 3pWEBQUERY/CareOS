@@ -60,23 +60,19 @@ export default async function AdminHome() {
               <span className={'val' + (admins < 2 ? ' warn' : '')}>{admins}</span>
             </div>
             <div className="metric">
-              <span className="lbl">{t('admin.overview.structure')}</span>
-              <span className="val">{units} <small>{t('admin.overview.unitsLabel')}</small> · {residents} <small>{t('admin.overview.residentsLabel')}</small></span>
-            </div>
-            <div className="metric">
               <span className="lbl">{t('admin.overview.audit24')}</span>
               <span className="val">{audit24}{failed > 0 && <small className="crit-text"> · {t('admin.overview.failedLogins', { n: failed })}</small>}</span>
             </div>
             <div className="metric">
               <span className="lbl">{t('admin.overview.api')}</span>
-              <span className="val">{tokens} <small>{t('admin.overview.tokens')}</small> · {hooks} <small>{t('admin.overview.webhooks')}</small></span>
+              <span className="val">{tokens}<small> {t('admin.overview.tokens')} · {hooks} {t('admin.overview.webhooks')}</small></span>
             </div>
           </div>
           {admins < 2 && <div className="alert warn"><span className="grow">{t('admin.overview.singleAdmin')}</span></div>}
 
           <div className="grid-2">
             <section className="card" aria-labelledby="adm-sections">
-              <div className="card-head"><h2 id="adm-sections">{t('admin.overview.sections')}</h2><span className="small muted">{t('admin.overview.roles', { n: roles })}</span></div>
+              <div className="card-head"><h2 id="adm-sections">{t('admin.overview.sections')}</h2><span className="small muted">{t('admin.overview.structureLine', { units, res: residents, roles })}</span></div>
               <ul className="list">
                 {sections.map((s) => (
                   <li key={s.key}>

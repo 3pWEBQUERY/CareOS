@@ -97,8 +97,8 @@ export default async function DocPage({ params, searchParams }: { params: Promis
           {doc.status === 'archived' && <div className="alert"><span className="grow">{t('docs.archivedHint')}</span></div>}
 
           {pending && (
-            <div className={'alert ' + (pending.submittedAt ? 'info' : '')}>
-              <div className="grow">
+            <div className={'alert ' + (pending.submittedAt ? 'info' : '')} style={{ flexWrap: 'wrap' }}>
+              <div className="grow" style={{ minWidth: 220 }}>
                 <strong className="fg">{t('docs.pendingHead', { v: pending.version, state: t('docs.vstate.' + vstate(pending)) })}</strong>
                 <span className="fg2">
                   {t('docs.pendingMeta', { by: names.get(pending.authorId) ?? '–', date: fmtDT(pending.createdAt) })}
@@ -130,8 +130,8 @@ export default async function DocPage({ params, searchParams }: { params: Promis
             myAck ? (
               <div className="alert ok"><span className="grow">{t('docs.ack.done', { date: fmtDT(myAck.at), v: doc.currentVersion })}</span></div>
             ) : (
-              <div className="alert warn">
-                <div className="grow">
+              <div className="alert warn" style={{ flexWrap: 'wrap' }}>
+                <div className="grow" style={{ minWidth: 220 }}>
                   <strong>{t('docs.ack.required')}</strong>
                   <span className="fg">{current!.critical && current!.changeNote ? t('docs.ack.criticalNote', { v: current!.version, note: current!.changeNote }) : t('docs.ack.hint')}</span>
                 </div>

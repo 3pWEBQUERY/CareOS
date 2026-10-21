@@ -110,5 +110,5 @@ export function Markdown({ source, className = 'prose' }: { source: string; clas
 
 /** Klartext ohne Markdown-Zeichen, z. B. für Suchtreffer-Ausschnitte. */
 export function plainText(src: string) {
-  return src.replace(/```[\s\S]*?```/g, ' ').replace(/^#{1,3}\s+/gm, '').replace(/^\s*([-*]|\d+[.)]|>)\s+/gm, '').replace(/\*\*|`|\b_|_\b/g, '').replace(/\s+/g, ' ').trim()
+  return src.replace(/```[\s\S]*?```/g, ' ').replace(/^#{1,3}\s+(.*)$/gm, '$1 –').replace(/^\s*([-*]|\d+[.)]|>)\s+/gm, '').replace(/\*\*|`|\b_|_\b/g, '').replace(/\s+/g, ' ').trim()
 }

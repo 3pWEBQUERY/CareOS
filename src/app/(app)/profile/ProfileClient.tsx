@@ -25,7 +25,7 @@ export function ThemeChooser({ current }: { current: Theme }) {
     })
   }
   return (
-    <div className="seg" role="group" aria-label={t('common.theme.label')}>
+    <div className="seg" role="group" aria-label={t('common.theme.label')} style={{ alignSelf: 'flex-start' }}>
       {(['light', 'dark', 'system'] as const).map((x) => (
         <button key={x} type="button" aria-pressed={v === x} onClick={() => pick(x)}>{t('common.theme.' + x)}</button>
       ))}
@@ -38,7 +38,7 @@ export function LocaleChooser({ current }: { current: Locale }) {
   const [v, setV] = useState<Locale>(current)
   const [pending, start] = useTransition()
   return (
-    <div className="seg" role="group" aria-label={t('profile.appearance.language')} data-pending={pending || undefined}>
+    <div className="seg" role="group" aria-label={t('profile.appearance.language')} data-pending={pending || undefined} style={{ alignSelf: 'flex-start', flexWrap: 'wrap' }}>
       {LOCALES.map((l) => (
         <button
           key={l}
