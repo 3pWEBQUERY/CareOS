@@ -1,0 +1,9 @@
+{
+  "name": "CareOS",
+  "short_name": "CareOS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EEF1F2",
+  "theme_color": "#0B5F74",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
