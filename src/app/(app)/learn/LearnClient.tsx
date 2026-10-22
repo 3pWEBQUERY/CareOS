@@ -7,6 +7,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { Dialog } from '@/components/ui/Dialog'
 import { toast } from '@/components/toast'
 import { assignCourse, confirmPractical, saveCourse, saveModule, submitQuiz, type QuizResult } from './actions'
+import { DateField } from '@/components/ui/DateField'
 
 const tr = (t: (k: string) => string, s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
 
@@ -155,7 +156,7 @@ export function AssignButton({ courses, people, roles, units, defaultCourse }: {
                 {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
             </label>
-            <label className="fld"><span className="lbl">{t('learn.assign.due')}</span><input className="field" type="date" name="dueAt" /></label>
+            <label className="fld"><span className="lbl">{t('learn.assign.due')}</span><DateField name="dueAt" /></label>
           </div>
           <div className="stack-sm">
             <span className="lbl">{t('learn.assign.to')}</span>

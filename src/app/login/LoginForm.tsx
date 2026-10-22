@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { loginAction, type LoginState } from './actions'
 
@@ -11,6 +11,9 @@ export function LoginForm({ labels, next, sso }: { labels: Labels; next: string;
   const [pkError, setPkError] = useState(false)
   const [pkBusy, setPkBusy] = useState(false)
   const error = state?.error ? (state.error === 'locked' ? labels.locked.replace('{s}', String(state.retry ?? 60)) : labels[state.error as keyof Labels]) : null
+  // Nach fehlgeschlagener Anmeldung Fokus ins Passwortfeld (der Absende-Knopf war während der Prüfung deaktiviert)
+  const pw = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (state?.error) pw.current?.focus() }, [state])
 
   async function passkey() {
     setPkError(false)
@@ -33,13 +36,13 @@ export function LoginForm({ labels, next, sso }: { labels: Labels; next: string;
         <input type="hidden" name="next" value={next} />
         <label className="fld">
           <span className="lbl">{labels.email}</span>
-          <input className="field" name="email" type="email" autoComplete="username webauthn" required defaultValue={state?.email} aria-invalid={!!error} autoFocus />
+          <input className="field" name="email" type="email" autoComplete="username webauthn" required defaultValue={state?.email} aria-invalid={!!error} aria-describedby={error ? 'login-err' : undefined} autoFocus />
         </label>
         <label className="fld">
           <span className="lbl">{labels.password}</span>
-          <input className="field" name="password" type="password" autoComplete="current-password" required aria-invalid={!!error} />
+          <input ref={pw} className="field" name="password" type="password" autoComplete="current-password" required aria-invalid={!!error} aria-describedby={error ? 'login-err' : undefined} />
         </label>
-        {error && <p className="err" role="alert" style={{ margin: 0 }}>{error}</p>}
+        {error && <p className="err" id="login-err" role="alert" style={{ margin: 0 }}>{error}</p>}
         <button className="btn primary lg block" type="submit" data-loading={pending} disabled={pending}>{labels.submit}</button>
       </form>
       <div className="divider">{labels.or}</div>

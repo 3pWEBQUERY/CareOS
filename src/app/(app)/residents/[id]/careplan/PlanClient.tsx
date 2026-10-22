@@ -12,6 +12,7 @@ import {
   discardDraftAction, dismissSuggestionAction, evaluateAction, saveAreaAction, saveInterventionAction, submitAction,
   type AiAreaDraft, type IvInput,
 } from './actions'
+import { DateField } from '@/components/ui/DateField'
 
 type Opt = { value: string; label: string }
 export type AreaSnapshot = { domain: string; situation: string; resources: string; needs: string; risks: string; goal: string; evaluateBy: string; interventions: { title: string; times: string[] }[] }
@@ -247,7 +248,7 @@ export function EvaluateButton({ residentId, areaId, defaultNext, domainLabel }:
         </label>
         <label className="fld" htmlFor="ev-next" style={{ maxWidth: 220 }}>
           <span className="lbl">{t('care.plan.evalNext')}</span>
-          <input id="ev-next" className="field mono" type="date" value={next} onChange={(e) => setNext(e.target.value)} />
+          <DateField id="ev-next" value={next} onChange={setNext} />
         </label>
         {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
       </Dialog>
@@ -463,7 +464,7 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
             <span className="fg2">{t('care.plan.prompts.evaluation')}</span>
             <label className="fld" htmlFor="pf-eval" style={{ maxWidth: 220 }}>
               <span className="lbl">{t('care.plan.evaluateBy')}</span>
-              <input id="pf-eval" className="field mono" type="date" value={f.evaluateBy} onChange={(e) => setF({ ...f, evaluateBy: e.target.value })} />
+              <DateField id="pf-eval" value={f.evaluateBy} onChange={(v) => setF({ ...f, evaluateBy: v })} />
             </label>
             <dl className="kv">
               {(['situation', 'resources', 'needs', 'risks', 'goal'] as const).map((k) => (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useOptimistic, useState, useTransition } from 'react'
+import { useOptimistic, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -10,6 +10,7 @@ import { IconCheck, IconPlus } from '@/components/icons'
 import { createTask, documentTask, toggleTask } from './actions'
 import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
 import type { TaskData } from '@/lib/offline/types'
+import { TimeField } from '@/components/ui/TimeField'
 
 export type DayTask = {
   id: string; time: string; due: string; title: string; description: string | null; category: string; tone: string; min: number
@@ -40,19 +41,31 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
   const nowD = new Date(now)
   const nowLabel = `${t('common.now')} ${hmLocal(nowD)}`
 
-  const toggle = (k: DayTask, done: boolean) => {
+  // Doppelklick/Doppeltipp: solange die Aktion für diese Aufgabe läuft, wird kein zweiter Wechsel gebucht
+  const inflight = useRef(new Set<string>())
+  const tr = (s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
+  const toggle = (k: DayTask, done: boolean, isUndo = false) => {
+    if (inflight.current.has(k.id)) return
     if (!done && (isOffline() || queued[k.id])) return void toast(t('common.offlineSync.notOffline'), { kind: 'crit' })
+    inflight.current.add(k.id)
     start(async () => {
       setOpt({ id: k.id, done, at: hmLocal(new Date()) })
-      const r = done
-        ? await orQueue(() => toggleTask(k.id, done), { kind: 'task', residentId, data: { taskId: k.id, status: 'done' } }, { who, label: k.title })
-        : await toggleTask(k.id, done)
-      if (isQueued(r)) { markQueued(k.id, 'done'); return void toast(t(r.message)) }
-      if (!r.ok) return void toast(t(r.error), { kind: 'crit' })
-      toast(t(done ? 'chart.day.toastDone' : 'chart.day.toastOpen', { title: k.title }), {
-        undo: () => start(async () => { setOpt({ id: k.id, done: !done, at: hmLocal(new Date()) }); await toggleTask(k.id, !done) }),
-        undoLabel: t('common.undo'),
-      })
+      try {
+        const r = done
+          ? await orQueue(() => toggleTask(k.id, done), { kind: 'task', residentId, data: { taskId: k.id, status: 'done' } }, { who, label: k.title })
+          : await toggleTask(k.id, done)
+        if (isQueued(r)) { markQueued(k.id, 'done'); return void toast(t(r.message)) }
+        if (!r.ok) return void toast(tr(r.error), { kind: 'crit', ms: 6000 })
+        if (isUndo) return
+        toast(t(done ? 'chart.day.toastDone' : 'chart.day.toastOpen', { title: k.title }), {
+          undo: () => toggle(k, !done, true),
+          undoLabel: t('common.undo'),
+        })
+      } catch {
+        toast(t('common.genericError'), { kind: 'crit', ms: 6000 })
+      } finally {
+        inflight.current.delete(k.id)
+      }
     })
   }
 
@@ -108,7 +121,7 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
         <ActionForm action={createTask.bind(null, residentId)} success="chart.day.added" onDone={(r) => r.ok && setAdding(false)}>
           <div className="form-grid">
             <label className="fld span-all"><span className="lbl">{t('chart.day.fTitle')}</span><input className="field" name="title" required maxLength={200} /></label>
-            <label className="fld"><span className="lbl">{t('chart.day.fTime')}</span><input className="field mono" name="time" type="time" required defaultValue={defaultTime(nowD)} /></label>
+            <label className="fld"><span className="lbl">{t('chart.day.fTime')}</span><TimeField name="time" required defaultValue={defaultTime(nowD)} /></label>
             <label className="fld"><span className="lbl">{t('chart.day.fDuration')}</span><input className="field mono" name="durationMin" inputMode="numeric" defaultValue="10" /></label>
             <label className="fld"><span className="lbl">{t('chart.day.fCategory')}</span>
               <select className="field" name="category" defaultValue={categories[0]?.value}>{categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>

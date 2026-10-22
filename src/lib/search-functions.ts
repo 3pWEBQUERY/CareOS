@@ -26,6 +26,7 @@ const FUNCTIONS: Fn[] = [
   { label: 'learn.tabs.compliance', hint: 'nav.learn', href: '/learn/compliance', perm: 'learn.manage', keywords: 'matrix schulung pflichtschulung' },
   { label: 'docs.new', hint: 'nav.docs', href: '/docs', perm: 'docs.manage', keywords: 'weisung standard richtlinie' },
   { label: 'nav.medround', hint: 'common.palette.groupAction', href: '/tasks/medround', perm: 'resident.medication.administer', keywords: 'medikamente abgabe runde' },
+  { label: 'visit.title', hint: 'common.palette.groupAction', href: '/tasks/visit', perm: 'resident.read', keywords: 'visite arzt arztvisite anordnung fragen visite médicale visita medica round doctor' },
   { label: 'common.quick.incident', hint: 'nav.quality', href: '/quality/new', perm: 'quality.report', keywords: 'sturz ereignis meldung cirs vorfall' },
   { label: 'common.palette.fn.newPost', hint: 'nav.team', href: '/team/new', perm: 'team.post', keywords: 'mitteilung post news' },
   { label: 'common.palette.fn.handoverSince', hint: 'nav.handover', href: '/handover?since=1', perm: 'handover.read', keywords: 'übergabe rapport seit letztem dienst' },

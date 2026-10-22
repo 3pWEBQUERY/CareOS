@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useOptimistic, useRef, useState, useTransition } from 'react'
 import { useLocale, useT } from '@/i18n/client'
 import { INTL_LOCALE } from '@/i18n/core'
 import { toast } from '@/components/toast'
@@ -18,6 +18,8 @@ export type NoteRow = {
   structured?: StructuredForm | null; ack?: NoteAckInfo | null
   /** Offline erfasst und später synchronisiert (PRD §39) */
   offline?: boolean
+  /** Optimistisch angezeigt, Speicherung läuft (PRD §31) */
+  pending?: boolean
 }
 type Cat = { key: string; label: string; tone: string }
 
@@ -52,6 +54,9 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
   const [aiId, setAiId] = useState<string | null>(null)
   const [draft, setDraft] = useState<{ id: string; text: string } | null>(null)
   const [pending, start] = useTransition()
+  const [optNotes, addPending] = useOptimistic(notes, (cur: NoteRow[], n: NoteRow) => [n, ...cur])
+  // Offline vorgemerkt: bis zur Synchronisation mit Hinweis «Offline erfasst» im Verlauf (PRD §39)
+  const [queuedNotes, setQueuedNotes] = useState<NoteRow[]>([])
   const [aiPending, startAi] = useTransition()
   const [listening, setListening] = useState(false)
   const [speechOk, setSpeechOk] = useState(false)
@@ -103,14 +108,32 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
     const v = text.trim()
     if (v.length < 3) { setErr(t('chart.notes.errors.empty')); ta.current?.focus(); return }
     rec.current?.stop()
+    const snap = { important, source, aiId }
+    // Feld sofort leeren (dringendes Update ausserhalb der Transition), damit sofort weiter dokumentiert werden kann
+    setErr(null); setText(''); setImportant(false); setSource('manual'); setAiId(null); setFilter('all')
+    ta.current?.focus() // Absende-Knopf wird während des Speicherns deaktiviert – Fokus bleibt im Eingabefeld
     start(async () => {
-      // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
-      const r = await orQueue(() => createNote(residentId, { category: category as NoteInput['category'], text: v, important, source, aiId }), { kind: 'note', residentId, data: { category, text: v, important } }, { who })
-      if (isQueued(r)) { setErr(null); setText(''); setImportant(false); setSource('manual'); setAiId(null); setDraft(null); toast(t(r.message)); return }
-      if (!r.ok) { setErr(t(r.error)); return }
-      setErr(null); setText(''); setImportant(false); setSource('manual'); setAiId(null); setDraft(null)
-      setFresh(r.data?.id ?? null); setFilter('all')
-      toast(t('chart.notes.saved', { at: t('common.today') + ' ' + hm(new Date()) }))
+      // Eintrag erscheint sofort im Verlauf (PRD §31); bei Fehler kommt der Text zurück ins Feld
+      const at = new Date()
+      const row: NoteRow = {
+        id: 'pending-' + at.getTime(), at: at.toISOString(), rel: t('common.today') + ' ' + hm(at), category, text: v, author: me, important: snap.important,
+        aiAssisted: snap.source === 'ai', source: snap.source, fromTask: false, supersedes: false, correctedBy: null, canCorrect: false, pending: true,
+      }
+      addPending(row)
+      const restore = (msg: string) => {
+        setText((cur) => (cur.trim() ? cur : v)); setImportant(snap.important); setSource(snap.source); setAiId(snap.aiId); setErr(msg)
+      }
+      try {
+        // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
+        const r = await orQueue(() => createNote(residentId, { category: category as NoteInput['category'], text: v, important: snap.important, source: snap.source, aiId: snap.aiId }), { kind: 'note', residentId, data: { category, text: v, important: snap.important } }, { who })
+        if (isQueued(r)) { setQueuedNotes((c) => [{ ...row, id: 'queued-' + at.getTime(), pending: false, offline: true }, ...c]); setDraft(null); toast(t(r.message)); return }
+        if (!r.ok) return restore(t(r.error))
+        setDraft(null)
+        setFresh(r.data?.id ?? null)
+        toast(t('chart.notes.saved', { at: t('common.today') + ' ' + hm(at) }))
+      } catch {
+        restore(t('common.genericError'))
+      }
     })
   }
 
@@ -134,7 +157,8 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
     setDraft(null)
   }
 
-  const list = notes.filter((n) => filter === 'all' || n.category === filter || (filter === 'important' && n.important))
+  const synced = (q: NoteRow) => notes.some((n) => n.text === q.text && n.category === q.category)
+  const list = [...queuedNotes.filter((q) => !synced(q)), ...optNotes].filter((n) => filter === 'all' || n.category === filter || (filter === 'important' && n.important))
 
   return (
     <>
@@ -154,7 +178,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
             </span>
           </div>
           <textarea
-            id="ntext" ref={ta} value={text} aria-label={t('chart.notes.entryLabel')} placeholder={t('chart.notes.placeholder')}
+            id="ntext" ref={ta} value={text} aria-label={t('chart.notes.entryLabel')} aria-invalid={err ? true : undefined} aria-describedby={err ? 'ntext-err' : undefined} placeholder={t('chart.notes.placeholder')}
             onChange={(e) => { setText(e.target.value); if (err) setErr(null) }}
             onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); save() } }}
           />
@@ -173,7 +197,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
             <label className="check small"><input type="checkbox" checked={important} onChange={(e) => setImportant(e.target.checked)} />{t('chart.notes.important')}</label>
             {source === 'voice' && <span className="tag outline">{t('chart.notes.voiceDraft')}</span>}
             {source === 'ai' && <span className="tag violet">{t('chart.notes.aiAssisted')}</span>}
-            {err && <span className="err" role="alert">{err}</span>}
+            {err && <span className="err" id="ntext-err" role="alert">{err}</span>}
             <span className="push">
               {formSlot}
               {speechOk && (
@@ -204,7 +228,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
       {list.length ? (
         <ol className="notes">
           {list.map((n) => (
-            <li key={n.id} className={'note' + (fresh === n.id ? ' fresh' : '') + (n.correctedBy ? ' superseded' : '')}>
+            <li key={n.id} className={'note' + (fresh === n.id ? ' fresh' : '') + (n.correctedBy ? ' superseded' : '') + (n.pending ? ' is-pending' : '')} aria-busy={n.pending || undefined}>
               <time className="mono" dateTime={n.at}>{n.rel}</time>
               <div style={{ minWidth: 0 }}>
                 <div className="nh">
@@ -215,6 +239,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
                   {n.source === 'voice' && <span className="tag outline">{t('chart.notes.voiceTag')}</span>}
                   {n.fromTask && <span className="tag outline">{t('chart.notes.fromTask')}</span>}
                   {n.offline && <span className="tag outline">{t('common.offlineSync.tag')}</span>}
+                  {n.pending && <span className="small muted">{t('common.saving')}</span>}
                   <span className="au">{n.author}</span>
                   {n.canCorrect && <button type="button" className="linkbtn small" style={{ marginLeft: 'auto' }} onClick={() => setCorrecting(n)}>{t('chart.notes.correct')}</button>}
                 </div>

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useOptimistic, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useT } from '@/i18n/client'
 import { IconBell } from '@/components/icons'
+import { toast } from '@/components/toast'
 import { markNotificationsReadAction } from '@/app/(app)/shell-actions'
 
 type N = { id: string; priority: 'critical' | 'action' | 'info' | 'social'; title: string; body: string | null; href: string | null; at: string; read: boolean }
@@ -17,11 +18,24 @@ const FOCUSABLE = 'a[href], button:not([disabled])'
 export function Notifications({ unread, critical }: { unread: number; critical: number }) {
   const t = useT()
   const [open, setOpen] = useState(false)
-  const [items, setItems] = useState<N[] | null>(null)
+  const [loaded, setItems] = useState<N[] | null>(null)
   const [pending, start] = useTransition()
   const ref = useRef<HTMLDivElement>(null)
   const btn = useRef<HTMLButtonElement>(null)
   const pop = useRef<HTMLDivElement>(null)
+  // Gelesen sofort anzeigen (Zähler und Liste, PRD §31); bei Fehler kehrt der Stand zurück, mit Hinweis
+  const [read, addRead] = useOptimistic<{ all: boolean; ids: string[] }, string[] | 'all'>({ all: false, ids: [] }, (c, u) => (u === 'all' ? { ...c, all: true } : { ...c, ids: [...c.ids, ...u] }))
+  const shown = read.all ? 0 : Math.max(0, unread - read.ids.length)
+  const items = loaded?.map((n) => (!n.read && (read.all || read.ids.includes(n.id)) ? { ...n, read: true } : n)) ?? null
+  const markRead = (ids?: string[]) => start(async () => {
+    addRead(ids ?? 'all')
+    try {
+      await markNotificationsReadAction(ids)
+      setItems((c) => c?.map((n) => (!ids || ids.includes(n.id) ? { ...n, read: true } : n)) ?? c)
+    } catch {
+      toast(t('common.genericError'), { kind: 'crit' })
+    }
+  })
 
   useEffect(() => {
     if (!open) return
@@ -58,7 +72,7 @@ export function Notifications({ unread, critical }: { unread: number; critical: 
   }, [open])
 
   const groups = ORDER.map((p) => ({ p, list: (items ?? []).filter((n) => n.priority === p) })).filter((g) => g.list.length)
-  const hasUnread = unread > 0 || !!items?.some((n) => !n.read)
+  const hasUnread = shown > 0 || !!items?.some((n) => !n.read)
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
@@ -69,10 +83,10 @@ export function Notifications({ unread, critical }: { unread: number; critical: 
         aria-haspopup="dialog"
         aria-controls={open ? 'notif-pop' : undefined}
         onClick={() => setOpen(!open)}
-        aria-label={t('common.notifications.title') + (unread ? ` (${unread})` : '')}
+        aria-label={t('common.notifications.title') + (shown ? ` (${shown})` : '')}
       >
         <IconBell size={18} />
-        {unread > 0 && <span className={'count' + (critical ? '' : ' info')} aria-hidden="true">{unread > 99 ? '99+' : unread}</span>}
+        {shown > 0 && <span className={'count' + (critical ? '' : ' info')} aria-hidden="true">{shown > 99 ? '99+' : shown}</span>}
       </button>
       {open && (
         <div ref={pop} id="notif-pop" className="popover" role="dialog" aria-labelledby="notif-title" tabIndex={-1}>
@@ -84,7 +98,7 @@ export function Notifications({ unread, critical }: { unread: number; critical: 
                 type="button"
                 disabled={pending}
                 aria-busy={pending || undefined}
-                onClick={() => start(async () => { await markNotificationsReadAction(); setItems((c) => c?.map((n) => ({ ...n, read: true })) ?? c) })}
+                onClick={() => markRead()}
               >
                 {t('common.notifications.markAll')}
               </button>
@@ -107,7 +121,7 @@ export function Notifications({ unread, critical }: { unread: number; critical: 
                           href={n.href ?? '#'}
                           onClick={() => {
                             setOpen(false)
-                            if (!n.read) start(() => markNotificationsReadAction([n.id]))
+                            if (!n.read) markRead([n.id])
                           }}
                         >
                           <div className="grow">

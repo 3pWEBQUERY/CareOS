@@ -2,6 +2,8 @@
 
 import { useT } from '@/i18n/client'
 import type { FieldError, FormField } from '@/lib/forms'
+import { DateField } from '@/components/ui/DateField'
+import { TimeField } from '@/components/ui/TimeField'
 
 export type RawValues = Record<string, string | boolean | string[]>
 
@@ -82,9 +84,13 @@ export function FormFields({ fields, values, errors, onChange, idPrefix = 'ff', 
                 <option value="">–</option>
                 {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
               </select>
+            ) : f.type === 'date' ? (
+              <DateField id={id} disabled={disabled} aria-invalid={common['aria-invalid']} aria-describedby={errId} value={str} onChange={(x) => onChange(f.key, x)} />
+            ) : f.type === 'time' ? (
+              <TimeField id={id} disabled={disabled} aria-invalid={common['aria-invalid']} aria-describedby={errId} value={str} onChange={(x) => onChange(f.key, x)} />
             ) : (
               <input
-                className={'field' + (f.type === 'number' || f.type === 'time' || f.type === 'date' ? ' mono' : '')}
+                className={'field' + (f.type === 'number' ? ' mono' : '')}
                 {...common}
                 type={f.type === 'number' ? 'text' : f.type}
                 inputMode={f.type === 'number' ? 'decimal' : undefined}

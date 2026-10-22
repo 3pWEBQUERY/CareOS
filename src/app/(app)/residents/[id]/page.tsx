@@ -8,6 +8,7 @@ import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
 import { Spark } from '../_components/Spark'
 import { pageResident, userNames, residentTitle } from '../_lib/resident'
 import { AiSummary } from './AiSummary'
+import { VisitCard } from './VisitCard'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return residentTitle((await params).id)
@@ -169,6 +170,8 @@ export default async function ResidentOverview({ params }: { params: Promise<{ i
           ) : <div className="card-body small muted">{t('residents.overview.noRecent')}</div>}
         </section>
       </div>
+
+      <VisitCard ctx={ctx} r={r} canWrite={can('resident.chart.write')} />
 
       <div className="grid-2">
         <section className="card" aria-labelledby="ov-up">

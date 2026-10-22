@@ -74,10 +74,14 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
         return
       }
       setVals({}); setHint({}); setWarn(null)
+      // Der Absende-Knopf war während des Speicherns deaktiviert: Fokus für die nächste Messung ins erste Feld
+      ref.current?.querySelector<HTMLInputElement>('input.field')?.focus()
       toast(t('chart.vitals.saved') + (r.data?.abnormal ? ' · ' + t('chart.vitals.savedAbnormal', { n: r.data.abnormal }) : ''))
     })
   }
 
+  // Dieselbe Meldung steht bereits am Feld (Live-Region dort): nicht ein zweites Mal ausgeben/vorlesen
+  const dupErr = !!err?.field && hint[err.field]?.text === err.msg
   return (
     <form ref={ref} className="vform" noValidate onSubmit={(e) => { e.preventDefault(); submit(false) }}>
       {fields.map((f) => (
@@ -86,7 +90,7 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
           <input
             className="field" id={'v_' + f.key} name={f.key} inputMode="decimal" autoComplete="off" placeholder={PH[f.key] != null ? nf(PH[f.key], f.dec) : ''}
             value={vals[f.key] ?? ''} aria-invalid={err?.field === f.key || hint[f.key]?.kind === 'err' || undefined}
-            aria-describedby={hint[f.key] ? 'vh_' + f.key : undefined}
+            aria-describedby={[hint[f.key] && 'vh_' + f.key, err?.field === f.key && !dupErr && 'v_err'].filter(Boolean).join(' ') || undefined}
             onChange={(e) => { setVals((v) => ({ ...v, [f.key]: e.target.value })); setWarn(null); if (hint[f.key]) setHint((cur) => { const n = { ...cur }; delete n[f.key]; return n }) }}
             onBlur={() => check(f)}
           />
@@ -112,7 +116,7 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
       <div className="actions">
         <button className="btn primary" type="submit" data-loading={pending || undefined} disabled={pending}>{t('chart.vitals.save')}</button>
         <span className="small muted">{t('chart.vitals.formHint')}</span>
-        {err && <span className="err" role="alert">{err.msg}</span>}
+        {err && !dupErr && <span className="err" id="v_err" role="alert">{err.msg}</span>}
       </div>
     </form>
   )
@@ -136,7 +140,7 @@ export function Thresholds({ residentId, rows, canEdit }: { residentId: string; 
         </div>
       </div>
       <ActionForm action={saveThresholds.bind(null, residentId)} success="chart.vitals.thresholdsSaved" reset={false} className="stack-sm" onDone={(r) => r.ok && setEdit(false)}>
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto' }} data-scroll>
           <table className="stable">
             <thead><tr><th>{t('chart.vitals.value')}</th><th>{t('chart.vitals.orgRange')}</th><th>{t('chart.vitals.individualLo')}</th><th>{t('chart.vitals.individualHi')}</th></tr></thead>
             <tbody>

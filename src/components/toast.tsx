@@ -4,14 +4,16 @@ import { useEffect, useRef, useState } from 'react'
 import { useT } from '@/i18n/client'
 
 export type ToastOpts = { kind?: 'default' | 'crit'; undo?: () => void | Promise<void>; undoLabel?: string; ms?: number }
-type Item = ToastOpts & { id: number; msg: string }
+type Item = ToastOpts & { id: number; msg: string; origin?: HTMLElement | null }
 
 let seq = 0
 const listeners = new Set<(i: Item) => void>()
 
 /** Kurze Rückmeldung unten rechts. Mit undo nur für ungefährliche Aktionen (PRD §32). */
 export function toast(msg: string, opts: ToastOpts = {}) {
-  const item = { ...opts, id: ++seq, msg }
+  // Auslösendes Element merken: nach «Rückgängig» kehrt der Fokus dorthin zurück statt ins Leere (WCAG 2.4.3)
+  const origin = typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null
+  const item = { ...opts, id: ++seq, msg, origin }
   listeners.forEach((l) => l(item))
 }
 
@@ -68,7 +70,7 @@ export function Toaster() {
     <div key={i.id} className={'toast' + (i.kind === 'crit' ? ' crit' : '')} onMouseEnter={() => pause(i.id)} onMouseLeave={() => resume(i.id)} onFocus={() => pause(i.id)} onBlur={() => resume(i.id)}>
       <span>{i.msg}</span>
       {i.undo && (
-        <button type="button" onClick={async () => { drop(i.id); await i.undo?.() }}>
+        <button type="button" onClick={async () => { const o = i.origin; drop(i.id); if (o?.isConnected && o !== document.body) o.focus(); await i.undo?.() }}>
           {i.undoLabel ?? t('common.undo')}
         </button>
       )}

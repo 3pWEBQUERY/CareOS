@@ -7,6 +7,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { deleteShiftAction, saveShiftAction } from '../actions'
 import { ActButton } from '../../team/_ui/ActButton'
+import { DateField } from '@/components/ui/DateField'
 
 export type ShiftType = { id: string; code: string; name: string; start: string; end: string }
 export type StaffOpt = { id: string; name: string; qual: string }
@@ -39,7 +40,7 @@ function ShiftForm({ d, onClose, types, staff, quals, unitId }: { d: ShiftDraft;
           <div className="form-grid">
             <label className="fld">
               <span className="lbl">{t('schedule.plan.date')}</span>
-              <input type="date" name="date" className="field" defaultValue={d.date} required />
+              <DateField name="date" defaultValue={d.date} required />
             </label>
             <label className="fld">
               <span className="lbl">{t('schedule.plan.type')}</span>

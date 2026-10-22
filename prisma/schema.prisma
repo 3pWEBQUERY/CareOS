@@ -582,6 +582,8 @@ model Resident {
   handoverEntries HandoverEntry[]
   incidents       Incident[]
   files           ResidentFile[]
+  visits          Visit[]
+  visitQuestions  VisitQuestion[]
 
   @@index([orgId, unitId])
 }
@@ -1434,4 +1436,81 @@ model OfflineOp {
 
   @@index([userId, createdAt])
   @@index([orgId, createdAt])
+}
+
+// ───────────────────────── Visite ─────────────────────────
+
+enum VisitQuestionStatus {
+  open
+  answered
+  withdrawn
+}
+
+/// Arztvisite (PRD §29): pro Person und Visite ein Eintrag mit Zusammenfassung (als Verlaufseintrag, Document Once).
+model Visit {
+  id            String   @id @default(cuid())
+  orgId         String
+  unitId        String
+  residentId    String
+  /// Termin der Visite (wird beim Abschluss als erledigt markiert)
+  appointmentId String?
+  physician     String?
+  at            DateTime @default(now())
+  note          String?
+  /// Automatisch geschriebener Verlaufseintrag (Kategorie physician)
+  observationId String?
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  resident  Resident        @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  questions VisitQuestion[]
+  orders    VisitOrder[]
+
+  @@index([orgId, unitId, at])
+  @@index([residentId, at])
+}
+
+/// Von der Pflege für die nächste Visite vorgemerkte Frage, optional mit Bezug auf Vitalwert oder Verlaufseintrag.
+model VisitQuestion {
+  id          String              @id @default(cuid())
+  orgId       String
+  residentId  String
+  text        String
+  /// vital | observation
+  refType     String?
+  refId       String?
+  /// Kurztext des Bezugs zum Zeitpunkt der Erfassung (z. B. «BZ 11,8 mmol/l · 22.10. 14:10»)
+  refLabel    String?
+  status      VisitQuestionStatus @default(open)
+  answer      String?
+  visitId     String?
+  createdById String
+  createdAt   DateTime            @default(now())
+  closedById  String?
+  closedAt    DateTime?
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  visit    Visit?   @relation(fields: [visitId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, status])
+  @@index([residentId, status])
+}
+
+/// Ärztliche Anordnung aus einer Visite. Jede Anordnung erzeugt eine Aufgabe (Task.source = order, sourceId = id).
+model VisitOrder {
+  id         String    @id @default(cuid())
+  visitId    String
+  residentId String
+  /// medication | lab | check | therapy | other
+  kind       String
+  text       String
+  dueAt      DateTime?
+  questionId String?
+  taskId     String?
+  createdAt  DateTime  @default(now())
+
+  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([visitId])
+  @@index([residentId])
 }

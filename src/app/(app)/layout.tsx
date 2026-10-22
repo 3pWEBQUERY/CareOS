@@ -14,6 +14,7 @@ import { CommandPalette, type PalItem } from '@/components/shell/CommandPalette'
 import { Notifications } from '@/components/shell/Notifications'
 import { LiveUpdates } from '@/components/shell/LiveUpdates'
 import { QuickActions } from '@/components/shell/QuickActions'
+import { ScrollRegions } from '@/components/shell/ScrollRegions'
 import { currentShiftLabel } from '@/lib/shift'
 import { overdueCount } from '@/lib/tasks'
 import { enforceMfaSetup } from '@/lib/auth/mfa-gate'
@@ -66,6 +67,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     })),
     ...nav.map((n) => ({ group: t('common.palette.groupView'), label: n.label, href: n.href })),
     ...(ctx.can('resident.medication.administer') ? [{ group: t('common.palette.groupAction'), label: t('nav.medround'), href: '/tasks/medround' }] : []),
+    ...(ctx.can('resident.read') ? [{ group: t('common.palette.groupAction'), label: t('visit.title'), href: '/tasks/visit' }] : []),
     ...(ctx.can('quality.report') ? [{ group: t('common.palette.groupAction'), label: t('common.quick.incident'), href: '/quality/new' }] : []),
     ...(ctx.can('task.manage') ? [{ group: t('common.palette.groupAction'), label: t('common.quick.task'), href: '/tasks?new=1' }] : []),
     { group: t('common.palette.groupAction'), label: t('common.quick.document'), href: '/residents?pick=notes' },
@@ -110,10 +112,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <RailNav items={nav} label={t('nav.mainNav')} />
         <div className="content" id="main">{children}</div>
       </div>
-      <BottomNav items={nav} more={more} moreLabel={t('nav.more')} quick={<QuickActions canIncident={ctx.can('quality.report')} canTask={ctx.can('task.manage')} />} />
+      <BottomNav items={nav} more={more} moreLabel={t('nav.more')} label={t('nav.mainNav')} quick={<QuickActions canIncident={ctx.can('quality.report')} canTask={ctx.can('task.manage')} />} />
       <Toaster />
       <SwUpdateNotice />
       <LiveUpdates userId={user.id} />
+      <ScrollRegions />
     </I18nProvider>
   )
 }

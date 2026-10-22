@@ -1,6 +1,7 @@
 'use client'
 
 import { useT } from '@/i18n/client'
+import { DateField } from '@/components/ui/DateField'
 
 export type ResidentDefaults = {
   firstName?: string; lastName?: string; birthDate?: string; sex?: string | null; roomId?: string | null; careLevel?: number | null
@@ -21,7 +22,7 @@ export function ResidentFields({ d = {}, rooms, nurses, edit }: {
     <div className="form-grid">
       <label className="fld"><span className="lbl">{t('residents.form.lastName')}</span><input className="field" name="lastName" required maxLength={80} defaultValue={d.lastName} autoComplete="off" /></label>
       <label className="fld"><span className="lbl">{t('residents.form.firstName')}</span><input className="field" name="firstName" required maxLength={80} defaultValue={d.firstName} autoComplete="off" /></label>
-      <label className="fld"><span className="lbl">{t('residents.form.birthDate')}</span><input className="field mono" name="birthDate" type="date" required defaultValue={d.birthDate} /></label>
+      <label className="fld"><span className="lbl">{t('residents.form.birthDate')}</span><DateField name="birthDate" required defaultValue={d.birthDate} quick={false} /></label>
       <label className="fld"><span className="lbl">{t('residents.form.sex')}</span>
         <select className="field" name="sex" defaultValue={d.sex ?? ''}>
           <option value="">–</option>

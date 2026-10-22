@@ -117,7 +117,10 @@ export async function completeTaskAction(form: FormData): Promise<ActionResult> 
     if (isClosed(task.status)) return err('tasks.errors.closed')
     const reason = fd(form, 'reason')
     if (status !== 'done' && reason.length < 3) return err('tasks.errors.reason', 'reason')
-    const after = await db.task.update({ where: { id: task.id }, data: { status, completedById: ctx.user.id, completedAt: new Date(), note: reason || task.note } })
+    // Bedingtes Update: zwei Geräte gleichzeitig (Echtzeit-Konflikt) buchen nicht doppelt
+    const upd = await db.task.updateMany({ where: { id: task.id, status: { notIn: ['done', 'partial', 'skipped'] } }, data: { status, completedById: ctx.user.id, completedAt: new Date(), note: reason || task.note } })
+    if (!upd.count) return err('tasks.errors.closed')
+    const after = await db.task.findUniqueOrThrow({ where: { id: task.id } })
     await audit(ctx, { action: 'task.complete', entityType: 'Task', entityId: task.id, before: snapshot(task), after: snapshot(after), context: { residentId: task.residentId } })
     await emit({ orgId: ctx.org.id, type: 'task.completed', unitId: task.unitId, residentId: task.residentId, actorId: ctx.user.id, payload: { taskId: task.id, status } })
     refresh()

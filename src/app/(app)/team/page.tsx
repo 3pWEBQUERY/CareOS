@@ -140,7 +140,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                       </div>
                       <div className="form-actions">
                         {inline ? (
-                          <ActButton action={ackPostAction.bind(null, p.id)} className="btn primary">✓ {t('team.ack.button')}</ActButton>
+                          <ActButton action={ackPostAction.bind(null, p.id)} className="btn primary" optimistic={<>✓ {t('team.ack.confirmed')}</>} optimisticClassName="btn">✓ {t('team.ack.button')}</ActButton>
                         ) : (
                           <Link className="btn primary" href={`/team/post/${p.id}`}>{t('team.ux.readAndAck')}</Link>
                         )}

@@ -15,7 +15,7 @@ export type EventType =
   | 'handover.updated' | 'handover.acknowledged'
   | 'incident.reported' | 'incident.updated'
   | 'careplan.updated' | 'assessment.recorded' | 'wound.updated' | 'nutrition.recorded'
-  | 'resident.updated'
+  | 'resident.updated' | 'visit.updated'
   | 'post.published' | 'message.created'
   | 'document.published' | 'schedule.changed' | 'notification.created'
 

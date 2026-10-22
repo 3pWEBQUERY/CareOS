@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
+import { onRadioKeys } from '@/components/ui/radio'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { setDoseAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { useConfirm, type ConfirmOptions } from '@/components/ui/ConfirmDialog'
@@ -209,7 +210,7 @@ export function DoseDialog({ row, slots, initialTime, initialStatus, day, editab
             <input type="hidden" name="time" value={time} />
             <input type="hidden" name="expectedId" value={cell.adminId} />
             <input type="hidden" name="status" value={status} />
-            <div className="chips" role="radiogroup" aria-label={t('meds.dialog.newState')}>
+            <div className="chips" role="radiogroup" aria-label={t('meds.dialog.newState')} onKeyDown={onRadioKeys}>
               {options.map((s) => (
                 <button key={s} type="button" role="radio" className="chip dose-opt" data-v={s} aria-checked={status === s} onClick={() => setStatus(s)}>
                   <span aria-hidden="true">{SIGN[s]}</span> {t('meds.action.' + s)}

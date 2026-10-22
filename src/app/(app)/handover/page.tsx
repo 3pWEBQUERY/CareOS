@@ -6,7 +6,7 @@ import { lastShiftEnd, shiftTypes } from '@/lib/shift'
 import { shiftName } from '@/lib/shift-name'
 import { addDays, dateKey, dbDate, fmtDayMonth, fmtRel, hm, parseDateKey, sameDay, shiftBounds, startOfDay } from '@/lib/time'
 import { Empty, Forbidden } from '@/components/ui/Empty'
-import { HandoverActions, HandoverCard, type HoBlockDto } from '@/components/handover/HandoverUi'
+import { HandoverAckScope, HandoverActions, HandoverCard, type HoBlockDto } from '@/components/handover/HandoverUi'
 import { collectHandover, runningAndPrevious } from './collect'
 import { ackSettings } from '@/lib/acks'
 
@@ -114,6 +114,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
       </div>
       <div className="scroll">
         <div className="tabpanel">
+          <HandoverAckScope>
           <div className="row-between">
             <nav className="seg seg-x ho-scope" aria-label={t('tasks.handover.scope.label')}>
               <Link href={href({ since: null })} aria-current={!since ? 'page' : undefined} scroll={false}>{t('tasks.handover.scope.shift')}</Link>
@@ -165,6 +166,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
           ) : (
             <Empty title={t('tasks.handover.empty.residents')} />
           )}
+          </HandoverAckScope>
         </div>
       </div>
     </main>

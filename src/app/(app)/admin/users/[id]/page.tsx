@@ -14,6 +14,7 @@ import {
   addAssignmentAction, addUserQualificationAction, removeAssignmentAction, removeUserQualificationAction,
   resetMfaAction, resetPasswordAction, revokeUserSessionsAction, setUserActiveAction, updateUserAction,
 } from '../actions'
+import { DateField } from '@/components/ui/DateField'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
@@ -170,7 +171,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
                       <option value="" disabled>{t('admin.users.pickQualificationLabel')}</option>
                       {quals.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}
                     </select>
-                    <input className="field" type="date" name="validUntil" aria-label={t('admin.users.validUntil')} title={t('admin.users.validUntil')} style={{ width: 160 }} />
+                    <DateField name="validUntil" aria-label={t('admin.users.validUntil')} title={t('admin.users.validUntil')} style={{ width: 160 }} />
                     <Submit className="btn">{t('common.add')}</Submit>
                   </ActionForm>
                 </div>

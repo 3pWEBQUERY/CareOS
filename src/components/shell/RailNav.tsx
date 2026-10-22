@@ -22,7 +22,9 @@ export function RailNav({ items, label }: { items: NavItem[]; label: string }) {
         return (
           <span key={it.href} style={{ display: 'contents' }}>
             {sep && <hr />}
-            <Link href={it.href} aria-current={isActive(path, it.href) ? 'page' : undefined} prefetch>
+            {/* Standard-Vorladen (bis zum Skeleton der Zielansicht): sofortiger Wechsel ohne alle Ansichten
+                bei jedem Seitenaufruf und jedem Live-Update vollständig auf dem Server zu rendern (Last, Aktualität). */}
+            <Link href={it.href} aria-current={isActive(path, it.href) ? 'page' : undefined}>
               <Icon />
               {it.label}
               {!!it.badge && <span className="badge">{it.badge}</span>}
@@ -34,7 +36,7 @@ export function RailNav({ items, label }: { items: NavItem[]; label: string }) {
   )
 }
 
-export function BottomNav({ items, more, moreLabel, quick }: { items: NavItem[]; more: NavItem[]; moreLabel: string; quick: React.ReactNode }) {
+export function BottomNav({ items, more, moreLabel, label, quick }: { items: NavItem[]; more: NavItem[]; moreLabel: string; label?: string; quick: React.ReactNode }) {
   const path = usePathname()
   const main = ['/', '/residents', '/tasks', '/team']
   const shown = main.map((h) => items.find((i) => i.href === h)).filter(Boolean) as NavItem[]
@@ -50,7 +52,7 @@ export function BottomNav({ items, more, moreLabel, quick }: { items: NavItem[];
     )
   }
   return (
-    <nav className="bottom-nav" aria-label={moreLabel} style={{ gridTemplateColumns: `repeat(${shown.length + 2}, 1fr)` }}>
+    <nav className="bottom-nav" aria-label={label ?? moreLabel} style={{ gridTemplateColumns: `repeat(${shown.length + 2}, 1fr)` }}>
       {shown.slice(0, 2).map(cell)}
       <div className="fab-slot">{quick}</div>
       {shown.slice(2).map(cell)}

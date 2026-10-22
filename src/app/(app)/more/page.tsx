@@ -16,6 +16,7 @@ export default async function MorePage() {
   const items = [
     ctx.can('handover.read') && ['/handover', t('nav.handover')],
     ctx.can('resident.medication.administer') && ['/tasks/medround', t('nav.medround')],
+    ctx.can('resident.read') && ['/tasks/visit', t('visit.nav')],
     ctx.can('schedule.read') && ['/schedule', t('nav.schedule')],
     ctx.can('chat.use') && ['/chat', t('nav.chat')],
     ctx.can('learn.read') && ['/learn', t('nav.learn')],

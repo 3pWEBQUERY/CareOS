@@ -9,6 +9,7 @@ import { addActionAction, saveStageAction } from '../actions'
 import { ActionCheck } from '../client'
 import { actionTitle, canManageUnit, qualityUnits, SEVERITIES, STAGES, stageIndex, toLocalInput } from '../_lib'
 import { StageForm } from './StageForm'
+import { DateTimeField } from '@/components/ui/DateTimeField'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
@@ -284,7 +285,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
                         <input className="field" name="title" maxLength={300} required placeholder={t('quality.detail.newActionHint')} />
                       </label>
                       <label className="fld"><span className="lbl">{t('quality.detail.dueAt')}</span>
-                        <input className="field mono" type="datetime-local" name="dueAt" defaultValue={toLocalInput(new Date(now.getTime() + 3600_000))} />
+                        <DateTimeField name="dueAt" defaultValue={toLocalInput(new Date(now.getTime() + 3600_000))} />
                       </label>
                       <label className="check" style={{ alignSelf: 'end', minHeight: 34 }}><input type="checkbox" name="asTask" defaultChecked /> {t('quality.detail.asTask')}</label>
                       <div className="form-actions" style={{ alignSelf: 'end' }}><Submit className="btn">{t('common.add')}</Submit></div>

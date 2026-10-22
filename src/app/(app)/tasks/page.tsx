@@ -36,6 +36,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const canComplete = ctx.canHere('task.complete')
   const canMeds = ctx.canHere('resident.medication.read')
   const canRound = ctx.canHere('resident.medication.administer')
+  const canVisit = ctx.canHere('resident.read')
 
   const now = new Date()
   const today = startOfDay(now)
@@ -102,7 +103,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       assignee: a ? { id: a.id, initials: a.initials, name: `${a.firstName.charAt(0)}. ${a.lastName}` } : null,
       completed: k.completedAt ? t('tasks.completedBy', { time: hm(k.completedAt), by: uName(k.completedById) ?? '–' }) : null,
       note: k.note, createdBy: uName(k.createdById), sourceLabel: sourceLabel(k),
-      link: k.residentId && medSlot && canMeds ? { href: `/residents/${k.residentId}/meds`, label: t('tasks.toMar') } : k.residentId && prn && canMeds ? { href: `/residents/${k.residentId}/meds#effect`, label: t('tasks.toEffect') } : null,
+      link: k.residentId && medSlot && canMeds ? { href: `/residents/${k.residentId}/meds`, label: t('tasks.toMar') } : k.residentId && prn && canMeds ? { href: `/residents/${k.residentId}/meds#effect`, label: t('tasks.toEffect') } : k.residentId && k.source === 'order' && k.title === 'visit.order.medication' && canMeds ? { href: `/residents/${k.residentId}/meds#orders`, label: t('visit.task.toMeds') } : null,
     }
   })
   const staff: StaffDto[] = users.filter((u) => staffIds.includes(u.id) && u.active).map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName}`, initials: u.initials })).sort((a, b) => a.name.localeCompare(b.name))
@@ -146,6 +147,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             </nav>
             <div className="row">
               {canRound && <Link className="btn" href="/tasks/medround">{t('tasks.medround')}</Link>}
+              {canVisit && <Link className="btn" href="/tasks/visit">{t('visit.nav')}</Link>}
               {canManage && (
                 <CreateTask
                   initialOpen={sp.new === '1'}

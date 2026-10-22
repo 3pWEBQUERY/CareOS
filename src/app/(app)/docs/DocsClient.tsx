@@ -9,6 +9,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { useConfirm, splitQuestion } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { createDocument, updateDocumentMeta, createVersion, updateDraft, askAssistant, type AssistantAnswer } from './actions'
+import { DateField } from '@/components/ui/DateField'
 
 type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 
@@ -77,8 +78,8 @@ function MetaFields({ d, users }: { d?: Meta; users?: { id: string; name: string
         </label>
       )}
       <label className="fld span-all"><span className="lbl">{t('docs.f.tags')}</span><input className="field" name="tags" defaultValue={d?.tags.join(', ')} placeholder={t('docs.f.tagsHint')} /></label>
-      <label className="fld"><span className="lbl">{t('docs.f.validFrom')}</span><input className="field" type="date" name="validFrom" defaultValue={d?.validFrom ?? ''} /></label>
-      <label className="fld"><span className="lbl">{t('docs.f.validUntil')}</span><input className="field" type="date" name="validUntil" defaultValue={d?.validUntil ?? ''} /></label>
+      <label className="fld"><span className="lbl">{t('docs.f.validFrom')}</span><DateField name="validFrom" defaultValue={d?.validFrom ?? ''} /></label>
+      <label className="fld"><span className="lbl">{t('docs.f.validUntil')}</span><DateField name="validUntil" defaultValue={d?.validUntil ?? ''} /></label>
       <label className="check span-all"><input type="checkbox" name="requireAck" defaultChecked={d?.requireAck} /> {t('docs.f.requireAck')}</label>
     </div>
   )

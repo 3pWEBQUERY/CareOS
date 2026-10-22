@@ -9,6 +9,8 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { EDGE, EXUDATE, TISSUE, WOUND_KINDS, WOUND_ORIGINS } from '@/lib/care'
 import { createWoundAction, saveWoundEntryAction, setWoundStatusAction } from './actions'
+import { DateField } from '@/components/ui/DateField'
+import { DateTimeField } from '@/components/ui/DateTimeField'
 
 export function NewWoundButton({ residentId, today, contextLabel }: { residentId: string; today: string; contextLabel: string }) {
   const t = useT()
@@ -54,7 +56,7 @@ export function NewWoundButton({ residentId, today, contextLabel }: { residentId
             </label>
             <label className="fld" htmlFor="w-start">
               <span className="lbl">{t('care.wounds.startedAt')}</span>
-              <input id="w-start" name="startedAt" type="date" className="field mono" defaultValue={today} max={today} />
+              <DateField id="w-start" name="startedAt" defaultValue={today} max={today} />
             </label>
           </div>
           <div className="form-actions">
@@ -94,7 +96,7 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
       <div className="vform" style={{ border: 0, padding: 0 }}>
         <label htmlFor="we-at" style={{ gridColumn: '1 / -1', maxWidth: 260 }}>
           <span className="lbl">{t('care.wounds.entryAt')}</span>
-          <input id="we-at" name="at" type="datetime-local" className="field" defaultValue={now} max={now} />
+          <DateTimeField id="we-at" name="at" defaultValue={now} max={now} />
         </label>
         <label htmlFor="we-l"><span className="lbl">{t('care.wounds.length')}</span><input id="we-l" name="length" className="field" inputMode="decimal" autoComplete="off" /></label>
         <label htmlFor="we-w"><span className="lbl">{t('care.wounds.width')}</span><input id="we-w" name="width" className="field" inputMode="decimal" autoComplete="off" /></label>
@@ -125,7 +127,7 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
         </label>
         <label className="fld" htmlFor="we-next">
           <span className="lbl">{t('care.wounds.nextChange')}</span>
-          <input id="we-next" name="nextChange" type="datetime-local" className="field mono" min={now} />
+          <DateTimeField id="we-next" name="nextChange" min={now} />
           <span className="hint">{t('care.wounds.nextChangeHint')}</span>
         </label>
         <div className="fld span-all">

@@ -7,7 +7,8 @@ import { run, fd, fdNum, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { taskTitle } from '@/lib/task-title'
-import { atTime } from '@/lib/time'
+import { atTime, hm } from '@/lib/time'
+import { OPEN_STATUSES } from '@/lib/tasks'
 import { actionResident } from '../../_lib/resident'
 
 const pick = (k: { status: string; completedById: string | null; completedAt: Date | null; note: string | null }) => ({
@@ -30,7 +31,17 @@ export async function toggleTask(taskId: string, done: boolean): Promise<ActionR
     const data = done
       ? { status: 'done' as const, completedById: ctx.user.id, completedAt: new Date() }
       : { status: 'planned' as const, completedById: null, completedAt: null, note: null }
-    const after = await db.task.update({ where: { id: task.id }, data })
+    if (done) {
+      // Nur offene Aufgaben quittieren (bedingtes Update): Doppelklick oder zweites Gerät erzeugt keine zweite Buchung
+      const upd = await db.task.updateMany({ where: { id: task.id, status: { in: [...OPEN_STATUSES] } }, data })
+      if (!upd.count) {
+        const now = await db.task.findUnique({ where: { id: task.id } })
+        if (now?.completedById === ctx.user.id) return { ok: true }
+        const by = now?.completedById ? await db.user.findUnique({ where: { id: now.completedById }, select: { firstName: true, lastName: true } }) : null
+        return { ok: false, error: ctx.t('common.offlineSync.reason.taskClosed', { by: by ? `${by.firstName.charAt(0)}. ${by.lastName}` : '–', at: now?.completedAt ? hm(now.completedAt) : '–' }) }
+      }
+    }
+    const after = done ? await db.task.findUniqueOrThrow({ where: { id: task.id } }) : await db.task.update({ where: { id: task.id }, data })
     await audit(ctx, { action: done ? 'task.complete' : 'task.reopen', entityType: 'Task', entityId: task.id, before: pick(task), after: pick(after), context: { residentId: r.id, title: task.title } })
     await emit({ orgId: ctx.org.id, type: done ? 'task.completed' : 'task.reopened', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { taskId: task.id, status: after.status } })
     refresh()

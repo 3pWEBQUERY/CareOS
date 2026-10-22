@@ -7,6 +7,7 @@ import { Forbidden, Empty } from '@/components/ui/Empty'
 import { AdminHead } from '../Head'
 import { auditWhere, type AuditFilter } from './filter'
 import { auditLabel } from '../audit-label'
+import { DateField } from '@/components/ui/DateField'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -67,8 +68,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                 {entities.map((e) => <option key={e.entityType} value={e.entityType}>{e.entityType}</option>)}
               </select>
             </label>
-            <label className="fld"><span className="lbl">{t('admin.audit.from')}</span><input className="field mono" type="date" name="from" defaultValue={f.from ?? ''} /></label>
-            <label className="fld"><span className="lbl">{t('admin.audit.to')}</span><input className="field mono" type="date" name="to" defaultValue={f.to ?? ''} /></label>
+            <label className="fld"><span className="lbl">{t('admin.audit.from')}</span><DateField name="from" defaultValue={f.from ?? ''} /></label>
+            <label className="fld"><span className="lbl">{t('admin.audit.to')}</span><DateField name="to" defaultValue={f.to ?? ''} /></label>
             <div className="row" style={{ alignSelf: 'end' }}>
               <button className="btn primary" type="submit">{t('common.filter')}</button>
               {filtered && <Link className="btn ghost" href="/admin/audit">{t('admin.audit.reset')}</Link>}

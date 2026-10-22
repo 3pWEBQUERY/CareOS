@@ -413,6 +413,23 @@ export async function seedDemo(client: PrismaClient = db) {
   await client.handoverEntry.create({ data: { handoverId: ho.id, residentId: residentIds['207'], watch: 'Nach Sturz: Schmerzen Hüfte beobachten, Bettalarm aktiv', open: 'Sturzassessment ausstehend', important: true, authorId: U.MK } })
   await client.handoverEntry.create({ data: { handoverId: ho.id, residentId: residentIds['201'], watch: 'BZ morgen nüchtern', authorId: U.LR } })
 
+  // Arztvisite heute (PRD §29): Termine und von der Pflege vorgemerkte Fragen mit Bezug auf Vitalwert bzw. Verlaufseintrag
+  for (const [room, time] of [['201', '10:30'], ['204', '10:45'], ['206', '11:00']] as const) {
+    await client.appointment.create({ data: { residentId: residentIds[room], at: at(today, time), title: 'Arztvisite Dr. med. P. Keller', kind: 'physician', createdById: U.BG } })
+  }
+  const dm2 = (d: Date) => `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+  const bz = await client.vitalSign.findFirst({ where: { residentId: residentIds['201'], glucose: { gt: 10 } }, orderBy: { at: 'desc' } })
+  const bd = await client.observation.findFirst({ where: { residentId: residentIds['204'], text: { startsWith: 'BD 162/94' } } })
+  const hypo1 = await client.observation.findFirst({ where: { residentId: residentIds['206'], text: { startsWith: 'BZ 3,9' } } })
+  const questions = [
+    { room: '201', by: 'DS', ago: 200, text: 'BZ wiederholt über 10 mmol/l, heute 11,8 mmol/l. Diabetestherapie anpassen?', ref: bz ? { refType: 'vital', refId: bz.id, refLabel: `Blutzucker 11,8 mmol/l ▲ · ${dm2(bz.at)}` } : null },
+    { room: '204', by: 'LR', ago: 140, text: 'Blutdruck seit gestern erhöht, in Ruhe 154/90 mmHg. Antihypertensive Therapie anpassen?', ref: bd ? { refType: 'observation', refId: bd.id, refLabel: `Beobachtung · ${dm2(bd.at)} · BD 162/94 mmHg nach Spaziergang, nach 15 Min. Ruhe 154/90.` } : null },
+    { room: '206', by: 'DS', ago: 290, text: 'Hypoglykämie 3,9 mmol/l am Nachmittag. Insulindosis am Mittag prüfen?', ref: hypo1 ? { refType: 'observation', refId: hypo1.id, refLabel: `Beobachtung · ${dm2(hypo1.at)} · BZ 3,9 mmol/l um 16 Uhr, leicht schwitzig.` } : null },
+  ]
+  for (const q of questions) {
+    await client.visitQuestion.create({ data: { orgId: org.id, residentId: residentIds[q.room], text: q.text, ...(q.ref ?? {}), createdById: U[q.by], createdAt: minsAgo(q.ago) } })
+  }
+
   // Kommunikation
   const ch: Record<string, string> = {}
   for (const c of [

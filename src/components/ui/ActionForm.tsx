@@ -34,10 +34,19 @@ export function ActionForm({
   const [pending, start] = useTransition()
   const errId = useId()
   const focusAfter = useRef<HTMLElement | null>(null)
+  // Während des Speicherns ist das Fieldset deaktiviert und der Fokus fällt auf <body>: danach zum
+  // auslösenden Element zurück, sofern der Fokus nicht inzwischen woanders liegt (WCAG 2.4.3).
+  const restore = useRef<HTMLElement | null>(null)
   useEffect(() => {
-    if (!pending && focusAfter.current) {
+    if (pending) return
+    if (focusAfter.current) {
       focusAfter.current.focus()
       focusAfter.current = null
+      restore.current = null
+    } else if (restore.current) {
+      const el = restore.current
+      restore.current = null
+      if (el.isConnected && (!document.activeElement || document.activeElement === document.body)) el.focus()
     }
   }, [pending, error])
   const tr = (s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
@@ -46,6 +55,7 @@ export function ActionForm({
     // Markierungen aus dem letzten Versuch entfernen
     formEl.querySelectorAll(`[aria-describedby="${errId}"]`).forEach((x) => { x.removeAttribute('aria-invalid'); x.removeAttribute('aria-describedby') })
     const form = new FormData(formEl)
+    restore.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null
     start(async () => {
       const r = await action(form)
       if (r.ok) {
@@ -56,7 +66,9 @@ export function ActionForm({
       } else {
         setError(tr(r.error))
         // Fehler am Feld: markieren und fokussieren (PRD §32); sonst liest die Live-Region die Meldung vor.
-        const el = r.field ? (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null) : null
+        let el = r.field ? (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null) : null
+        // Eigene Felder (DateField/TimeField) schreiben in ein verstecktes Feld – markiert wird das sichtbare
+        if (el instanceof HTMLInputElement && el.type === 'hidden' && el.dataset.for) el = document.getElementById(el.dataset.for) ?? el
         if (el) {
           el.setAttribute('aria-invalid', 'true')
           el.setAttribute('aria-describedby', errId)

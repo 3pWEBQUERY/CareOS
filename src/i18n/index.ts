@@ -17,8 +17,9 @@ import insights from './messages/insights'
 import admin from './messages/admin'
 import profile from './messages/profile'
 import forms from './messages/forms'
+import visit from './messages/visit'
 
-const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms }
+const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms, visit }
 
 export type Namespace = keyof typeof NAMESPACES
 

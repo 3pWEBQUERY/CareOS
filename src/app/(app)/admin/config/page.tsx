@@ -16,6 +16,7 @@ import {
   deleteShiftTypeAction, resetThresholdAction, saveAssessmentAction, saveCoverageAction, saveDomainsAction,
   saveFlagsAction, saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
 } from './actions'
+import { TimeField } from '@/components/ui/TimeField'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -227,8 +228,8 @@ async function Shifts() {
       {st && <input type="hidden" name="id" value={st.id} />}
       <label className="fld"><span className="lbl">{t('admin.config.code')}</span><input className="field mono" name="code" defaultValue={st?.code} required maxLength={4} /></label>
       <label className="fld"><span className="lbl">{t('admin.config.name')}</span><input className="field" name="name" defaultValue={st?.name} required maxLength={60} /></label>
-      <label className="fld"><span className="lbl">{t('admin.config.start')}</span><input className="field mono" type="time" name="start" defaultValue={st?.start ?? '07:00'} required /></label>
-      <label className="fld"><span className="lbl">{t('admin.config.end')}</span><input className="field mono" type="time" name="end" defaultValue={st?.end ?? '15:30'} required /></label>
+      <label className="fld"><span className="lbl">{t('admin.config.start')}</span><TimeField name="start" defaultValue={st?.start ?? '07:00'} required /></label>
+      <label className="fld"><span className="lbl">{t('admin.config.end')}</span><TimeField name="end" defaultValue={st?.end ?? '15:30'} required /></label>
     </div>
   )
   return (

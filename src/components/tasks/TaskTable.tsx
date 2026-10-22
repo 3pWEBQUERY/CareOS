@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useOptimistic, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
@@ -9,7 +9,10 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { IconCheck } from '@/components/icons'
 import { assignTaskAction, completeManyAction, completeTaskAction, createTaskAction, escalateTaskAction, reopenManyAction, reopenTaskAction, startTaskAction } from '@/app/(app)/tasks/actions'
-import { useCall } from '@/components/meds/shared'
+import { isKey, useCall } from '@/components/meds/shared'
+import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
+import { DateField } from '@/components/ui/DateField'
+import { TimeField } from '@/components/ui/TimeField'
 
 export type TaskRowDto = {
   id: string
@@ -36,7 +39,7 @@ export type StaffDto = { id: string; name: string; initials: string }
 type Mode = 'assign' | 'partial' | 'skipped' | 'escalate' | 'details'
 
 /** Universal Action System (PRD §49): Create · Assign · Complete · Review · Escalate – als einheitliche Zeilenaktionen. */
-export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText }: {
+export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meId, emptyText }: {
   rows: TaskRowDto[]
   staff: StaffDto[]
   canManage: boolean
@@ -48,18 +51,23 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
   const { pending, call } = useCall()
   const [dlg, setDlg] = useState<{ row: TaskRowDto; mode: Mode } | null>(null)
   const [bulk, setBulk] = useState<TaskRowDto[] | null>(null)
-  const [menu, setMenuState] = useState<{ id: string; top: number; right: number } | null>(null)
+  const [menu, setMenuState] = useState<{ id: string; top?: number; bottom?: number; right: number } | null>(null)
+  // Auslöser des offenen Menüs: Fokus kehrt nach Esc oder nach Wahl einer Aktion dorthin zurück (WCAG 2.4.3)
+  const menuBtn = useRef<HTMLElement | null>(null)
   const openMenu = (id: string, el: HTMLElement) => {
     if (menu?.id === id) return setMenuState(null)
+    menuBtn.current = el
     const b = el.getBoundingClientRect()
-    setMenuState({ id, top: b.bottom + 4, right: Math.max(8, window.innerWidth - b.right) })
+    // Nach oben öffnen, wenn unten (über der Bottom-Nav) kein Platz ist – sonst liegen Aktionen verdeckt
+    const up = window.innerHeight - b.bottom < 300 && b.top > 300
+    setMenuState({ id, ...(up ? { bottom: window.innerHeight - b.top + 4 } : { top: b.bottom + 4 }), right: Math.max(8, window.innerWidth - b.right) })
   }
   const setMenu = (v: null) => setMenuState(v)
 
   useEffect(() => {
     if (!menu) return
     const close = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('[data-menu]')) setMenuState(null) }
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setMenuState(null)
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') { setMenuState(null); menuBtn.current?.focus() } }
     const off = () => setMenuState(null)
     document.addEventListener('click', close)
     document.addEventListener('keydown', esc)
@@ -69,13 +77,46 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
   }, [menu])
 
   const done = (row: TaskRowDto) => row.view === 'done' || row.view === 'partial' || row.view === 'skipped'
-  const quick = (row: TaskRowDto) => {
-    if (!canComplete || pending) return
-    if (done(row)) return call(reopenTaskAction, { id: row.id })
-    call(completeTaskAction, { id: row.id, status: 'done' }, () => {
-      toast(t('tasks.toast.done', { title: row.title }), { undo: () => call(reopenTaskAction, { id: row.id }), undoLabel: t('common.undo') })
-    }, true)
+
+  // Schnellquittierung optimistisch (PRD §31): Status sofort, bei Fehler zurück und Hinweis. Live-Updates anderer
+  // Personen setzen auf die neuen Server-Daten auf, ohne den eigenen, noch laufenden Status zu überschreiben.
+  const [, startQuick] = useTransition()
+  const [optView, setOptView] = useOptimistic<Record<string, TaskRowDto['view']>, { id: string; view: TaskRowDto['view'] }>({}, (cur, u) => ({ ...cur, [u.id]: u.view }))
+  // Ohne Verbindung vorgemerkt: bis zur Synchronisation als erledigt mit Hinweis «Offline erfasst» (PRD §39)
+  const [queued, setQueued] = useState<Record<string, true>>({})
+  const inflight = useRef(new Set<string>())
+  const rows = serverRows.map((r) => (queued[r.id] && !done(r) ? { ...r, view: 'done' as const } : optView[r.id] ? { ...r, view: optView[r.id] } : r))
+  const tr = (s: string) => (isKey(s) ? t(s) : s)
+  const act = (row: TaskRowDto, reopen: boolean) => {
+    // Doppelklick: solange die Aktion für diese Zeile läuft, keine zweite Buchung
+    if (!canComplete || inflight.current.has(row.id)) return
+    if (reopen && (queued[row.id] || isOffline())) return void toast(t('common.offlineSync.notOffline'), { kind: 'crit' })
+    inflight.current.add(row.id)
+    startQuick(async () => {
+      setOptView({ id: row.id, view: reopen ? 'up' : 'done' })
+      try {
+        const f = new FormData()
+        f.set('id', row.id)
+        if (reopen) {
+          const r = await reopenTaskAction(f)
+          if (!r.ok) toast(tr(r.error), { kind: 'crit', ms: 6000 })
+          return
+        }
+        f.set('status', 'done')
+        const r = row.resident
+          ? await orQueue(() => completeTaskAction(f), { kind: 'task', residentId: row.resident.id, data: { taskId: row.id, status: 'done' } }, { who: row.resident.name, label: row.title })
+          : await completeTaskAction(f)
+        if (isQueued(r)) { setQueued((c) => ({ ...c, [row.id]: true })); return void toast(t(r.message)) }
+        if (!r.ok) return void toast(tr(r.error), { kind: 'crit', ms: 6000 })
+        toast(t('tasks.toast.done', { title: row.title }), { undo: () => act({ ...row, view: 'done' }, true), undoLabel: t('common.undo') })
+      } catch {
+        toast(t('common.genericError'), { kind: 'crit', ms: 6000 })
+      } finally {
+        inflight.current.delete(row.id)
+      }
+    })
   }
+  const quick = (row: TaskRowDto) => act(row, done(row))
 
   if (!rows.length) return <p className="muted" style={{ margin: 0 }}>{emptyText}</p>
 
@@ -138,6 +179,7 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
                       {row.priority !== 'routine' && <span className={'tag ' + (row.priority === 'critical' ? 'crit' : 'warn')}>{t('common.priority.' + row.priority)}</span>}
                       {row.view === 'in_progress' && <span className="tag accent">{t('tasks.view.in_progress')}</span>}
                       {row.view === 'escalated' && <span className="tag crit">{t('tasks.view.escalated')}</span>}
+                      {queued[row.id] && <span className="tag outline">{t('common.offlineSync.tag')}</span>}
                       {(row.view === 'partial' || row.view === 'skipped') && <span className="tag warn">{t('tasks.view.' + row.view)}</span>}
                     </div>
                     {row.description && !closed && <div className="small fg2" style={{ maxWidth: '60ch' }}>{row.description}</div>}
@@ -150,18 +192,18 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
                   </td>
                   <td className="right nowrap tt-act">
                     <div className="row" style={{ justifyContent: 'flex-end', gap: 6, flexWrap: 'nowrap', position: 'relative' }} data-menu>
-                      <button type="button" className="btn ghost sm row-menu" aria-haspopup="menu" aria-expanded={menu?.id === row.id} aria-label={t('tasks.actions.menuFor', { title: row.title })} onClick={(e) => openMenu(row.id, e.currentTarget)}>⋯</button>
+                      <button type="button" className="btn ghost sm row-menu" aria-expanded={menu?.id === row.id} aria-label={t('tasks.actions.menuFor', { title: row.title })} onClick={(e) => openMenu(row.id, e.currentTarget)}>⋯</button>
                       {menu?.id === row.id && (
-                        <div className="popover" role="menu" style={{ position: 'fixed', width: 230, top: menu.top, right: menu.right, textAlign: 'left' }}>
+                        <div className="popover" style={{ position: 'fixed', width: 230, top: menu.top, bottom: menu.bottom, right: menu.right, textAlign: 'left' }} onClick={() => menuBtn.current?.focus()}>
                           <ul className="menu">
-                            {!closed && canComplete && row.view !== 'in_progress' && !row.link && <li><button type="button" role="menuitem" onClick={() => { setMenu(null); call(startTaskAction, { id: row.id }) }}>{t('tasks.actions.start')}</button></li>}
-                            {!closed && canManage && <li><button type="button" role="menuitem" onClick={() => { setMenu(null); setDlg({ row, mode: 'assign' }) }}>{t('tasks.actions.assign')}</button></li>}
-                            {!closed && canComplete && !row.assignee && !canManage && <li><button type="button" role="menuitem" onClick={() => { setMenu(null); call(startTaskAction, { id: row.id }) }}>{t('tasks.actions.takeOver')}</button></li>}
-                            {!closed && canComplete && !row.link && <li><button type="button" role="menuitem" onClick={() => { setMenu(null); setDlg({ row, mode: 'partial' }) }}>{t('tasks.actions.partial')}</button></li>}
-                            {!closed && canComplete && !row.link && <li><button type="button" role="menuitem" onClick={() => { setMenu(null); setDlg({ row, mode: 'skipped' }) }}>{t('tasks.actions.skip')}</button></li>}
-                            {!closed && canComplete && row.view !== 'escalated' && <li><button type="button" role="menuitem" style={{ color: 'var(--crit)' }} onClick={() => { setMenu(null); setDlg({ row, mode: 'escalate' }) }}>{t('tasks.actions.escalate')}</button></li>}
-                            {closed && canComplete && !row.link && <li><button type="button" role="menuitem" onClick={() => { setMenu(null); call(reopenTaskAction, { id: row.id }) }}>{t('tasks.actions.reopen')}</button></li>}
-                            <li><button type="button" role="menuitem" onClick={() => { setMenu(null); setDlg({ row, mode: 'details' }) }}>{t('tasks.actions.details')}</button></li>
+                            {!closed && canComplete && row.view !== 'in_progress' && !row.link && <li><button type="button" onClick={() => { setMenu(null); call(startTaskAction, { id: row.id }) }}>{t('tasks.actions.start')}</button></li>}
+                            {!closed && canManage && <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'assign' }) }}>{t('tasks.actions.assign')}</button></li>}
+                            {!closed && canComplete && !row.assignee && !canManage && <li><button type="button" onClick={() => { setMenu(null); call(startTaskAction, { id: row.id }) }}>{t('tasks.actions.takeOver')}</button></li>}
+                            {!closed && canComplete && !row.link && <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'partial' }) }}>{t('tasks.actions.partial')}</button></li>}
+                            {!closed && canComplete && !row.link && <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'skipped' }) }}>{t('tasks.actions.skip')}</button></li>}
+                            {!closed && canComplete && row.view !== 'escalated' && <li><button type="button" style={{ color: 'var(--crit)' }} onClick={() => { setMenu(null); setDlg({ row, mode: 'escalate' }) }}>{t('tasks.actions.escalate')}</button></li>}
+                            {closed && canComplete && !row.link && <li><button type="button" onClick={() => { setMenu(null); call(reopenTaskAction, { id: row.id }) }}>{t('tasks.actions.reopen')}</button></li>}
+                            <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'details' }) }}>{t('tasks.actions.details')}</button></li>
                           </ul>
                         </div>
                       )}
@@ -373,11 +415,11 @@ export function CreateTask({ initialOpen, residents, staff, categories, todayKey
               </label>
               <label className="fld">
                 <span className="lbl">{t('tasks.create.date')}</span>
-                <input className="field" type="date" name="date" defaultValue={todayKey} required />
+                <DateField name="date" defaultValue={todayKey} required />
               </label>
               <label className="fld">
                 <span className="lbl">{t('tasks.create.time')}</span>
-                <input className="field mono" type="time" name="time" defaultValue={defaultTime} required />
+                <TimeField name="time" defaultValue={defaultTime} required />
               </label>
               <label className="fld">
                 <span className="lbl">{t('tasks.details.duration')}</span>

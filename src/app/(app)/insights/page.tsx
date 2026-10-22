@@ -282,7 +282,7 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
         <div className="card-head"><h2 id="cv-h">{t('insights.management.coverageTitle')}</h2><span className="small muted">{t('insights.management.coverageSub')}</span></div>
         <div className="card-body stack-sm">
           {!d.anyTarget && <div className="alert"><span className="grow">{t('insights.management.noTarget')}</span></div>}
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto' }} data-scroll>
             <table className="cov" aria-label={t('insights.management.coverageTitle')}>
               <thead>
                 <tr><th scope="col"><span className="sr-only">{t('insights.shift')}</span></th>{d.coverage[0]?.days.map((x) => <th key={x.day.toISOString()} scope="col">{weekdayShort(x.day, locale)}<br /><span className="mono">{fmtDayMonth(x.day)}</span></th>)}</tr>

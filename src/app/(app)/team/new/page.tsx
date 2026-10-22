@@ -5,6 +5,8 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { canModerate, canPostTo, myRoleKeys, visibleChannels } from '../lib'
 import { publishPostAction } from '../actions'
 import { ackSettings } from '@/lib/acks'
+import { DateField } from '@/components/ui/DateField'
+import { TimeField } from '@/components/ui/TimeField'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -69,8 +71,8 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
               <fieldset>
                 <legend className="lbl">{t('team.form.event')}</legend>
                 <div className="form-grid">
-                  <label className="fld"><span className="lbl">{t('team.form.eventDate')}</span><input type="date" name="eventDate" className="field" /></label>
-                  <label className="fld"><span className="lbl">{t('team.form.eventTime')}</span><input type="time" name="eventTime" className="field" /></label>
+                  <label className="fld"><span className="lbl">{t('team.form.eventDate')}</span><DateField name="eventDate" /></label>
+                  <label className="fld"><span className="lbl">{t('team.form.eventTime')}</span><TimeField name="eventTime" /></label>
                   <label className="fld"><span className="lbl">{t('team.form.eventPlace')}</span><input name="eventPlace" className="field" maxLength={200} /></label>
                 </div>
               </fieldset>
@@ -78,7 +80,7 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
               <div className="form-grid">
                 <label className="fld">
                   <span className="lbl">{t('team.form.expiresAt')}</span>
-                  <input type="date" name="expiresAt" className="field" />
+                  <DateField name="expiresAt" />
                   <span className="hint">{t('team.form.expiresHint')}</span>
                 </label>
                 <label className="fld">

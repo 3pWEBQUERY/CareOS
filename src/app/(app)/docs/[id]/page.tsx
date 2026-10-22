@@ -258,7 +258,7 @@ export default async function DocPage({ params, searchParams }: { params: Promis
                     {overview.missing.length > 0 ? (
                       <>
                         <span className="lbl" style={{ marginTop: 4 }}>{t('docs.ack.missing', { n: overview.missing.length })}</span>
-                        <ul className="list" style={{ maxHeight: 260, overflow: 'auto' }}>
+                        <ul className="list" style={{ maxHeight: 260, overflow: 'auto' }} data-scroll>
                           {overview.missing.map((u) => <li key={u.id} className="row-between small" style={{ padding: '5px 0' }}><span>{u.name}</span>{u.unit && <span className="muted">{u.unit}</span>}</li>)}
                         </ul>
                         <ActBtn className="btn sm" label={t('docs.ack.remind')} action={remindAck.bind(null, doc.id)} />

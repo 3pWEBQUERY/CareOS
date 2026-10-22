@@ -140,7 +140,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               {post.requireAck && !expired && !isAuthor && !myAck && (
                 <div className="alert warn team-ack-end" id="ack-end">
                   <span className="grow fg">{t('team.ux.ackEnd')}</span>
-                  <ActButton action={ackPostAction.bind(null, post.id)} className="btn primary">✓ {t('team.ack.button')}</ActButton>
+                  <ActButton action={ackPostAction.bind(null, post.id)} className="btn primary" optimistic={<>✓ {t('team.ack.confirmed')}</>} optimisticClassName="btn">✓ {t('team.ack.button')}</ActButton>
                 </div>
               )}
 

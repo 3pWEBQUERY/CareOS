@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { ResidentWorkspace } from '@/components/shell/ListDrawer'
+import type { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
 
 export type ResRow = { id: string; room: string; name: string; meta: string; over: number; open: number; changed: boolean; search: string }
 
@@ -53,11 +54,24 @@ export function ResidentList({ rows }: { rows: ResRow[] }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [router, prevHref, nextHref])
-  // Nachbarn vorladen und die aktuelle Person in der Liste sichtbar halten
+  // Aktuelle Person in der Liste sichtbar halten
   useEffect(() => {
-    if (prevHref) router.prefetch(prevHref)
-    if (nextHref) router.prefetch(nextHref)
     listRef.current?.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' })
+  }, [currentId])
+  // Nur die beiden Nachbarn vollständig vorladen (Banner und Register-Inhalt), damit Alt+↑/↓ ohne Wartezeit wechselt
+  // (PRD §31) – nicht die ganze Liste (Serverlast). Erst im Leerlauf, damit die aktuelle Akte Vorrang hat.
+  // Jede Aktualisierung (Live-Update, eigene Aktion) verwirft den Vorrat; dann verzögert neu laden, nie veraltet anzeigen.
+  useEffect(() => {
+    let alive = true
+    const timers: ReturnType<typeof setTimeout>[] = []
+    const load = (h: string) => router.prefetch(h, {
+      kind: 'full' as PrefetchKind,
+      onInvalidate: () => { if (alive) timers.push(setTimeout(() => { if (alive && document.visibilityState === 'visible') load(h) }, 3000)) },
+    })
+    const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 300))
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout
+    const id = ric(() => { if (!alive) return; if (nextHref) load(nextHref); if (prevHref) load(prevHref) })
+    return () => { alive = false; cancel(id); timers.forEach(clearTimeout) }
   }, [router, prevHref, nextHref])
   const links = () => [...(listRef.current?.querySelectorAll<HTMLAnchorElement>('a.res') ?? [])]
   const onListKey = (e: React.KeyboardEvent) => {

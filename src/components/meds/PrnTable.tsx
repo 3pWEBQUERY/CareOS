@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
+import { onRadioKeys } from '@/components/ui/radio'
 import { splitQuestion } from '@/components/ui/ConfirmDialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { givePrnAction, recordEffectAction, voidPrnAction } from '@/app/(app)/residents/[id]/meds/actions'
@@ -206,9 +207,9 @@ export function EffectChecks({ items, canRecord, resident }: { items: EffectDto[
             <input type="hidden" name="adminId" value={open.adminId} />
             <input type="hidden" name="effect" value={effect} />
             <p style={{ margin: 0 }}>{open.drug} <span className="mono">{open.dose}</span> · <span className="small muted">{t('meds.effect.givenAt', { at: open.at, by: open.by })}</span></p>
-            <div className="quickdoc" role="radiogroup" aria-label={t('meds.effect.label')}>
+            <div className="quickdoc" role="radiogroup" aria-label={t('meds.effect.label')} onKeyDown={onRadioKeys}>
               {(['effective', 'partial', 'none'] as const).map((k) => (
-                <button key={k} type="button" role="radio" aria-checked={effect === k} aria-pressed={effect === k} data-v={k === 'effective' ? 'done' : k === 'partial' ? 'partial' : 'skipped'} onClick={() => setEffect(k)}>
+                <button key={k} type="button" role="radio" aria-checked={effect === k} data-v={k === 'effective' ? 'done' : k === 'partial' ? 'partial' : 'skipped'} onClick={() => setEffect(k)}>
                   <span aria-hidden="true">{k === 'effective' ? '✓' : k === 'partial' ? '△' : '✕'}</span>{t('meds.effect.' + k)}
                 </button>
               ))}

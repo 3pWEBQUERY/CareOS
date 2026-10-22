@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { createContext, useContext, useOptimistic, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -22,13 +22,45 @@ type Target = { shiftCode: string; date: string }
 
 const COLS = ['happened', 'done', 'watch', 'open'] as const
 
+/**
+ * Übernehmen ohne Warten (PRD §31): Übernahmen sind idempotent und ungefährlich – der Status erscheint sofort,
+ * der Server bestätigt im Hintergrund; bei Fehler kehrt die Anzeige zurück und ein Hinweis erscheint.
+ * «Alle übernehmen» markiert über diesen Bereich alle Karten gleichzeitig.
+ */
+const AckScope = createContext<{ all: boolean; markAll: () => void } | null>(null)
+export function HandoverAckScope({ children }: { children: React.ReactNode }) {
+  const [all, setAll] = useOptimistic(false)
+  return <AckScope.Provider value={{ all, markAll: () => setAll(true) }}>{children}</AckScope.Provider>
+}
+function useAck() {
+  const t = useT()
+  const [pending, start] = useTransition()
+  const ack = (fields: Record<string, string>, optimistic: () => void) => start(async () => {
+    optimistic()
+    const f = new FormData()
+    for (const [k, v] of Object.entries(fields)) f.set(k, v)
+    try {
+      const r = await acknowledgeAction(f)
+      if (!r.ok) toast(isKey(r.error) ? t(r.error) : r.error, { kind: 'crit', ms: 6000 })
+      else if (r.message) toast(isKey(r.message) ? t(r.message) : r.message)
+    } catch {
+      toast(t('common.genericError'), { kind: 'crit', ms: 6000 })
+    }
+  })
+  return { pending, ack }
+}
+const hmNow = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') }
+
 /** Übergabekarte einer Person: vier Fragen (PRD §11.2), Übernehmen, Ergänzen. */
 export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; target: Target; canAck: boolean; canEdit: boolean }) {
   const t = useT()
-  const { pending, call } = useCall()
+  const { pending, ack } = useAck()
+  const scope = useContext(AckScope)
+  const [mine, setMine] = useOptimistic(false)
   const [edit, setEdit] = useState(false)
   const important = !!b.entry?.important
-  const acked = !!b.acked
+  const optAcked = !b.acked && (mine || !!scope?.all)
+  const acked = !!b.acked || optAcked
   return (
     <section className={'ho' + (acked ? ' acked' : important ? ' important' : '')} aria-labelledby={'ho-' + b.resident.id}>
       <div className="ho-head">
@@ -40,9 +72,9 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
         <div className="push">
           {canEdit && <button type="button" className="btn ghost" onClick={() => setEdit(true)}>{t(b.entry ? 'tasks.handover.entry.edit' : 'tasks.handover.entry.add')}</button>}
           {canAck && (
-            <button type="button" className={'btn' + (important && !acked ? ' primary' : '')} disabled={acked || pending} data-loading={pending || undefined}
-              onClick={() => call(acknowledgeAction, { ...target, residentId: b.resident.id })}>
-              {acked ? '✓ ' + t('tasks.handover.acked', { time: b.acked ?? '' }) : t(important ? 'tasks.handover.ackImportant' : 'tasks.handover.ack')}
+            <button type="button" className={'btn' + (important && !acked ? ' primary' : '')} disabled={acked || pending}
+              onClick={() => ack({ ...target, residentId: b.resident.id }, () => setMine(true))}>
+              {acked ? '✓ ' + t('tasks.handover.acked', { time: b.acked ?? hmNow() }) : t(important ? 'tasks.handover.ackImportant' : 'tasks.handover.ack')}
             </button>
           )}
         </div>
@@ -118,6 +150,9 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
 }) {
   const t = useT()
   const { pending, call } = useCall()
+  const scope = useContext(AckScope)
+  const { pending: allPending, ack } = useAck()
+  const allShown = allAcked || !!scope?.all
   const [submit, setSubmit] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [ai, setAi] = useState<{ id: string; text: string } | null>(null)
@@ -145,9 +180,9 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
         )}
         {canSubmit && !submitted && <button type="button" className="btn" onClick={() => setSubmit(true)}>{t('tasks.handover.submit.button')}</button>}
         {canAck && canAckAll && (
-          <button type="button" className="btn primary" disabled={pending || allAcked} data-loading={(pending && !confirming) || undefined}
-            onClick={() => (important.length ? setConfirming(true) : call(acknowledgeAction, { ...target, residentId: '' }))}>
-            {allAcked ? '✓ ' + t('tasks.handover.allAcked') : t('tasks.handover.ackAll')}
+          <button type="button" className="btn primary" disabled={pending || allPending || allShown} data-loading={(pending && !confirming) || undefined}
+            onClick={() => (important.length ? setConfirming(true) : ack({ ...target, residentId: '' }, () => scope?.markAll()))}>
+            {allShown ? '✓ ' + t('tasks.handover.allAcked') : t('tasks.handover.ackAll')}
           </button>
         )}
       </div>

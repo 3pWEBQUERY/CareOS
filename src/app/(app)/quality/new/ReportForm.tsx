@@ -2,8 +2,11 @@
 
 import { useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { useT } from '@/i18n/client'
+import { useLocale, useT } from '@/i18n/client'
+import { formatDateTime } from '@/lib/date-input'
+import { onRadioKeys } from '@/components/ui/radio'
 import { reportIncidentAction } from '../actions'
+import { DateTimeField } from '@/components/ui/DateTimeField'
 
 type Step = { key: string; title: string; offsetMin: number }
 type TypeOpt = { id: string; key: string; name: string; steps: Step[] }
@@ -29,6 +32,7 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
   defaultResidentId: string
 }) {
   const t = useT()
+  const locale = useLocale()
   const router = useRouter()
   const ref = useRef<HTMLFormElement>(null)
   const details = useRef<HTMLDetailsElement>(null)
@@ -54,9 +58,7 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
   const offset = (min: number) => (min < 60 ? `+${min} ${t('common.minutes')}` : `+${Math.round(min / 60)} h`)
   const whenLabel = (() => {
     if (when === now) return nowLabel
-    const [d = '', tm = ''] = when.split('T')
-    const [y, m, dd] = d.split('-')
-    return y ? `${dd}.${m}.${y} ${tm}` : '–'
+    return formatDateTime(when, locale) || '–'
   })()
   const invalid = (f: string) => error?.field === f || undefined
 
@@ -91,7 +93,7 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
         <fieldset className="q-sec">
           <legend className="lbl">{t('quality.fields.type')}</legend>
           <input type="hidden" name="typeId" value={typeId} />
-          <div className="chips q-types" role="radiogroup" aria-label={t('quality.fields.type')} aria-invalid={invalid('typeId')} aria-describedby={invalid('typeId') ? 'q-err' : undefined}>
+          <div className="chips q-types" role="radiogroup" aria-label={t('quality.fields.type')} aria-invalid={invalid('typeId')} aria-describedby={invalid('typeId') ? 'q-err' : undefined} onKeyDown={onRadioKeys}>
             {types.map((x, i) => (
               <button
                 key={x.id}
@@ -99,7 +101,6 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
                 role="radio"
                 data-field={i === 0 ? 'typeId' : undefined}
                 aria-checked={typeId === x.id}
-                aria-pressed={typeId === x.id}
                 className="chip"
                 onClick={() => { setTypeId(x.id); if (error?.field === 'typeId') setError(null) }}
               >
@@ -136,9 +137,9 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
         <div className="fld">
           <span className="lbl" id="sev-l">{t('quality.fields.severity')}</span>
           <input type="hidden" name="severity" value={severity} />
-          <div className="seg q-sev" role="radiogroup" aria-labelledby="sev-l" aria-describedby="sev-h">
+          <div className="seg q-sev" role="radiogroup" aria-labelledby="sev-l" aria-describedby="sev-h" onKeyDown={onRadioKeys}>
             {SEVERITIES.map((s) => (
-              <button key={s} type="button" role="radio" aria-checked={severity === s} aria-pressed={severity === s} onClick={() => setSeverity(s)}>
+              <button key={s} type="button" role="radio" aria-checked={severity === s} onClick={() => setSeverity(s)}>
                 {t('quality.severity.' + s)}
               </button>
             ))}
@@ -167,7 +168,7 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
           <div className="form-grid q-details-body">
             <label className="fld">
               <span className="lbl">{t('quality.fields.occurredAt')}</span>
-              <input className="field mono" type="datetime-local" name="occurredAt" value={when} onChange={(e) => setWhen(e.target.value)} max={now.slice(0, 10) + 'T23:59'} required aria-invalid={invalid('occurredAt')} aria-describedby={invalid('occurredAt') ? 'q-err' : undefined} />
+              <DateTimeField name="occurredAt" value={when} onChange={setWhen} max={now.slice(0, 10) + 'T23:59'} required aria-invalid={invalid('occurredAt')} aria-describedby={invalid('occurredAt') ? 'q-err' : undefined} />
             </label>
             <label className="fld">
               <span className="lbl">{t('quality.fields.place')}</span>

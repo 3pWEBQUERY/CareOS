@@ -18,6 +18,7 @@ export const PERMISSIONS = {
   'resident.medication.administer': 'Medikamente abgeben',
   'resident.medication.edit': 'Verordnungen erfassen und ändern',
   'resident.medication.doublecheck': 'Vier-Augen-Kontrolle',
+  'resident.visit.conduct': 'Visite dokumentieren (ärztliche Anordnungen erfassen)',
   'task.read': 'Aufgaben sehen',
   'task.complete': 'Aufgaben quittieren',
   'task.manage': 'Aufgaben erstellen und zuweisen',
@@ -67,7 +68,7 @@ const CARE_ASSIST: Permission[] = [
 const CARE_NURSE: Permission[] = [
   ...CARE_ASSIST,
   'resident.careplan.edit', 'resident.assessment.write', 'resident.wounds.write',
-  'resident.medication.read', 'resident.medication.administer', 'resident.medication.doublecheck',
+  'resident.medication.read', 'resident.medication.administer', 'resident.medication.doublecheck', 'resident.visit.conduct',
   'task.manage', 'handover.write', 'chat.clinical', 'ai.use',
 ]
 const LEAD: Permission[] = [
@@ -83,7 +84,7 @@ export const DEFAULT_ROLES: { key: string; name: string; permissions: Permission
   { key: 'specialist', name: 'Fachverantwortung', permissions: [...CARE_NURSE, 'resident.careplan.approve', 'resident.chart.correct', 'docs.manage', 'learn.manage'] },
   { key: 'ward_lead', name: 'Stationsleitung', permissions: LEAD },
   { key: 'nursing_director', name: 'Pflegedienstleitung', permissions: [...LEAD, 'team.moderate', 'docs.manage', 'docs.approve', 'learn.manage', 'admin.audit'] },
-  { key: 'physician', name: 'Arzt/Ärztin', permissions: [...BASE, 'resident.read', 'resident.chart.write', 'resident.medication.read', 'resident.medication.edit', 'resident.careplan.approve', 'handover.read', 'chat.clinical'] },
+  { key: 'physician', name: 'Arzt/Ärztin', permissions: [...BASE, 'resident.read', 'resident.chart.write', 'resident.medication.read', 'resident.medication.edit', 'resident.careplan.approve', 'resident.visit.conduct', 'handover.read', 'chat.clinical'] },
   { key: 'therapy', name: 'Therapie', permissions: [...BASE, 'resident.read', 'resident.chart.write', 'resident.assessment.write', 'task.read', 'task.complete'] },
   { key: 'administration', name: 'Administration', permissions: [...BASE, 'resident.create', 'resident.edit', 'team.post'] },
   { key: 'hr', name: 'HR', permissions: [...BASE, 'schedule.manage', 'learn.manage', 'team.post', 'admin.users', 'insights.view'] },

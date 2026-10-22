@@ -44,6 +44,18 @@ export function Dialog({ open, onClose, title, children, footer, wide, context }
       if (el.isConnected) el.focus()
     }
   }, [open])
+  // Viele Aufrufer rendern den Dialog nur solange er offen ist ({x && <Dialog open …/>}): dann schliesst er durch
+  // Entfernen, nicht über open=false. Auch in diesem Fall den Fokus an den Auslöser zurückgeben (WCAG 2.4.3).
+  // Nur bei echtem Entfernen (Dialog nicht mehr im DOM) – nicht beim doppelten Effekt-Durchlauf im StrictMode.
+  useEffect(() => {
+    const d = ref.current
+    return () => {
+      if (!d || d.isConnected) return
+      const el = opener.current
+      opener.current = null
+      if (el?.isConnected && el !== document.body) el.focus()
+    }
+  }, [])
   return (
     <dialog
       ref={ref}

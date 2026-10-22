@@ -8,6 +8,7 @@ import { ActionForm } from '@/components/ui/ActionForm'
 import { saveOrderAction, stopOrderAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { ResidentContext } from './shared'
 import type { ResidentCtxDto } from './types'
+import { DateField } from '@/components/ui/DateField'
 
 export type OrderDto = {
   id: string
@@ -240,12 +241,12 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
         <div className="form-grid">
           <label className="fld">
             <span className="lbl">{t('meds.orders.start')}</span>
-            <input className="field" type="date" name="startDate" defaultValue={order ? todayKey : todayKey} min={order ? todayKey : undefined} />
+            <DateField name="startDate" defaultValue={todayKey} min={order ? todayKey : undefined} />
             {order && <span className="hint">{t('meds.orders.startEditHint')}</span>}
           </label>
           <label className="fld">
             <span className="lbl">{t('meds.orders.end')}{kind !== 'temporary' && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</span>
-            <input className="field" type="date" name="endDate" defaultValue={order?.endKey ?? ''} required={kind === 'temporary'} />
+            <DateField name="endDate" defaultValue={order?.endKey ?? ''} required={kind === 'temporary'} />
           </label>
           <label className="fld">
             <span className="lbl">{t('meds.orders.prescriber')}</span>

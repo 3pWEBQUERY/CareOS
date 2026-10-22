@@ -159,7 +159,7 @@ export function median(values: number[]) {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
 }
 
-/** Datum/Zeit für <input type="datetime-local"> in Stationszeit. */
+/** Datum/Zeit im Format YYYY-MM-DDTHH:MM (DateTimeField) in Stationszeit. */
 export function toLocalInput(d: Date) {
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`
