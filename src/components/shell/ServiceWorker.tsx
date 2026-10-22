@@ -26,7 +26,17 @@ export function ServiceWorker() {
       if ((e.data as { type?: string })?.type === 'navigate' && href && new URL(href).origin === location.origin) location.href = href
     }
     navigator.serviceWorker.addEventListener('message', onMsg)
-    const off = () => navigator.serviceWorker.removeEventListener('message', onMsg)
+    // Neue Version übernommen (skipWaiting): die App informiert und bietet «Neu laden» an.
+    let hadController = !!navigator.serviceWorker.controller
+    const onChange = () => {
+      if (hadController) window.dispatchEvent(new Event('careos:sw-updated'))
+      hadController = true
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', onChange)
+    const off = () => {
+      navigator.serviceWorker.removeEventListener('message', onMsg)
+      navigator.serviceWorker.removeEventListener('controllerchange', onChange)
+    }
     if (DEV) {
       const q = new URLSearchParams(location.search).get('sw')
       try {

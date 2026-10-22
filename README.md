@@ -39,6 +39,9 @@ Architektur und Konventionen: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Deployment auf Railway
 
+Schritt-für-Schritt-Anleitung mit Variablen-Generator: [`docs/RAILWAY.md`](docs/RAILWAY.md) (`npm run railway:env`).
+
+
 1. **Projekt anlegen:** In Railway „New Project → Deploy from GitHub repo“ und dieses Repository wählen. `railway.json` setzt Build, Migration vor dem Deploy (`prisma migrate deploy`), Start und Health Check (`/api/health`).
 2. **Postgres hinzufügen:** „+ New → Database → PostgreSQL“.
 3. **Bucket hinzufügen:** „+ New → Bucket“ (Railway Storage Bucket). Den Dienst z. B. `Bucket` nennen.
@@ -79,6 +82,10 @@ Architektur und Konventionen: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | `admin@lindenhof.ch` | Systemadministration |
 
 Alle Personen und Werte der Demodaten sind erfunden. Passwörter nach dem ersten Login ändern.
+
+## Als App (PWA)
+
+CareOS ist eine installierbare Web-App: Manifest mit Icons (inkl. maskable/monochrome), Verknüpfungen (Aufgaben, Übergabe, Dokumentieren, Medikamentenrunde), Screenshots für den Installationsdialog, Service Worker mit Offline-Ansicht, Push-Benachrichtigungen und Update-Hinweis. Installation über *Mehr* oder *Profil* → **App installieren**; auf iPhone/iPad über *Teilen → Zum Home-Bildschirm*. Voraussetzung ist HTTPS (auf Railway automatisch).
 
 ## Lokale Entwicklung
 

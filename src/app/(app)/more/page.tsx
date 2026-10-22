@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { InstallApp } from '@/components/shell/InstallApp'
 import { getCtx } from '@/lib/context'
 import { SignOutForm } from '@/components/shell/SignOutForm'
 
@@ -26,6 +27,7 @@ export default async function MorePage() {
         <nav className="more-grid" aria-label={t('nav.more')}>
           {items.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
         </nav>
+        <InstallApp />
         <SignOutForm className="btn block" label={t('common.signOut')} />
       </div>
     </main>

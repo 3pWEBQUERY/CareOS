@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+// Erzeugt den Variablenblock für den CareOS-Service auf Railway (Raw Editor → einfügen).
+// Neue Geheimnisse (APP_SECRET, VAPID-Schlüssel) werden bei jedem Aufruf frisch erzeugt.
+// Aufruf: node scripts/railway-env.mjs [--demo] [--admin=mail@example.ch] [--org="Alterszentrum Muster"]
+import { randomBytes } from 'node:crypto'
+import webpush from 'web-push'
+
+const args = Object.fromEntries(process.argv.slice(2).map((a) => {
+  const [k, ...v] = a.replace(/^--/, '').split('=')
+  return [k, v.length ? v.join('=') : true]
+}))
+const vapid = webpush.generateVAPIDKeys()
+const lines = [
+  '# Datenbank (Railway Postgres)',
+  'DATABASE_URL=${{Postgres.DATABASE_URL}}',
+  '',
+  '# Railway Bucket – Dienstname "Bucket" anpassen, falls anders benannt',
+  'BUCKET=${{Bucket.BUCKET}}',
+  'ENDPOINT=${{Bucket.ENDPOINT}}',
+  'REGION=${{Bucket.REGION}}',
+  'ACCESS_KEY_ID=${{Bucket.ACCESS_KEY_ID}}',
+  'SECRET_ACCESS_KEY=${{Bucket.SECRET_ACCESS_KEY}}',
+  'S3_FORCE_PATH_STYLE=true',
+  '',
+  '# Anwendung',
+  'APP_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}',
+  'TZ=Europe/Zurich',
+  'SESSION_HOURS=12',
+  `APP_SECRET=${randomBytes(32).toString('hex')}`,
+  '',
+  '# Web Push',
+  `VAPID_PUBLIC_KEY=${vapid.publicKey}`,
+  `VAPID_PRIVATE_KEY=${vapid.privateKey}`,
+  `VAPID_SUBJECT=mailto:${args.admin && args.admin !== true ? args.admin : 'it@example.ch'}`,
+  '',
+]
+if (args.demo) {
+  lines.push('# Demodaten "Haus Lindenhof" beim ersten Start (nur Test/Pilot)', 'SEED_DEMO=true', '')
+} else {
+  lines.push(
+    '# Erststart: Organisation und Systemadministration anlegen (danach INIT_ADMIN_PASSWORD entfernen)',
+    `INIT_ORG_NAME=${args.org && args.org !== true ? args.org : 'Meine Organisation'}`,
+    `INIT_ADMIN_EMAIL=${args.admin && args.admin !== true ? args.admin : 'admin@example.ch'}`,
+    `INIT_ADMIN_PASSWORD=${randomBytes(12).toString('base64url')}`,
+    '',
+  )
+}
+lines.push('# Optional: CareOS AI', '# ANTHROPIC_API_KEY=', '# AI_MODEL=claude-opus-5-5', '', '# Optional: Single Sign-on (OpenID Connect)', '# OIDC_ISSUER=', '# OIDC_CLIENT_ID=', '# OIDC_CLIENT_SECRET=', '# OIDC_LABEL=Mit Microsoft anmelden')
+console.log(lines.join('\n'))

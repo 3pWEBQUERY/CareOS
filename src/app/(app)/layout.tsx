@@ -5,6 +5,7 @@ import { dictionary } from '@/i18n'
 import { I18nProvider } from '@/i18n/client'
 import { Brand } from '@/components/Brand'
 import { Toaster } from '@/components/toast'
+import { SwUpdateNotice } from '@/components/shell/SwUpdateNotice'
 import { ThemeToggle } from '@/components/shell/ThemeToggle'
 import { Clock } from '@/components/shell/Clock'
 import { UnitSwitcher } from '@/components/shell/UnitSwitcher'
@@ -111,6 +112,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
       <BottomNav items={nav} more={more} moreLabel={t('nav.more')} quick={<QuickActions canIncident={ctx.can('quality.report')} canTask={ctx.can('task.manage')} />} />
       <Toaster />
+      <SwUpdateNotice />
       <LiveUpdates userId={user.id} />
     </I18nProvider>
   )

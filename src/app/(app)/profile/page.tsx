@@ -10,6 +10,7 @@ import { ActBtn } from '@/components/admin/ui'
 import { Empty } from '@/components/ui/Empty'
 import { MfaSetupBanner } from './MfaSetupBanner'
 import { PushSection } from './PushSection'
+import { InstallApp } from '@/components/shell/InstallApp'
 import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, ThemeChooser } from './ProfileClient'
 import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updatePhoneAction } from './actions'
 
@@ -95,6 +96,7 @@ export default async function ProfilePage() {
             </section>
           </div>
 
+          <InstallApp />
           <PushSection />
 
           <h2 className="sec">{t('profile.security')}</h2>

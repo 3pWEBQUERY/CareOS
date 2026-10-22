@@ -3,7 +3,7 @@
 // - Navigation ohne Verbindung: /offline (liest den verschlüsselten Lesestand im Browser), zuletzt /offline.html.
 // - Gesundheitsdaten (angemeldete HTML-Seiten, API-Antworten) werden bewusst NICHT zwischengespeichert.
 // - Web Push: Anzeige der Benachrichtigung (Inhalt ohne Gesundheitsdaten) und Öffnen des Links.
-const VERSION = 'v2'
+const VERSION = 'v3'
 const STATIC = 'careos-static-' + VERSION
 const OFFLINE = 'careos-offline-' + VERSION
 const OFFLINE_PAGE = '/offline'
@@ -27,7 +27,7 @@ self.addEventListener('install', (e) => {
   if (LITE) return self.skipWaiting()
   e.waitUntil(
     caches.open(STATIC)
-      .then((c) => c.addAll([OFFLINE_HTML, '/icon.svg', '/manifest.webmanifest']))
+      .then((c) => c.addAll([OFFLINE_HTML, '/icon.svg', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/maskable-512.png', '/icons/monochrome-512.png']))
       .then(() => precacheOffline().then(() => (lastPrecache = Date.now())).catch(() => {})),
   )
   self.skipWaiting()
@@ -51,7 +51,7 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (url.origin !== location.origin) return
-  if (url.pathname.startsWith('/_next/static/')) {
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')) {
     e.respondWith(
       caches.match(req).then((hit) => hit || fetch(req).then((res) => {
         if (res.ok) { const copy = res.clone(); caches.open(STATIC).then((c) => c.put(req, copy)) }
@@ -76,8 +76,8 @@ self.addEventListener('push', (e) => {
   e.waitUntil(
     self.registration.showNotification(d.title || 'CareOS', {
       body: d.body || '',
-      icon: '/icon.svg',
-      badge: '/icon.svg',
+      icon: '/icons/icon-192.png',
+      badge: '/icons/monochrome-512.png',
       tag: d.tag || undefined,
       renotify: !!d.tag && critical,
       requireInteraction: critical,

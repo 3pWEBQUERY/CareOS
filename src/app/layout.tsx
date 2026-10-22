@@ -14,12 +14,23 @@ import '@fontsource/ibm-plex-mono/latin-400.css'
 import '@fontsource/ibm-plex-mono/latin-500.css'
 import './globals.css'
 import { ServiceWorker } from '@/components/shell/ServiceWorker'
+import { InstallCapture } from '@/components/shell/InstallApp'
 
 export const metadata: Metadata = {
   title: { default: 'CareOS', template: '%s · CareOS' },
   description: 'Die Arbeitsplattform für Pflegeorganisationen',
+  applicationName: 'CareOS',
   manifest: '/manifest.webmanifest',
-  icons: { icon: '/icon.svg' },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  appleWebApp: { capable: true, title: 'CareOS', statusBarStyle: 'default' },
+  formatDetection: { telephone: false },
+  other: { 'mobile-web-app-capable': 'yes' },
   robots: { index: false, follow: false },
 }
 
@@ -43,6 +54,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         {children}
         <ServiceWorker />
+        <InstallCapture />
       </body>
     </html>
   )
