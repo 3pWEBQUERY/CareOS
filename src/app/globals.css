@@ -1,0 +1,2090 @@
+/*
+ * CareOS Design System – "Clinical Calm"
+ * Grundlage: Stationsarbeitsplatz-Entwurf. Flach, 1px Linien, 5px Radius, IBM Plex.
+ * Hell ist Standard. Dunkel über data-theme="dark" oder data-theme="system" + Systemeinstellung.
+ */
+
+:root {
+  --bg: #EEF1F2; --surface: #FFFFFF; --surface-2: #F5F7F8; --sunken: #E5EAEC;
+  --line: #D5DCDF; --line-strong: #B2BEC4;
+  /* --line-ui: Rahmen von Eingabefeldern/Checkboxen (≥ 3:1, WCAG 1.4.11); --on-solid: Text auf --crit/--ok/--warn-Flächen */
+  --line-ui: #7E8C94; --on-solid: #FFFFFF;
+  /* --fg-3 abgedunkelt (vorher #6C7B84): ≥ 4.5:1 auf allen Flächen inkl. *-soft */
+  --fg: #13202A; --fg-2: #45555E; --fg-3: #59686F;
+  --accent: #0B5F74; --accent-hover: #084C5D; --accent-fg: #FFFFFF; --accent-soft: #DCEBEF;
+  --ok: #2A7849; --ok-soft: #DFEEE4;
+  --warn: #94570A; --warn-soft: #F8EAD4;
+  --crit: #AE261E; --crit-soft: #F7DFDC;
+  --violet: #5546A0; --violet-soft: #E8E5F5;
+  --scrim: rgba(19, 32, 42, .42);
+  --shadow-pop: 0 8px 24px rgba(19, 32, 42, .12);
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --r: 5px; --r-sm: 3px;
+  --rail-w: 4.75rem; --list-w: 17.25rem;
+  --bottom-nav-h: 0px;
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0D1317; --surface: #141C21; --surface-2: #182228; --sunken: #0F171B;
+  --line: #26323A; --line-strong: #3A4852;
+  --line-ui: #647480; --on-solid: #0D1317;
+  --fg: #E3EAED; --fg-2: #A8B5BC; --fg-3: #8B9AA2;
+  --accent: #5DB3C8; --accent-hover: #7CC4D6; --accent-fg: #06202A; --accent-soft: #15343E;
+  --ok: #6BBF8C; --ok-soft: #14301F;
+  --warn: #E0A24C; --warn-soft: #3A2911;
+  --crit: #F07B70; --crit-soft: #3E1A17;
+  --violet: #AA9DF0; --violet-soft: #252040;
+  --scrim: rgba(0, 0, 0, .6);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, .45);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --bg: #0D1317; --surface: #141C21; --surface-2: #182228; --sunken: #0F171B;
+    --line: #26323A; --line-strong: #3A4852;
+    --line-ui: #647480; --on-solid: #0D1317;
+    --fg: #E3EAED; --fg-2: #A8B5BC; --fg-3: #8B9AA2;
+    --accent: #5DB3C8; --accent-hover: #7CC4D6; --accent-fg: #06202A; --accent-soft: #15343E;
+    --ok: #6BBF8C; --ok-soft: #14301F;
+    --warn: #E0A24C; --warn-soft: #3A2911;
+    --crit: #F07B70; --crit-soft: #3E1A17;
+    --violet: #AA9DF0; --violet-soft: #252040;
+    --scrim: rgba(0, 0, 0, .6);
+    --shadow-pop: 0 8px 24px rgba(0, 0, 0, .45);
+    color-scheme: dark;
+  }
+}
+
+/* ───────── Basis ───────── */
+*, *::before, *::after { box-sizing: border-box }
+html, body { height: 100% }
+/* Schriftgrösse (Profil, pro Gerät). Alle Schriftgrössen sind in rem – die Browser-Einstellung wirkt zusätzlich. */
+:root[data-text="l"] { font-size: 112.5% }
+:root[data-text="xl"] { font-size: 125% }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font-family: var(--font-ui); font-size: 0.875rem; line-height: 1.45;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+img { max-width: 100% }
+button, input, select, textarea { font: inherit; color: inherit }
+button { cursor: pointer }
+a { color: var(--accent) }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+[hidden] { display: none !important }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums }
+.lbl { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3) }
+.muted { color: var(--fg-3) }
+.fg2 { color: var(--fg-2) }
+.small { font-size: 0.75rem }
+.crit-text { color: var(--crit) }
+.warn-text { color: var(--warn) }
+.ok-text { color: var(--ok) }
+.nowrap { white-space: nowrap }
+.ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0 }
+.skip { position: absolute; left: 12px; top: -60px; z-index: 100; background: var(--accent); color: var(--accent-fg); padding: 8px 12px; border-radius: var(--r) }
+.skip:focus { top: 12px }
+.stack { display: flex; flex-direction: column; gap: 16px }
+.stack-sm { display: flex; flex-direction: column; gap: 8px }
+.row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.grow { flex: 1; min-width: 0 }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 16px; align-items: start }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; align-items: start }
+
+/* ───────── Shell ───────── */
+.app {
+  display: grid; height: 100%; gap: 10px;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  padding-block: 10px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); min-height: 0; min-width: 0; display: flex; flex-direction: column }
+.workspace { display: grid; grid-template-columns: var(--list-w) minmax(0, 1fr); gap: 10px; min-height: 0; min-width: 0 }
+.content { min-height: 0; min-width: 0; display: flex; flex-direction: column }
+
+/* Topbar */
+.topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 12px; position: relative }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; color: var(--fg); text-decoration: none }
+.brand svg { flex: none }
+.brand b { font-weight: 600; color: var(--accent) }
+.ctx { display: flex; flex-direction: column; line-height: 1.2; padding-left: 14px; border-left: 1px solid var(--line); min-width: 0 }
+.ctx strong { font-weight: 500 }
+.ctx span, .ctx strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.ctx span { font-size: 0.75rem; color: var(--fg-3) }
+.ctx select { border: 0; background: none; padding: 0; font-weight: 500; max-width: 280px; cursor: pointer }
+.search-btn { margin-left: auto; display: flex; align-items: center; gap: 10px; min-width: 220px; flex: 0 1 300px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r); padding: 6px 8px 6px 10px; color: var(--fg-3); text-align: left }
+.search-btn:hover { border-color: var(--line-strong) }
+.search-btn span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+kbd { font-family: var(--font-mono); font-size: 0.6875rem; border: 1px solid var(--line-strong); border-radius: var(--r-sm); padding: 0 5px; color: var(--fg-2); background: var(--surface) }
+.shift { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; white-space: nowrap }
+.shift .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok) }
+.clock { font-size: 0.8125rem; color: var(--fg-2); white-space: nowrap }
+.demo { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--warn); background: var(--warn-soft); border-radius: var(--r-sm); padding: 2px 6px; white-space: nowrap }
+.icon-btn { position: relative; width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--r); background: none; color: var(--fg-2); padding: 0 }
+.icon-btn:hover { background: var(--surface-2); border-color: var(--line) }
+.icon-btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent) }
+.icon-btn .count { position: absolute; top: 1px; right: 0; font-family: var(--font-mono); font-size: 0.625rem; line-height: 1; padding: 2px 4px; border-radius: var(--r-sm); background: var(--crit); color: var(--on-solid) }
+.icon-btn .count.info { background: var(--accent); color: var(--accent-fg) }
+.me { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; background: none; border: 1px solid transparent; border-radius: var(--r); padding: 2px 6px 2px 2px; text-align: left; color: inherit; text-decoration: none }
+.me:hover { background: var(--surface-2); border-color: var(--line) }
+.av { width: 28px; height: 28px; border-radius: var(--r); background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-weight: 600; font-size: 0.75rem; flex: none }
+.av.sm { width: 22px; height: 22px; font-size: 0.625rem; border-radius: var(--r-sm) }
+.av.muted { background: var(--sunken); color: var(--fg-2) }
+.me div { white-space: nowrap }
+.me small { display: block; color: var(--fg-3); font-size: 0.6875rem; line-height: 1.1 }
+
+/* Rail */
+.rail { padding: 6px 4px; gap: 4px; align-items: stretch; overflow-y: auto; scrollbar-width: none }
+.rail a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 7px; border: 1px solid transparent; border-radius: var(--r); background: none; color: var(--fg-2); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0; text-decoration: none; text-align: center; line-height: 1.15; position: relative; overflow-wrap: normal; hyphens: auto }
+.rail a:hover { background: var(--surface-2) }
+.rail a[aria-current="page"] { background: var(--accent-soft); color: var(--accent) }
+.rail .badge { position: absolute; top: 4px; right: 6px; font-family: var(--font-mono); font-size: 0.625rem; line-height: 1; padding: 2px 4px; border-radius: var(--r-sm); background: var(--crit); color: var(--on-solid) }
+.rail hr { border: 0; border-top: 1px solid var(--line); margin: 4px 6px; width: auto }
+
+/* Bottom-Navigation (Mobile) */
+.bottom-nav { display: none }
+
+/* ───────── Listen-Spalte (Bewohnende) ───────── */
+.list-head { padding: 10px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px }
+.list-head .row { justify-content: space-between; align-items: baseline }
+.field { width: 100%; background: var(--surface-2); border: 1px solid var(--line-ui); border-radius: var(--r); padding: 6px 9px; min-height: 34px }
+.field:hover { border-color: var(--fg-3) }
+.field:focus { outline: none; border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 1px var(--accent) }
+.field[aria-invalid="true"] { border-color: var(--crit) }
+.field[aria-invalid="true"]:focus { box-shadow: 0 0 0 1px var(--crit) }
+.field:disabled:hover { border-color: var(--line-ui) }
+.field:disabled { opacity: .6; cursor: not-allowed }
+textarea.field { resize: vertical; min-height: 84px; line-height: 1.5 }
+select.field { padding-right: 24px }
+.reslist { list-style: none; margin: 0; padding: 4px; overflow: auto; flex: 1; min-height: 0 }
+.res { width: 100%; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px; border: 1px solid transparent; border-radius: var(--r); background: none; text-align: left; color: inherit; text-decoration: none }
+.res:hover { background: var(--surface-2) }
+.res[aria-current="true"], .res[aria-current="page"] { background: var(--accent-soft); border-color: var(--accent-soft) }
+.res .room { font-family: var(--font-mono); font-size: 0.75rem; text-align: center; padding: 4px 0; border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--fg-2); background: var(--surface) }
+.res[aria-current] .room { border-color: var(--accent); color: var(--accent) }
+.res[aria-current="false"] .room { border-color: var(--line); color: var(--fg-2) }
+.res .nm { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.res .meta { font-size: 0.75rem; color: var(--fg-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.res .counts { display: flex; gap: 4px }
+.res .chg { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 6px; vertical-align: 2px }
+.pill { font-family: var(--font-mono); font-size: 0.6875rem; line-height: 1; padding: 3px 5px; border-radius: var(--r-sm); background: var(--sunken); color: var(--fg-2); font-variant-numeric: tabular-nums; white-space: nowrap }
+.pill.crit { background: var(--crit-soft); color: var(--crit) }
+.pill.warn { background: var(--warn-soft); color: var(--warn) }
+.pill.ok { background: var(--ok-soft); color: var(--ok) }
+.pill.accent { background: var(--accent-soft); color: var(--accent) }
+.list-foot { border-top: 1px solid var(--line); padding: 8px 10px; font-size: 0.75rem; color: var(--fg-3); display: flex; gap: 12px; flex-wrap: wrap }
+.list-foot i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; vertical-align: -1px; margin-right: 4px }
+
+/* ───────── Hauptbereich ───────── */
+.main { overflow: hidden }
+.scroll { overflow: auto; min-height: 0; flex: 1 }
+.banner { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: flex-start; padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--surface-2); border-radius: var(--r) var(--r) 0 0 }
+.banner h1 { margin: 0; font-size: 1.3125rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; text-wrap: balance }
+.banner h1 span { font-weight: 400; color: var(--fg-3) }
+.banner .who { display: flex; flex-direction: column; gap: 6px; min-width: 0 }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 22px }
+.fact { display: flex; flex-direction: column; gap: 1px; min-width: 0 }
+.fact .v { font-size: 0.8125rem }
+.flags { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; align-self: center }
+.flag { font-family: var(--font-cond); font-size: 0.75rem; font-weight: 600; letter-spacing: .02em; padding: 3px 8px; border-radius: var(--r-sm); border: 1px solid var(--line-strong); color: var(--fg-2); background: var(--surface); white-space: nowrap }
+.flag.crit { background: var(--crit-soft); border-color: var(--crit-soft); color: var(--crit) }
+.flag.warn { background: var(--warn-soft); border-color: var(--warn-soft); color: var(--warn) }
+.flag.info { background: var(--accent-soft); border-color: var(--accent-soft); color: var(--accent) }
+.flag.rea-no { border-color: var(--crit); color: var(--crit); background: var(--surface) }
+.flag.rea-yes { border-color: var(--ok); color: var(--ok); background: var(--surface) }
+
+.tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: thin; flex: none; position: relative }
+.tabs a, .tabs button { border: 0; background: none; padding: 10px 12px 9px; border-bottom: 2px solid transparent; color: var(--fg-2); font-weight: 500; white-space: nowrap; display: flex; gap: 6px; align-items: center; text-decoration: none }
+.tabs a:hover, .tabs button:hover { color: var(--fg) }
+.tabs [aria-selected="true"], .tabs [aria-current="page"] { color: var(--accent); border-bottom-color: var(--accent) }
+.tabpanel { padding: 16px 18px 24px; display: flex; flex-direction: column; gap: 16px }
+
+h2.sec { margin: 0; font-size: 0.9375rem; font-weight: 600 }
+h3.sub { margin: 0; font-size: 0.875rem; font-weight: 600 }
+.sec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap }
+.view-head { padding: 16px 18px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface-2); border-radius: var(--r) var(--r) 0 0; flex: none }
+.view-head h1 { margin: 0; font-size: 1.1875rem; font-weight: 600; letter-spacing: -.01em }
+.view-head .sub { margin: 2px 0 0; color: var(--fg-3); font-size: 0.8125rem }
+
+/* ───────── Buttons & Steuerelemente ───────── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r); padding: 6px 12px; font-weight: 500; color: var(--fg); text-decoration: none; min-height: 34px; white-space: nowrap }
+.btn:hover { background: var(--surface-2) }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg) }
+.btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover) }
+.btn.danger { border-color: var(--crit); color: var(--crit) }
+.btn.danger:hover { background: var(--crit-soft) }
+.btn.danger.solid { background: var(--crit); color: var(--on-solid) }
+.btn.ghost { border-color: transparent; background: none }
+.btn.ghost:hover { background: var(--surface-2) }
+.btn.sm { padding: 3px 9px; font-size: 0.8125rem; min-height: 28px }
+.btn.lg { padding: 10px 16px; min-height: 44px; font-size: 0.9375rem }
+.btn.block { width: 100% }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed }
+.btn[data-loading="true"] { cursor: progress } /* kein Ausgrauen: Text bleibt lesbar (Kontrast), Spinner zeigt den Zustand */
+.btn[data-loading="true"]::after { content: ""; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite }
+@keyframes spin { to { transform: rotate(360deg) } }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--r); overflow: hidden; flex-wrap: nowrap }
+.seg a, .seg button { border: 0; background: var(--surface); padding: 5px 11px; font-size: 0.8125rem; color: var(--fg-2); text-decoration: none; white-space: nowrap }
+.seg a + a, .seg button + button { border-left: 1px solid var(--line-strong) }
+.seg [aria-pressed="true"], .seg [aria-checked="true"], .seg [aria-current="page"] { background: var(--accent); color: var(--accent-fg) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-sm); padding: 3px 9px; font-size: 0.8125rem; color: var(--fg-2); text-decoration: none; white-space: nowrap }
+.chip:hover { border-color: var(--line-strong) }
+.chip[aria-pressed="true"], .chip[aria-checked="true"], .chip[aria-current="page"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft) }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 500; text-align: left; text-decoration: none }
+.linkbtn:hover { text-decoration: underline }
+.snip { border: 1px dashed var(--line-strong); background: none; border-radius: var(--r-sm); padding: 2px 7px; font-size: 0.75rem; color: var(--fg-2) }
+.snip:hover { border-style: solid; border-color: var(--accent); color: var(--accent) }
+.err { color: var(--crit); font-size: 0.8125rem }
+.okmsg { color: var(--ok); font-size: 0.8125rem }
+
+/* Formulare */
+.form { display: flex; flex-direction: column; gap: 14px }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; align-items: start }
+.form-grid .span-all { grid-column: 1 / -1 }
+.fld { display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.fld > .hint { font-size: 0.75rem; color: var(--fg-3) }
+.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 28px }
+.check input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0 }
+.form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.form-actions .spacer { flex: 1 }
+fieldset { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px 12px; margin: 0; min-width: 0 }
+legend { padding: 0 4px }
+
+/* Karten */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); min-width: 0 }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap }
+.card-head h2, .card-head h3 { margin: 0; font-size: 0.875rem; font-weight: 600 }
+.card-body { padding: 12px }
+.card-foot { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--surface-2); border-radius: 0 0 var(--r) var(--r) }
+.card.crit { border-color: var(--crit) }
+.card.warn { border-color: var(--warn) }
+.card.ok { border-color: var(--ok-soft) }
+
+/* Kennzahlen */
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden }
+.metric { padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; text-decoration: none; color: inherit }
+/* Trennlinien rechts/unten, der Container schneidet die äusseren ab – korrekt bei jedem Zeilenumbruch */
+.metric { box-shadow: 1px 0 0 var(--line), 0 1px 0 var(--line) }
+a.metric:focus-visible { outline-offset: -2px }
+a.metric:hover { background: var(--surface-2) }
+.metric .val { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 1.1 }
+.metric .val small { font-size: 0.8125rem; color: var(--fg-3); font-weight: 400 }
+.metric .val.crit { color: var(--crit) }
+.metric .val.warn { color: var(--warn) }
+.metric .val.ok { color: var(--ok) }
+.bar { height: 6px; background: var(--sunken); border-radius: 2px; overflow: hidden }
+.bar i { display: block; height: 100%; background: var(--accent) }
+.bar i.ok { background: var(--ok) }
+.bar i.warn { background: var(--warn) }
+.bar i.crit { background: var(--crit) }
+
+/* Timeline (Schicht / Tagesplan) */
+.timeline { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.trow { display: grid; grid-template-columns: 52px 28px minmax(0, 1fr) auto 58px; gap: 10px; align-items: center; padding: 8px 12px }
+.timeline > li + li { border-top: 1px solid var(--line) }
+.trow .t { font-size: 0.8125rem; color: var(--fg-2) }
+.trow .ttl { font-weight: 500 }
+.trow .ttl a { color: inherit; text-decoration: none }
+.trow .ttl a:hover { text-decoration: underline }
+.trow .sub { font-size: 0.75rem; color: var(--fg-3) }
+.trow .mins { font-size: 0.75rem; color: var(--fg-3); text-align: right }
+.trow.is-done .ttl { color: var(--fg-3); text-decoration: line-through; text-decoration-color: var(--line-strong) }
+.trow.is-over .t { color: var(--crit); font-weight: 500 }
+.trow.is-over .sub { color: var(--crit) }
+.trow.is-due .t { color: var(--warn); font-weight: 500 }
+.trow.is-skipped .ttl { color: var(--fg-3) }
+.chk { width: 24px; height: 24px; border: 1.5px solid var(--line-ui); border-radius: var(--r-sm); background: var(--surface); display: grid; place-items: center; padding: 0; color: transparent; flex: none }
+.chk:hover { border-color: var(--accent) }
+.chk[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: var(--on-solid) }
+.chk[data-state="partial"] { background: var(--warn-soft); border-color: var(--warn); color: var(--warn) }
+.chk[data-state="skipped"] { background: var(--sunken); border-color: var(--line-strong); color: var(--fg-3) }
+.trow.is-over .chk { border-color: var(--crit) }
+.tag { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: var(--r-sm); background: var(--sunken); color: var(--fg-2); white-space: nowrap; display: inline-block; line-height: 1.4 }
+.tag.accent { background: var(--accent-soft); color: var(--accent) }
+.tag.warn { background: var(--warn-soft); color: var(--warn) }
+.tag.crit { background: var(--crit-soft); color: var(--crit) }
+.tag.violet { background: var(--violet-soft); color: var(--violet) }
+.tag.ok { background: var(--ok-soft); color: var(--ok) }
+.tag.outline { background: none; border: 1px solid var(--line-strong) }
+.now { display: flex; align-items: center; gap: 10px; padding: 4px 12px; background: var(--accent-soft) }
+.now span { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); font-weight: 500 }
+.now i { flex: 1; height: 1px; background: var(--accent) }
+
+/* Ereignis-Zeitachse (Resident Timeline) */
+.events { list-style: none; margin: 0; padding: 0; position: relative }
+.event { display: grid; grid-template-columns: 64px 16px minmax(0, 1fr); gap: 10px; padding: 6px 0 }
+.event time { font-size: 0.75rem; color: var(--fg-2); text-align: right; padding-top: 1px }
+.event .dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line-strong); background: var(--surface); margin: 4px auto 0; position: relative; z-index: 1 }
+.event .dot.accent { border-color: var(--accent) }
+.event .dot.crit { border-color: var(--crit); background: var(--crit) }
+.event .dot.warn { border-color: var(--warn) }
+.event .dot.ok { border-color: var(--ok); background: var(--ok) }
+.event .dot.violet { border-color: var(--violet) }
+.events::before { content: ""; position: absolute; left: 81px; top: 10px; bottom: 10px; width: 1px; background: var(--line) }
+.event .body { min-width: 0 }
+.event .body p { margin: 2px 0 0; max-width: 72ch }
+.day-sep { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); padding: 10px 0 4px 90px }
+
+/* Verlauf / Pflegebericht */
+.entry { border: 1px solid var(--line-ui); border-radius: var(--r); display: flex; flex-direction: column; background: var(--surface) }
+.entry-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 8px 10px; border-bottom: 1px solid var(--line) }
+.entry-head select { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 4px 6px }
+.entry textarea { border: 0; resize: vertical; min-height: 84px; padding: 10px 12px; background: var(--surface); line-height: 1.5; width: 100% }
+.entry textarea:focus { outline: none }
+.entry:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) }
+.entry-foot { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-top: 1px solid var(--line); background: var(--surface-2); border-radius: 0 0 var(--r) var(--r); flex-wrap: wrap }
+.entry-foot .push { margin-left: auto; display: flex; gap: 8px }
+.notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.note { display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 14px; padding: 12px 0 }
+.note + .note { border-top: 1px solid var(--line) }
+.note time { font-size: 0.75rem; color: var(--fg-2); padding-top: 2px }
+.note .nh { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px }
+.note .au { font-size: 0.75rem; color: var(--fg-3) }
+.note p { margin: 0; max-width: 72ch; white-space: pre-wrap }
+.note.fresh { background: var(--accent-soft); padding-inline: 10px; border-radius: var(--r-sm) }
+.note.superseded p { color: var(--fg-3); text-decoration: line-through; text-decoration-color: var(--line-strong) }
+
+/* Tabellen */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); position: relative }
+/* position: relative hält absolut positionierte Kinder (.sr-only in Kopfzellen) im Scrollbereich – sonst entsteht auf Mobile eine Seitenscrollbar */
+.vt, .stable, .mar { width: 100%; border-collapse: collapse; font-size: 0.8125rem }
+.vt th, .vt td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap }
+.vt tr:last-child td, .vt tr:last-child th { border-bottom: 0 }
+.vt thead th, .stable thead th, .mar thead th { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); background: var(--surface-2); white-space: nowrap }
+.vt td.num, .stable td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums }
+.vt .hi, .vt .lo { color: var(--crit); font-weight: 500 }
+.vt .hi::after { content: " ▲"; font-size: 0.625rem }
+.vt .lo::after { content: " ▼"; font-size: 0.625rem }
+.stable th, .stable td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top }
+.stable tbody tr:last-child td, .stable tbody tr:last-child th { border-bottom: 0 }
+.stable tbody th { font-weight: 500 }
+.stable tr.over td:first-child { color: var(--crit); font-weight: 500 }
+.stable tr.clickable:hover td { background: var(--surface-2) }
+.stable td.right, .stable th.right { text-align: right }
+
+/* Charts */
+.charts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px }
+.chart { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px 6px; min-width: 0; background: var(--surface) }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px }
+.chart-head strong { font-weight: 500 }
+.chart-head .cur { font-family: var(--font-mono); font-size: 0.9375rem }
+.chart-head .cur.alarm { color: var(--crit) }
+.chart svg { display: block; width: 100%; height: auto; color: var(--fg-3) }
+.chart .band { fill: var(--ok-soft) }
+.chart .grid { stroke: var(--line); stroke-width: 1 }
+.chart .ax { fill: var(--fg-3); font-family: var(--font-mono); font-size: 0.625rem }
+.chart .s1 { stroke: var(--accent); fill: none; stroke-width: 1.75 }
+.chart .s2 { stroke: var(--fg-3); fill: none; stroke-width: 1.5; stroke-dasharray: 3 3 }
+.chart .p1 { fill: var(--surface); stroke: var(--accent); stroke-width: 1.5 }
+.chart .p2 { fill: var(--surface); stroke: var(--fg-3); stroke-width: 1.25 }
+.chart .pa { fill: var(--crit); stroke: var(--crit) }
+.chart .pend { fill: var(--accent) }
+.chart .barfill { fill: var(--accent) }
+.chart .barfill.muted { fill: var(--line-strong) }
+.chart .barfill.crit { fill: var(--crit) }
+.chart .target { stroke: var(--ok); stroke-width: 1.25; stroke-dasharray: 4 3 }
+.legend { display: flex; gap: 12px; font-size: 0.6875rem; color: var(--fg-3); padding-top: 2px; flex-wrap: wrap }
+.legend i { display: inline-block; width: 14px; height: 0; border-top: 2px solid var(--accent); vertical-align: 3px; margin-right: 4px }
+.legend i.d { border-top: 2px dashed var(--fg-3) }
+.legend i.b { height: 8px; border: 0; background: var(--ok-soft); vertical-align: -1px }
+.spark { display: block; width: 100%; height: 28px }
+.spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.5 }
+
+.vform { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; align-items: end; border: 1px solid var(--line); border-radius: var(--r); padding: 12px; background: var(--surface) }
+.vform label { display: flex; flex-direction: column; gap: 4px }
+.vform .field { font-family: var(--font-mono) }
+.vform .actions { display: flex; gap: 10px; align-items: center; grid-column: 1 / -1; flex-wrap: wrap }
+
+/* Medikation */
+.mar th, .mar td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: middle }
+.mar tbody tr:last-child th, .mar tbody tr:last-child td { border-bottom: 0 }
+.mar thead th .mono { display: block; font-family: var(--font-mono); letter-spacing: 0; text-transform: none; font-weight: 400; font-size: 0.75rem; color: var(--fg-2) }
+.mar thead th.slot, .mar td { text-align: center; width: 96px }
+.mar tbody th { font-weight: 400; min-width: 200px }
+.drug { font-weight: 500 }
+.drug-sub { font-size: 0.75rem; color: var(--fg-3) }
+.dose { width: 100%; min-width: 72px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r-sm); padding: 4px 4px 3px; display: flex; flex-direction: column; align-items: center; line-height: 1.2 }
+.dose b { font-family: var(--font-mono); font-weight: 500; font-size: 0.8125rem }
+.dose span { font-family: var(--font-mono); font-size: 0.625rem; color: var(--fg-3); min-height: 12px }
+.dose:hover { border-color: var(--accent) }
+.dose.given { background: var(--ok-soft); border-color: var(--ok-soft); color: var(--ok) }
+.dose.given span { color: var(--ok) }
+.dose.refused, .dose.omitted, .dose.held { background: var(--warn-soft); border-color: var(--warn-soft); color: var(--warn) }
+.dose.refused span, .dose.omitted span, .dose.held span { color: var(--warn) }
+.dose.over { border-color: var(--crit); color: var(--crit) }
+.dose:disabled { cursor: not-allowed }
+.nodose { color: var(--line-strong); font-family: var(--font-mono) }
+.mlegend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.75rem; color: var(--fg-3); align-items: center }
+.mlegend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; border: 1px solid var(--line-strong); vertical-align: -2px; margin-right: 5px }
+.mlegend i.g { background: var(--ok-soft); border-color: var(--ok) }
+.mlegend i.r { background: var(--warn-soft); border-color: var(--warn) }
+.mlegend i.o { border-color: var(--crit) }
+
+/* Medikamentenrunde: reduzierte, ablenkungsarme Ansicht */
+.round { max-width: 880px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 14px }
+.round-res { border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface) }
+.round-res > header { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); flex-wrap: wrap; border-radius: var(--r) var(--r) 0 0 }
+.round-res > header .room { font-family: var(--font-mono); font-size: 0.9375rem; border: 1px solid var(--accent); color: var(--accent); border-radius: var(--r-sm); padding: 2px 8px; background: var(--surface) }
+.round-res > header h2 { margin: 0; font-size: 1.125rem; font-weight: 600 }
+.round-line { display: grid; grid-template-columns: minmax(0, 1fr) 90px 70px auto; gap: 12px; align-items: center; padding: 12px 14px }
+.round-line + .round-line { border-top: 1px solid var(--line) }
+.round-line .dosev { font-family: var(--font-mono); font-size: 1.0625rem; font-weight: 500 }
+
+/* Übergabe */
+.ho { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.ho.acked { border-color: var(--ok-soft) }
+.ho.important { border-color: var(--warn) }
+.ho-head { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap }
+.ho.acked .ho-head { background: var(--ok-soft) }
+.ho-head .room, .roomtag { font-family: var(--font-mono); font-size: 0.75rem; color: var(--fg-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 1px 6px; background: var(--surface) }
+.ho-head strong { font-weight: 600 }
+.ho-head .push { margin-left: auto; display: flex; gap: 8px; align-items: center }
+.ho-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) }
+.ho-col { padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; min-width: 0 }
+.ho-col + .ho-col { border-left: 1px solid var(--line) }
+.ho-col ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: 0.8125rem }
+.ho-col li.c { color: var(--crit) }
+.ho-col li.w { color: var(--warn) }
+.ho-col .none { font-size: 0.8125rem; color: var(--fg-3) }
+.ho-list { display: flex; flex-direction: column; gap: 10px }
+.ho-foot { padding: 8px 12px; border-top: 1px solid var(--line); background: var(--surface-2); border-radius: 0 0 var(--r) var(--r) }
+
+/* Listen */
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.list > li + li { border-top: 1px solid var(--line) }
+.li { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; color: inherit; text-decoration: none; min-width: 0 }
+a.li:hover, button.li:hover { background: var(--surface-2) }
+button.li { width: 100%; border: 0; background: none; text-align: left }
+.li .grow > :first-child { font-weight: 500 }
+.li.unread .grow > :first-child::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 7px; vertical-align: 1px }
+
+/* Definitionen */
+.kv { display: grid; grid-template-columns: minmax(110px, max-content) minmax(0, 1fr); gap: 6px 16px; margin: 0; font-size: 0.8125rem }
+.kv dt { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); padding-top: 2px }
+.kv dd { margin: 0; min-width: 0 }
+
+/* Alerts */
+.alert { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r); border: 1px solid var(--line); background: var(--surface-2); font-size: 0.8125rem }
+.alert.crit { border-color: var(--crit); background: var(--crit-soft); color: var(--crit) }
+.alert.warn { border-color: var(--warn-soft); background: var(--warn-soft); color: var(--warn) }
+.alert.info { border-color: var(--accent-soft); background: var(--accent-soft); color: var(--accent) }
+.alert.ok { border-color: var(--ok-soft); background: var(--ok-soft); color: var(--ok) }
+.alert .grow > strong { display: block; margin-bottom: 1px }
+.alert .fg { color: var(--fg) }
+
+/* KI-Kennzeichnung (PRD §23.2) */
+.ai-box { border: 1px solid var(--violet); border-radius: var(--r); background: var(--violet-soft); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px }
+.ai-box .ai-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--violet); font-size: 0.75rem }
+.ai-box .ai-text { white-space: pre-wrap; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; line-height: 1.5 }
+
+/* Schritte (Planungsfluss, Ereignis-Workflow) */
+.steps { display: flex; list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); overflow-x: auto; background: var(--surface); position: relative }
+.steps li { flex: 1; min-width: 110px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 0.8125rem; color: var(--fg-3) }
+.steps li + li { border-left: 1px solid var(--line) }
+.steps li .n { font-family: var(--font-mono); font-size: 0.6875rem }
+.steps li[data-state="done"] { color: var(--ok) }
+.steps li[data-state="current"] { background: var(--accent-soft); color: var(--accent); font-weight: 500 }
+.steps a { color: inherit; text-decoration: none }
+
+/* Leerzustände, Skeleton */
+.empty { border: 1px dashed var(--line-strong); border-radius: var(--r); padding: 22px 16px; text-align: center; color: var(--fg-3); display: flex; flex-direction: column; gap: 8px; align-items: center }
+.empty strong { color: var(--fg-2); font-weight: 500 }
+.skel { background: linear-gradient(90deg, var(--sunken), var(--surface-2), var(--sunken)); background-size: 200% 100%; border-radius: var(--r-sm); min-height: 14px }
+@media (prefers-reduced-motion: no-preference) { .skel { animation: skel 1.4s ease-in-out infinite } }
+@keyframes skel { from { background-position: 200% 0 } to { background-position: -200% 0 } }
+
+/* Palette, Dialoge, Popover, Toast */
+.scrim { position: fixed; inset: 0; background: var(--scrim); display: flex; justify-content: center; align-items: flex-start; padding: 12vh max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); z-index: 50 }
+.pal { width: min(560px, 100%); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); display: flex; flex-direction: column; max-height: 70vh; box-shadow: var(--shadow-pop) }
+.pal input { border: 0; border-bottom: 1px solid var(--line); padding: 14px 16px; font-size: 1rem; background: none; border-radius: var(--r) var(--r) 0 0 }
+.pal input:focus { outline: none }
+.pal ul { list-style: none; margin: 0; padding: 6px; overflow: auto }
+.pal li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer }
+.pal li[aria-selected="true"] { background: var(--accent-soft); color: var(--accent) }
+.pal li .k { font-size: 0.75rem; color: var(--fg-3) }
+.pal li .grp { font-family: var(--font-cond); font-size: 0.6875rem; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); white-space: nowrap }
+.pal .palfoot { border-top: 1px solid var(--line); padding: 7px 12px; font-size: 0.75rem; color: var(--fg-3) }
+dialog.dlg { border: 1px solid var(--line-strong); border-radius: var(--r); padding: 0; background: var(--surface); color: var(--fg); width: min(560px, calc(100% - 32px)); max-height: calc(100% - 48px); box-shadow: var(--shadow-pop) }
+dialog.dlg.wide { width: min(820px, calc(100% - 32px)) }
+dialog.dlg::backdrop { background: var(--scrim) }
+.dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2) }
+.dlg-head h2 { margin: 0; font-size: 1rem; font-weight: 600 }
+.dlg-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; overflow: auto }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--surface-2); flex-wrap: wrap }
+.dlg-context { display: flex; gap: 10px; align-items: center; padding: 8px 12px; border: 1px solid var(--accent); border-radius: var(--r); background: var(--accent-soft); color: var(--accent); font-size: 0.8125rem }
+.popover { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; width: min(400px, calc(100vw - 32px)); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; max-height: 70vh }
+.popover-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line) }
+.popover .list { overflow: auto }
+.menu { list-style: none; margin: 0; padding: 4px }
+.menu a, .menu button { display: flex; width: 100%; gap: 8px; align-items: center; padding: 8px 10px; border: 0; background: none; border-radius: var(--r-sm); color: var(--fg); text-decoration: none; text-align: left }
+.menu a:hover, .menu button:hover { background: var(--surface-2) }
+.toasts { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px) + var(--bottom-nav-h)); z-index: 60; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none }
+.toast { background: var(--fg); color: var(--bg); border-radius: var(--r); padding: 10px 14px; font-size: 0.8125rem; max-width: min(420px, calc(100vw - 32px)); display: flex; gap: 12px; align-items: center; pointer-events: auto; box-shadow: var(--shadow-pop) }
+.toast.crit { background: var(--crit); color: var(--on-solid) }
+.toast button { border: 0; background: none; color: inherit; font-weight: 600; text-decoration: underline; padding: 0 }
+
+/* Fokus-Dokumentation: Statusauswahl ✓ △ ✕ */
+.quickdoc { display: flex; gap: 6px; flex-wrap: wrap }
+.quickdoc button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line-strong); background: var(--surface); border-radius: var(--r); padding: 6px 10px; min-height: 36px }
+.quickdoc button:is([aria-pressed="true"], [aria-checked="true"])[data-v="done"] { background: var(--ok-soft); border-color: var(--ok); color: var(--ok) }
+.quickdoc button:is([aria-pressed="true"], [aria-checked="true"])[data-v="partial"] { background: var(--warn-soft); border-color: var(--warn); color: var(--warn) }
+.quickdoc button:is([aria-pressed="true"], [aria-checked="true"])[data-v="skipped"] { background: var(--sunken); border-color: var(--fg-3); color: var(--fg-2) }
+
+/* Dienstplan */
+.cal { display: grid; grid-template-columns: 180px repeat(7, minmax(84px, 1fr)); min-width: 780px }
+.cal > div { border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); padding: 6px 8px; min-height: 44px; font-size: 0.8125rem }
+.cal > .ch { background: var(--surface-2); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); min-height: 0 }
+.cal > .ch.today { color: var(--accent); background: var(--accent-soft) }
+.cal > .rh { border-left: 0; font-weight: 500 }
+.cal .today-col { background: color-mix(in srgb, var(--accent-soft) 40%, transparent) }
+.sh { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 0.75rem; padding: 2px 6px; border-radius: var(--r-sm); background: var(--accent-soft); color: var(--accent); border: 1px solid transparent; white-space: nowrap }
+.sh.S { background: var(--violet-soft); color: var(--violet) }
+.sh.N { background: var(--sunken); color: var(--fg); border-color: var(--line-strong) }
+.sh.open { background: var(--surface); color: var(--crit); border: 1px dashed var(--crit) }
+.sh.abs { background: var(--warn-soft); color: var(--warn) }
+.month { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line) }
+.month > div { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 72px; padding: 4px 6px; display: flex; flex-direction: column; gap: 3px; font-size: 0.75rem }
+.month > div.out { background: var(--surface-2); color: var(--fg-3) }
+.month > div.today { box-shadow: inset 0 0 0 2px var(--accent) }
+.month .dn { font-family: var(--font-mono) }
+
+/* Chat */
+.chat { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 0; flex: 1 }
+.chat-list { border-right: 1px solid var(--line); overflow: auto; min-height: 0 }
+.chat-main { display: flex; flex-direction: column; min-height: 0; min-width: 0 }
+.msgs { flex: 1; overflow: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0 }
+.msg { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; max-width: 72ch }
+.msg .mh { display: flex; gap: 8px; align-items: baseline; font-size: 0.75rem; color: var(--fg-3) }
+.msg .mh strong { color: var(--fg); font-weight: 600; font-size: 0.8125rem }
+.msg p { margin: 2px 0 0; white-space: pre-wrap; overflow-wrap: anywhere }
+.msg .mention { color: var(--accent); font-weight: 500 }
+.msg .reacts { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap }
+.msg .reacts button { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-sm); padding: 0 6px; font-size: 0.75rem }
+.msg .reacts button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft) }
+.composer { border-top: 1px solid var(--line); padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end; background: var(--surface-2) }
+.composer textarea { flex: 1; min-height: 40px; max-height: 160px }
+
+/* Fliesstext (Dokumente, Schulungen) */
+.prose { max-width: 75ch; line-height: 1.6 }
+.prose h1, .prose h2, .prose h3 { line-height: 1.25; margin: 1.4em 0 .4em }
+.prose h1 { font-size: 1.25rem } .prose h2 { font-size: 1.0625rem } .prose h3 { font-size: 0.9375rem }
+.prose p, .prose ul, .prose ol { margin: .6em 0 }
+.prose :first-child { margin-top: 0 }
+.prose code { font-family: var(--font-mono); font-size: 0.8125rem; background: var(--sunken); padding: 0 4px; border-radius: var(--r-sm) }
+.prose blockquote { margin: .8em 0; padding: 4px 12px; border-left: 3px solid var(--accent); color: var(--fg-2) }
+
+/* Login */
+.auth { min-height: 100%; display: grid; place-items: center; padding: 24px 16px }
+.auth-card { width: min(400px, 100%); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); display: flex; flex-direction: column }
+.auth-card header { padding: 18px 20px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px }
+.auth-card h1 { margin: 0; font-size: 1.125rem; font-weight: 600 }
+.auth-card .body { padding: 18px 20px 20px; display: flex; flex-direction: column; gap: 14px }
+.auth-card footer { padding: 10px 20px; border-top: 1px solid var(--line); background: var(--surface-2); font-size: 0.75rem; color: var(--fg-3); border-radius: 0 0 var(--r) var(--r); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap }
+.divider { display: flex; align-items: center; gap: 10px; color: var(--fg-3); font-size: 0.75rem }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line) }
+.otp { font-family: var(--font-mono); font-size: 1.375rem; letter-spacing: .3em; text-align: center }
+
+/* Offline-Hinweis */
+.offline-bar { position: fixed; left: 50%; transform: translateX(-50%); top: 8px; z-index: 70; background: var(--warn); color: var(--on-solid); border-radius: var(--r); padding: 6px 12px; font-size: 0.8125rem }
+
+/* Schnellaktion (Mobile FAB) */
+.fab { display: none }
+
+/* ───────── Responsiv ───────── */
+/* Topbar bleibt einzeilig und die Suche lesbar: zuerst Schichtzeiten, dann Name/Funktion ausblenden */
+@media (max-width: 1480px) {
+  .topbar .shift .full { display: none }
+}
+@media (max-width: 1320px) {
+  .topbar .shift .full, .me div { display: none }
+}
+@media (max-width: 1180px) {
+  :root { --list-w: 14.75rem }
+  .search-btn { min-width: 0 }
+  .clock { display: none }
+}
+@media (max-width: 920px) {
+  .chat { grid-template-columns: minmax(0, 1fr) }
+  .chat[data-open="true"] .chat-list { display: none }
+  .chat:not([data-open="true"]) .chat-main { display: none }
+  .msgs { max-height: 60vh }
+}
+/* Tablet hoch (721–920 px, PRD §29): Arbeitsplatz statt gestreckter Handy-Ansicht. Topbar einzeilig,
+   Bewohnerliste als Zimmerleiste mit Schublade (ListDrawer), andere Unternavigationen schmal. */
+@media (min-width: 721px) and (max-width: 920px) {
+  .topbar { gap: 10px }
+  .ctx { padding-left: 10px; max-width: 190px }
+  .ctx > span { display: none }
+  .ctx select { max-width: 100% }
+  .demo { display: none }
+  .search-btn { min-width: 0; flex: 1 1 150px }
+  .search-btn kbd { display: none }
+  .workspace { position: relative; grid-template-columns: 200px minmax(0, 1fr) }
+  .workspace:has(> aside .reslist) { grid-template-columns: 60px minmax(0, 1fr) }
+  .workspace:has(> aside .reslist) > :not(aside):not(.ws-list-toggle) { grid-column: 2 }
+  .workspace:has(> aside .reslist) > .ws-list-toggle { display: grid; position: absolute; top: 9px; left: 11px; z-index: 32; width: 38px; height: 38px; border-color: var(--line); background: var(--surface) }
+  .workspace:not([data-list]) > aside:has(.reslist) .list-head,
+  .workspace:not([data-list]) > aside:has(.reslist) .list-foot { display: none }
+  .workspace:not([data-list]) > aside .reslist { padding: 54px 4px 4px }
+  .workspace:not([data-list]) > aside .res { grid-template-columns: minmax(0, 1fr); padding: 5px 3px }
+  .workspace:not([data-list]) > aside .res > :not(.room) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+  .workspace:not([data-list]) > aside .res:has(.pill.crit) .room { border-color: var(--crit); color: var(--crit); background: var(--crit-soft) }
+  /* Überfällige Anzahl als Zahl am Zimmer (Status nicht nur über Farbe) */
+  .workspace:not([data-list]) > aside .res { position: relative }
+  .workspace:not([data-list]) > aside .res > .counts:has(.pill.crit) { position: absolute; width: auto; height: auto; clip: auto; overflow: visible; top: -2px; right: -3px }
+  .workspace:not([data-list]) > aside .res > .counts .pill:not(.crit) { display: none }
+  .workspace:not([data-list]) > aside .res > .counts .pill.crit { padding: 2px 3px; font-size: 0.625rem; background: var(--crit); color: var(--on-solid) }
+  .workspace[data-list="open"] > aside:has(.reslist) { position: absolute; top: 0; bottom: 0; left: 0; width: min(320px, 70vw); z-index: 31; box-shadow: var(--shadow-pop) }
+  .workspace[data-list="open"] > aside .list-head { padding-right: 56px }
+  .workspace[data-list="open"]:has(> aside .reslist) > .ws-list-toggle { left: calc(min(320px, 70vw) - 48px) }
+}
+
+/* Mobile: Seite scrollt als Ganzes, Spalten stapeln */
+@media (max-width: 720px) {
+  html, body { height: auto }
+  .app { height: auto; min-height: 100% }
+  .workspace { grid-template-columns: minmax(0, 1fr) }
+  .workspace > aside .reslist { max-height: 240px }
+  .main { overflow: visible }
+  .scroll { overflow: visible }
+  .ctx { display: none }
+}
+@media (max-width: 720px) {
+  :root { --bottom-nav-h: 64px }
+  .app { grid-template-columns: minmax(0, 1fr); padding-bottom: calc(10px + var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)) }
+  .rail { display: none }
+  .shift span.full, .demo, .me div { display: none }
+  .workspace[data-detail="true"] > aside { display: none }
+  .bottom-nav {
+    display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+    background: var(--surface); border-top: 1px solid var(--line);
+    padding: 4px max(8px, env(safe-area-inset-left, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-right, 0px));
+  }
+  .bottom-nav a, .bottom-nav button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 52px; border: 0; background: none; color: var(--fg-2); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; text-decoration: none; border-radius: var(--r); position: relative }
+  .bottom-nav [aria-current="page"] { color: var(--accent) }
+  .bottom-nav .fab-slot { position: relative }
+  .fab, .bottom-nav .fab { display: grid; place-items: center; width: 52px; height: 52px; min-height: 0; padding: 0; border-radius: 50%; background: var(--accent); color: var(--accent-fg); border: 0; margin: -18px auto 0; box-shadow: var(--shadow-pop) }
+  .trow { grid-template-columns: 44px 26px minmax(0, 1fr); row-gap: 4px }
+  .trow .tag { grid-column: 3; justify-self: start }
+  .trow .mins { display: none }
+  .note { grid-template-columns: 1fr; gap: 4px }
+  .ho-col + .ho-col { border-left: 0; border-top: 1px solid var(--line) }
+  .tabpanel { padding: 14px 12px 20px }
+  .banner, .view-head { padding: 12px }
+  .flags { margin-left: 0 }
+  .round-line { grid-template-columns: minmax(0, 1fr) auto; }
+  .kv { grid-template-columns: minmax(0, 1fr) }
+  .events::before { left: 69px }
+  .event { grid-template-columns: 52px 16px minmax(0, 1fr) }
+  .day-sep { padding-left: 78px }
+  .chk { width: 28px; height: 28px }
+  .btn { min-height: 40px }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .chip, .res, .dose, .chk, .rail a, .icon-btn, .li { transition: background-color .12s, border-color .12s, color .12s }
+}
+@media print {
+  .rail, .topbar, .bottom-nav, .toasts, .fab, .entry, .no-print { display: none !important }
+  .app { display: block; padding: 0 }
+  .panel { border: 0 }
+  body { background: #fff; color: #000 }
+}
+/* ───────── Shell: Fokus und Komponentenzustände (PRD §50, WCAG 2.4.7 / 2.4.11) ───────── */
+:focus:not(:focus-visible) { outline: none }
+/* In Containern mit overflow (Register, Segmente, Listen, Menüs, Popover, Bottom-Nav) liegt der Ring innen und wird nicht abgeschnitten. */
+.tabs a:focus-visible, .tabs button:focus-visible, .seg > :focus-visible, .li:focus-visible, .res:focus-visible,
+.menu a:focus-visible, .menu button:focus-visible, .bottom-nav a:focus-visible, .more-grid a:focus-visible,
+.steps .step-btn:focus-visible, .pal li:focus-visible { outline-offset: -2px }
+/* Auf gefüllter Akzentfläche: heller Ring innen */
+.seg > [aria-pressed="true"]:focus-visible, .seg > [aria-checked="true"]:focus-visible, .seg > [aria-current="page"]:focus-visible { outline-color: var(--accent-fg); outline-offset: -4px }
+.btn.primary:focus-visible, .btn.danger.solid:focus-visible, .chk[aria-pressed="true"]:focus-visible, .fab:focus-visible { outline-offset: 2px }
+.toast :focus-visible, .offline-bar :focus-visible { outline-color: currentColor }
+.popover:focus, .pal:focus, .dlg-head h2:focus, .sheet:focus { outline: none }
+.ws-list-toggle { display: none }
+
+/* Aktiv (gedrückt) */
+.btn:active:not(:disabled):not([aria-disabled="true"]) { background: var(--sunken) }
+.btn.primary:active:not(:disabled):not([aria-disabled="true"]) { background: var(--accent-hover); border-color: var(--accent-hover) }
+.btn.danger:active:not(:disabled) { background: var(--crit-soft) }
+.btn.danger.solid:active:not(:disabled) { background: var(--crit) }
+.chip:active:not(:disabled):not([aria-pressed="true"]), .seg button:active:not(:disabled):not([aria-pressed="true"]),
+.icon-btn:active:not(:disabled), a.li:active, button.li:active, .res:active, .rail a:active, .menu a:active, .menu button:active { background: var(--sunken) }
+
+/* Deaktiviert: kein Hover-Effekt, klar erkennbar */
+.btn:disabled:hover, .btn[aria-disabled="true"]:hover { background: var(--surface) }
+.btn.primary:disabled:hover, .btn.primary[aria-disabled="true"]:hover { background: var(--accent); border-color: var(--accent) }
+.btn.danger.solid:disabled:hover { background: var(--crit) }
+.btn.ghost:disabled:hover, .icon-btn:disabled:hover { background: none; border-color: transparent }
+.chip:disabled, .seg button:disabled, .icon-btn:disabled, .linkbtn:disabled, .snip:disabled, .quickdoc button:disabled { opacity: .5; cursor: not-allowed }
+.chip:disabled:hover { border-color: var(--line) }
+.linkbtn:disabled:hover { text-decoration: none }
+.chk:disabled { cursor: not-allowed }
+.chk:disabled:hover { border-color: var(--line-ui) }
+
+/* Laufende Server Action (ActionForm data-pending): Spinner am Absenden-Button statt nur ausgegraut */
+form[data-pending] button[type="submit"].btn { cursor: progress }
+form[data-pending] button[type="submit"].btn::after { content: ""; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite }
+
+/* Dialoge: Kopf und Fuss bleiben sichtbar, Inhalt scrollt; Seite dahinter scrollt nicht */
+dialog.dlg[open] { display: flex; flex-direction: column }
+dialog.dlg > .dlg-head, dialog.dlg > .dlg-foot { flex: none }
+dialog.dlg > .dlg-body { min-height: 0; flex: 1 1 auto }
+html:has(dialog.dlg[open]) { overflow: hidden }
+
+/* Command Palette: Gruppen, Leerzustand */
+.pal li.pal-grp { cursor: default; padding: 10px 10px 3px; font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3) }
+.pal li.pal-grp:first-child { padding-top: 4px }
+.pal li .pal-lbl { min-width: 0; overflow-wrap: anywhere }
+.pal ul:empty { display: none }
+.pal-empty { padding: 20px 16px; display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center; color: var(--fg-3); font-size: 0.8125rem }
+.pal-empty strong { color: var(--fg-2); font-weight: 500; font-size: 0.875rem }
+.pal .palfoot { display: flex; justify-content: space-between; gap: 12px }
+
+/* Toasts: getrennte Live-Regionen (status / alert) */
+.toasts-region { display: flex; flex-direction: column; gap: 8px; align-items: flex-end }
+.toasts-region:empty { display: none }
+.toast button { min-height: 24px; padding: 2px 4px; margin: -2px -4px; border-radius: var(--r-sm) }
+
+/* Chips: Abstand zwischen Label und Zahl (auf Mobile inline-flex) */
+.chip { gap: 5px }
+/* Dialoge in Tabellenzellen erben sonst Ausrichtung, Schriftgrösse und nowrap der Zelle */
+.stable td dialog.dlg, .stable th dialog.dlg, .vt td dialog.dlg, .mar td dialog.dlg, .mar th dialog.dlg { text-align: left; white-space: normal; font-size: 0.875rem; font-weight: 400 }
+
+/* Kennzahlen gleichmässig umbrechen (3 → 3|1, 4 → 4|2×2|1, 6 → 6|3×2|2×3) statt 3+1.
+   :where() hält die Spezifität niedrig, damit modulspezifische Raster (.res-metrics, .metrics-2) gewinnen. */
+.metrics:where(:has(> :nth-child(3):last-child)) { grid-template-columns: repeat(auto-fit, minmax(clamp(33.33%, (510px - 100%) * 999, 100%), 1fr)) }
+.metrics:where(:has(> :nth-child(4):last-child)) { grid-template-columns: repeat(auto-fit, minmax(max(clamp(25%, (680px - 100%) * 999, 50%), min(100%, max(0px, (300px - 100%) * 999))), 1fr)) }
+.metrics:where(:has(> :nth-child(6):last-child)) { grid-template-columns: repeat(auto-fit, minmax(max(clamp(16.66%, (1020px - 100%) * 999, 33.33%), min(50%, max(0px, (510px - 100%) * 999))), 1fr)) }
+
+/* Popover-Kopf mit Überschrift */
+.popover-head h2 { margin: 0 }
+
+/* Mobile: Touch-Ziele ≥ 40 px, kein Zoom beim Fokussieren von Feldern (iOS), Dialoge als Blatt am unteren Rand */
+@media (max-width: 720px) {
+  .icon-btn { width: 40px; height: 40px }
+  .me { min-height: 40px }
+  .search-btn { min-height: 40px }
+  .btn.sm { min-height: 40px }
+  .chip, .seg a, .seg button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center }
+  .tabs a, .tabs button { min-height: 44px }
+  .snip { min-height: 36px }
+  .menu a, .menu button { min-height: 44px }
+  .toast button { min-height: 40px }
+  .field, .pal input { font-size: 1rem }
+  .field { min-height: 40px }
+  dialog.dlg, dialog.dlg.wide { width: 100%; max-width: 100%; margin: auto 0 0; max-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px)); border-radius: var(--r) var(--r) 0 0; border-width: 1px 0 0 }
+  .dlg-foot { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) }
+  .dlg-foot > .btn { flex: 1 1 auto }
+  .scrim:has(> .pal) { padding-top: max(12px, env(safe-area-inset-top, 0px)) }
+  .pal { max-height: calc(100dvh - 24px) }
+  .pal .palfoot > span:first-child { display: none }
+  .sheet { max-height: calc(100dvh - 24px); overflow: auto }
+}
+
+/* Bewegung reduzieren (WCAG 2.3.3): keine Animationen/Übergänge, Spinner bleiben als statischer Ring */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important }
+}
+.bottom-nav .badge { font-family: var(--font-mono); font-size: 0.625rem; line-height: 1; padding: 2px 4px; border-radius: var(--r-sm); background: var(--crit); color: var(--on-solid) }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; background: var(--surface); border-top: 1px solid var(--line-strong); border-radius: var(--r) var(--r) 0 0; padding: 12px max(16px, env(safe-area-inset-left, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; gap: 8px }
+.sheet .btn { justify-content: flex-start; min-height: 48px }
+.more-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px }
+.more-grid a { display: flex; align-items: center; gap: 10px; padding: 14px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--fg); text-decoration: none; font-weight: 500 }
+.more-grid a:hover { border-color: var(--line-strong) }
+
+/* ───────── CareOS Docs & Learn (nur Tokens, hell + dunkel) ───────── */
+.docs-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start }
+.prose ul, .prose ol { padding-left: 1.4em }
+.prose li + li { margin-top: .2em }
+.prose pre { background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; overflow-x: auto; margin: .8em 0 }
+.prose pre code { background: none; padding: 0 }
+.diff { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); font-family: var(--font-mono); font-size: 0.7813rem; line-height: 1.55; overflow-x: auto; padding: 4px 0 }
+.diff-line { display: grid; grid-template-columns: 24px minmax(0, 1fr) }
+.diff-line .diff-op { text-align: center; color: var(--fg-3); user-select: none }
+.diff-line .diff-text { white-space: pre-wrap; overflow-wrap: anywhere; padding-right: 10px }
+.diff-line.add { background: var(--ok-soft) }
+.diff-line.add .diff-op { color: var(--ok); font-weight: 600 }
+.diff-line.del { background: var(--crit-soft) }
+.diff-line.del .diff-op { color: var(--crit); font-weight: 600 }
+.diff-line.del .diff-text { color: var(--fg-2); text-decoration: line-through; text-decoration-color: var(--crit) }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); cursor: pointer; min-height: 40px }
+.opt input { margin: 3px 0 0; accent-color: var(--accent); flex: none }
+.opt:hover { border-color: var(--line-strong) }
+.opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft) }
+.cm { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; line-height: 1.3; white-space: nowrap; padding: 2px 6px; border-radius: var(--r-sm); border: 1px solid transparent }
+.cm.valid { background: var(--ok-soft); color: var(--ok) }
+.cm.expiring { background: var(--warn-soft); color: var(--warn) }
+.cm.expired, .cm.overdue { background: var(--crit-soft); color: var(--crit) }
+.cm.missing { border: 1px dashed var(--line-strong); color: var(--fg-3) }
+.cm.na { color: var(--line-strong) }
+.matrix th:first-child, .matrix td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface) }
+.matrix thead th:first-child { background: var(--surface-2) }
+.matrix td, .matrix th { white-space: nowrap }
+.matrix tfoot th, .matrix tfoot td { border-top: 1px solid var(--line-strong); background: var(--surface-2); vertical-align: top }
+.matrix tbody th { font-weight: 500 }
+.video { display: block; width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--line); border-radius: var(--r); background: var(--sunken) }
+.steps li[data-state="locked"] { color: var(--line-strong) }
+@media (max-width: 920px) {
+  .docs-layout { grid-template-columns: minmax(0, 1fr) }
+}
+
+/* ───────── CareOS Plan, Assess, Wounds, Nutrition (nur Tokens, hell + dunkel) ───────── */
+.ws-pre { white-space: pre-wrap; overflow-wrap: anywhere }
+.steps .step-btn { border: 0; background: none; padding: 0; margin: 0; color: inherit; font: inherit; text-align: left; display: flex; flex-direction: column; gap: 2px; width: 100%; cursor: pointer; min-height: 36px }
+.steps .step-btn:disabled { cursor: not-allowed }
+.steps .step-btn > span:last-child { overflow-wrap: anywhere; hyphens: auto }
+.day-chip { min-width: 46px; min-height: 36px; text-align: center }
+.care-opts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 6px }
+.care-opts.nrs { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)) }
+.care-opts .opt { align-items: center; min-height: 44px }
+.care-opts .opt input { margin: 0; width: 18px; height: 18px }
+.care-opts .opt .pts { margin-left: auto; font-family: var(--font-mono); font-size: 0.75rem; color: var(--fg-3) }
+.care-q + .care-q { border-top: 1px solid var(--line); padding-top: 12px }
+.care-q legend, .care-q > .lbl { margin-bottom: 6px }
+.care-q[data-missing="true"] > legend { color: var(--warn) }
+.legend i.bar { height: 8px; border: 0; background: var(--accent); vertical-align: -1px }
+.legend i.bar.crit { background: var(--crit) }
+.legend i.bar.muted { background: var(--line-strong) }
+.legend i.tg { border-top: 2px dashed var(--ok) }
+.chart .barval { fill: var(--fg-2); font-family: var(--font-mono); font-size: 0.5938rem }
+.chart .barval.crit { fill: var(--crit) }
+.thumbs { display: flex; gap: 6px; flex-wrap: wrap }
+.thumbs a { display: block; line-height: 0; border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; background: var(--sunken) }
+.thumbs img { width: 56px; height: 56px; object-fit: cover }
+.seg.portion button { min-width: 44px; min-height: 34px; font-family: var(--font-mono) }
+.seg.portion button[aria-pressed="true"] { font-weight: 600 }
+.quick-ml { display: flex; gap: 6px; flex-wrap: wrap }
+.quick-ml .btn { font-family: var(--font-mono); min-width: 72px }
+.photo-in:focus-visible + .btn { outline: 2px solid var(--accent); outline-offset: 1px }
+.care-act-inline { display: none }
+@media (max-width: 720px) {
+  .care-act-inline { display: block }
+  .care-act-col { display: none }
+  .day-chip, .seg.portion button { min-height: 40px }
+  .quick-ml .btn { flex: 1 1 calc(50% - 6px); min-height: 44px }
+}
+
+/* ───────── CareOS Insights & Quality (nur Tokens, hell + dunkel) ───────── */
+.ins-card { display: flex; flex-direction: column; gap: 6px; margin: 0; padding-bottom: 10px }
+.ins-span { grid-column: 1 / -1 }
+.chart .ins-hit { fill: transparent }
+.chart .ins-col:hover .barfill { opacity: .78 }
+.chart .ins-col:hover .ins-hit { fill: var(--surface-2); fill-opacity: .6 }
+.chart .ins-base { stroke: var(--line-strong); stroke-width: 1 }
+.ins-table > summary { cursor: pointer; display: inline-block; list-style: none; min-height: 28px; line-height: 28px }
+.ins-table > summary::-webkit-details-marker { display: none }
+.ins-table > summary::before { content: "▸ "; font-size: 0.625rem }
+.ins-table[open] > summary::before { content: "▾ " }
+.ins-meters { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px }
+.ins-meters li { display: grid; grid-template-columns: minmax(90px, 38%) minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 0.8125rem }
+.ins-meters .ins-mv { text-align: right; white-space: nowrap }
+.ins-stack { display: flex; gap: 2px; height: 10px; border-radius: 2px; overflow: hidden }
+.ins-stack i { display: block; min-width: 3px; background: var(--line-strong) }
+.ins-stack i.ok { background: var(--ok) }
+.ins-stack i.accent { background: var(--accent) }
+.ins-stack i.warn { background: var(--warn) }
+.ins-stack i.crit { background: var(--crit) }
+.ins-key { display: inline-block; width: 9px; height: 9px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; background: var(--line-strong) }
+.ins-key.ok { background: var(--ok) } .ins-key.accent { background: var(--accent) } .ins-key.warn { background: var(--warn) } .ins-key.crit { background: var(--crit) }
+
+.cov { border-collapse: separate; border-spacing: 2px; font-size: 0.75rem }
+.cov th { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .04em; color: var(--fg-3); text-align: center; padding: 2px 4px; white-space: nowrap }
+.cov th[scope="row"] { text-align: left; padding-right: 8px }
+.cov td { font-family: var(--font-mono); text-align: center; padding: 4px 2px; min-width: 34px; border-radius: var(--r-sm); background: var(--surface-2); color: var(--fg-2) }
+.cov td.ok { background: var(--ok-soft); color: var(--ok) }
+.cov td.warn { background: var(--warn-soft); color: var(--warn); font-weight: 500 }
+.cov td.crit { background: var(--crit-soft); color: var(--crit); font-weight: 600 }
+@media (max-width: 720px) {
+  .ins-meters li { grid-template-columns: minmax(0, 1fr) auto; row-gap: 3px }
+  .ins-meters li .bar { grid-column: 1 / -1; grid-row: 2 }
+}
+
+/* ───────── Bewohnerakte: Resident 360 Trends (Agent Residents) ───────── */
+.trend-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); clip-path: inset(0 1px 1px 0) }
+.trend { padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line) }
+.trend .val { font-size: 1.0625rem; font-weight: 500; line-height: 1.15 }
+.trend .val small { font-size: 0.75rem; font-weight: 400 }
+.trend .spark { margin-top: 2px }
+@media (max-width: 720px) { .q-filters { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+
+/* ───────── CareOS Team, Chat, Schedule (nur Tokens, hell + dunkel) ───────── */
+.team-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); gap: 16px; align-items: start }
+@media (max-width: 1100px) { .team-grid { grid-template-columns: minmax(0, 1fr) } }
+/* Chat */
+.chat-list .li[aria-current="page"] { background: var(--accent-soft) }
+.chat-list .li { align-items: center }
+.chat-head { flex-wrap: nowrap; background: var(--surface-2) }
+.chat-head h2 { font-size: 0.9375rem }
+.chat-back { display: none }
+.chat-notice { margin: 8px 12px 0; padding: 6px 10px }
+.chat-members { border-bottom: 1px solid var(--line); max-height: 260px; overflow: auto; background: var(--surface) }
+.chat-day { display: flex; justify-content: center; padding: 4px 0 }
+.chat-day .lbl { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 1px 8px }
+.chat-files { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px }
+.chat-files .chip { display: inline-flex; align-items: center; gap: 4px }
+.msg .mh { flex-wrap: wrap }
+.msg { position: relative }
+.msg .mact { display: inline-flex; gap: 4px; align-items: center; visibility: hidden; position: absolute; right: 0; top: -2px; background: var(--surface); padding: 0 0 0 6px }
+.msg:hover .mact, .msg:focus-within .mact { visibility: visible }
+.msg .mact .react-add { border: 1px dashed var(--line-strong); background: var(--surface); border-radius: var(--r-sm); padding: 0 6px; font-size: 0.75rem; color: var(--fg-2); line-height: 18px }
+.msg .mact .react-add:hover { border-style: solid; border-color: var(--accent); color: var(--accent) }
+.msg .reacts button { color: var(--fg-2); line-height: 20px }
+.msg .reacts button[aria-pressed="true"] { color: var(--accent) }
+.msg.mine .av { background: var(--accent); color: var(--accent-fg) }
+.mention-pop { top: auto; bottom: calc(100% + 6px); left: 12px; right: auto; width: min(360px, calc(100vw - 48px)) }
+@media (hover: none) { .msg .mact { visibility: visible; position: static; margin-left: 6px } }
+@media (max-width: 920px) {
+  .chat-back { display: inline-flex }
+  .chat { min-height: 60vh }
+}
+/* Dienstplan */
+.cal > .rh { background: var(--surface); position: sticky; left: 0; z-index: 1 }
+.cal > .ch.rh { background: var(--surface-2) }
+@media (max-width: 720px) { .cal { grid-template-columns: 132px repeat(7, minmax(76px, 1fr)); min-width: 664px } }
+.cal-cell { display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-start; position: relative }
+.cal > .cal-sep { border-top: 1px solid var(--line-strong) }
+.sh-btn { cursor: pointer; font: inherit; font-family: var(--font-mono); font-size: 0.75rem }
+.sh-btn:hover { border-color: currentColor }
+.cal-add { border: 1px dashed var(--line-strong); background: none; color: var(--fg-3); border-radius: var(--r-sm); font-family: var(--font-mono); font-size: 0.75rem; line-height: 18px; padding: 0 7px; opacity: 0 }
+.cal-cell:hover .cal-add, .cal-add:focus-visible { opacity: 1 }
+.cal-add:hover { border-color: var(--accent); color: var(--accent) }
+@media (hover: none) { .cal-add { opacity: .6 } }
+.cov { font-size: 0.6875rem; padding: 1px 5px; border-radius: var(--r-sm); background: var(--ok-soft); color: var(--ok); white-space: nowrap }
+.cov.under { background: var(--crit-soft); color: var(--crit) }
+.cov.ok { background: var(--ok-soft); color: var(--ok) }
+.month-head { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 0 0 4px }
+.month-head .lbl { padding: 0 6px }
+.month > div .sh { align-self: flex-start; max-width: 100%; overflow: hidden }
+.month a.sh { text-decoration: none }
+.month-time { font-size: 0.625rem; opacity: .8 }
+@media (max-width: 560px) { .month-time { display: none } .month > div { min-height: 58px; padding: 3px } .month .sh { padding: 1px 3px; font-size: 0.6875rem } }
+/* ───────── CareOS Med / Tasks / Handover (Ergänzung) ───────── */
+.round-line > .round-act { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; min-width: 340px }
+.round-res.done { border-color: var(--ok) }
+.round-res.done > header { background: var(--ok-soft) }
+.drug.stopped { text-decoration: line-through; text-decoration-color: var(--line-strong) }
+@media (max-width: 720px) {
+  .round-line > .round-act { min-width: 0; grid-column: 1 / -1; justify-content: stretch }
+  .round-line > .round-act .btn.lg { flex: 1 1 0; padding-inline: 8px }
+}
+
+/* Shell: Topbar auf schmalen Bildschirmen */
+@media (max-width: 720px) {
+  .topbar { gap: 8px 10px; padding: 8px 10px; flex-wrap: wrap }
+  .search-btn { min-width: 0; width: 100%; flex: 1 1 100%; order: 5; margin-left: 0 }
+  .search-btn kbd { display: none }
+  .topbar .shift { margin-left: auto }
+}
+.seg-x { max-width: 100%; overflow-x: auto; scrollbar-width: none }
+@media (max-width: 720px) {
+  .mar tbody th { min-width: 140px }
+  .stable .hide-sm { display: none }
+}
+
+/* ───────── Offline-Synchronisation (PRD §39): Statusleiste mit wartenden Einträgen ───────── */
+.offline-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 2px 10px; max-width: calc(100vw - 32px); text-align: center }
+.offline-bar[data-conflict] { background: var(--crit) }
+.offline-bar .linkbtn { color: inherit; text-decoration: underline; min-height: 24px }
+.offline-view { max-width: 760px; width: 100%; margin: 0 auto; min-height: 100dvh; border-radius: 0 }
+@media (min-width: 800px) { .offline-view { min-height: 0; margin: 16px auto; border-radius: var(--r) } }
+
+/* ───────── Formulare (Fokusdokumentation, PRD §10.3): Kopf und Fuss des Dialogs bleiben sichtbar, Inhalt scrollt ───────── */
+dialog.dlg[open]:has(.form-entry) { display: flex; flex-direction: column }
+dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
+@media (max-width: 720px) { .entry-foot .push { flex-wrap: wrap; justify-content: flex-end } }
+
+/* ───────── Home (Agent Home/Residents): Schichtzusammenfassung, Veränderungen pro Person, Schicht-Timeline ───────── */
+.home-summary { margin: 6px 0 0; font-size: 0.875rem; color: var(--fg) }
+.home-summary a { color: var(--accent); font-weight: 500 }
+.home-routine { display: flex; align-items: center; gap: 10px; padding: 10px 12px; color: inherit; text-decoration: none }
+.home-routine:hover { background: var(--surface-2) }
+.home-chg > li > details > summary, .home-tl details > summary { list-style: none; cursor: pointer }
+.home-chg summary::-webkit-details-marker, .home-tl summary::-webkit-details-marker { display: none }
+.home-chg summary.li:hover { background: var(--surface-2) }
+.home-chg summary .grow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px }
+.home-chg-name { font-weight: 500; margin-right: 2px }
+.home-chg-head { flex-basis: 100%; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical }
+.home-chg summary time::after { content: " ▾"; font-family: var(--font-ui) }
+.home-chg details[open] summary time::after { content: " ▴" }
+.home-chg details[open] > summary { background: var(--surface-2) }
+.home-chg details[open] .home-chg-head { display: none }
+.home-chg-body { padding: 4px 12px 12px 12px; display: flex; flex-direction: column; gap: 10px; background: var(--surface-2); border-top: 1px solid var(--line) }
+.home-chg-body ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.home-chg-body ol > li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; padding: 6px 0 }
+.home-chg-body ol > li + li { border-top: 1px solid var(--line) }
+.home-chg-body ol > li > .grow { flex-basis: 260px; white-space: pre-wrap }
+.home-chg-body time { min-width: 86px }
+.home-chg-sep { padding: 8px 12px 4px; background: var(--surface-2) }
+.home-tl .tl-done summary, .home-tl .tl-group > summary { display: grid }
+.home-tl .tl-done summary { grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 12px; color: var(--fg-3); font-size: 0.8125rem }
+.home-tl .tl-done summary:hover, .home-tl .tl-group > summary:hover { background: var(--surface-2) }
+.home-tl .tl-done summary .grow::after { content: " ▾" }
+.home-tl .tl-done details[open] summary .grow::after { content: " ▴" }
+.home-tl .tl-done .timeline { border: 0; border-top: 1px solid var(--line); border-radius: 0 }
+.home-tl .trow { grid-template-columns: 52px minmax(0, 1fr) auto }
+.home-tl .tl-group > summary .ttl::after { content: " ▾"; color: var(--fg-3); font-weight: 400 }
+.home-tl .tl-group[open] > summary .ttl::after { content: " ▴" }
+.home-tl .tl-who { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px 74px }
+.home-tl .tl-who .chip { display: inline-flex; align-items: center; min-height: 28px }
+@media (max-width: 720px) {
+  .res-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+  .res-metrics .metric { padding: 8px 10px }
+  .res-metrics .metric .val small { display: block; font-size: 0.6875rem }
+  .home-tl .trow { grid-template-columns: 44px minmax(0, 1fr) }
+  .home-tl .trow .tag { grid-column: 2 }
+  .home-tl .tl-who { padding-left: 12px }
+  .home-tl .tl-who .chip, .home-chg-body .btn { min-height: 40px }
+  .home-chg-body time { min-width: 0 }
+}
+.home-tl a.tl-link { color: inherit; text-decoration: none }
+.home-tl a.tl-link:hover { background: var(--surface-2) }
+.home-tl a.tl-link .ttl::after { content: " →"; color: var(--fg-3); font-weight: 400 }
+/* Tagesplan: Sprungziel aus Home (#task-…) hervorheben */
+.timeline > li.trow[id^="task-"] { scroll-margin: 96px }
+.timeline > li.trow[id^="task-"]:target { background: var(--accent-soft); outline: 2px solid var(--accent); outline-offset: -2px }
+/* ───────── Bewohnerakte (Agent Home/Residents): kompakter Kopf, Register mit Blätter-Knöpfen, Personenwechsel ───────── */
+.rec-banner { position: relative }
+.rec-banner .facts { gap: 6px 20px }
+.rec-banner .fact .v { max-width: 32ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.rec-note { margin: 2px 0 0; font-size: 0.8125rem; color: var(--warn); max-width: 90ch; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical }
+.rec-note .lbl { color: var(--warn); margin-right: 4px }
+.rec-pager { display: none; gap: 6px }
+.rec-sentinel { height: 0 }
+.rec-tabs { flex: none; background: var(--surface) }
+.rec-tabs-row { position: relative; display: flex; align-items: stretch; border-bottom: 1px solid var(--line) }
+.rec-tabs-row > .tabs { flex: 1; min-width: 0; border-bottom: 0; scrollbar-width: none }
+.rec-tabs-row > .tabs::-webkit-scrollbar { display: none }
+.rec-tabs-btn { position: absolute; top: 0; bottom: 0; z-index: 1; width: 32px; border: 0; background: var(--surface); color: var(--accent); font-size: 1.25rem; line-height: 1; padding: 0 }
+.rec-tabs-btn.left { left: 0 }
+.rec-tabs-btn.right { right: 0 }
+.rec-tabs-btn.left { border-right: 1px solid var(--line) }
+.rec-tabs-btn.right { border-left: 1px solid var(--line) }
+.rec-tabs-btn:hover { background: var(--accent-soft) }
+.rec-ident { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-size: 0.8125rem; min-width: 0 }
+.rec-ident strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+.rec-ident .flag { font-size: 0.6875rem; padding: 1px 6px }
+.res-keys { margin-left: auto; white-space: nowrap }
+@media (hover: none), (max-width: 920px) { .res-keys { display: none } }
+@media (max-width: 920px) {
+  .rec-tabs { position: sticky; top: 0; z-index: 30 }
+  .rec-tabs-row > .tabs a { min-height: 44px }
+}
+@media (max-width: 720px) {
+  .rec-banner { gap: 8px }
+  .rec-banner h1 { font-size: 1.1875rem }
+  .rec-banner .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px }
+  .rec-banner .fact .v { max-width: none; white-space: normal }
+  .rec-banner .rec-opt { display: none }
+  .rec-pager { display: flex; position: absolute; top: 12px; right: 12px }
+  .rec-banner h1 { padding-right: 132px; min-height: 40px }
+  .rec-pager .btn { min-height: 40px; min-width: 40px }
+  .rec-pager .btn .mono { display: none }
+  .rec-tabs-btn { width: 36px }
+}
+.entry-head .snips { display: contents }
+@media (max-width: 720px) {
+  .entry-head .snips { display: flex; flex: 1 1 100%; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px }
+  .entry-head .snips .snip { white-space: nowrap; min-height: 36px; flex: none }
+  .notes-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100% }
+  .notes-filter .chip { min-height: 36px; flex: none }
+}
+
+/* ───────── Med / Tasks / Handover – Feinschliff (Agent Med; nur eigene Klassen, nur Tokens) ───────── */
+/* Medikamentenrunde (PRD §13.2, §29): Layout über Container-Query, damit Tablet quer und hoch eigene Anordnungen erhalten */
+.round { container-type: inline-size; max-width: 960px }
+.round-bar { position: sticky; top: 0; z-index: 5; display: flex; flex-direction: column; gap: 8px; padding: 6px 0 10px; background: var(--surface); border-bottom: 1px solid var(--line) }
+.round-res { scroll-margin-top: 84px }
+.round-res > header h2:focus { outline: none }
+.round-res > header h2:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.round-res .round-line { grid-template-columns: minmax(0, 1fr) minmax(120px, auto) auto; gap: 8px 16px }
+.round-line .rl-dose { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; min-width: 0 }
+.round-line .dosev { font-size: 1.125rem; white-space: nowrap }
+.round-line .rl-route { font-weight: 600; color: var(--fg) }
+.round-line .rl-note { margin-top: 2px }
+.round-line .rl-over { grid-column: 1 / -1; margin-top: -4px }
+.round-line > .round-act { min-width: 0 }
+.round-act .btn.lg { min-height: 48px; min-width: 116px }
+.round-line.is-over { box-shadow: inset 3px 0 0 var(--crit) }
+.round-next { display: flex; justify-content: flex-end; padding: 10px 14px; border-top: 1px solid var(--line) }
+@container (max-width: 720px) {
+  .round-res .round-line { grid-template-columns: minmax(0, 1fr) auto }
+  .round-line .rl-dose { align-items: flex-end; text-align: right }
+  .round-line > .round-act { grid-column: 1 / -1; justify-content: flex-start }
+  .round-line > .round-act .btn.lg { flex: 1 1 0; min-width: 0; padding-inline: 8px }
+  .round-next .btn { flex: 1 }
+}
+/* Vier-Augen-Kontrolle und Dosis-Dialog */
+.four-eyes { border-color: var(--violet) }
+.four-eyes > legend { color: var(--violet) }
+.four-eyes-steps { margin: 0; padding-left: 1.3em; display: flex; flex-direction: column; gap: 2px; color: var(--fg-2) }
+.four-eyes-check { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface-2); font-size: 0.8125rem }
+.dose-big { font-family: var(--font-mono); font-size: 1.0625rem; font-weight: 500 }
+.dose-opt { display: inline-flex; gap: 6px; align-items: center; min-height: 36px; padding-inline: 12px }
+.dose-opt[aria-checked="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 500 }
+.dose-opt[aria-checked="true"][data-v="given"] { border-color: var(--ok); color: var(--ok); background: var(--ok-soft) }
+.dose-opt[aria-checked="true"]:is([data-v="refused"], [data-v="omitted"], [data-v="held"]) { border-color: var(--warn); color: var(--warn); background: var(--warn-soft) }
+/* Abgabeliste: Dosis mit Einheit, grössere Ziele auf Touch-Geräten */
+.mar .dose { min-width: 84px }
+.mar .dose b { white-space: nowrap }
+.mar .dose[data-loading="true"] { cursor: progress }
+@media (pointer: coarse) {
+  .mar .dose { min-height: 44px }
+  .task-table .chk { width: 34px; height: 34px }
+  .task-table .row-menu { min-width: 40px; min-height: 40px }
+  .ho-head .btn { min-height: 40px }
+}
+
+/* ───────── Employee Experience: Team, Chat, Dienstplan, Docs, Learn (Agent EmpX, nur Tokens, hell + dunkel) ───────── */
+/* Team: «Bitte lesen und bestätigen» – zuoberst, vollständig lesbar, Bestätigung mit einem Tipp */
+.team-ackq-item { display: flex; flex-direction: column; gap: 6px; padding: 12px }
+.team-ackq-title { color: inherit; text-decoration: none }
+.team-ackq-title:hover { text-decoration: underline }
+.team-ackq-body { margin: 0; max-width: 72ch; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; color: var(--fg) }
+.team-ackq .form-actions { margin-top: 2px }
+@media (max-width: 720px) { .team-ackq .form-actions .btn { flex: 1 1 auto } }
+
+/* Chat: Lesefluss, Senden-Status, Erwähnungen, Touch-Aktionen */
+.chat-stage { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column }
+.chat-stage > .msgs { flex: 1 }
+.msgs:focus-visible { outline-offset: -2px }
+.chat-unread { display: flex; align-items: center; gap: 10px; color: var(--accent); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase }
+.chat-unread::before, .chat-unread::after { content: ""; flex: 1; height: 1px; background: var(--accent) }
+.chat-jump { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); box-shadow: var(--shadow-pop); z-index: 2 }
+.msg-pending > div > p { color: var(--fg-2) }
+.msg-pending.is-failed > div > p { color: var(--fg) }
+.msg-pending.is-failed .av { background: var(--crit-soft); color: var(--crit) }
+.composer-attach { width: 40px; height: 40px }
+.composer textarea { resize: none; overflow-y: auto }
+.composer-hint { flex-basis: 100%; margin: 0 }
+@media (hover: none), (max-width: 720px) { .composer-hint { display: none } }
+.mention-opt { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer; min-height: 36px }
+.mention-opt:hover, .mention-opt[aria-selected="true"] { background: var(--accent-soft); color: var(--accent) }
+.msg .reacts button, .msg .mact .react-add { min-height: 24px; min-width: 28px }
+.msg-more { display: none; border: 1px solid var(--line); background: var(--surface); border-radius: var(--r-sm); color: var(--fg-2); padding: 0 8px; line-height: 1; min-height: 28px; min-width: 36px; margin-left: auto }
+.msg[data-open] .mact { visibility: visible }
+@media (hover: none) {
+  .msg-more { display: inline-flex; align-items: center; justify-content: center }
+  .msg .mact { display: none; visibility: visible; position: static; margin-left: 0; flex-basis: 100%; flex-wrap: wrap; gap: 8px; padding: 4px 0 0 }
+  .msg[data-open] .mact { display: inline-flex }
+  .msg .reacts button, .msg .mact .react-add, .msg .mact .linkbtn { min-height: 36px; min-width: 40px; padding-inline: 10px }
+}
+
+/* Tabellen als Karten auf dem Handy (.rwrap > .rtable): Aktionen bleiben ohne Querscrollen erreichbar */
+.rwrap { position: relative }
+.r-only { display: none }
+@media (max-width: 720px) {
+  .rwrap { border: 0; background: none; overflow: visible }
+  .rtable, .rtable > tbody, .rtable > tfoot { display: block }
+  .rtable > thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap }
+  .rtable tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 4px; align-items: start; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+  .rtable tr + tr { margin-top: 8px }
+  .rtable tr > th, .rtable tr > td { display: block; grid-column: 1; padding: 0; border: 0 !important; text-align: left; white-space: normal; min-width: 0 !important }
+  .rtable tr > th:empty, .rtable tr > td:empty, .rtable .r-desk { display: none }
+  .rtable .r-only { display: inline }
+  .rtable tr > td.right:not(.r-act) { text-align: left }
+  .rtable td[data-label]::before { content: attr(data-label); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); margin-right: 8px }
+  .rtable .r-act { grid-column: 2; grid-row: 1 / span 2; text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 6px }
+  .rtable .r-act .btn { min-height: 40px }
+  .rtable tr.r-free { padding-block: 8px; background: var(--surface-2) }
+  .rtable .r-title { font-size: 0.875rem }
+}
+
+/* Dienstplan: Teamplan mit fixierter Kopfzeile und erster Spalte, grössere Touch-Ziele */
+.plan-wrap { max-height: min(72vh, 760px); overflow: auto }
+.plan-wrap .cal > .ch { position: sticky; top: 0; z-index: 2 }
+.plan-wrap .cal > .ch.rh { left: 0; z-index: 3 }
+@media (max-width: 920px) { .plan-wrap { max-height: 70dvh } }
+@media (pointer: coarse) {
+  .cal-add { min-width: 36px; min-height: 32px; opacity: .7 }
+  .cal .sh-btn { min-height: 32px; min-width: 36px; justify-content: center }
+}
+
+/* Docs: Lesekomfort und Druckansicht */
+.doc-read > .card-body { padding: 20px 24px 24px }
+.doc-read .prose { font-size: 0.9375rem; line-height: 1.65; max-width: 72ch }
+.doc-read .prose h1, .doc-read .prose h2 { scroll-margin-top: 12px }
+@media (max-width: 720px) { .doc-read > .card-body { padding: 14px 14px 18px } }
+.print-only { display: none }
+@media print {
+  .print-only { display: block; margin: 0 0 10px; color: #000 }
+  .docs-layout { display: block }
+  .doc-read { border: 0 }
+  .doc-read > .card-body { padding: 0 }
+  .doc-read .prose { max-width: none; font-size: 11pt; color: #000 }
+  .main:has(.doc-read), .main:has(.doc-read) .scroll { overflow: visible !important }
+  .main:has(.doc-read) .view-head { background: none; border-bottom: 1px solid #000; padding: 0 0 8px }
+}
+
+/* Learn: Quiz und Compliance-Matrix */
+.quiz-q { border: 0; padding: 0; margin: 0 }
+.quiz-q > legend { padding: 0; font-weight: 500; margin-bottom: 8px }
+.quiz-q[data-state] .opt { border-color: var(--crit) }
+.opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px }
+.matrix-wrap { max-height: min(70vh, 760px); overflow: auto }
+.matrix-wrap .matrix thead th { position: sticky; top: 0; z-index: 2 }
+.matrix-wrap .matrix thead th:first-child { z-index: 3 }
+.matrix-wrap .matrix tfoot th, .matrix-wrap .matrix tfoot td { position: sticky; bottom: 0; z-index: 2 }
+.matrix-wrap .matrix tfoot th:first-child { z-index: 3 }
+.matrix-wrap .matrix td { vertical-align: middle }
+.view-head > .head-actions { min-width: 0; max-width: 100% }
+@container (max-width: 440px) {
+  .round-line > .round-act .btn.lg.primary { flex-basis: 100% }
+}
+@media (max-width: 720px) { .doc-print { display: none } }
+
+/* ───────── QIA-BEGIN · Quality, Insights, Admin – UX-Feinschliff (Agent QIA; nur eigene Klassen, nur Tokens, hell + dunkel) ───────── */
+/* Bestätigungsdialog (src/components/ui/ConfirmDialog.tsx) */
+.confirm-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--fg-2) }
+.confirm-ack { align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface-2) }
+.confirm-ack input { margin-top: 3px }
+
+/* Quality: Ereignis melden – das Wesentliche auf einem Bildschirm */
+.q-report-body { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 14px }
+.q-sec { border: 0; padding: 0; margin: 0; min-width: 0 }
+.q-sec > legend { padding: 0; margin-bottom: 6px }
+.q-types .chip { min-height: 36px }
+.q-report textarea.field { min-height: 0 }
+.q-types[aria-invalid="true"] .chip { border-color: var(--crit) }
+.q-sev { align-self: flex-start; max-width: 100% }
+.q-sev button { min-height: 34px }
+.q-ctx { flex-wrap: wrap }
+.q-details { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.q-details > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 8px 12px; min-height: 40px; border-radius: var(--r) }
+.q-details > summary::-webkit-details-marker { display: none }
+.q-details > summary:hover { background: var(--surface-2) }
+.q-details > summary .linkbtn { margin-left: auto }
+.q-details[open] > summary { border-bottom: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0 }
+.q-details[open] > summary .linkbtn { visibility: hidden }
+.q-details-sum { color: var(--fg-2) }
+.q-details-body { padding: 12px }
+.q-next { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2) }
+.q-next h2 { margin: 0 }
+.q-next-list { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 2px; font-size: 0.8125rem }
+.q-next-list li > span.grow { display: inline }
+.q-submit { position: sticky; bottom: 0; z-index: 2; background: var(--surface); padding: 10px 0; border-top: 1px solid var(--line) }
+.q-submit-ctx { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 }
+@media (max-width: 720px) {
+  .q-new .view-head .sub { display: none }
+  .q-new .tabpanel { padding-bottom: 8px }
+  .q-types .chip { min-height: 40px }
+  .q-sev { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100% }
+  .q-sev button { padding-inline: 4px; white-space: normal; line-height: 1.2; min-height: 40px }
+  .q-submit { bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)); margin: 0 -12px; padding: 8px 12px }
+  .q-submit .btn { flex: 1 1 auto }
+  .q-submit-ctx { display: none }
+}
+
+/* Quality: Ereignisliste und Detail */
+.q-cards { display: none; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.q-cards > li + li { border-top: 1px solid var(--line) }
+.q-cards .li:hover { background: var(--surface-2) }
+.q-steps li { padding: 0 }
+.q-steps li > a { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; min-height: 44px; height: 100% }
+.q-steps li[data-view] { box-shadow: inset 0 -2px 0 var(--accent) }
+.q-step-name { overflow-wrap: anywhere; hyphens: auto }
+.q-nextstep .lbl { margin-right: 4px }
+@media (max-width: 720px) {
+  .q-cards { display: flex }
+  .q-table { display: none }
+  .q-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .q-metrics .metric + .metric { border-top: 0 }
+  .q-metrics .metric:nth-child(n + 3) { border-top: 1px solid var(--line) }
+  .q-metrics .metric:nth-child(even) { border-left: 1px solid var(--line) }
+  .q-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible }
+  .q-steps li { min-width: 0 }
+  .q-steps li + li { border-left: 0 }
+  .q-steps li:nth-child(3n + 2), .q-steps li:nth-child(3n) { border-left: 1px solid var(--line) }
+  .q-steps li:nth-child(n + 4) { border-top: 1px solid var(--line) }
+  .q-detail > .stack { display: contents }
+  .q-o1 { order: 1 } .q-o2 { order: 2 } .q-o3 { order: 3 } .q-o4 { order: 4 }
+  .q-detail[data-new] .q-o2 { order: 0 }
+  .q-step-name { font-size: 0.75rem }
+}
+/* Admin: Unternavigation – Desktop als Spalte, Tablet hoch und Handy als Leiste oben */
+.adm-nav nav { overflow: auto; min-height: 0 }
+.adm-nav .menu a { flex-direction: column; align-items: flex-start; gap: 1px; min-height: 40px }
+.adm-nav .menu a[aria-current="page"] { background: var(--accent-soft); color: var(--accent) }
+.adm-nav-l { font-weight: 500 }
+.adm-nav-h { color: var(--fg-3) }
+.adm-nav a[aria-current="page"] .adm-nav-h { color: var(--accent) }
+.adm-fact { text-align: right; align-self: center; max-width: 45% }
+@media (max-width: 920px) {
+  .adm-ws { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) }
+  .adm-nav .list-head { display: none }
+  .adm-nav nav { overflow-x: auto; scrollbar-width: thin; overscroll-behavior-x: contain }
+  .adm-nav .menu { display: flex; gap: 2px; padding: 4px; white-space: nowrap }
+  .adm-nav .menu a { justify-content: center; padding: 6px 12px; min-height: 40px }
+  .adm-nav-h { display: none }
+}
+@media (max-width: 720px) { .adm-fact { display: none } }
+@media (max-width: 920px) { .stable .adm-hide-md { display: none } }
+
+/* Admin: Berechtigungen einer Rolle (Matrix.tsx) und Matrix über alle Rollen (RoleMatrix.tsx) */
+.pm-tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center }
+.pm-tools > .field { flex: 1 1 220px; min-width: 0 }
+.pm-tools > .seg-x { min-width: 0 }
+.pm-group { border: 1px solid var(--line); border-radius: var(--r); padding: 0; margin: 0; min-width: 0; background: var(--surface) }
+.pm-ghead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0 }
+.pm-gcheck { min-height: 32px }
+.pm-gcheck input, .pm-row input, .rm-table input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex: none }
+.pm-list { list-style: none; margin: 0; padding: 0 }
+.pm-list > li + li { border-top: 1px solid var(--line) }
+.pm-list > li[data-changed] { background: var(--accent-soft) }
+.pm-row { display: flex; align-items: center; gap: 10px; padding: 7px 12px; min-height: 40px; cursor: pointer }
+.pm-row .grow { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px }
+.pm-diff { font-size: 0.625rem }
+.pm-key { white-space: nowrap }
+.pm-bar { position: sticky; bottom: 0; z-index: 3; background: var(--surface); padding: 10px 0; border-top: 1px solid var(--line) }
+@media (max-width: 720px) {
+  .pm-row { flex-wrap: wrap }
+  .pm-key { flex-basis: 100%; padding-left: 28px; font-size: 0.6875rem }
+  .pm-bar { bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)); margin: 0 -12px; padding: 8px 12px }
+}
+.rm-wrap { position: relative; overflow: auto; max-height: calc(100dvh - 300px); min-height: 280px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.rm-wrap:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.rm-table { border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; min-width: 100% }
+.rm-table th, .rm-table td { border-bottom: 1px solid var(--line); padding: 6px 8px; background: var(--surface) }
+.rm-table td { text-align: center; min-width: 96px }
+.rm-table thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); vertical-align: bottom; font-weight: 500 }
+.rm-role a { color: var(--fg); text-decoration: none; display: block; line-height: 1.25; max-width: 140px; margin: 0 auto; font-size: 0.75rem; overflow-wrap: break-word; hyphens: auto }
+.rm-role a:hover { color: var(--accent); text-decoration: underline }
+.rm-role .mono { display: block; text-align: center }
+.rm-table .rm-first, .rm-table .rm-corner { position: sticky; left: 0; z-index: 1; text-align: left; min-width: 220px; max-width: 300px; border-right: 1px solid var(--line); font-weight: 400 }
+.rm-table .rm-corner { z-index: 3; font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3) }
+.rm-pl { display: block }
+.rm-table td:has(.rm-cell) { padding: 0 }
+.rm-cell { display: flex; align-items: center; justify-content: center; min-height: 44px; cursor: pointer }
+.rm-pk { display: block; font-size: 0.6875rem }
+.rm-group th, .rm-group td { background: var(--surface-2) }
+.rm-group .pm-gcheck { justify-content: center; min-height: 28px }
+.rm-table td[data-changed] { background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--accent) }
+.rm-table tbody tr:hover > td, .rm-table tbody tr:hover > th { background: var(--surface-2) }
+.rm-table tbody tr:hover > td[data-changed] { background: var(--accent-soft) }
+@media (max-width: 720px) {
+  .rm-table .rm-first, .rm-table .rm-corner { min-width: 150px; max-width: 170px }
+  .rm-pk { display: none }
+  .rm-wrap { max-height: 70dvh }
+}
+
+/* Admin: Formular-Editor */
+.fb-grip { cursor: grab; width: 24px; min-height: 28px; display: inline-grid; place-items: center; border: 1px dashed var(--line-strong); border-radius: var(--r-sm); color: var(--fg-3); flex: none; user-select: none }
+.fb-grip:hover { border-color: var(--accent); color: var(--accent) }
+.fb-field[data-drag] { opacity: .55 }
+.fb-field[data-over="before"] { box-shadow: 0 -3px 0 var(--accent) }
+.fb-field[data-over="after"] { box-shadow: 0 3px 0 var(--accent) }
+@media (hover: none) { .fb-grip { border-style: solid; cursor: default } }
+/* Insights: Referenzreihe (geplant/beantragt) mit ≥ 3:1 Kontrast und ΔE ≥ 18 zur Akzentreihe (dataviz-Validator, hell + dunkel) */
+.ins-card, .legend { --ins-ref: #86939A }
+:root[data-theme="dark"] .ins-card, :root[data-theme="dark"] .legend { --ins-ref: #5E6B73 }
+@media (prefers-color-scheme: dark) { :root[data-theme="system"] .ins-card, :root[data-theme="system"] .legend { --ins-ref: #5E6B73 } }
+.ins-card .barfill.muted { fill: var(--ins-ref) }
+.ins-card .legend i.bar.muted { background: var(--ins-ref) }
+.chart .ins-unit { font-family: var(--font-cond); font-size: 0.625rem; letter-spacing: .04em }
+/* Abdeckungstabelle: Kollision mit .cov (Dienstplan-Chip) aufheben */
+table.cov { background: none; color: inherit; padding: 0; border-radius: 0; font-size: 0.75rem; white-space: normal }
+/* QIA-END */
+/* Bewohnerübersicht Mobile: die Liste (mit Filter, Allergie/REA, offenen Massnahmen) ersetzt die breite Tabelle – keine Doppelanzeige */
+@media (max-width: 720px) {
+  .workspace:not([data-detail]) > aside .reslist { max-height: none }
+  .res-unit-table { display: none }
+  .workspace .res { min-height: 52px }
+}
+/* Übergabe (PRD §11, §29): vier Fragen 4/2/1-spaltig nach verfügbarer Breite, nicht nach Viewport */
+.ho { container-type: inline-size }
+@container (max-width: 879px) {
+  .ho-body { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .ho-col + .ho-col { border-left: 0 }
+  .ho-col:nth-child(even) { border-left: 1px solid var(--line) }
+  .ho-col:nth-child(2) { border-top: 0 }
+  .ho-col:nth-child(n+3) { border-top: 1px solid var(--line) }
+}
+@container (max-width: 459px) {
+  .ho-body { grid-template-columns: minmax(0, 1fr) }
+  .ho-col:nth-child(even) { border-left: 0 }
+  .ho-col + .ho-col { border-top: 1px solid var(--line) }
+  .ho-head .push { margin-left: 0; width: 100% }
+  .ho-head .push .btn { flex: 1 }
+}
+.ho-confirm .lbl { display: block }
+.ho-check { margin-top: 4px; min-height: 40px; font-weight: 500 }
+.ho-check input { width: 20px; height: 20px }
+/* Aufgaben: Sammelquittierung */
+.stable tr.grp-row td { background: var(--surface-2); padding-block: 6px }
+.bulk-list { max-height: 40vh; overflow: auto }
+.chk[data-state="link"] { border-style: dashed; color: var(--accent); text-decoration: none; font-size: 0.8125rem }
+.chk[data-state="link"]:hover { border-color: var(--accent); background: var(--accent-soft) }
+@media (max-width: 720px) {
+  /* Kennzahlen 2 × 2 statt 4 untereinander */
+  /* Aufgabenliste als Karten: Quittieren bleibt im Daumenbereich sichtbar, keine horizontale Scrollbar */
+  .task-table thead { display: none }
+  .task-table table, .task-table tbody { display: block }
+  .task-table tbody tr { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; grid-template-areas: "time res act" "time task act"; gap: 2px 10px; padding: 10px 12px; border-bottom: 1px solid var(--line) }
+  .task-table tbody tr:last-child { border-bottom: 0 }
+  .task-table tbody td { display: block; padding: 0; border: 0 }
+  .task-table td.tt-time { grid-area: time }
+  .task-table td.tt-res { grid-area: res }
+  .task-table td.tt-res .small { display: inline; margin-left: 6px }
+  .task-table td.tt-task { grid-area: task }
+  .task-table td.tt-act { grid-area: act; align-self: center }
+  .task-table td.hide-sm { display: none }
+  .task-table tbody tr.grp-row { display: block; background: var(--surface-2) }
+  .task-table tr.grp-row .row-between { gap: 6px }
+  .task-table .chk { width: 40px; height: 40px }
+  .task-table .row-menu { min-width: 40px; min-height: 40px }
+}
+/* Team, Dienstplan, Learn (Handy): Kennzahlen 2×2 (.metrics-sm2), Kanäle als eine wischbare Zeile – «Bitte lesen und bestätigen» bleibt oben sichtbar */
+@media (max-width: 720px) {
+  .metrics-sm2 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .metrics-sm2 .metric { padding: 8px 12px }
+  .team-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -12px; padding-inline: 12px }
+  .team-chips .chip { min-height: 36px; display: inline-flex; align-items: center }
+}
+.metrics.metrics-2 { grid-template-columns: repeat(4, minmax(0, 1fr)) }
+@media (max-width: 720px) { .metrics.metrics-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+/* Home Mobile: Übergabe ist über die Kennzahl «Offene Übergaben» erreichbar – Platz über dem Falz für «Kritisch» */
+@media (max-width: 720px) { .home-ho-btn { display: none } }
+.team-ack-end { align-items: center; flex-wrap: wrap }
+@media (max-width: 720px) { .team-ack-end { flex-direction: column; align-items: stretch } }
+.bulk-item { display: flex; align-items: center; gap: 10px; min-height: 44px; width: 100% }
+.bulk-item input { width: 18px; height: 18px }
+/* Docs: Filter-Chips mit Zähler (Abstand auch bei inline-flex), auf dem Handy eine wischbare Zeile; kompakte Dokumentkarten */
+.docs-chips .chip { gap: 5px }
+@media (max-width: 720px) {
+  .docs-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -12px; padding-inline: 12px }
+  .docs-chips .chip { flex: none }
+  .rtable.r-inline tr { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px }
+  .rtable.r-inline tr > td:first-child { flex-basis: 100% }
+  .rtable.r-inline tr > td { font-size: 0.75rem }
+  .rtable.r-inline tr > td.r-title { font-size: 0.875rem }
+}
+.thumbs > img { width: 56px; height: 56px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--r-sm) }
+/* Dialoge, die in Tabellenzellen stehen (z. B. Tausch anfragen), erben sonst Ausrichtung/Schriftgrösse der Zelle */
+.rtable dialog.dlg { text-align: left; white-space: normal; font-size: 0.875rem }
+/* Planungsfluss: Schrittnamen mit Silbentrennung statt Bruch mitten im Wort */
+.steps .step-btn > span:last-child { overflow-wrap: normal; hyphens: auto }
+.dlg .steps li { min-width: 104px }
+@media (max-width: 920px) {
+  /* Abgabeliste: Präparat bleibt beim seitlichen Scrollen sichtbar */
+  .mar tbody th, .mar thead th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--line) }
+  .mar thead th:first-child { background: var(--surface-2) }
+}
+/* Assessments: auf Tablet bleibt «Durchführen» sichtbar (Verlauf/Datum weichen, Datum steht im Ergebnis-Verlauf) */
+@media (max-width: 1180px) { .stable .as-trend { display: none } }
+@media (max-width: 1023px) { .stable .as-date { display: none } }
+/* Sweep: «nicht zutreffend»/«gesperrt» als Text lesbar (≥ 4.5:1) – --line-strong ist nur für Linien gedacht */
+.cm.na, .nodose, .steps li[data-state="locked"] { color: var(--fg-3) }
+/* Bestätigungsdialoge, die in Tabellenzellen oder Kopfzeilen stehen, erben keine Zellen-Ausrichtung */
+td dialog.dlg, th dialog.dlg { text-align: left; white-space: normal; font-size: 0.875rem; font-weight: 400 }
+
+/* Grössere Schrift (Profil): Media Queries rechnen in px, daher Topbar-Inhalte früher reduzieren */
+@media (max-width: 1600px) {
+  :root:is([data-text="l"], [data-text="xl"]) .me div,
+  :root:is([data-text="l"], [data-text="xl"]) .topbar .shift .full { display: none }
+}
+@media (max-width: 1280px) {
+  :root[data-text="xl"] .topbar .clock { display: none }
+}
+@media (max-width: 480px) {
+  :root:is([data-text="l"], [data-text="xl"]) .topbar .theme-btn { display: none }
+}
+
+/* ───────── Datums-/Zeitfelder (DateField, TimeField, DateTimeField – PRD §50 Date/Time Picker) ─────────
+   Sichtbares Feld = .field (Zustände Hover/Fokus/Fehler/Deaktiviert von dort), Knopf rechts im Feld,
+   Popover fixiert am Feld (im offenen <dialog> gerendert), auf Mobile als Blatt am unteren Rand. */
+.dtf { position: relative; min-width: 0 }
+.dtf-box { position: relative }
+.dtf-in { padding-right: 38px }
+.dtf-in::placeholder { color: var(--fg-3); opacity: 1 }
+.dtf-btn { position: absolute; top: 1px; right: 1px; bottom: 1px; width: 34px; display: grid; place-items: center; border: 0; border-radius: 0 var(--r) var(--r) 0; background: none; color: var(--fg-2); padding: 0 }
+.dtf-btn:hover:not(:disabled) { background: var(--sunken); color: var(--fg) }
+.dtf-btn:active:not(:disabled) { background: var(--line) }
+.dtf-btn[aria-expanded="true"] { color: var(--accent) }
+.dtf-btn:disabled { opacity: .5; cursor: not-allowed }
+.dtf-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+.dtf-err { margin: 4px 0 0 }
+.dtf-pair { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0 }
+.dtf-pair > .dtf:not(.dtf-time) { flex: 1 1 8.5rem }
+.dtf-pair > .dtf-time { flex: 1 1 5.5rem }
+
+.dtf-scrim { position: fixed; inset: 0; z-index: 79; background: var(--scrim) }
+.dtf-pop { position: fixed; z-index: 80; background: var(--surface); color: var(--fg); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: var(--shadow-pop); padding: 8px; font-size: 0.875rem; font-weight: 400; text-align: left; white-space: normal; max-width: calc(100vw - 16px) }
+.dtf-pop:focus { outline: none }
+.dtf-pop.is-sheet { left: 0; right: 0; bottom: 0; top: auto; max-width: none; max-height: calc(100dvh - 24px); overflow: auto; border-width: 1px 0 0; border-radius: var(--r) var(--r) 0 0; padding: 12px max(16px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) }
+
+/* Kalender */
+.dtf-cal-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px }
+.dtf-month { font-weight: 600; font-size: 0.875rem }
+.dtf-nav { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--r); background: none; color: var(--fg-2); padding: 0 }
+.dtf-nav:hover:not(:disabled) { background: var(--surface-2); border-color: var(--line) }
+.dtf-nav:active:not(:disabled) { background: var(--sunken) }
+.dtf-nav:disabled { opacity: .4; cursor: not-allowed }
+.dtf-grid { border-collapse: separate; border-spacing: 2px; margin: 0 -2px }
+.dtf-grid th { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-3); padding: 2px 0 4px; text-align: center }
+.dtf-grid td { width: 2.25rem; height: 2.25rem; padding: 0; text-align: center; vertical-align: middle; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 0.8125rem; border: 1px solid transparent; border-radius: var(--r-sm); cursor: pointer; user-select: none }
+.dtf-grid td:hover { background: var(--surface-2); border-color: var(--line) }
+.dtf-grid td:active { background: var(--sunken) }
+.dtf-grid td[data-other] { color: var(--fg-3) }
+.dtf-grid td[aria-current="date"] { border-color: var(--accent); color: var(--accent); font-weight: 600 }
+.dtf-grid td[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600 }
+.dtf-grid td[aria-disabled="true"] { color: var(--fg-3); background: none; border-color: transparent; text-decoration: line-through; cursor: not-allowed; opacity: .55 }
+.dtf-grid td:focus { outline: none }
+.dtf-grid td:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
+.dtf-foot { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--line); margin-top: 6px; padding-top: 8px }
+.dtf-foot .dtf-close { margin-left: auto }
+
+/* Zeitliste (Listbox, Fokus bleibt im Feld → aktive Option sichtbar markiert) */
+.dtf-times { padding: 4px; min-width: 9rem }
+.dtf-list { position: relative; list-style: none; margin: 0; padding: 0; max-height: min(16rem, 50vh); overflow: auto; overscroll-behavior: contain }
+.dtf-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: var(--r-sm); cursor: pointer; color: var(--fg) }
+.dtf-list li:hover { background: var(--surface-2) }
+.dtf-list li.is-active { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent) }
+.dtf-list li[aria-selected="true"] { color: var(--accent); font-weight: 600 }
+.dtf-list li.is-now { border-bottom: 1px solid var(--line); border-radius: var(--r-sm) var(--r-sm) 0 0; margin-bottom: 2px }
+.dtf-now { font-family: var(--font-ui); font-weight: 500 }
+.dtf-sheet-title { font-weight: 600; padding: 2px 10px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px }
+
+@media (max-width: 720px) {
+  .dtf-in { padding-right: 46px; min-height: 42px }
+  .dtf-btn { width: 42px }
+  /* Feldschrift ist hier 1rem: Datum braucht mehr Platz, sonst bricht die Zeit in die nächste Zeile */
+  .dtf-pair > .dtf:not(.dtf-time) { flex-basis: 10rem }
+  .dtf-pair > .dtf-time { flex-basis: 6rem }
+  .dtf-nav { width: 44px; height: 44px }
+  .dtf-month { font-size: 1rem }
+  .dtf-cal .dtf-grid { width: calc(100% + 4px); table-layout: fixed }
+  .dtf-grid td { width: auto; height: 2.75rem; font-size: 0.9375rem }
+  .dtf-foot .btn { min-height: 44px; flex: 1 1 auto }
+  .dtf-foot .dtf-close { flex: 0 1 auto }
+  .dtf-times.is-sheet { padding-top: 8px }
+  .dtf-times.is-sheet .dtf-list { max-height: min(22rem, 55dvh) }
+  .dtf-list li { min-height: 44px; font-size: 1rem }
+}
+
+/* ───────── Arztvisite (PRD §29, Agent «Visite»): /tasks/visit – nur .visit*-Klassen und .vq/.vo ─────────
+   Breite Ansicht: Liste | Person | Erfassung. Mittlere Breite (z. B. Tablet quer, oder grosse Schrift):
+   Liste als Leiste oben, darunter Person | Erfassung. Schmal (Tablet hoch, Handy): Leiste, Person, Erfassung untereinander.
+   Container-Abfragen in rem, damit die Schriftgrösse (careos_text) die Aufteilung mitbestimmt. */
+.visit-main { flex: 1; container-type: inline-size; container-name: visit }
+.visit { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; overflow: auto }
+.visit > * { min-width: 0 }
+.visit .field { min-height: 40px }
+.visit .btn { min-height: 40px }
+.visit .btn.sm { min-height: 34px }
+.visit .btn.lg { min-height: 48px }
+.visit-center { padding: 16px 18px 24px; display: flex; flex-direction: column; gap: 14px; min-width: 0 }
+.visit-cap { container-type: inline-size; background: var(--surface-2); border-top: 1px solid var(--line); padding: 16px 16px 0; display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+
+/* Liste: standardmässig als Leiste (horizontal scrollbar) */
+.visit-list { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface); min-width: 0 }
+.visit-list-head { display: none }
+.visit-list ul { list-style: none; margin: 0; padding: 2px; display: flex; flex-wrap: wrap; gap: 6px; flex: 0 1 auto; min-width: 0 }
+.visit-list li { flex: none }
+.visit-list .res { position: relative; grid-template-columns: auto minmax(0, auto) auto; min-height: 44px; padding: 5px 8px; border-color: var(--line) }
+.visit-list .res .room { min-width: 2.5rem; padding: 3px 4px }
+.visit-list .res .grow { display: flex; flex-direction: column; min-width: 0; max-width: 11rem }
+.visit-list .res .meta:empty { display: none }
+.visit-list .res .tag { justify-self: end }
+.visit-list-add { flex: none; min-width: 0 }
+.visit-list-add .field { width: auto; max-width: 16rem }
+.visit-list-empty { margin: 0; padding: 4px 0; flex: 1 }
+.visit-keys { display: none }
+
+/* Personenkopf */
+.visit-banner { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface-2) }
+.visit-banner-who { display: flex; align-items: center; gap: 12px; flex-wrap: wrap }
+.visit-banner .room { font-size: 0.9375rem; border: 1px solid var(--accent); color: var(--accent); border-radius: var(--r-sm); padding: 4px 10px; background: var(--surface) }
+.visit-banner h2 { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.2 }
+.visit-banner h2 span { font-weight: 400; color: var(--fg-3) }
+.visit-banner h2:focus { outline: none }
+.visit-banner h2:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.visit-banner .flags { margin-left: 0; align-self: flex-start }
+.visit-h3 { margin: 0; font-size: 0.875rem; font-weight: 600; display: flex; align-items: center; gap: 6px }
+
+/* Veränderungen */
+.visit-vital { align-items: center; display: grid; grid-template-columns: minmax(0, 1fr) 5.5rem minmax(7rem, auto); gap: 12px }
+.visit-vital-name { font-weight: 500 }
+.visit-vital .spark { width: 5.5rem }
+.visit-vital-val { display: flex; flex-direction: column; align-items: flex-end; text-align: right; gap: 1px }
+.visit-vital-val .mono { font-size: 1.0625rem; font-weight: 500; white-space: nowrap }
+.visit-note { flex-wrap: wrap; row-gap: 4px }
+.visit-note time { min-width: 5.5rem }
+.visit-note-text { flex-basis: 14rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; white-space: pre-wrap }
+
+/* Erfassung */
+.vq { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.vq-text { margin: 0; font-weight: 500 }
+.vq-meta { display: flex; flex-wrap: wrap; gap: 4px 10px }
+.vq textarea.field { min-height: 64px }
+.vo { margin: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface); display: flex; flex-direction: column; gap: 8px; min-width: 0 }
+.vo-for { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.vo-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "kind kind del" "text text text" "date time time"; gap: 8px; align-items: end }
+.vo-kind { grid-area: kind } .vo-text { grid-area: text } .vo-date { grid-area: date } .vo-time { grid-area: time } .vo-del { grid-area: del }
+.vo-del { min-width: 40px; padding: 6px 10px; color: var(--fg-2) }
+.vo-med { margin: 0; color: var(--fg-2); border-left: 3px solid var(--violet); padding-left: 8px }
+.visit-cap-foot { position: sticky; bottom: 0; z-index: 4; margin: auto -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px }
+.visit-cap-actions { flex-wrap: nowrap }
+.visit-cap :is(input, select, textarea, button) { scroll-margin-bottom: 8.5rem }
+.visit-cap-actions .btn { flex: none }
+
+@container (min-width: 42rem) {
+  .vo-grid { grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr) 9.5rem 7rem auto; grid-template-areas: "kind text date time del" }
+}
+
+/* Mittlere Breite: Leiste oben, Person | Erfassung nebeneinander, beide scrollen getrennt */
+@container visit (min-width: 54rem) {
+  .visit { overflow: hidden; grid-template-rows: auto minmax(0, 1fr); align-content: stretch }
+  .visit[data-mode="person"] { grid-template-columns: minmax(0, 1fr) minmax(19rem, 22rem) }
+  .visit[data-mode="person"] > .visit-center, .visit[data-mode="person"] > .visit-cap { overflow: auto; min-height: 0 }
+  .visit[data-mode="overview"] > .visit-center { overflow: auto; min-height: 0 }
+  .visit-cap { border-top: 0; border-left: 1px solid var(--line) }
+}
+/* Breit: Liste links als Spalte */
+@container visit (min-width: 74rem) {
+  .visit { grid-template-rows: minmax(0, 1fr) }
+  .visit[data-mode="person"] { grid-template-columns: 16rem minmax(0, 1fr) minmax(22rem, 26rem) }
+  .visit[data-mode="overview"] { grid-template-columns: 16rem minmax(0, 1fr) }
+  .visit-list { grid-column: auto; flex-direction: column; align-items: stretch; padding: 10px; border-bottom: 0; border-right: 1px solid var(--line); overflow: auto; min-height: 0 }
+  .visit-list-head { display: flex; flex-direction: column; gap: 2px; padding: 0 2px 4px }
+  .visit-list ul { flex-direction: column; overflow: visible; flex: none; padding: 0 }
+  .visit-list .res { grid-template-columns: 40px minmax(0, 1fr) auto; border-color: transparent }
+  .visit-list .res .grow { max-width: none }
+  .visit-list .res .meta:empty { display: block }
+  .visit-list-add { flex: none }
+  .visit-keys { display: block; margin: 0; padding: 0 2px }
+}
+@media (pointer: coarse) { .visit-keys { display: none !important } }
+@media (max-width: 720px) {
+  .visit { overflow: visible }
+  .visit-center { padding: 14px 12px 18px }
+  .visit-cap { padding: 14px 12px 0 }
+  .visit-cap-foot { margin: auto -12px 0; padding-inline: 12px; bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)) }
+  .visit-list { padding: 8px }
+  .visit-list ul { flex-wrap: nowrap; overflow-x: auto; flex: 1 1 100%; scrollbar-width: thin }
+  .visit-list-add, .visit-list-add .field { flex: 1 1 100%; width: 100%; max-width: none }
+  .visit-banner-who > .grow { flex: 1 1 calc(100% - 5rem) }
+  .visit-vital { grid-template-columns: minmax(0, 1fr) auto }
+  .visit-vital .spark { display: none }
+}
+
+/* ===== Barrierefreiheit (WCAG 2.2 AA, PRD §30) – Ergänzungen des A11y-Durchgangs ===== */
+/* 1.4.10 Reflow: Diagrammraster passt auch bei 320 CSS-px (Mindestbreite 300 px erzeugte Seitenscroll) */
+.charts { grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)) }
+/* Scrollbare Tabellen/Listen, die per Tastatur fokussierbar gemacht werden (ScrollRegions): Ring innen, da der Rahmen am Rand liegt */
+[data-scroll-focus]:focus-visible { outline-offset: -2px }
+/* 1.4.4 Text bis 200 %: Personenliste schneidet Sicherheitsangaben (Allergie, REA) nicht ab, sondern bricht um;
+   lange Wörter in Kennzahlen und Medikamentenrunde brechen statt in die Nachbarspalte zu laufen */
+.res .meta { white-space: normal; text-overflow: clip }
+.metric, .round-line .drug, .round-line .drug-sub { overflow-wrap: break-word; hyphens: auto }
+@media (max-width: 720px) {
+  /* Touch-Ziele ≥ 40 px (PRD §28/§30): Quittier-Kästchen bleiben optisch 28 px, die Trefferfläche wächst auf 40 px */
+  .chk { position: relative }
+  .chk::before { content: ""; position: absolute; inset: min(0px, calc((100% - 40px) / 2)) }
+  .me { min-width: 40px }
+  .rec-tabs-btn { width: 40px }
+  .snip, .entry-head .snips .snip, .team-chips .chip, .notes-filter .chip, .q-types .chip, .quickdoc button, .dose-opt, .day-chip,
+  .mention-opt, .steps .step-btn, .msg .reacts button, .msg .mact .react-add, .msg .mact .linkbtn { min-height: 40px }
+  .check { min-height: 40px }
+  .entry-head select { min-height: 40px }
+  .btn.sm { min-width: 40px }
+  /* Aufgaben als Karten: Zeitspalte wächst mit der Schriftgrösse; «überfällig»/«jetzt fällig» umbrechen statt über
+     Name und Titel zu laufen; lange Wörter im Titel brechen statt unter den Aktionsknopf zu laufen (1.4.4/1.4.10) */
+  /* 2.4.11 Fokus nicht verdeckt: per Tab angesteuerte Elemente nicht unter Bottom-Nav/FAB bzw. dem klebenden Registerkopf */
+  html { scroll-padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 32px); scroll-padding-top: 64px }
+  .task-table tbody tr { grid-template-columns: 4rem minmax(0, 1fr) auto }
+  .task-table td.tt-time .small { white-space: normal; font-family: var(--font-ui) }
+  .task-table td.tt-task { overflow-wrap: break-word; hyphens: auto }
+}
+
+/* Timeline: mehrzeilige Einträge (z. B. Visite-Zusammenfassung) behalten ihre Zeilen */
+.event .body p { white-space: pre-line }
+
+/* ==========================================================================================================
+   Formularfelder des Design Systems (src/components/ui/fields/, PRD §50)
+   Zustände Default/Hover/Focus/Active/Disabled/Error kommen von .field; hier nur Rahmen, Einheit, Hinweis,
+   Warnung, Zähler, Passwort, Suche, Combobox, Checkbox/Schalter, Radio, Datei, Farbe. Nur Tokens, Schrift in rem.
+   ========================================================================================================== */
+.fld > label.lbl { cursor: default }
+.fld-opt { font-family: var(--font-ui); font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--fg-3) }
+.fld-hint { margin: 0; font-size: 0.75rem; color: var(--fg-3) }
+.fld-err { margin: 0 }
+.fld-slot:empty { display: none }
+.fld-warn { margin: 0; font-size: 0.75rem; font-weight: 500; color: var(--warn) }
+.fld-count { margin: 0; font-size: 0.75rem; color: var(--fg-3); text-align: right }
+.fld-count[data-near] { color: var(--warn) }
+/* Einheit als Suffix: Feld + Einheit als eine Gruppe */
+.fld-ctl { display: flex; align-items: stretch; min-width: 0 }
+.fld-ctl > .field { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0 }
+.fld-unit { display: flex; align-items: center; padding: 0 9px; border: 1px solid var(--line-ui); border-left: 0; border-radius: 0 var(--r) var(--r) 0; background: var(--sunken); color: var(--fg-2); font-size: 0.8125rem; white-space: nowrap }
+.fld[data-invalid] .fld-unit { border-color: var(--crit) }
+.field[data-warn]:not([aria-invalid="true"]) { border-color: var(--warn) }
+/* Passwort mit Umschalter, Suche mit Lupe */
+.pw, .srch { position: relative; display: block; min-width: 0 }
+.pw-in { padding-right: 40px }
+.pw-btn { position: absolute; top: 1px; right: 1px; bottom: 1px; width: 38px; display: grid; place-items: center; border: 0; border-radius: 0 var(--r) var(--r) 0; background: none; color: var(--fg-2); padding: 0 }
+.pw-btn:hover:not(:disabled) { background: var(--sunken); color: var(--fg) }
+.pw-btn[aria-pressed="true"] { color: var(--accent) }
+.pw-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+.pw-btn:disabled { opacity: .5; cursor: not-allowed }
+.srch-ico { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--fg-3); pointer-events: none }
+.field.srch-in { padding-left: 30px }
+/* Checkbox und Schalter */
+.cbx { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; flex: none; cursor: pointer }
+.cbx:disabled { cursor: not-allowed }
+.check:has(input:disabled) { cursor: not-allowed; color: var(--fg-3) }
+.chk-fld { display: inline-flex; flex-direction: column; gap: 2px; min-width: 0 }
+.chk-fld > .fld-hint, .chk-fld > .fld-err { padding-left: 24px }
+.chk-fld:has(.sw) > .fld-hint, .chk-fld:has(.sw) > .fld-err { padding-left: 46px }
+.fld-opts { display: flex; flex-direction: column; gap: 2px }
+.sw { appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 36px; height: 20px; margin: 0; border: 1.5px solid var(--line-ui); border-radius: 999px; background: var(--surface-2); cursor: pointer; transition: background-color .12s, border-color .12s }
+/* .check input setzt 16 px – für Schalter nur die Grösse überschreiben (Zustände bleiben bei .sw:checked) */
+.check input.sw { width: 36px; height: 20px }
+.sw::before { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--fg-2); transition: transform .12s }
+.sw:hover:not(:disabled) { border-color: var(--accent) }
+.sw:checked { background: var(--accent); border-color: var(--accent) }
+.sw:checked::before { transform: translateX(16px); background: var(--accent-fg) }
+.sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.sw:disabled { opacity: .5; cursor: not-allowed }
+.sw[aria-invalid="true"] { border-color: var(--crit) }
+/* Radio-Gruppe (Liste) und Segmente */
+.rg { display: flex; flex-direction: column; gap: 2px; align-items: flex-start }
+.rg.rg-inline { flex-direction: row; flex-wrap: wrap; gap: 2px 16px }
+.rg-opt { display: inline-flex; align-items: flex-start; gap: 8px; min-height: 28px; padding: 4px 2px; border: 0; border-radius: var(--r-sm); background: none; color: var(--fg); font: inherit; text-align: left; cursor: pointer }
+.rg-dot { flex: none; display: grid; place-items: center; width: 16px; height: 16px; margin-top: 1px; border: 1.5px solid var(--line-ui); border-radius: 50%; background: var(--surface) }
+.rg-opt:hover:not(:disabled) .rg-dot { border-color: var(--accent) }
+.rg-opt[aria-checked="true"] .rg-dot { border-color: var(--accent) }
+.rg-opt[aria-checked="true"] .rg-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent) }
+.rg-opt:disabled { opacity: .5; cursor: not-allowed }
+.rg-text { display: flex; flex-direction: column }
+.rg-hint { font-size: 0.75rem; color: var(--fg-3) }
+.rg[aria-invalid="true"] .rg-dot, .seg[aria-invalid="true"] { border-color: var(--crit) }
+.rg-seg { align-self: flex-start; max-width: 100% }
+/* Combobox */
+.cb { position: relative; min-width: 0 }
+.field.cb-in { padding-right: 34px; text-overflow: ellipsis }
+.cb:has(.cb-clear) .field.cb-in { padding-right: 62px }
+.cb-btn { position: absolute; top: 1px; bottom: 1px; width: 30px; display: grid; place-items: center; border: 0; border-radius: var(--r-sm); background: none; color: var(--fg-2); padding: 0 }
+.cb-btn:hover:not(:disabled) { background: var(--sunken); color: var(--fg) }
+.cb-btn:disabled { opacity: .5; cursor: not-allowed }
+.cb-toggle { right: 1px }
+.cb-clear { right: 31px }
+.cb-chev { display: grid; transform: rotate(90deg); transition: transform .12s }
+.cb-toggle[aria-expanded="true"] .cb-chev { transform: rotate(-90deg) }
+.cb-pop { position: fixed; z-index: 80; overflow: auto; overscroll-behavior: contain; padding: 4px; background: var(--surface); color: var(--fg); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: var(--shadow-pop); font-size: 0.875rem; text-align: left }
+.cb-pop:focus { outline: none }
+.cb-opt { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 2rem; padding: 6px 10px; border-radius: var(--r-sm); cursor: pointer }
+.cb-opt[data-active] { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent) }
+.cb-opt[aria-selected="true"] { font-weight: 600 }
+.cb-opt[aria-selected="true"] .cb-opt-l::after { content: " \2713"; color: var(--accent) }
+.cb-opt[aria-disabled="true"] { color: var(--fg-3); cursor: not-allowed }
+.cb-opt-l { min-width: 0; overflow-wrap: anywhere }
+.cb-opt-h { flex: none; max-width: 50%; font-size: 0.75rem; font-weight: 400; color: var(--fg-3); text-align: right }
+.cb-group { position: sticky; top: -4px; z-index: 1; padding: 8px 10px 4px; background: var(--surface); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3) }
+.cb-empty { padding: 10px; color: var(--fg-3) }
+/* Datei */
+.ff { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1.5px dashed var(--line-ui); border-radius: var(--r); background: var(--surface-2) }
+.ff.is-over { border-color: var(--accent); border-style: solid; background: var(--accent-soft) }
+.ff:has(.ff-native:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px }
+.ff.is-disabled { opacity: .6 }
+.fld[data-invalid] .ff { border-color: var(--crit) }
+.ff-native { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; opacity: 0 }
+.ff-drop { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--fg-2) }
+.ff-btn { cursor: pointer }
+.ff.is-disabled .ff-btn { cursor: not-allowed }
+.ff-limits { font-size: 0.75rem; color: var(--fg-3) }
+.ff-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px }
+.ff-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); min-width: 0 }
+.ff-thumb { flex: none; width: 40px; height: 40px; object-fit: cover; border-radius: var(--r-sm); background: var(--sunken) }
+.ff-doc { display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--fg-2) }
+.ff-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.ff-size { font-size: 0.75rem; color: var(--fg-3) }
+/* Farbe */
+.clr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.clr-pick { flex: none; width: 40px; height: 34px; padding: 2px; border: 1px solid var(--line-ui); border-radius: var(--r); background: var(--surface-2); cursor: pointer }
+.clr-pick:disabled { opacity: .6; cursor: not-allowed }
+.field.clr-in { width: 8.5rem }
+@media (max-width: 720px) {
+  .pw-btn { width: 40px }
+  .cb-btn { width: 36px }
+  .cb-clear { right: 37px }
+  .field.cb-in { padding-right: 40px }
+  .cb:has(.cb-clear) .field.cb-in { padding-right: 76px }
+  .cb-opt { min-height: 44px; align-items: center }
+  .rg-opt { min-height: 40px; align-items: center }
+  .rg-dot { margin-top: 0 }
+  .clr-pick { height: 40px }
+  .ff-item .btn { min-height: 40px }
+}
+
+/* ── Paket C: Storno und Korrektur klinischer Messungen (PRD §35) ─────────────────────────── */
+tr.voided > td { color: var(--fg-3) }
+tr.voided > td.num, tr.voided .corr-strike { text-decoration: line-through; text-decoration-color: var(--fg-3) }
+tr.voided > td.num.hi::after, tr.voided > td.num.lo::after { content: none }
+.voided-note { display: inline-flex; gap: 6px; align-items: baseline; flex-wrap: wrap; white-space: normal; margin-top: 2px }
+.vt td.vt-by { white-space: normal; min-width: 9rem }
+.corr-orig { display: grid; gap: 4px; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2) }
+.corr-orig-body { color: var(--fg-2); overflow-wrap: anywhere }
+.corr-vform { border: 0; padding: 0; background: none; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)) }
+.corr-form .chips { flex-wrap: wrap }
+/* Radio-Gruppe als Karten (.opt: Quiz, Assessments) */
+.rg.rg-cards { align-items: stretch; gap: 8px }
+.rg-opt.opt { width: 100%; padding: 8px 10px; min-height: 40px; border: 1px solid var(--line); background: var(--surface) }
+.rg-opt.opt:hover:not(:disabled) { border-color: var(--line-strong) }
+.rg-opt.opt[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft) }
+.rg-opt.opt .rg-dot { margin-top: 2px }
+.rg[aria-invalid="true"] .rg-opt.opt { border-color: var(--crit) }
+.rg.care-opts { display: grid; align-items: stretch }
+.care-opts .rg-text { flex: 1; min-width: 0 }
+.rg-row { display: flex; align-items: center; gap: 8px }
+.care-opts .rg-opt.opt { align-items: center }
+.care-opts .rg-opt.opt .rg-dot { margin-top: 0 }
+
+/* ── Paket C: Bewohnerfoto und kontrollierte Kamera (PRD §32, §15) ────────────────────────── */
+.rphoto { flex: none; display: inline-grid; place-items: center; border-radius: 50%; object-fit: cover; background: var(--sunken); color: var(--fg-2); font-family: var(--font-cond); font-weight: 600; letter-spacing: .02em; border: 1px solid var(--line); overflow: hidden }
+.rphoto.is-empty { border-style: dashed; border-color: var(--line-strong) }
+.rphoto-xs { width: 1.5rem; height: 1.5rem; font-size: 0.625rem }
+.rphoto-sm { width: 2rem; height: 2rem; font-size: 0.75rem }
+.rphoto-md { width: 2.5rem; height: 2.5rem; font-size: 0.875rem }
+.rphoto-lg { width: 3.5rem; height: 3.5rem; font-size: 1.125rem }
+.rphoto-xl { width: 6rem; height: 6rem; font-size: 1.75rem }
+.rphoto-btn { position: relative; flex: none; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; align-self: flex-start }
+.rphoto-btn:hover .rphoto { border-color: var(--accent) }
+.rphoto-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.rphoto-add { position: absolute; right: -2px; bottom: -2px; width: 1.25rem; height: 1.25rem; display: grid; place-items: center; border-radius: 50%; background: var(--accent); color: var(--accent-fg); font-size: 0.875rem; font-weight: 600; line-height: 1; border: 2px solid var(--surface-2) }
+.rec-banner > .rphoto { align-self: flex-start }
+.dlg-context .rphoto { border-color: var(--accent) }
+@media (max-width: 720px) {
+  .rec-banner .rphoto-lg { width: 2.75rem; height: 2.75rem; font-size: 0.9375rem }
+  .rphoto-btn { min-width: 44px; min-height: 44px; display: grid; place-items: center }
+}
+.cam { display: grid; gap: 10px }
+.cam-view { position: relative; display: grid; place-items: center; min-height: 12rem; background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden }
+.cam-view video, .cam-view img { display: block; width: 100%; max-height: 55vh; object-fit: contain; background: #000 }
+.cam-square .cam-view { aspect-ratio: 1; max-width: min(100%, 22rem); margin: 0 auto; width: 100% }
+.cam-square .cam-view video, .cam-square .cam-view img { height: 100%; max-height: none; object-fit: cover }
+.cam-view video[hidden] { display: none }
+.cam-msg { padding: 16px; text-align: center; max-width: 32rem }
+.cam-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center }
+
+/* ── Personenverzeichnis und Mitarbeiterprofil (PRD §55), Profilbild ── */
+.pav { display: grid; place-items: center; flex: none; border-radius: var(--r); background: var(--accent); color: var(--accent-fg); font-weight: 600; object-fit: cover; line-height: 1 }
+.pav-sm { width: 1.375rem; height: 1.375rem; font-size: 0.625rem; border-radius: var(--r-sm) }
+.pav-md { width: 2.25rem; height: 2.25rem; font-size: 0.8125rem }
+.pav-lg { width: 2.5rem; height: 2.5rem; font-size: 0.9375rem }
+.pav-xl { width: 3.5rem; height: 3.5rem; font-size: 1.125rem }
+img.pav { background: var(--sunken) }
+.ppl-bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center }
+.ppl-q { flex: 1 1 16rem; min-width: 0 }
+.ppl-unit { flex: 0 1 14rem; min-width: 10rem }
+.ppl-list { overflow: hidden; padding: 0 }
+.ppl-row { align-items: center; min-height: 3.5rem }
+.ppl-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px }
+.ppl-name { font-weight: 500 }
+.ppl-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.ppl-state { flex: none }
+.ppl-phone { flex: none; min-width: 8.5rem; text-align: right }
+.ppl-today { display: inline-flex; gap: 6px; align-items: center; font-size: 0.8125rem; white-space: nowrap }
+.ppl-head { gap: 14px; flex-wrap: nowrap; min-width: 0; align-items: center }
+.ppl-shifts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px }
+.ppl-shifts li { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.ppl-day { min-width: 5.75rem }
+.ppl-me { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; align-items: start }
+.ppl-avatar-edit { display: flex; gap: 16px; align-items: flex-start }
+.ppl-avatar-edit[data-loading] { opacity: .7 }
+@media (max-width: 1180px) { .ppl-phone { display: none } }
+@media (max-width: 900px) { .ppl-me { grid-template-columns: minmax(0, 1fr) } }
+@media (max-width: 640px) {
+  .ppl-row { flex-wrap: wrap; row-gap: 4px }
+  .ppl-state { order: 3; flex-basis: 100%; padding-left: calc(2.25rem + 12px) }
+  .ppl-unit { flex: 1 1 100% }
+  .ppl-today { white-space: normal }
+}
+
+/* ── Paket B: Startseite nach Rolle, Bewohnerzuordnung, Übergabe (Klassen home-*, asg-*, ho-assigned, ho-filters) ── */
+.home-head-acts { justify-content: flex-end }
+.home-mine .card-head h2 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap }
+.home-mine-shift { font-weight: 400 }
+.home-mine-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px }
+.home-mine-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; color: var(--fg) }
+.home-mine-chip .mono { color: var(--fg-2) }
+.home-prio { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center }
+.home-prio > .li:hover { background: var(--surface-2) }
+.home-prio-acts { display: flex; flex-direction: column; gap: 6px; padding: 6px 12px 6px 0 }
+.home-prio-more { padding: 8px 12px }
+.home-prio-out { display: block; padding: 8px 12px; border-top: 1px solid var(--line); color: var(--accent); text-decoration: none; font-weight: 500 }
+.home-prio-out:hover { background: var(--surface-2); text-decoration: underline }
+.home-units { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); gap: 12px }
+.home-units .card-head h3 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap }
+.home-units .card-head h3 .small { font-weight: 400 }
+.home-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 10px 14px; margin: 0; padding: 12px }
+.home-facts > div { display: flex; flex-direction: column; gap: 3px; min-width: 0 }
+.home-facts dd { margin: 0; font-size: 0.875rem }
+.home-quiet { border-top: 1px solid var(--line); line-height: 1.8 }
+.home-quiet a { color: var(--fg-2) }
+.asg-row { align-items: center; flex-wrap: wrap; row-gap: 6px }
+.asg-name { min-width: 10rem }
+.asg-staff { justify-content: flex-end }
+.asg-chip { display: inline-flex; align-items: center; gap: 3px; min-width: 2.75rem; min-height: 32px; justify-content: center; font-family: var(--font-mono); font-size: 0.8125rem }
+.asg-chip[aria-pressed="true"]::before { content: "✓"; font-family: var(--font-ui) }
+.asg-chip.off { border-style: dashed }
+.ho-filters { gap: 8px }
+.ho-assigned { white-space: nowrap }
+.ho-col li .tag { margin-right: 2px; vertical-align: 1px }
+@media (max-width: 720px) {
+  .home-prio { grid-template-columns: minmax(0, 1fr) }
+  .home-prio-acts { flex-direction: row; flex-wrap: wrap; padding: 0 12px 10px }
+  .home-prio-acts .btn, .home-mine-chip, .asg-chip { min-height: 40px }
+  .asg-staff { justify-content: flex-start; flex-basis: 100% }
+  .home-head-acts { justify-content: flex-start }
+}
+
+/* ── Admin → Datenimport (PRD §41) ── */
+.imp-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; align-items: start }
+.imp-cols td { vertical-align: top }
+.imp-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.imp-actions .spacer { flex: 1 }
+.imp-rows td.num { width: 4.5rem }
+@media (max-width: 1100px) { .imp-grid { grid-template-columns: minmax(0, 1fr) } }
+@media (max-width: 640px) { .imp-actions .btn { flex: 1 1 auto; min-height: 40px } }
+
+/* ── Paket C: Vorschläge Fokusdokumentation (PRD §10.3) ─────────────────────────────────── */
+.focus-sugg .alert { align-items: center; flex-wrap: wrap }
+.focus-sugg .alert .grow { min-width: min(100%, 18rem) }
+.focus-act { gap: 6px; flex-wrap: wrap }
+.imp-colcard > summary { cursor: pointer; list-style: none }
+.imp-colcard > summary::-webkit-details-marker { display: none }
+.imp-colcard > summary h2::after { content: "▾"; margin-left: 8px; color: var(--fg-3); font-size: 0.75rem }
+.imp-colcard:not([open]) > summary h2::after { content: "▸" }
+.imp-colcard:not([open]) > summary { border-bottom: 0 }
+#imp-res:focus { outline: none }
+#imp-res:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+/* ── Paket C: Flüssigkeitsbilanz (PRD §14) ─────────────────────────────────────────────── */
+.fluid-form { display: grid; grid-template-columns: minmax(10rem, 1.2fr) minmax(8rem, 0.8fr) minmax(10rem, 1.4fr) auto; gap: 10px; align-items: end }
+@media (max-width: 720px) { .fluid-form { grid-template-columns: 1fr 1fr } .fluid-form > .btn { grid-column: 1 / -1 } .fluid-form > .fld:nth-child(3) { grid-column: 1 / -1 } }
+.fluid-table th[scope="row"] { font-weight: 400; text-align: left; white-space: nowrap }
+.fluid-table .fluid-sub { padding-left: 20px; color: var(--fg-2) }
+.fluid-table tr.fluid-sum th, .fluid-table tr.fluid-sum td { font-weight: 600; border-top: 1px solid var(--line-strong) }
+.fluid-table tr.fluid-bal th, .fluid-table tr.fluid-bal td { font-weight: 600; background: var(--surface-2) }
+.imp-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr)) }
+
+/* ── Paket C: Diktat (PRD §10.4) ──────────────────────────────────────────────────────── */
+.btn.is-recording { border-color: var(--crit); color: var(--crit) }
+.fluid-table .fluid-none { font-family: var(--font-ui) }
+
+/* ── Paket A: Ereignis-Massnahmen, Assessment-Editor ─────────────────────────────────────── */
+.q-act-side { display: inline-flex; align-items: center; gap: 6px; flex: none }
+@media (max-width: 600px) {
+  .q-act { flex-wrap: wrap }
+  .q-act > .grow { flex-basis: calc(100% - 44px) }
+  .q-act-side { width: 100%; padding-left: 38px; justify-content: space-between }
+}
+.ab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: abq }
+.ab-q .stable td { vertical-align: middle }
+
+/* Topbar: Profilbild in der Grösse des bisherigen Kürzels */
+.me .pav { width: 1.75rem; height: 1.75rem; font-size: 0.75rem }
+.cam-thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px }
+.cam-thumbs li { display: grid; gap: 4px; justify-items: center }
+.cam-thumbs img { width: 5rem; height: 5rem; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line) }
+.wound-photos { display: grid; gap: 8px }
+
+/* ── Paket C: Wundverlauf als Karten (PRD §29, Tablet hoch ohne horizontales Scrollen) ───── */
+.wound-log { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.wl-entry { padding: 12px 14px; border-bottom: 1px solid var(--line) }
+.wl-entry:last-child { border-bottom: 0 }
+.wl-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline }
+.wl-act { margin-left: auto }
+.wl-body { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 16px; margin: 8px 0 0 }
+.wl-body > div { min-width: 0 }
+.wl-body dt { margin-bottom: 2px }
+.wl-body dd { margin: 0; overflow-wrap: anywhere }
+.wl-body .wl-wide { grid-column: span 2 }
+.wl-entry.voided .wl-strike { text-decoration: line-through; text-decoration-color: var(--fg-3); color: var(--fg-3) }
+.wl-entry.voided .wl-body dd { color: var(--fg-3) }
+@media (max-width: 720px) { .wl-body { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+
+/* ── Paket C: Am Bett (PRD §29, Tablet) ───────────────────────────────────────────────── */
+.bedside { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px }
+.bedside-id { display: flex; gap: 16px; align-items: center; padding: 14px 16px; flex-wrap: wrap }
+.bedside-name { margin: 0; font-size: 1.375rem; font-weight: 600 }
+.bedside-col { display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.bedside-snips { display: flex; flex-wrap: wrap; gap: 8px }
+.bedside .vform .field, .bedside textarea.field { min-height: 48px; font-size: 1.0625rem }
+.bedside .btn { min-height: 44px }
+/* Zwei Spalten nur, wenn beide mindestens 30rem breit sind (bei grosser Schrift automatisch einspaltig) */
+.bedside { grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr)) }
+.bedside-id, .bedside-wide { grid-column: 1 / -1 }
+.workspace:has(.bedside) { grid-template-columns: minmax(0, 1fr) }
+.workspace:has(.bedside) > aside, .workspace:has(.bedside) > .ws-list-toggle { display: none }
+.bedside-tasks { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.bedside-tasks > li { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); min-height: 64px }
+.bedside-tasks > li:last-child { border-bottom: 0; min-height: 0 }
+.bedside-tasks .bt-time { flex: none; width: 3.25rem }
+.bedside-tasks .bt-main { flex: 1; min-width: 0 }
+.bedside-tasks .bt-title { font-weight: 500; overflow-wrap: break-word; hyphens: auto }
+.bedside-tasks .bt-main .tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom }
+.bedside-tasks li.is-over .bt-time { color: var(--crit) }
+.bedside-tasks li.is-done .bt-title { color: var(--fg-3) }
+.bedside-tasks .btn.lg { flex: none; min-width: 8.5rem }
+@media (max-width: 720px) { .bedside-tasks > li { flex-wrap: wrap } .bedside-tasks .btn.lg { width: 100% } }
+
+/* ── Felder: Select mit demselben Pfeil wie Combobox (IconChevron, 16 px, --fg-2), Vitalwert-Raster ohne Springen ── */
+:root { --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%2345555E' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.5 7.5 10 13 4.5 7.5'/%3E%3C/svg%3E") }
+:root[data-theme="dark"] { --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%23A8B5BC' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.5 7.5 10 13 4.5 7.5'/%3E%3C/svg%3E") }
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] { --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%23A8B5BC' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.5 7.5 10 13 4.5 7.5'/%3E%3C/svg%3E") }
+}
+select.field, select.field:focus { appearance: none; -webkit-appearance: none; padding-right: 32px; background-image: var(--select-chev); background-repeat: no-repeat; background-position: right 8px center; background-size: 16px 16px }
+select.field::-ms-expand { display: none }
+@media (forced-colors: active) { select.field { appearance: auto; -webkit-appearance: auto; background-image: none } }
+/* Vitalwert-Raster (.vform): Label, Feld und Meldung als Zeilen eines Subgrids – eine Warnung unter einem Feld
+   verschiebt die Felder derselben Rasterzeile nicht mehr (vorher align-items: end). */
+.vform > .fld { display: grid; grid-row: span 3; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); row-gap: 4px; align-content: start }
+.vform > .fld > * { grid-column: 1; grid-row: 2; min-width: 0 }
+.vform > .fld > .lbl { grid-row: 1; align-self: end }
+.vform > .fld > :is(.fld-warn, .fld-hint, .fld-err, .fld-slot, .hint, .err) { grid-row: 3; align-self: start }
+
+/* ── Paket C: Eigene Vitalparameter (PRD §45) ─────────────────────────────────────────── */
+.cv-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 8px 10px; align-items: end; border: 1px solid var(--line); border-radius: var(--r); padding: 10px; margin: 0 }
+.vt td.vt-act > span { display: flex; flex-direction: column; align-items: flex-end; gap: 4px }
+
+/* ── Freigabeliste Pflegeplanung (/tasks/approvals) ── */
+@media (max-width: 720px) { .appr-row { flex-wrap: wrap } .appr-row > .btn { width: 100% } }
+
+/* ── Design-System-Seite (/admin/design, PRD §50–52): nur Anordnung der Beispiele, Komponenten bleiben unverändert ── */
+.ds-toc { list-style: none; margin: 0; padding: 0 }
+.ds-sec { scroll-margin-top: 8px; padding-top: 8px }
+.ds-note { margin: 0; max-width: 90ch }
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr)); gap: 12px; align-items: start }
+.ds-states { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr)); gap: 14px 12px; align-items: start }
+@media (max-width: 720px) { .ds-states { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.ds-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; hyphens: auto; overflow-wrap: anywhere }
+.ds-demo { min-width: 0 }
+.ds-tabs { padding: 0 }
+.ds-status .alert { min-width: 13rem }
+.ds-colors td { vertical-align: middle }
+.ds-group th { background: var(--surface-2) }
+.ds-tok { gap: 6px 10px }
+.ds-swatch { width: 28px; height: 20px; flex: none; border: 1px solid var(--line-strong); border-radius: var(--r-sm) }
+.ds-flat { border: 0; border-radius: 0 }
+.ds-space { align-items: center; padding: 6px 12px }
+.ds-space > .mono:first-child { width: 3.5rem; flex: none }
+.ds-space-bar { flex: none; height: 10px; background: var(--accent); border-radius: 2px }
+.ds-radius { flex: 1 1 9rem; display: flex; flex-direction: column; gap: 6px; align-items: flex-start }
+.ds-radius-box { width: 64px; height: 40px; border: 1.5px solid var(--accent); background: var(--accent-soft) }
+.ds-menu { max-width: 240px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface) }
+/* Fund über das Design System: .btn.danger:hover (crit-soft) galt auch für .btn.danger.solid → weisse Schrift auf hellem Rot (Kontrast < 2:1). */
+.btn.danger.solid:hover:not(:disabled) { background: color-mix(in srgb, var(--crit) 86%, var(--fg)); border-color: color-mix(in srgb, var(--crit) 86%, var(--fg)) }
+.bedside-snips .btn { white-space: normal; text-align: left; max-width: 100%; height: auto }
+.ds-colors th[scope="row"] { white-space: nowrap }
+@media (max-width: 720px) { .ds-toc { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px } }
+@media (max-width: 720px) { .ds-states:has(.seg) { grid-template-columns: minmax(0, 1fr) } }

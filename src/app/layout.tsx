@@ -1,0 +1,71 @@
+import type { Metadata, Viewport } from 'next'
+import { cookies } from 'next/headers'
+import { THEME_COOKIE, TEXT_COOKIE, normalizeTheme, normalizeTextSize } from '@/lib/theme'
+import { getSession } from '@/lib/auth/session'
+import { pickLocale, type Tree } from '@/i18n/core'
+import { dictionary } from '@/i18n'
+import { I18nProvider } from '@/i18n/client'
+import { headers } from 'next/headers'
+// Schriften selbst gehostet (npm) – keine Anfragen an Drittanbieter aus dem Browser (Datenschutz).
+import '@fontsource/ibm-plex-sans/latin-400.css'
+import '@fontsource/ibm-plex-sans/latin-500.css'
+import '@fontsource/ibm-plex-sans/latin-600.css'
+import '@fontsource/ibm-plex-sans-condensed/latin-500.css'
+import '@fontsource/ibm-plex-sans-condensed/latin-600.css'
+import '@fontsource/ibm-plex-mono/latin-400.css'
+import '@fontsource/ibm-plex-mono/latin-500.css'
+import './globals.css'
+import { ServiceWorker } from '@/components/shell/ServiceWorker'
+import { InstallCapture } from '@/components/shell/InstallApp'
+
+export const metadata: Metadata = {
+  title: { default: 'CareOS', template: '%s · CareOS' },
+  description: 'Die Arbeitsplattform für Pflegeorganisationen',
+  applicationName: 'CareOS',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
+  appleWebApp: { capable: true, title: 'CareOS', statusBarStyle: 'default' },
+  formatDetection: { telephone: false },
+  other: { 'mobile-web-app-capable': 'yes' },
+  robots: { index: false, follow: false },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#EEF1F2' },
+    { media: '(prefers-color-scheme: dark)', color: '#0D1317' },
+  ],
+}
+
+function fieldMessages(lang: Parameters<typeof dictionary>[0]): Tree {
+  const c = dictionary(lang).common as Tree
+  return { common: { optional: c.optional, required: c.required, close: c.close, field: c.field, dt: c.dt } }
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const jar = await cookies()
+  const session = await getSession()
+  const theme = normalizeTheme(session?.user.theme ?? jar.get(THEME_COOKIE)?.value)
+  const text = normalizeTextSize(jar.get(TEXT_COOKIE)?.value)
+  const lang = session?.user.locale ?? pickLocale(jar.get('careos_locale')?.value ?? (await headers()).get('accept-language'))
+  return (
+    <html lang={lang} data-theme={theme} data-text={text} suppressHydrationWarning>
+      <body>
+        {/* Texte der Feld-Komponenten (fields, Datum/Zeit) auch ausserhalb der App-Shell (Anmeldung, Einladung);
+            die App-Shell stellt darin das vollständige Wörterbuch bereit. */}
+        <I18nProvider locale={lang} terminology="resident" messages={fieldMessages(lang)}>{children}</I18nProvider>
+        <ServiceWorker />
+        <InstallCapture />
+      </body>
+    </html>
+  )
+}

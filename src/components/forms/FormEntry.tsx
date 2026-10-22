@@ -1,0 +1,115 @@
+'use client'
+
+import { useEffect, useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
+import { useT } from '@/i18n/client'
+import { toast } from '@/components/toast'
+import { Dialog } from '@/components/ui/Dialog'
+import { validateFormValues, type FieldError, type FormField } from '@/lib/forms'
+import { createFormEntry } from '@/app/(app)/residents/[id]/notes/form-actions'
+import { FormFields, type RawValues } from './FormFields'
+import { Checkbox, Select } from '@/components/ui/fields'
+
+export type FormOption = { id: string; key?: string; name: string; description: string | null; version: number; fields: FormField[] }
+
+/** Formular aus einem Vorschlag öffnen (Fokusdokumentation, PRD §10.3): `openFocusForm('schmerzerfassung', { nrs: '6' })`. */
+export const FOCUS_FORM_EVENT = 'careos:focus-form'
+export function openFocusForm(formKey: string, values: Record<string, string> = {}) {
+  window.dispatchEvent(new CustomEvent(FOCUS_FORM_EVENT, { detail: { formKey, values } }))
+}
+
+/**
+ * Knopf "Formular" neben dem Verlaufseintrag (PRD §10.3 Fokusdokumentation).
+ * Der Dialog wird in den <body> portiert, damit er nicht im Formular des Verlaufs liegt
+ * (Enter in einem Feld würde sonst den Freitext-Eintrag absenden).
+ */
+export function FormEntry({ residentId, who, forms, hideButton }: { residentId: string; who: string; forms: FormOption[]; /** nur über Vorschläge öffnen (z. B. Vitalwerte) */ hideButton?: boolean }) {
+  const t = useT()
+  const [mounted, setMounted] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [formId, setFormId] = useState(forms[0]?.id ?? '')
+  const [values, setValues] = useState<RawValues>({})
+  const [errors, setErrors] = useState<Record<string, FieldError>>({})
+  const [important, setImportant] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [pending, start] = useTransition()
+  useEffect(() => setMounted(true), [])
+  // Vorschlag «Schmerzerfassung …» öffnet das passende Formular mit Vorbelegung
+  useEffect(() => {
+    const on = (e: Event) => {
+      const d = (e as CustomEvent<{ formKey: string; values: RawValues }>).detail
+      const f = forms.find((x) => x.key === d?.formKey)
+      if (!f) return
+      setFormId(f.id); setErrors({}); setErr(null); setImportant(false)
+      setValues(Object.fromEntries(Object.entries(d.values ?? {}).filter(([k]) => f.fields.some((x) => x.key === k))))
+      setOpen(true)
+    }
+    window.addEventListener(FOCUS_FORM_EVENT, on)
+    return () => window.removeEventListener(FOCUS_FORM_EVENT, on)
+  }, [forms])
+  if (!forms.length) return null
+  const form = forms.find((f) => f.id === formId) ?? forms[0]
+
+  const reset = (id = formId) => { setFormId(id); setValues({}); setErrors({}); setErr(null); setImportant(false) }
+  const close = () => { setOpen(false); reset() }
+
+  const save = () => {
+    const v = validateFormValues(form.fields, values)
+    setErrors(v.errors)
+    if (!v.ok) {
+      setErr(t('forms.errors.invalid'))
+      requestAnimationFrame(() => (document.querySelector('dialog.dlg [aria-invalid="true"] input, dialog.dlg [aria-invalid="true"]') as HTMLElement | null)?.focus())
+      return
+    }
+    setErr(null)
+    start(async () => {
+      const r = await createFormEntry(residentId, { formId: form.id, version: form.version, values, important })
+      if (!r.ok) { setErr(t(r.error)); return }
+      toast(t('forms.entry.saved', { name: form.name }))
+      close()
+    })
+  }
+
+  return (
+    <>
+      {!hideButton && <button type="button" className="btn" onClick={() => setOpen(true)} title={t('forms.entry.hint')}>{t('forms.entry.button')}</button>}
+      {mounted && open && createPortal(
+        <Dialog open={open} onClose={close} wide title={t('forms.entry.title')} context={<span>{who}</span>}
+          footer={(
+            <>
+              <Checkbox checked={important} onChange={(e) => setImportant(e.target.checked)} label={t('chart.notes.important')} wrapClassName="small" wrapStyle={{ marginRight: 'auto' }} />
+              <button type="button" className="btn" onClick={close}>{t('common.cancel')}</button>
+              <button type="button" className="btn primary" onClick={save} data-loading={pending || undefined} disabled={pending}>{t('forms.entry.save')}</button>
+            </>
+          )}>
+          <div
+            className="stack form-entry"
+            onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); save() } }}
+          >
+            {forms.length > 1 && (
+              <Select label={t('forms.entry.pick')} value={form.id} onChange={(e) => reset(e.target.value)}>
+                  {forms.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+                </Select>
+            )}
+            {form.description && <p className="small muted" style={{ margin: 0 }}>{form.description}</p>}
+            <FormFields
+              key={form.id}
+              idPrefix={'fe-' + form.id}
+              fields={form.fields}
+              values={values}
+              errors={errors}
+              disabled={pending}
+              onChange={(k, v) => {
+                setValues((cur) => ({ ...cur, [k]: v }))
+                if (errors[k]) setErrors((cur) => { const n = { ...cur }; delete n[k]; return n })
+              }}
+            />
+            <p className="small muted" style={{ margin: 0 }}>{t('forms.entry.requiredHint')} · {t('chart.notes.ctrlEnter')}</p>
+            {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
+          </div>
+        </Dialog>,
+        document.body,
+      )}
+    </>
+  )
+}
