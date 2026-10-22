@@ -2052,3 +2052,6 @@ select.field::-ms-expand { display: none }
 .vform > .fld > * { grid-column: 1; grid-row: 2; min-width: 0 }
 .vform > .fld > .lbl { grid-row: 1; align-self: end }
 .vform > .fld > :is(.fld-warn, .fld-hint, .fld-err, .fld-slot, .hint, .err) { grid-row: 3; align-self: start }
+
+/* ── Paket C: Eigene Vitalparameter (PRD §45) ─────────────────────────────────────────── */
+.cv-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 8px 10px; align-items: end; border: 1px solid var(--line); border-radius: var(--r); padding: 10px; margin: 0 }

@@ -7,6 +7,7 @@ import { VitalForm, Thresholds } from './VitalForm'
 import { VitalCorrect } from './VitalCorrect'
 import { ReviewTag } from '@/components/residents/ReviewTag'
 import { CustomVitalsEditor } from '@/components/residents/CustomVitalsEditor'
+import { LabResults } from '@/components/labs/LabResults'
 import { customFlag, customVitals, readExtra } from '@/lib/vitals-custom'
 import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
 import { FormEntry } from '@/components/forms/FormEntry'
@@ -209,6 +210,9 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
       <div className="sec-head"><h2 className="sec">{t('chart.vitals.week')}</h2></div>
       {charts.length ? <div className="charts">{charts}</div> : <p className="empty">{t('chart.vitals.noneWeek')}</p>}
 
+      {/* Laborbefunde (Schnittstelle Labor, Paket D2) – mit Leerzustand, solange kein Labor angebunden ist */}
+      <LabResults residentId={r.id} limit={20} />
+
       <Thresholds
         residentId={r.id}
         canEdit={can('resident.careplan.edit')}
@@ -217,6 +221,8 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
           lo: limits[k].lo, hi: limits[k].hi, orgLo: orgLimits[k].lo, orgHi: orgLimits[k].hi, individual: individual.has(k),
         }))}
       />
+      {/* Klinische Konfiguration: eigene Parameter der Organisation (nur mit admin.config) */}
+      {ctx.can('admin.config') && <CustomVitalsEditor defs={custom} />}
     </>
   )
 }
