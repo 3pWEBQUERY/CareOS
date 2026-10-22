@@ -1,6 +1,37 @@
 import { defineMessages } from '../core'
 
 const de = {
+  fluid: {
+    title: 'Flüssigkeitsbilanz',
+    subtitle: 'Einfuhr und Ausfuhr je Tag',
+    kind: 'Art',
+    in: 'Einfuhr',
+    out: 'Ausfuhr',
+    amount: 'Menge',
+    note: 'Bemerkung',
+    notePh: 'z. B. Katheter, Beutel geleert',
+    save: 'Erfassen',
+    saved: '{kind} {ml} ml erfasst',
+    kinds: {
+      drink: 'Getränke (oral)',
+      in_infusion: 'Infusion',
+      in_tube: 'Sonde',
+      out_urine: 'Urin',
+      out_drain: 'Drainage',
+      out_vomit: 'Erbrechen',
+      out_other: 'Sonstige Ausfuhr',
+    },
+    inTotal: 'Einfuhr gesamt',
+    outTotal: 'Ausfuhr gesamt',
+    balance: 'Bilanz',
+    notRecorded: 'nicht erfasst',
+    today: 'Heute erfasst (Infusion, Sonde, Ausfuhr)',
+    hint: 'Die Bilanz wird nur für Tage mit erfasster Ausfuhr berechnet. Getränke werden oben im Trinkprotokoll erfasst.',
+    errors: {
+      kind: 'Bitte wählen Sie die Art.',
+      amount: 'Bitte eine Menge zwischen 5 und 3000 ml eingeben.',
+    },
+  },
   roomShort: 'Zi. {room}',
   by: 'von {name}',
   domains: {
@@ -407,6 +438,37 @@ const de = {
 }
 
 const fr = {
+  fluid: {
+    title: 'Bilan hydrique',
+    subtitle: 'Apports et pertes par jour',
+    kind: 'Type',
+    in: 'Apports',
+    out: 'Pertes',
+    amount: 'Quantité',
+    note: 'Remarque',
+    notePh: 'p. ex. sonde urinaire, poche vidée',
+    save: 'Saisir',
+    saved: '{kind} {ml} ml saisi',
+    kinds: {
+      drink: 'Boissons (orales)',
+      in_infusion: 'Perfusion',
+      in_tube: 'Sonde',
+      out_urine: 'Urine',
+      out_drain: 'Drainage',
+      out_vomit: 'Vomissements',
+      out_other: 'Autres pertes',
+    },
+    inTotal: 'Total apports',
+    outTotal: 'Total pertes',
+    balance: 'Bilan',
+    notRecorded: 'non saisi',
+    today: 'Saisi aujourd’hui (perfusion, sonde, pertes)',
+    hint: 'Le bilan n’est calculé que pour les jours avec des pertes saisies. Les boissons se saisissent plus haut dans le protocole d’hydratation.',
+    errors: {
+      kind: 'Veuillez choisir le type.',
+      amount: 'Veuillez saisir une quantité entre 5 et 3000 ml.',
+    },
+  },
   roomShort: 'Ch. {room}',
   by: 'par {name}',
   domains: {
@@ -813,6 +875,37 @@ const fr = {
 }
 
 const it = {
+  fluid: {
+    title: 'Bilancio idrico',
+    subtitle: 'Entrate e uscite al giorno',
+    kind: 'Tipo',
+    in: 'Entrate',
+    out: 'Uscite',
+    amount: 'Quantità',
+    note: 'Osservazione',
+    notePh: 'p. es. catetere, sacca svuotata',
+    save: 'Registrare',
+    saved: '{kind} {ml} ml registrato',
+    kinds: {
+      drink: 'Bevande (orali)',
+      in_infusion: 'Infusione',
+      in_tube: 'Sonda',
+      out_urine: 'Urina',
+      out_drain: 'Drenaggio',
+      out_vomit: 'Vomito',
+      out_other: 'Altre uscite',
+    },
+    inTotal: 'Totale entrate',
+    outTotal: 'Totale uscite',
+    balance: 'Bilancio',
+    notRecorded: 'non registrato',
+    today: 'Registrato oggi (infusione, sonda, uscite)',
+    hint: 'Il bilancio viene calcolato solo per i giorni con uscite registrate. Le bevande si registrano sopra nel protocollo delle bevande.',
+    errors: {
+      kind: 'Scelga il tipo.',
+      amount: 'Inserisca una quantità tra 5 e 3000 ml.',
+    },
+  },
   roomShort: 'Cam. {room}',
   by: 'di {name}',
   domains: {
@@ -1219,6 +1312,37 @@ const it = {
 }
 
 const en = {
+  fluid: {
+    title: 'Fluid balance',
+    subtitle: 'Intake and output per day',
+    kind: 'Type',
+    in: 'Intake',
+    out: 'Output',
+    amount: 'Amount',
+    note: 'Note',
+    notePh: 'e.g. catheter, bag emptied',
+    save: 'Record',
+    saved: '{kind} {ml} ml recorded',
+    kinds: {
+      drink: 'Drinks (oral)',
+      in_infusion: 'Infusion',
+      in_tube: 'Tube feed',
+      out_urine: 'Urine',
+      out_drain: 'Drain',
+      out_vomit: 'Vomit',
+      out_other: 'Other output',
+    },
+    inTotal: 'Total intake',
+    outTotal: 'Total output',
+    balance: 'Balance',
+    notRecorded: 'not recorded',
+    today: 'Recorded today (infusion, tube, output)',
+    hint: 'The balance is only calculated for days with recorded output. Drinks are recorded above in the drinks log.',
+    errors: {
+      kind: 'Please choose the type.',
+      amount: 'Please enter an amount between 5 and 3000 ml.',
+    },
+  },
   roomShort: 'Rm {room}',
   by: 'by {name}',
   domains: {

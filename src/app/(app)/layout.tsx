@@ -32,10 +32,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ctx.can('chat.use') ? unreadConversations(user.id) : Promise.resolve(0),
     ctx.can('resident.read')
       ? db.resident.findMany({
-          where: { orgId: org.id, unitId: { in: ctx.unitIds }, status: { in: ['active', 'absent'] } },
+          // Sofort-Treffer der Schnellsuche nur für den gewählten Bereich; alle übrigen liefert /api/search live.
+          where: { orgId: org.id, unitId: { in: ctx.unit ? [ctx.unit.id] : ctx.unitIds }, status: { in: ['active', 'absent'] } },
           select: { id: true, firstName: true, lastName: true, room: { select: { number: true } }, unit: { select: { name: true } } },
           orderBy: { lastName: 'asc' },
-          take: 500,
+          take: 200,
         })
       : Promise.resolve([]),
     currentShiftLabel(ctx),
@@ -78,7 +79,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const units = ctx.units.map((u) => ({ id: u.id, name: u.name, location: u.location.name }))
   const settings = (org.settings ?? {}) as { demo?: boolean }
-  const residentCount = ctx.unit ? residents.filter((r) => r.unit.name === ctx.unit!.name).length : residents.length
+  const residentCount = residents.length
 
   return (
     <I18nProvider locale={ctx.locale} terminology={ctx.terminology} messages={dictionary(ctx.locale)}>
