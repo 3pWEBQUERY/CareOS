@@ -10,9 +10,12 @@ import { canModerate, channelAudience, channelVisible } from '../../lib'
 import { ackPostAction, commentAction, deletePostAction, pinPostAction, remindAckAction } from '../../actions'
 import { ActButton } from '../../_ui/ActButton'
 
-export async function generateMetadata() {
-  const { t } = await getCtx()
-  return { title: t('nav.team') }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const post = ctx.can('team.read') ? await db.post.findFirst({ where: { id: (await params).id, channel: { orgId: ctx.org.id } }, select: { title: true, channel: true } }) : null
+  const visible = post && channelVisible(ctx, post.channel) && (!post.channel.archived || canModerate(ctx, post.channel))
+  return { title: visible ? `${post.title} · ${t('nav.team')}` : t('nav.team') }
 }
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -77,7 +80,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             <ActButton action={pinPostAction.bind(null, post.id, !post.pinned)} className="btn">{t(post.pinned ? 'team.post.unpin' : 'team.post.pin')}</ActButton>
           )}
           {(moderator || isAuthor) && !expired && (
-            <ActButton action={deletePostAction.bind(null, post.id)} className="btn danger" confirm="team.post.deleteConfirm">{t('team.post.delete')}</ActButton>
+            <ActButton action={deletePostAction.bind(null, post.id)} className="btn danger" confirm="team.post.deleteConfirm" context={<span><strong>{post.title}</strong> · {post.channel.name}</span>}>{t('team.post.delete')}</ActButton>
           )}
         </div>
       </div>

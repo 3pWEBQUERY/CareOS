@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import { usersWithPermission } from '@/lib/notify'
 import { dateKey, fmtDate, fromDbDate, hm } from '@/lib/time'
-import { pageResident, userNames } from '../../_lib/resident'
+import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { EditMaster } from './EditMaster'
 import { FormDialog } from '@/components/admin/ui'
 import { anonymiseResidentAction } from './actions'
@@ -17,6 +17,10 @@ const FIELDS = [
   'primaryNurseId', 'dischargedAt', 'text', 'category', 'important', 'title', 'note', 'done', 'at', 'kind', 'place', 'notes', 'name', 'relation', 'phone', 'email', 'isEmergency', 'isLegalRep',
   'completedAt', 'completedById', 'authorId', 'recordedById', 'dueAt', 'reason', 'aiAssisted', 'abnormal', 'sys', 'dia', 'pulse', 'temp', 'spo2', 'glucose', 'weight', 'pain', 'respRate', 'priority', 'source',
 ]
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'history')
+}
 
 export default async function HistoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ views?: string }> }) {
   const { id } = await params

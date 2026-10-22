@@ -8,9 +8,10 @@ import { LineChart } from '@/components/ui/LineChart'
 import { Empty } from '@/components/ui/Empty'
 import { loadAssessmentDefs } from './defs'
 import { PerformAssessment } from './AssessClient'
+import { residentTitle } from '../../_lib/resident'
 
-export async function generateMetadata() {
-  return { title: (await getCtx()).t('residents.tabs.assessments') }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'assessments')
 }
 
 export default async function AssessmentsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string }> }) {

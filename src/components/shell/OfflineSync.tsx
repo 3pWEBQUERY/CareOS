@@ -7,6 +7,7 @@ import { useLocale, useT } from '@/i18n/client'
 import { INTL_LOCALE } from '@/i18n/core'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { VITALS, type VitalKey } from '@/lib/vitals'
 import { portionLabel } from '@/lib/care'
 import { isOffline, offlineSupported, setOfflineUser, syncOutbox, useOutbox } from '@/lib/offline/client'
@@ -75,6 +76,7 @@ export function OfflineSync({ userId, offline }: { userId: string; offline: bool
 /** Panel «Synchronisation»: wartende Einträge und Konflikte mit Verwerfen / Neu erfassen. */
 function SyncPanel({ open, onClose, onSync, busy, offline }: { open: boolean; onClose: () => void; onSync: () => void; busy: boolean; offline: boolean }) {
   const t = useT()
+  const locale = useLocale()
   const [items, setItems] = useState<OutboxEntry[]>([])
   const [me, setMe] = useState<string | null>(null)
 
@@ -92,9 +94,16 @@ function SyncPanel({ open, onClose, onSync, busy, offline }: { open: boolean; on
     return () => { alive = false; window.removeEventListener('careos:outbox', load) }
   }, [open])
 
-  const discard = async (id: string) => {
-    if (!window.confirm(t('common.offlineSync.discardConfirm'))) return
-    await removeOps([id])
+  const [ask, confirmDialog] = useConfirm()
+  const discard = async (e: OutboxEntry) => {
+    const ok = await ask({
+      title: t('common.offlineSync.discardConfirm'),
+      text: t('common.offlineSync.discardText'),
+      context: <span><strong>{t('common.offlineSync.kind.' + e.kind)}</strong>{e.meta.who && <> · {e.meta.who}</>} · {t('common.offlineSync.captured', { at: fmtWhen(e.at, locale) })}</span>,
+      confirmLabel: t('common.offlineSync.discard'),
+      danger: true,
+    })
+    if (ok) await removeOps([e.id])
   }
 
   return (
@@ -108,11 +117,12 @@ function SyncPanel({ open, onClose, onSync, busy, offline }: { open: boolean; on
       <p className="small muted" style={{ margin: 0 }}>{t('common.offlineSync.hint')}</p>
       {items.length ? (
         <ul className="list" style={{ border: '1px solid var(--line)', borderRadius: 'var(--r)' }}>
-          {items.map((e) => <EntryRow key={e.id} e={e} foreign={!!me && e.userId !== me} onDiscard={() => discard(e.id)} onNavigate={onClose} />)}
+          {items.map((e) => <EntryRow key={e.id} e={e} foreign={!!me && e.userId !== me} onDiscard={() => discard(e)} onNavigate={onClose} />)}
         </ul>
       ) : (
         <p className="empty" style={{ margin: 0 }}>{t('common.offlineSync.empty')}</p>
       )}
+      {confirmDialog}
     </Dialog>
   )
 }

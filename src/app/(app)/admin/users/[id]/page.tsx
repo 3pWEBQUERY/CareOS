@@ -15,9 +15,11 @@ import {
   resetMfaAction, resetPasswordAction, revokeUserSessionsAction, setUserActiveAction, updateUserAction,
 } from '../actions'
 
-export async function generateMetadata() {
-  const { t } = await getCtx()
-  return { title: `${t('admin.nav.users')} · ${t('nav.admin')}` }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const u = ctx.can('admin.users') ? await db.user.findFirst({ where: { id: (await params).id, orgId: ctx.org.id }, select: { firstName: true, lastName: true } }) : null
+  return { title: `${u ? `${u.lastName} ${u.firstName}` : t('admin.nav.users')} · ${t('nav.admin')}` }
 }
 
 export default async function UserDetail({ params }: { params: Promise<{ id: string }> }) {

@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from 'react'
 import { useT } from '@/i18n/client'
+import { shiftName } from '@/lib/shift-name'
 import { ShiftDialog, type ShiftDraft, type ShiftType, type StaffOpt } from './ShiftDialog'
 
 export type GridShift = { id: string; typeId: string; code: string; userId: string | null; status: string; note: string | null; req: string | null; dateKey: string }
@@ -41,7 +42,7 @@ export function PlanGrid({ days, rows, shifts, absences, coverage, types, staff,
         {s.req && !s.userId && <span className="small">{s.req.split(' ').pop()}</span>}
       </>
     )
-    const title = `${ty?.name ?? s.code} ${ty?.start ?? ''}–${ty?.end ?? ''}${s.note ? ' · ' + s.note : ''}${s.status === 'swap_requested' ? ' · ' + t('schedule.status.swap_requested') : ''}`
+    const title = `${ty ? shiftName(t, ty) : s.code} ${ty?.start ?? ''}–${ty?.end ?? ''}${s.note ? ' · ' + s.note : ''}${s.status === 'swap_requested' ? ' · ' + t('schedule.status.swap_requested') : ''}`
     return canManage ? (
       <button key={s.id} type="button" className={cls + ' sh-btn'} title={title} aria-label={`${title} · ${rowName(s.userId)} · ${days.find((d) => d.key === s.dateKey)?.label ?? s.dateKey}`} onClick={() => setDraft({ id: s.id, typeId: s.typeId, userId: s.userId, date: s.dateKey, req: s.req, note: s.note })}>{label}</button>
     ) : (
@@ -118,7 +119,7 @@ export function PlanGrid({ days, rows, shifts, absences, coverage, types, staff,
         </div>
       </div>
       <div className="mlegend">
-        {types.map((x) => <span key={x.id}><span className={'sh ' + x.code}>{x.code}</span> {x.name} <span className="mono">{x.start}–{x.end}</span></span>)}
+        {types.map((x) => <span key={x.id}><span className={'sh ' + x.code}>{x.code}</span> {shiftName(t, x)} <span className="mono">{x.start}–{x.end}</span></span>)}
         <span><span className="sh open">F</span> {t('schedule.plan.legendOpen')}</span>
         <span><span className="sh abs">{t('schedule.absence.short.vacation')}</span> {t('schedule.plan.legendAbsence')}</span>
         <span>⇄ {t('schedule.status.swap_requested')}</span>

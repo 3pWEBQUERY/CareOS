@@ -1,7 +1,11 @@
 import { db } from '@/lib/db'
 import { dateKey, fmtDate, hm, sameDay } from '@/lib/time'
-import { pageResident, residentName } from '../../_lib/resident'
+import { pageResident, residentName, residentTitle } from '../../_lib/resident'
 import { Appointments, type ApptRow } from './Appointments'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'appointments')
+}
 
 export default async function AppointmentsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

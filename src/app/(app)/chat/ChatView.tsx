@@ -4,6 +4,7 @@ import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState,
 import Link from 'next/link'
 import { useT, useLocale } from '@/i18n/client'
 import { toast } from '@/components/toast'
+import { useConfirm, splitQuestion, type ConfirmOptions } from '@/components/ui/ConfirmDialog'
 import { IconFile, IconUpload } from '@/components/icons'
 import { INTL_LOCALE } from '@/i18n/core'
 import { REACTIONS } from './reactions'
@@ -47,6 +48,7 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
   const self = members.find((m) => m.id === me)
   const [, start] = useTransition()
   const tr = (s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
+  const [ask, confirmDialog] = useConfirm()
   const run = (fn: () => Promise<{ ok: boolean; error?: string; message?: string }>) =>
     start(async () => {
       const r = await fn()
@@ -203,7 +205,7 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
                 </select>
                 <button type="submit" className="btn sm">{t('team.chat.add')}</button>
               </form>
-              <button type="button" className="btn sm danger" onClick={() => { if (window.confirm(t('team.chat.leaveConfirm'))) run(() => leaveConversationAction(conv.id)) }}>{t('team.chat.leave')}</button>
+              <button type="button" className="btn sm danger" onClick={async () => { if (await ask({ ...splitQuestion(t('team.chat.leaveConfirm')), context: <strong>{conv.title}</strong>, confirmLabel: t('team.chat.leave'), danger: true })) run(() => leaveConversationAction(conv.id)) }}>{t('team.chat.leave')}</button>
             </div>
           )}
         </div>
@@ -231,7 +233,7 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
               <Fragment key={m.id}>
                 {newDay && <div className="chat-day"><span className="lbl">{dayLabel(m.at)}</span></div>}
                 {m.id === firstUnread && <div className="chat-unread" data-unread-mark><span>{t('team.ux.newMessages')}</span></div>}
-                <Message m={m} renderBody={renderBody} onRun={run} />
+                <Message m={m} renderBody={renderBody} onRun={run} onAsk={ask} />
               </Fragment>
             )
           })}
@@ -261,11 +263,12 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
       </div>
 
       <Composer members={members.filter((m) => m.id !== me)} onSend={send} />
+      {confirmDialog}
     </>
   )
 }
 
-function Message({ m, renderBody, onRun }: { m: ChatMsg; renderBody: (s: string) => React.ReactNode; onRun: (fn: () => Promise<{ ok: boolean; error?: string; message?: string }>) => void }) {
+function Message({ m, renderBody, onRun, onAsk }: { m: ChatMsg; renderBody: (s: string) => React.ReactNode; onRun: (fn: () => Promise<{ ok: boolean; error?: string; message?: string }>) => void; onAsk: (o: ConfirmOptions) => Promise<boolean> }) {
   const t = useT()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(m.body)
@@ -288,7 +291,7 @@ function Message({ m, renderBody, onRun }: { m: ChatMsg; renderBody: (s: string)
                 <button key={r.key} type="button" className="react-add" title={t('team.chat.reactions.' + r.key)} aria-label={t('team.chat.react', { r: t('team.chat.reactions.' + r.key) })} onClick={() => onRun(() => reactAction(m.id, r.key))}>{r.symbol}</button>
               ))}
               {m.mine && !editing && <button type="button" className="linkbtn small" onClick={() => { setDraft(m.body); setEditing(true) }}>{t('team.chat.edit')}</button>}
-              {m.mine && !editing && <button type="button" className="linkbtn small crit-text" onClick={() => { if (window.confirm(t('team.chat.deleteConfirm'))) onRun(() => deleteMessageAction(m.id)) }}>{t('team.chat.delete')}</button>}
+              {m.mine && !editing && <button type="button" className="linkbtn small crit-text" onClick={async () => { if (await onAsk({ title: t('team.chat.deleteConfirm'), context: <span><span className="mono">{m.time}</span> · {m.body.length > 120 ? m.body.slice(0, 120) + ' …' : m.body}</span>, confirmLabel: t('team.chat.delete'), danger: true })) onRun(() => deleteMessageAction(m.id)) }}>{t('team.chat.delete')}</button>}
             </span>
           )}
         </div>

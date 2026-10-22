@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
+import { useConfirm, splitQuestion } from '@/components/ui/ConfirmDialog'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { EDGE, EXUDATE, TISSUE, WOUND_KINDS, WOUND_ORIGINS } from '@/lib/care'
@@ -157,18 +158,26 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
   )
 }
 
-export function WoundStatusButtons({ residentId, woundId, status }: { residentId: string; woundId: string; status: 'open' | 'healing' | 'closed' }) {
+export function WoundStatusButtons({ residentId, woundId, status, who, label }: { residentId: string; woundId: string; status: 'open' | 'healing' | 'closed'; who?: string; label?: string }) {
   const t = useT()
   const [pending, start] = useTransition()
-  const set = (s: 'open' | 'healing' | 'closed') =>
+  const [ask, confirmDialog] = useConfirm()
+  const set = async (s: 'open' | 'healing' | 'closed') => {
+    if (s === 'closed' && !(await ask({
+      ...splitQuestion(t('care.wounds.closeConfirm')),
+      context: (who || label) ? <span>{who && <strong>{who}</strong>}{who && label && ' · '}{label}</span> : undefined,
+      confirmLabel: t('care.wounds.close'),
+      danger: true,
+    }))) return
     start(async () => {
-      if (s === 'closed' && !window.confirm(t('care.wounds.closeConfirm'))) return
       const r = await setWoundStatusAction(residentId, woundId, s)
       if (r.ok) toast(t(r.message ?? 'common.saved'))
       else toast(/^[a-z]+\.[\w.]+$/.test(r.error) ? t(r.error) : r.error, { kind: 'crit' })
     })
+  }
   return (
     <div className="row" style={{ gap: 6 }}>
+      {confirmDialog}
       {status === 'open' && <button type="button" className="btn sm" disabled={pending} onClick={() => set('healing')}>{t('care.wounds.markHealing')}</button>}
       {status === 'healing' && <button type="button" className="btn sm" disabled={pending} onClick={() => set('open')}>{t('care.wounds.markOpen')}</button>}
       {status !== 'closed' && <button type="button" className="btn sm danger" disabled={pending} onClick={() => set('closed')}>{t('care.wounds.close')}</button>}

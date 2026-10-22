@@ -7,6 +7,7 @@ import { usersWithPermission } from '@/lib/notify'
 import { ensureTasksForDay, isClosed, OPEN_STATUSES, taskView } from '@/lib/tasks'
 import { taskTitle } from '@/lib/task-title'
 import { shiftTypes } from '@/lib/shift'
+import { shiftName } from '@/lib/shift-name'
 import { addDays, currentShiftBounds, dateKey, fmtDayMonth, hm, sameDay, shiftAt, shiftBounds, startOfDay } from '@/lib/time'
 import { openDoses } from '@/lib/medication'
 import { doseText } from '@/components/meds/dose'
@@ -114,7 +115,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     const s = p.toString()
     return '/tasks' + (s ? '?' + s : '')
   }
-  const winLabel = def ? `${def.name} ${hm(win.start)}–${hm(win.end)}${sameDay(win.start, now) ? '' : ' · ' + fmtDayMonth(win.start)}` : t('tasks.wholeDay', { date: fmtDayMonth(today) })
+  const winLabel = def ? `${shiftName(t, def)} ${hm(win.start)}–${hm(win.end)}${sameDay(win.start, now) ? '' : ' · ' + fmtDayMonth(win.start)}` : t('tasks.wholeDay', { date: fmtDayMonth(today) })
   const nextHour = new Date(Math.ceil(now.getTime() / 1800_000) * 1800_000)
 
   return (
@@ -138,7 +139,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             <nav className="seg seg-x" aria-label={t('tasks.shift.label')}>
               {types.map((s) => (
                 <Link key={s.code} href={q({ s: s.code === running?.code ? null : s.code })} aria-current={code === s.code ? 'page' : undefined} scroll={false}>
-                  {s.name}{running?.code === s.code ? ' · ' + t('tasks.shift.now') : ''}
+                  {shiftName(t, s)}{running?.code === s.code ? ' · ' + t('tasks.shift.now') : ''}
                 </Link>
               ))}
               <Link href={q({ s: running ? 'day' : null })} aria-current={code === 'day' ? 'page' : undefined} scroll={false}>{t('tasks.shift.day')}</Link>

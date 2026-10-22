@@ -1,6 +1,10 @@
 import { db } from '@/lib/db'
-import { pageResident, residentName } from '../../_lib/resident'
+import { pageResident, residentName, residentTitle } from '../../_lib/resident'
 import { Contacts } from './Contacts'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'contacts')
+}
 
 export default async function ContactsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

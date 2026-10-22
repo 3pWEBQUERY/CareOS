@@ -7,6 +7,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { PlanGrid, type GridCov, type GridDay, type GridRow } from '../_ui/PlanGrid'
 import { saveTargetsAction } from '../actions'
 import { planWeek } from '../lib'
+import { shiftName } from '@/lib/shift-name'
 
 type Plan = Awaited<ReturnType<typeof planWeek>>
 
@@ -17,9 +18,9 @@ function warnings(ctx: Ctx, p: Plan) {
   for (const d of p.coverage) {
     const date = `${weekdayShort(d.day, locale)} ${fmtDayMonth(d.day)}`
     for (const c of d.types) {
-      if (c.n < c.target) out.push({ key: `u${d.key}${c.code}`, tone: c.n === 0 || c.target - c.n >= 2 ? 'crit' : 'warn', text: t('schedule.coverage.underLine', { date, shift: c.name, n: c.n, target: c.target }) + (c.open ? ' · ' + t('schedule.coverage.openLine', { n: c.open }) : '') })
-      if (p.key && c.target > 0 && !c.hf) out.push({ key: `q${d.key}${c.code}`, tone: 'crit', text: t('schedule.coverage.qualLine', { date, shift: c.name, qual: p.key.name }) })
-      for (const x of c.conflicts) out.push({ key: `a${x.shiftId}`, tone: 'warn', text: t('schedule.coverage.absLine', { date, shift: c.name, name: names.get(x.userId) ?? '–' }) })
+      if (c.n < c.target) out.push({ key: `u${d.key}${c.code}`, tone: c.n === 0 || c.target - c.n >= 2 ? 'crit' : 'warn', text: t('schedule.coverage.underLine', { date, shift: shiftName(t, c), n: c.n, target: c.target }) + (c.open ? ' · ' + t('schedule.coverage.openLine', { n: c.open }) : '') })
+      if (p.key && c.target > 0 && !c.hf) out.push({ key: `q${d.key}${c.code}`, tone: 'crit', text: t('schedule.coverage.qualLine', { date, shift: shiftName(t, c), qual: p.key.name }) })
+      for (const x of c.conflicts) out.push({ key: `a${x.shiftId}`, tone: 'warn', text: t('schedule.coverage.absLine', { date, shift: shiftName(t, c), name: names.get(x.userId) ?? '–' }) })
     }
   }
   return out
@@ -119,7 +120,7 @@ export async function CoverageView({ ctx, week, now }: { ctx: Ctx; week: Date; n
           <thead>
             <tr>
               <th>{t('schedule.cols.date')}</th>
-              {p.types.map((x) => <th key={x.id}><span className={'sh ' + x.code}>{x.code}</span> {x.name} <span className="mono" style={{ textTransform: 'none', letterSpacing: 0 }}>{t('schedule.coverage.target')} {p.targets[x.code]}</span></th>)}
+              {p.types.map((x) => <th key={x.id}><span className={'sh ' + x.code}>{x.code}</span> {shiftName(t, x)} <span className="mono" style={{ textTransform: 'none', letterSpacing: 0 }}>{t('schedule.coverage.target')} {p.targets[x.code]}</span></th>)}
             </tr>
           </thead>
           <tbody>
@@ -155,7 +156,7 @@ export async function CoverageView({ ctx, week, now }: { ctx: Ctx; week: Date; n
               <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}>
                 {p.types.map((x) => (
                   <label key={x.id} className="fld">
-                    <span className="lbl">{x.code} · {x.name}</span>
+                    <span className="lbl">{x.code} · {shiftName(t, x)}</span>
                     <input type="number" name={'target_' + x.code} className="field mono" min={0} max={50} step={1} defaultValue={p.targets[x.code]} inputMode="numeric" />
                   </label>
                 ))}

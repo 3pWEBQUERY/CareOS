@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
+import { useConfirm, splitQuestion } from '@/components/ui/ConfirmDialog'
 import { WEEK_ORDER } from '@/lib/care'
 import {
   acceptSuggestionAction, aiAreaDraftAction, aiDiscardAction, approveAction, createDraftAction, deactivateInterventionAction,
@@ -201,14 +202,18 @@ export function IvButton({ residentId, domain, iv, categories, label, className 
   )
 }
 
-export function IvDeactivate({ residentId, ivId, title }: { residentId: string; ivId: string; title: string }) {
+export function IvDeactivate({ residentId, ivId, title, context }: { residentId: string; ivId: string; title: string; context?: string }) {
   const t = useT()
   const { pending, go } = useRun()
+  const [ask, confirmDialog] = useConfirm()
   return (
-    <button type="button" className="btn sm ghost" disabled={pending} aria-label={t('care.plan.deactivate') + ': ' + title}
-      onClick={() => { if (window.confirm(t('care.plan.deactivateConfirm', { title }))) go(() => deactivateInterventionAction(residentId, ivId)) }}>
-      {t('care.plan.deactivate')}
-    </button>
+    <>
+      <button type="button" className="btn sm ghost" disabled={pending} aria-label={t('care.plan.deactivate') + ': ' + title}
+        onClick={async () => { if (await ask({ ...splitQuestion(t('care.plan.deactivateConfirm', { title })), context: context ? <span>{context}</span> : undefined, confirmLabel: t('care.plan.deactivate') })) go(() => deactivateInterventionAction(residentId, ivId)) }}>
+        {t('care.plan.deactivate')}
+      </button>
+      {confirmDialog}
+    </>
   )
 }
 

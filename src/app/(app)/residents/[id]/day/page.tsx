@@ -2,8 +2,12 @@ import { db } from '@/lib/db'
 import { ensureTasksForDay, taskView } from '@/lib/tasks'
 import { taskTitle } from '@/lib/task-title'
 import { addDays, fmtDayMonth, hm, startOfDay } from '@/lib/time'
-import { pageResident, residentName, taskCategory, TASK_CATEGORIES, userNames } from '../../_lib/resident'
+import { pageResident, residentName, taskCategory, TASK_CATEGORIES, userNames, residentTitle } from '../../_lib/resident'
 import { DayPlan, type DayTask } from './DayPlan'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'day')
+}
 
 export default async function DayPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

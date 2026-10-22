@@ -4,6 +4,7 @@ export default defineMessages({
   de: {
     roomShort: 'Zi. {room}',
     confirmEarly: 'Die Abgabe liegt mehr als 60 Minuten vor dem geplanten Zeitpunkt {time}. Trotzdem als abgegeben dokumentieren?',
+    early: { title: 'Vor dem geplanten Zeitpunkt abgeben?', text: 'Die Abgabe liegt mehr als 60 Minuten vor dem geplanten Zeitpunkt {time}.', confirm: 'Trotzdem als abgegeben dokumentieren' },
     orderStoppedNote: 'Keine gültige Verordnung mehr für diesen Zeitpunkt',
     slots: { morning: 'Morgen', noon: 'Mittag', evening: 'Abend', night: 'Nacht' },
     state: { open: 'offen', given: 'abgegeben', refused: 'verweigert', omitted: 'ausgelassen', held: 'pausiert', overdue: 'überfällig', voided: 'storniert' },
@@ -246,6 +247,7 @@ export default defineMessages({
   fr: {
     roomShort: 'Ch. {room}',
     confirmEarly: 'L’administration a lieu plus de 60 minutes avant l’heure prévue {time}. Documenter quand même comme administré ?',
+    early: { title: 'Administrer avant l’heure prévue ?', text: 'L’administration a lieu plus de 60 minutes avant l’heure prévue {time}.', confirm: 'Documenter quand même comme administré' },
     orderStoppedNote: 'Plus de prescription valable pour cet horaire',
     slots: { morning: 'Matin', noon: 'Midi', evening: 'Soir', night: 'Nuit' },
     state: { open: 'ouvert', given: 'administré', refused: 'refusé', omitted: 'omis', held: 'suspendu', overdue: 'en retard', voided: 'annulé' },
@@ -488,6 +490,7 @@ export default defineMessages({
   it: {
     roomShort: 'Cam. {room}',
     confirmEarly: 'La somministrazione avviene più di 60 minuti prima dell’orario previsto {time}. Documentare comunque come somministrato?',
+    early: { title: 'Somministrare prima dell’orario previsto?', text: 'La somministrazione avviene più di 60 minuti prima dell’orario previsto {time}.', confirm: 'Documentare comunque come somministrato' },
     orderStoppedNote: 'Nessuna prescrizione valida per questo orario',
     slots: { morning: 'Mattino', noon: 'Mezzogiorno', evening: 'Sera', night: 'Notte' },
     state: { open: 'aperto', given: 'somministrato', refused: 'rifiutato', omitted: 'omesso', held: 'sospeso', overdue: 'in ritardo', voided: 'annullato' },
@@ -730,6 +733,7 @@ export default defineMessages({
   en: {
     roomShort: 'Rm. {room}',
     confirmEarly: 'This is more than 60 minutes before the scheduled time {time}. Document as given anyway?',
+    early: { title: 'Give before the scheduled time?', text: 'This is more than 60 minutes before the scheduled time {time}.', confirm: 'Document as given anyway' },
     orderStoppedNote: 'No valid order for this time any more',
     slots: { morning: 'Morning', noon: 'Noon', evening: 'Evening', night: 'Night' },
     state: { open: 'open', given: 'given', refused: 'refused', omitted: 'omitted', held: 'held', overdue: 'overdue', voided: 'voided' },

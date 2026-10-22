@@ -3,10 +3,14 @@ import { db } from '@/lib/db'
 import { storageConfigured } from '@/lib/env'
 import { fileUrl } from '@/lib/files'
 import { fmtDate, fmtNum } from '@/lib/time'
-import { pageResident, userNames } from '../../_lib/resident'
+import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { Upload } from './Upload'
 
 const CATEGORIES = ['report', 'lab', 'imaging', 'prescription', 'directive', 'consent', 'insurance', 'other']
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'files')
+}
 
 export default async function FilesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ cat?: string }> }) {
   const { id } = await params

@@ -8,6 +8,7 @@ import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { aiDraft, aiFeedback, AiUnavailable } from '@/lib/ai'
 import { lastShiftEnd, shiftTypes } from '@/lib/shift'
+import { shiftName } from '@/lib/shift-name'
 import { dbDate, parseDateKey, shiftBounds } from '@/lib/time'
 import { collectHandover, handoverText } from './collect'
 import { ackSettings } from '@/lib/acks'
@@ -132,7 +133,7 @@ export async function aiSummaryAction(form: FormData): Promise<ActionResult<{ id
     const input = handoverText(blocks, ctx.t)
     if (!input.trim()) return { ok: false, error: 'tasks.handover.ai.empty' }
     try {
-      const res = await aiDraft(ctx, 'handover', ctx.t('tasks.handover.ai.instruction', { shift: def.name }), input, 1500)
+      const res = await aiDraft(ctx, 'handover', ctx.t('tasks.handover.ai.instruction', { shift: shiftName(ctx.t, def) }), input, 1500)
       return { ok: true, data: res }
     } catch (e) {
       if (e instanceof AiUnavailable) return { ok: false, error: 'common.ai.unavailable' }

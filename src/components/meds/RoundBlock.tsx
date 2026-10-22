@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useT } from '@/i18n/client'
-import { DoseDialog, stateLabel, tooEarly } from './MarTable'
-import { useDoseCall } from './shared'
+import { DoseDialog, earlyConfirm, stateLabel, tooEarly } from './MarTable'
+import { ResidentContext, useDoseCall } from './shared'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { doseText } from './dose'
 import type { ColleagueDto, DoseStateDto, MarRowDto, ResidentCtxDto } from './types'
 
@@ -49,12 +50,13 @@ export function RoundBlock({ data, time, slotKey, day, editable, colleagues, nex
   const r = data.resident
   const show = !complete || !collapsed
 
-  const act = (row: MarRowDto, status: DoseStateDto) => {
+  const [ask, confirmDialog] = useConfirm()
+  const act = async (row: MarRowDto, status: DoseStateDto) => {
     const c = row.cells[0]!
     if (pending) return
     if (status === 'given' && row.requiresDoubleCheck) return setDlg({ row, status })
     if (status === 'omitted' || status === 'held') return setDlg({ row, status })
-    if (status === 'given' && tooEarly(day, time) && !window.confirm(t('meds.confirmEarly', { time }))) return
+    if (status === 'given' && tooEarly(day, time) && !(await ask(earlyConfirm(t, r, row, c.dose, time)))) return
     record(row, time, status, c.adminId)
   }
 
@@ -134,6 +136,7 @@ export function RoundBlock({ data, time, slotKey, day, editable, colleagues, nex
           onClose={() => setDlg(null)}
         />
       )}
+      {confirmDialog}
     </section>
   )
 }

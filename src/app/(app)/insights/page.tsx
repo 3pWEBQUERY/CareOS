@@ -5,6 +5,7 @@ import { ChartCard, Columns, DataTable, MeterList, StatusBar } from '@/component
 import { fmtDate, fmtDayMonth, fmtNum, weekdayShort } from '@/lib/time'
 import { careData, managementData, workforceData } from './_data'
 import { Filter } from './Filter'
+import { shiftName } from '@/lib/shift-name'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -237,10 +238,10 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           <div className="card-head"><h2 id="dq-h">{t('insights.management.docTitle')}</h2><span className="small muted">{t('insights.periods.p' + scope.days)}</span></div>
           <div className="card-body stack-sm">
             <span className="lbl">{t('insights.management.notesPerShiftLong', { n: d.residents })}</span>
-            <MeterList ariaLabel={t('insights.management.notesPerShift')} max={100} rows={d.perShift.map((p) => ({ label: p.name, value: p.pct ?? 0, text: pct(p.pct, locale), tone: tone(p.pct), hint: t('insights.management.shiftsN', { n: p.shifts }) }))} />
+            <MeterList ariaLabel={t('insights.management.notesPerShift')} max={100} rows={d.perShift.map((p) => ({ label: shiftName(t, p), value: p.pct ?? 0, text: pct(p.pct, locale), tone: tone(p.pct), hint: t('insights.management.shiftsN', { n: p.shifts }) }))} />
             <span className="lbl" style={{ marginTop: 6 }}>{t('insights.management.withNoteLong')}</span>
             <MeterList ariaLabel={t('insights.management.withNote')} max={100} rows={[{ label: t('insights.management.completions', { n: d.completed }), value: notePct ?? 0, text: pct(notePct, locale), hint: `(${d.withNote})` }]} />
-            <DataTable labels={L} csvName={csvName(ctx, 'dokumentation')} table={{ head: [t('insights.management.measure'), t('insights.value')], rows: [...d.perShift.map((p) => [`${t('insights.management.notesPerShift')} · ${p.name}`, pct(p.pct, locale)]), [t('insights.management.withNote'), pct(notePct, locale)]] }} />
+            <DataTable labels={L} csvName={csvName(ctx, 'dokumentation')} table={{ head: [t('insights.management.measure'), t('insights.value')], rows: [...d.perShift.map((p) => [`${t('insights.management.notesPerShift')} · ${shiftName(t, p)}`, pct(p.pct, locale)]), [t('insights.management.withNote'), pct(notePct, locale)]] }} />
           </div>
         </section>
 
@@ -289,11 +290,11 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
               <tbody>
                 {d.coverage.map((c) => (
                   <tr key={c.code}>
-                    <th scope="row">{c.name}</th>
+                    <th scope="row">{shiftName(t, c)}</th>
                     {c.days.map((x) => {
                       const cls = x.target ? (x.staffed >= x.target ? 'ok' : x.staffed >= x.target - 1 ? 'warn' : 'crit') : ''
                       return (
-                        <td key={x.day.toISOString()} className={cls} title={`${c.name} ${fmtDayMonth(x.day)}: ${x.staffed}${x.target ? ' / ' + x.target : ''}${x.open ? ' · ' + t('insights.management.openN', { n: x.open }) : ''}`}>
+                        <td key={x.day.toISOString()} className={cls} title={`${shiftName(t, c)} ${fmtDayMonth(x.day)}: ${x.staffed}${x.target ? ' / ' + x.target : ''}${x.open ? ' · ' + t('insights.management.openN', { n: x.open }) : ''}`}>
                           {x.staffed}{x.target ? <span className="muted">/{x.target}</span> : null}{x.open ? <sup>+{x.open}</sup> : null}
                         </td>
                       )
@@ -304,7 +305,7 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
             </table>
           </div>
           <p className="small muted" style={{ margin: 0 }}>{t(d.anyTarget ? 'insights.management.coverageLegend' : 'insights.management.coverageLegendNoTarget')}</p>
-          <DataTable labels={L} csvName={csvName(ctx, 'abdeckung')} table={{ head: [t('insights.day'), t('insights.shift'), t('insights.management.staffed'), t('insights.management.target'), t('insights.management.open')], rows: d.coverage.flatMap((c) => c.days.map((x) => [fmtDate(x.day, locale), c.name, x.staffed, x.target ?? '–', x.open])) }} />
+          <DataTable labels={L} csvName={csvName(ctx, 'abdeckung')} table={{ head: [t('insights.day'), t('insights.shift'), t('insights.management.staffed'), t('insights.management.target'), t('insights.management.open')], rows: d.coverage.flatMap((c) => c.days.map((x) => [fmtDate(x.day, locale), shiftName(t, c), x.staffed, x.target ?? '–', x.open])) }} />
         </div>
       </section>
     </>
@@ -357,7 +358,7 @@ async function Workforce({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
                 <li key={s.id} className="li">
                   <span className={'sh open'}>{s.code}</span>
                   <div className="grow">
-                    <div>{weekdayShort(s.date, locale)} {fmtDayMonth(s.date)} · {s.name} <span className="mono small muted">{s.start}–{s.end}</span></div>
+                    <div>{weekdayShort(s.date, locale)} {fmtDayMonth(s.date)} · {shiftName(t, s)} <span className="mono small muted">{s.start}–{s.end}</span></div>
                     <div className="small muted">{s.unit}{s.qual ? ' · ' + s.qual : ''}</div>
                   </div>
                 </li>

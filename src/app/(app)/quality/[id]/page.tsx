@@ -10,9 +10,11 @@ import { ActionCheck } from '../client'
 import { actionTitle, canManageUnit, qualityUnits, SEVERITIES, STAGES, stageIndex, toLocalInput } from '../_lib'
 import { StageForm } from './StageForm'
 
-export async function generateMetadata() {
-  const { t } = await getCtx()
-  return { title: t('nav.quality') }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const inc = await db.incident.findFirst({ where: { id: (await params).id, orgId: ctx.org.id, unitId: { in: qualityUnits(ctx).map((u) => u.id) } }, select: { type: { select: { name: true } } } })
+  return { title: inc ? `${inc.type.name} · ${t('nav.quality')}` : t('nav.quality') }
 }
 
 export default async function IncidentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {

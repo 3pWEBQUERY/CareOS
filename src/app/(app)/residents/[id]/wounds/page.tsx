@@ -7,9 +7,10 @@ import { keyLabel, WOUND_KINDS, woundArea } from '@/lib/care'
 import { Empty } from '@/components/ui/Empty'
 import { NewWoundButton } from './WoundClient'
 import { StatusTag } from './ui'
+import { residentTitle } from '../../_lib/resident'
 
-export async function generateMetadata() {
-  return { title: (await getCtx()).t('residents.tabs.wounds') }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'wounds')
 }
 
 export default async function WoundsPage({ params }: { params: Promise<{ id: string }> }) {

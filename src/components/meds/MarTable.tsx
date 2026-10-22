@@ -5,6 +5,7 @@ import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { setDoseAction } from '@/app/(app)/residents/[id]/meds/actions'
+import { useConfirm, type ConfirmOptions } from '@/components/ui/ConfirmDialog'
 import { FourEyes, ResidentContext, useDoseCall } from './shared'
 import { doseText } from './dose'
 import type { CellDto, ColleagueDto, DoseStateDto, MarRowDto, ResidentCtxDto } from './types'
@@ -16,6 +17,16 @@ export function tooEarly(day: string, time: string) {
   const [h, m] = time.split(':').map(Number)
   const [y, mo, d] = day.split('-').map(Number)
   return new Date(y, mo - 1, d, h, m).getTime() - Date.now() > 60 * 60_000
+}
+
+/** Rückfrage vor einer frühen Abgabe mit Person, Zimmer, Allergien und Medikament als Kontext (PRD §32). */
+export function earlyConfirm(t: (k: string, v?: Record<string, string>) => string, resident: ResidentCtxDto, row: MarRowDto, dose: string, time: string): ConfirmOptions {
+  return {
+    title: t('meds.early.title'),
+    text: t('meds.early.text', { time }),
+    context: <><ResidentContext r={resident} /><span>{row.name} {doseText(dose, row.form)} · <span className="mono">{time}</span></span></>,
+    confirmLabel: t('meds.early.confirm'),
+  }
 }
 
 export function stateLabel(t: (k: string) => string, c: CellDto) {
@@ -40,11 +51,12 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
   const { pending, record, isBusy } = useDoseCall(day)
   const [dlg, setDlg] = useState<{ row: MarRowDto; time: string; status?: DoseStateDto } | null>(null)
 
-  const click = (row: MarRowDto, c: CellDto) => {
+  const [ask, confirmDialog] = useConfirm()
+  const click = async (row: MarRowDto, c: CellDto) => {
     if (!editable || pending) return
     if (c.state !== 'open' || !c.applicable) return setDlg({ row, time: c.time })
     if (row.requiresDoubleCheck) return setDlg({ row, time: c.time, status: 'given' })
-    if (tooEarly(day, c.time) && !window.confirm(t('meds.confirmEarly', { time: c.time }))) return
+    if (tooEarly(day, c.time) && !(await ask(earlyConfirm(t, resident, row, c.dose, c.time)))) return
     record(row, c.time, 'given', c.adminId)
   }
 
@@ -118,6 +130,7 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
           onClose={() => setDlg(null)}
         />
       )}
+      {confirmDialog}
     </>
   )
 }

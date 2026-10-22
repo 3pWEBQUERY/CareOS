@@ -2,8 +2,12 @@ import { db } from '@/lib/db'
 import { addDays, fmtNum, fmtRel, hm, sameDay, weekdayShort } from '@/lib/time'
 import { abnormalKeys, flag, mergeLimits, VITALS, type VitalKey } from '@/lib/vitals'
 import { LineChart, type Point } from '@/components/ui/LineChart'
-import { pageResident, userNames } from '../../_lib/resident'
+import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { VitalForm, Thresholds } from './VitalForm'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'vitals')
+}
 
 export default async function VitalsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

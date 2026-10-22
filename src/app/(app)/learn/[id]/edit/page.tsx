@@ -8,6 +8,13 @@ import { deleteModule, moveModule } from '../../actions'
 import { ActBtn } from '../../../docs/DocsClient'
 import { CourseForm, ModuleButton } from '../../LearnClient'
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const course = ctx.can('learn.manage') ? await loadCourse(ctx, (await params).id) : null
+  return { title: course ? `${course.title} · ${t('learn.edit.label')}` : t('learn.edit.label') }
+}
+
 export default async function CourseEditPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
   const { t } = ctx
@@ -68,7 +75,7 @@ export default async function CourseEditPage({ params }: { params: Promise<{ id:
                             <ActBtn className="btn sm ghost" label="↑" disabled={i === 0} action={moveModule.bind(null, course.id, m.id, -1)} />
                             <ActBtn className="btn sm ghost" label="↓" disabled={i === mods.length - 1} action={moveModule.bind(null, course.id, m.id, 1)} />
                             <ModuleButton courseId={course.id} label={t('common.edit')} className="btn sm" m={{ id: m.id, kind: m.kind, title: m.title, body: m.body, videoUrl: m.videoUrl, fileName: m.fileId ? fileName.get(m.fileId) ?? null : null, quiz }} />
-                            <ActBtn className="btn sm ghost" label={t('common.delete')} confirm={t('learn.edit.deleteConfirm', { title: m.title })} success="learn.edit.deleted" action={deleteModule.bind(null, course.id, m.id)} />
+                            <ActBtn className="btn sm ghost" label={t('common.delete')} confirm={t('learn.edit.deleteConfirm', { title: m.title })} context={<span><strong>{course.title}</strong> · {m.title}</span>} danger success="learn.edit.deleted" action={deleteModule.bind(null, course.id, m.id)} />
                           </div>
                         </div>
                       </li>

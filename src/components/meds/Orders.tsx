@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
+import { splitQuestion } from '@/components/ui/ConfirmDialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { saveOrderAction, stopOrderAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { ResidentContext } from './shared'
@@ -139,7 +140,7 @@ export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescri
       )}
       {stop && (
         <Dialog open onClose={() => setStop(null)} title={t('meds.orders.stopTitle')} context={<ResidentContext r={resident} />}>
-          <ActionForm action={stopOrderAction} onDone={(r) => r.ok && setStop(null)} confirm={t('meds.orders.stopConfirm', { drug: stop.name })}>
+          <ActionForm action={stopOrderAction} onDone={(r) => r.ok && setStop(null)} confirm={{ ...splitQuestion(t('meds.orders.stopConfirm', { drug: stop.name })), context: <><ResidentContext r={resident} /><span>{stop.name}</span></>, danger: true }}>
             <input type="hidden" name="id" value={stop.id} />
             <p style={{ margin: 0 }}><strong>{stop.name}</strong> <span className="small muted">{[stop.form, stop.route].filter(Boolean).join(' · ')}</span></p>
             <p className="small fg2" style={{ margin: 0 }}>{t('meds.orders.stopHint')}</p>

@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
+import { splitQuestion } from '@/components/ui/ConfirmDialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { givePrnAction, recordEffectAction, voidPrnAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { FourEyes, ResidentContext } from './shared'
@@ -155,7 +156,7 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
       )}
       {voiding && (
         <Dialog open onClose={() => setVoiding(null)} title={t('meds.prn.voidTitle')} context={<ResidentContext r={resident} />}>
-          <ActionForm action={voidPrnAction} onDone={(r) => r.ok && setVoiding(null)} confirm="meds.prn.voidConfirm">
+          <ActionForm action={voidPrnAction} onDone={(r) => r.ok && setVoiding(null)} confirm={{ ...splitQuestion(t('meds.prn.voidConfirm')), context: <><ResidentContext r={resident} /><span><span className="mono">{voiding.at}</span> · {voiding.drug} · <span className="mono">{voiding.dose}</span></span></>, danger: true }}>
             <input type="hidden" name="adminId" value={voiding.id} />
             <p style={{ margin: 0 }}><span className="mono">{voiding.at}</span> · {voiding.drug} · <span className="mono">{voiding.dose}</span></p>
             <label className="fld">

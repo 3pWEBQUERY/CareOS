@@ -5,7 +5,7 @@ import { OPEN_STATUSES, taskView } from '@/lib/tasks'
 import { lastShiftEnd } from '@/lib/shift'
 import { addDays, fmtDate, fmtNum, fmtRel, hm, sameDay, startOfDay } from '@/lib/time'
 import { flag, mergeLimits, VITALS, type VitalKey } from '@/lib/vitals'
-import { OBS_TONE, pageResident, userNames } from '../../_lib/resident'
+import { OBS_TONE, pageResident, userNames, residentTitle } from '../../_lib/resident'
 
 const KINDS = ['observation', 'vitals', 'medication', 'task', 'assessment', 'wound', 'intake', 'incident', 'appointment'] as const
 type Kind = (typeof KINDS)[number]
@@ -14,6 +14,10 @@ type Range = keyof typeof RANGES
 const DOT: Record<Kind, string> = { observation: 'accent', vitals: '', medication: 'violet', task: 'ok', assessment: 'accent', wound: 'warn', intake: '', incident: 'crit', appointment: 'violet' }
 
 type Ev = { id: string; at: Date; kind: Kind; tone: string; dot: string; tag: string; title: React.ReactNode; text?: string | null; by?: string | null; strike?: boolean }
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'timeline')
+}
 
 export default async function TimelinePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; range?: string }> }) {
   const { id } = await params

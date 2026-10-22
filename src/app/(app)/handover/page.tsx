@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { aiConfigured } from '@/lib/env'
 import { lastShiftEnd, shiftTypes } from '@/lib/shift'
+import { shiftName } from '@/lib/shift-name'
 import { addDays, dateKey, dbDate, fmtDayMonth, fmtRel, hm, parseDateKey, sameDay, shiftBounds, startOfDay } from '@/lib/time'
 import { Empty, Forbidden } from '@/components/ui/Empty'
 import { HandoverActions, HandoverCard, type HoBlockDto } from '@/components/handover/HandoverUi'
@@ -91,7 +92,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
       <div className="view-head">
         <div>
           <span className="lbl">{t('tasks.handover.label')} · {unit.name}</span>
-          <h1>{sel.def.name} {sel.def.start}–{sel.def.end}</h1>
+          <h1>{shiftName(t, sel.def)} {sel.def.start}–{sel.def.end}</h1>
           <p className="sub">
             {sameDay(shiftDay, now) ? t('common.today') : sameDay(shiftDay, addDays(now, -1)) ? t('common.yesterday') : ''} {fmtDayMonth(shiftDay)}
             {' · '}
@@ -106,7 +107,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
             {types.map((s) => {
               const o = latestOf(s.code)
               const active = s.code === sel.def.code && sameDay(startOfDay(o.start), shiftDay)
-              return <Link key={s.code} href={href({ s: s.code, d: null })} aria-current={active ? 'page' : undefined} scroll={false}>{s.name.replace(/dienst$/i, '')}</Link>
+              return <Link key={s.code} href={href({ s: s.code, d: null })} aria-current={active ? 'page' : undefined} scroll={false}>{shiftName(t, s, { short: true })}</Link>
             })}
           </nav>
         </div>

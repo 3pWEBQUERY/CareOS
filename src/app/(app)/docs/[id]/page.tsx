@@ -11,6 +11,14 @@ import { IconFile } from '@/components/icons'
 import { acknowledgeDocument, approveVersion, archiveDocument, deleteDraft, remindAck, returnToDraft, submitVersion } from '../actions'
 import { ActBtn, MetaButton, PrintButton, VersionButton } from '../DocsClient'
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const doc = ctx.can('docs.read') ? await loadDoc(ctx, (await params).id) : null
+  const visible = doc && (doc.status === 'approved' || ctx.can('docs.manage'))
+  return { title: visible ? `${doc.title} · ${t('nav.docs')}` : t('nav.docs') }
+}
+
 export default async function DocPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ v?: string; diff?: string }> }) {
   const ctx = await getCtx()
   const { t, locale } = ctx
@@ -89,7 +97,7 @@ export default async function DocPage({ params, searchParams }: { params: Promis
             {!pending && doc.status !== 'archived' && (
               <VersionButton className="btn primary" label={t('docs.version.new')} documentId={doc.id} suggest={nextVersion(doc.currentVersion, false)} suggestCritical={nextVersion(doc.currentVersion, true)} baseBody={current?.body ?? ''} hasFile={!!current?.fileId} />
             )}
-            {approve && doc.status !== 'archived' && <ActBtn className="btn ghost" label={t('docs.archive')} confirm={t('docs.archiveConfirm')} success="docs.archived" action={archiveDocument.bind(null, doc.id, false)} />}
+            {approve && doc.status !== 'archived' && <ActBtn className="btn ghost" label={t('docs.archive')} confirm={t('docs.archiveConfirm')} context={<strong>{doc.title}</strong>} success="docs.archived" action={archiveDocument.bind(null, doc.id, false)} />}
             {approve && doc.status === 'archived' && <ActBtn label={t('docs.restore')} success="common.saved" action={archiveDocument.bind(null, doc.id, true)} />}
             </>
           )}
@@ -114,14 +122,14 @@ export default async function DocPage({ params, searchParams }: { params: Promis
                 {!pending.submittedAt && (
                   <>
                     <VersionButton className="btn sm" label={t('common.edit')} documentId={doc.id} draft={{ id: pending.id, version: pending.version, body: pending.body, changeNote: pending.changeNote, critical: pending.critical, fileName: pending.fileId ? fileById.get(pending.fileId)?.filename ?? 'file' : null }} />
-                    {doc.currentVersion && <ActBtn className="btn sm ghost" label={t('docs.discard')} confirm={t('docs.discardConfirm')} success="docs.discarded" action={deleteDraft.bind(null, pending.id)} />}
+                    {doc.currentVersion && <ActBtn className="btn sm ghost" label={t('docs.discard')} confirm={t('docs.discardConfirm')} context={<span><strong>{doc.title}</strong> · v{pending.version}</span>} danger success="docs.discarded" action={deleteDraft.bind(null, pending.id)} />}
                     <ActBtn className="btn sm primary" label={t('docs.submit')} success="docs.submitted" action={submitVersion.bind(null, pending.id)} />
                   </>
                 )}
                 {pending.submittedAt && approve && (
                   <>
                     <ActBtn className="btn sm" label={t('docs.returnDraft')} success="common.saved" action={returnToDraft.bind(null, pending.id)} />
-                    <ActBtn className="btn sm primary" label={t('docs.approve')} confirm={t('docs.approveConfirm', { v: pending.version })} success="docs.approved" action={approveVersion.bind(null, pending.id)} />
+                    <ActBtn className="btn sm primary" label={t('docs.approve')} confirm={t('docs.approveConfirm', { v: pending.version })} context={<span><strong>{doc.title}</strong> · v{pending.version}</span>} success="docs.approved" action={approveVersion.bind(null, pending.id)} />
                   </>
                 )}
                 {pending.submittedAt && !approve && <span className="small muted">{t('docs.waitingApproval')}</span>}

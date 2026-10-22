@@ -1,10 +1,14 @@
 import { db } from '@/lib/db'
 import { aiConfigured } from '@/lib/env'
 import { fmtRel } from '@/lib/time'
-import { OBS_CATEGORIES, OBS_TONE, pageResident, residentName, userNames } from '../../_lib/resident'
+import { OBS_CATEGORIES, OBS_TONE, pageResident, residentName, userNames, residentTitle } from '../../_lib/resident'
 import { Notes, type NoteRow } from './Notes'
 import { FormEntry } from '@/components/forms/FormEntry'
 import { notesExtras } from './extras'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'notes')
+}
 
 export default async function NotesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

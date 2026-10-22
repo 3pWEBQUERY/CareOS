@@ -12,6 +12,14 @@ import { completeModule, startCourse } from '../actions'
 import { ActBtn } from '../../docs/DocsClient'
 import { PracticalConfirm, QuizForm } from '../LearnClient'
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const course = ctx.can('learn.read') ? await loadCourse(ctx, (await params).id) : null
+  const visible = course && (course.published || ctx.can('learn.manage'))
+  return { title: visible ? `${course.title} · ${t('nav.learn')}` : t('nav.learn') }
+}
+
 export default async function CoursePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ m?: string }> }) {
   const ctx = await getCtx()
   const { t, locale } = ctx
@@ -87,7 +95,7 @@ export default async function CoursePage({ params, searchParams }: { params: Pro
                   {cert?.expiresAt ? t('learn.course.certUntil', { date: fmtDate(cert.expiresAt, locale) }) : t('learn.cert.noExpiry')}
                 </span>
               </div>
-              {cState === 'expiring' && <ActBtn className="btn sm" label={t('learn.course.renew')} confirm={t('learn.course.renewConfirm')} action={startCourse.bind(null, course.id)} />}
+              {cState === 'expiring' && <ActBtn className="btn sm" label={t('learn.course.renew')} confirm={t('learn.course.renewConfirm')} context={<strong>{course.title}</strong>} action={startCourse.bind(null, course.id)} />}
               <Link className="btn sm" href="/learn/certificates">{t('learn.tabs.certificates')}</Link>
             </div>
           ) : enrollment?.status === 'expired' ? (
@@ -108,9 +116,9 @@ export default async function CoursePage({ params, searchParams }: { params: Pro
                   const link = st !== 'locked' || viewable(i)
                   const inner = (
                     <>
-                      <span className="n">{i + 1} · {t('learn.kind.' + m.kind)}{st === 'done' ? ' ✓' : ''}</span>
+                      <span className="n">{i + 1} · {t('learn.kind.' + m.kind)}{st === 'done' ? ' ✓' : st === 'locked' ? ' · ' + t('learn.mstate.locked') : ''}</span>
                       <span>{m.title}</span>
-                      <span className="sr-only">{t('learn.mstate.' + st)}</span>
+                      {st !== 'locked' && <span className="sr-only">{t('learn.mstate.' + st)}</span>}
                     </>
                   )
                   return (

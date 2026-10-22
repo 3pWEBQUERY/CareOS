@@ -1,6 +1,7 @@
 import 'server-only'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
+import { shiftName } from '@/lib/shift-name'
 import { addDays, currentShiftBounds, dbDate, fromDbDate, shiftAt, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
 
 export async function shiftTypes(orgId: string): Promise<ShiftDef[]> {
@@ -25,9 +26,9 @@ export async function myShiftNow(userId: string, orgId: string, now = new Date()
 
 export async function currentShiftLabel(ctx: Ctx) {
   const mine = await myShiftNow(ctx.user.id, ctx.org.id)
-  if (mine) return { name: mine.shiftType.name, start: mine.shiftType.start, end: mine.shiftType.end, mine: true, code: mine.shiftType.code }
+  if (mine) return { name: shiftName(ctx.t, mine.shiftType), start: mine.shiftType.start, end: mine.shiftType.end, mine: true, code: mine.shiftType.code }
   const s = shiftAt(await shiftTypes(ctx.org.id))
-  return s ? { ...s, mine: false } : null
+  return s ? { ...s, name: shiftName(ctx.t, s), mine: false } : null
 }
 
 /** Grenzen der laufenden Stationsschicht (für Übergabe und Aufgabenfilter). */

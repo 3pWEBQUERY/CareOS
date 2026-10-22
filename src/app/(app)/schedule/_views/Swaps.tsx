@@ -116,7 +116,7 @@ export async function SwapsView({ ctx, now, canManage }: { ctx: Ctx; now: Date; 
                     <td data-label={t('schedule.cols.taker')}>{r.takerId ? name(r.takerId) : <span className="muted">{t('schedule.swap.anyone')}</span>}</td>
                     <td>{statusOf(r)}</td>
                     <td className="small fg2">{r.note}</td>
-                    <td className="right r-act">{r.status === 'requested' && <ActButton action={cancelSwapAction.bind(null, r.id)} className="btn sm ghost" confirm="schedule.swap.cancelConfirm">{t('schedule.swap.cancel')}</ActButton>}</td>
+                    <td className="right r-act">{r.status === 'requested' && <ActButton action={cancelSwapAction.bind(null, r.id)} className="btn sm ghost" confirm="schedule.swap.cancelConfirm" context={when(r.shift)}>{t('schedule.swap.cancel')}</ActButton>}</td>
                   </tr>
                 ))}
               </tbody>

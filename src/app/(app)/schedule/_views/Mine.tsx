@@ -4,6 +4,7 @@ import type { Ctx } from '@/lib/context'
 import { addDays, dateKey, dbDate, fmtDayMonth, fmtNum, fromDbDate, sameDay, shiftBounds, weekdayShort } from '@/lib/time'
 import { absencesIn, dbKey, unitStaff, weekStart } from '../lib'
 import { SwapButton } from '../_ui/SwapButton'
+import { shiftName } from '@/lib/shift-name'
 
 const hours = (s: { code: string; name: string; start: string; end: string }, day: Date) => {
   const b = shiftBounds(s, day)
@@ -78,7 +79,7 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
                 return (
                   <tr key={s.id}>
                     {i === 0 ? dayCell : <th />}
-                    <td><span className={'sh ' + s.shiftType.code}>{s.shiftType.code}</span> {s.shiftType.name} <span className="r-only mono">{s.shiftType.start}–{s.shiftType.end}</span></td>
+                    <td><span className={'sh ' + s.shiftType.code}>{s.shiftType.code}</span> {shiftName(t, s.shiftType)} <span className="r-only mono">{s.shiftType.start}–{s.shiftType.end}</span></td>
                     <td className="num nowrap r-desk">{s.shiftType.start}–{s.shiftType.end}</td>
                     <td data-label={t('schedule.cols.unit')}>{s.unit.name}</td>
                     <td data-label={t('schedule.cols.status')}>
@@ -90,7 +91,7 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
                       {!past && s.status === 'planned' && !swap && (
                         <SwapButton
                           shiftId={s.id}
-                          label={`${s.shiftType.name} · ${weekdayShort(d, locale)} ${fmtDayMonth(d)} · ${s.shiftType.start}–${s.shiftType.end}`}
+                          label={`${shiftName(t, s.shiftType)} · ${weekdayShort(d, locale)} ${fmtDayMonth(d)} · ${s.shiftType.start}–${s.shiftType.end}`}
                           colleagues={(staffBy.get(s.unitId) ?? []).map((c) => ({ id: c.id, name: c.name, qual: c.qual, busy: busySet.has(`${c.id}|${dbKey(s.date)}`) }))}
                         />
                       )}
@@ -143,7 +144,7 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
             return (
               <div key={k} className={cls || undefined}>
                 <span className="dn"><span className="sr-only">{weekdayShort(d, locale)} </span>{d.getDate()}<span className="sr-only">.{d.getMonth() + 1}.</span></span>
-                {mine.map((s) => <span key={s.id} className={'sh ' + s.shiftType.code} title={`${s.shiftType.name} ${s.shiftType.start}–${s.shiftType.end}`}>{s.shiftType.code} <span className="month-time">{s.shiftType.start}</span><span className="sr-only"> {s.shiftType.name} {s.shiftType.start}–{s.shiftType.end}</span></span>)}
+                {mine.map((s) => <span key={s.id} className={'sh ' + s.shiftType.code} title={`${shiftName(t, s.shiftType)} ${s.shiftType.start}–${s.shiftType.end}`}>{s.shiftType.code} <span className="month-time">{s.shiftType.start}</span><span className="sr-only"> {shiftName(t, s.shiftType)} {s.shiftType.start}–{s.shiftType.end}</span></span>)}
                 {abs && <span className="sh abs" title={t('schedule.absence.kinds.' + abs.kind)}>{t('schedule.absence.short.' + abs.kind)}{abs.status === 'requested' ? ' ?' : ''}</span>}
                 {op.length > 0 && <Link className="sh open" href="/schedule?view=open" title={t('schedule.open.title')}>{op.map((s) => s.shiftType.code).join(' ')} {t('schedule.open.short')}</Link>}
               </div>

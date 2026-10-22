@@ -9,9 +9,10 @@ import { MarTable } from '@/components/meds/MarTable'
 import { EffectChecks, PrnTable, type EffectDto, type PrnAdminDto, type PrnDto } from '@/components/meds/PrnTable'
 import { Orders, type OrderDto } from '@/components/meds/Orders'
 import type { MarRowDto, ResidentCtxDto } from '@/components/meds/types'
+import { residentTitle } from '../../_lib/resident'
 
-export async function generateMetadata() {
-  return { title: (await getCtx()).t('residents.tabs.meds') }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'meds')
 }
 
 /** CareOS Med (PRD §13): Abgabeliste, Reserve mit Wirkungskontrolle, Verordnungen, Bestand. */

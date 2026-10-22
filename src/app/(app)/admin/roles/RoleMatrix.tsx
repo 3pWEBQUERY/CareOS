@@ -33,7 +33,7 @@ export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }
     return a.size !== b.size || [...a].some((p) => !b.has(p))
   })
   const changes = roles.reduce((n, r) => n + [...sel[r.id]].filter((p) => !base[r.id].has(p)).length + [...base[r.id]].filter((p) => !sel[r.id].has(p)).length, 0)
-  useUnsavedGuard(changes > 0, t('admin.ux.unsaved'))
+  const leaveDialog = useUnsavedGuard(changes > 0, t('admin.ux.unsaved'))
 
   const set = (roleId: string, ps: string[], on: boolean) =>
     setSel((cur) => {
@@ -123,6 +123,7 @@ export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }
         <button type="button" className="btn primary" disabled={!changes || pending} data-loading={pending || undefined} onClick={save}>{t('common.save')}</button>
       </div>
       {error && <p className="err" role="alert" style={{ margin: 0 }}>{error}</p>}
+      {leaveDialog}
     </div>
   )
 }

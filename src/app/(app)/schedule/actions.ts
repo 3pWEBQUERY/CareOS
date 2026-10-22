@@ -10,6 +10,7 @@ import { emit } from '@/lib/events'
 import { notify, usersWithPermission } from '@/lib/notify'
 import { dateKey, dbDate, fromDbDate, parseDateKey, startOfDay, weekdayShort, fmtDayMonth, fmtDbDate } from '@/lib/time'
 import { weekStart } from './lib'
+import { shiftName } from '@/lib/shift-name'
 
 const err = (error: string, field?: string): ActionResult => ({ ok: false, error, field })
 const KINDS: AbsenceKind[] = ['vacation', 'sick', 'training', 'compensation', 'other']
@@ -20,9 +21,9 @@ function parseDay(s: string) {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
-const label = (ctx: Ctx, s: { date: Date; shiftType: { name: string } }) => {
+const label = (ctx: Ctx, s: { date: Date; shiftType: { code: string; name: string } }) => {
   const d = fromDbDate(s.date)
-  return { shift: s.shiftType.name, date: `${weekdayShort(d, ctx.locale)} ${fmtDayMonth(d)}` }
+  return { shift: shiftName(ctx.t, s.shiftType), date: `${weekdayShort(d, ctx.locale)} ${fmtDayMonth(d)}` }
 }
 const weekHref = (date: Date) => `/schedule?w=${dateKey(weekStart(fromDbDate(date)))}`
 
@@ -111,7 +112,7 @@ export async function saveShiftAction(form: FormData): Promise<ActionResult> {
   })
 }
 
-async function notifyOpenShift(ctx: Ctx, s: { unitId: string; date: Date; shiftType: { name: string } }) {
+async function notifyOpenShift(ctx: Ctx, s: { unitId: string; date: Date; shiftType: { code: string; name: string } }) {
   const staff = await db.user.findMany({
     where: { orgId: ctx.org.id, active: true, id: { not: ctx.user.id }, OR: [{ roles: { some: { unitId: s.unitId } } }, { teams: { some: { team: { unitId: s.unitId } } } }] },
     select: { id: true },

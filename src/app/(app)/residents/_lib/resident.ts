@@ -1,4 +1,5 @@
 import 'server-only'
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
 import { ForbiddenError, getCtx, residentInScope, type Ctx } from '@/lib/context'
@@ -60,3 +61,18 @@ export function taskCategory(t: (k: string) => string, value: string) {
 }
 
 export const splitList = (s: string) => s.split(/[,;\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 30)
+
+const titleResident = cache(async (id: string) => residentInScope(await getCtx(), id))
+
+/**
+ * Seitentitel einer Akte in der Sprache der Person: «Huber Margrit · Verlauf» (PRD §53).
+ * `detail` ergänzt den Datensatz einer Detailseite (z. B. Wundlokalisation).
+ */
+export async function residentTitle(id: string, tab?: string, detail?: (r: NonNullable<Awaited<ReturnType<typeof titleResident>>>) => Promise<string | null | undefined>) {
+  const { t } = await getCtx()
+  const r = await titleResident(id)
+  const tabLabel = tab ? t('residents.tabs.' + tab) : null
+  if (!r) return { title: tabLabel ?? t('nav.residents') }
+  const extra = detail ? await detail(r) : null
+  return { title: [residentName(r), tabLabel, extra].filter(Boolean).join(' · ') }
+}

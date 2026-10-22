@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useT } from '@/i18n/client'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { Dialog } from '@/components/ui/Dialog'
+import { useConfirm, splitQuestion } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { createDocument, updateDocumentMeta, createVersion, updateDraft, askAssistant, type AssistantAnswer } from './actions'
 
@@ -16,24 +17,29 @@ export const DOC_CATS = ['guideline', 'instruction', 'emergency', 'hygiene', 'fo
 const tr = (t: (k: string) => string, s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
 
 /** Knopf für eine gebundene Server Action mit Toast-Rückmeldung. */
-export function ActBtn({ action, label, success, confirm, className = 'btn', disabled }: {
+export function ActBtn({ action, label, success, confirm, className = 'btn', disabled, context, danger }: {
   action: () => Promise<Result>
   label: string
   success?: string
   confirm?: string
   className?: string
   disabled?: boolean
+  /** Betroffener Datensatz im Bestätigungsdialog (PRD §32). */
+  context?: React.ReactNode
+  danger?: boolean
 }) {
   const t = useT()
   const [pending, start] = useTransition()
+  const [ask, confirmDialog] = useConfirm()
   return (
+    <>
     <button
       type="button"
       className={className}
       disabled={disabled || pending}
       data-loading={pending || undefined}
-      onClick={() => {
-        if (confirm && !window.confirm(confirm)) return
+      onClick={async () => {
+        if (confirm && !(await ask({ ...splitQuestion(tr(t, confirm)), context, confirmLabel: label, danger: danger ?? /\bdanger\b/.test(className) }))) return
         start(async () => {
           const r = await action()
           if (r.ok) { const m = r.message ?? success; if (m) toast(tr(t, m)) }
@@ -43,6 +49,8 @@ export function ActBtn({ action, label, success, confirm, className = 'btn', dis
     >
       {label}
     </button>
+    {confirmDialog}
+    </>
   )
 }
 

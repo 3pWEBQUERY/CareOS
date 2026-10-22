@@ -11,9 +11,10 @@ import {
 import { Empty } from '@/components/ui/Empty'
 import { submissionOf } from './data'
 import { EvaluateButton, IvButton, IvDeactivate, PlanAreaButton, PlanToolbar, SuggestionActions, type AreaSnapshot } from './PlanClient'
+import { residentTitle } from '../../_lib/resident'
 
-export async function generateMetadata() {
-  return { title: (await getCtx()).t('residents.tabs.careplan') }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id, 'careplan')
 }
 
 export default async function CarePlanPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ v?: string }> }) {
@@ -302,7 +303,7 @@ export default async function CarePlanPage({ params, searchParams }: { params: P
                                     title={t('care.plan.editIntervention')} context={contextLabel}
                                     iv={{ id: iv.id, title: iv.title, category: iv.category, times: iv.times.join(', '), weekdays: iv.weekdays, durationMin: iv.durationMin, instructions: iv.instructions ?? '' }}
                                   />
-                                  <IvDeactivate residentId={r.id} ivId={iv.id} title={iv.title} />
+                                  <IvDeactivate residentId={r.id} ivId={iv.id} title={iv.title} context={contextLabel} />
                                   </div>
                                 </td>
                               )}

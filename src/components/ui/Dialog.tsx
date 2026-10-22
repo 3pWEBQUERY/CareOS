@@ -48,8 +48,10 @@ export function Dialog({ open, onClose, title, children, footer, wide, context }
     <dialog
       ref={ref}
       className={'dlg' + (wide ? ' wide' : '')}
-      onClose={() => { if (openRef.current) onClose() }}
-      onCancel={(e) => { e.preventDefault(); onClose() }}
+      // close/cancel durchlaufen in React den Komponentenbaum: Ereignisse eines verschachtelten Dialogs
+      // (z. B. Bestätigung in einem Formulardialog) dürfen den äusseren nicht schliessen.
+      onClose={(e) => { if (e.target === e.currentTarget && openRef.current) onClose() }}
+      onCancel={(e) => { if (e.target !== e.currentTarget) return; e.preventDefault(); onClose() }}
       aria-labelledby={id + 't'}
     >
       {open && (

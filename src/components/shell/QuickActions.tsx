@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { IconPlus } from '@/components/icons'
 
@@ -12,6 +13,8 @@ import { IconPlus } from '@/components/icons'
  */
 export function QuickActions({ canIncident, canTask }: { canIncident: boolean; canTask: boolean }) {
   const t = useT()
+  // In einer Akte beziehen sich die Aktionen direkt auf diese Person (keine Auswahl nötig).
+  const rid = /^\/residents\/([^/?#]+)/.exec(usePathname() ?? '')?.[1]
   const [open, setOpen] = useState(false)
   const btn = useRef<HTMLButtonElement>(null)
   const sheet = useRef<HTMLDivElement>(null)
@@ -54,10 +57,10 @@ export function QuickActions({ canIncident, canTask }: { canIncident: boolean; c
               <h2 className="lbl" id="quick-title" style={{ margin: 0 }}>{t('common.quick.label')}</h2>
               <button type="button" className="btn ghost sm" onClick={() => close(true)}>{t('common.close')}</button>
             </div>
-            <Link className="btn lg" href="/residents?pick=notes">{t('common.quick.document')}</Link>
-            <Link className="btn lg" href="/residents?pick=vitals">{t('common.quick.vitals')}</Link>
+            <Link className="btn lg" href={rid ? `/residents/${rid}/notes` : '/residents?pick=notes'}>{t('common.quick.document')}</Link>
+            <Link className="btn lg" href={rid ? `/residents/${rid}/vitals` : '/residents?pick=vitals'}>{t('common.quick.vitals')}</Link>
             {canTask && <Link className="btn lg" href="/tasks?new=1">{t('common.quick.task')}</Link>}
-            {canIncident && <Link className="btn lg" href="/quality/new">{t('common.quick.incident')}</Link>}
+            {canIncident && <Link className="btn lg" href={rid ? `/quality/new?resident=${encodeURIComponent(rid)}` : '/quality/new'}>{t('common.quick.incident')}</Link>}
           </div>
         </>
       )}

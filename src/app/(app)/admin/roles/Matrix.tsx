@@ -29,7 +29,7 @@ export function PermissionMatrix({ roleId, name, description, groups, initial, a
   const added = useMemo(() => [...sel].filter((p) => !base.has(p)), [sel, base])
   const removed = useMemo(() => [...base].filter((p) => !sel.has(p)), [sel, base])
   const changed = added.length + removed.length
-  useUnsavedGuard(changed > 0, t('admin.ux.unsaved'))
+  const leaveDialog = useUnsavedGuard(changed > 0, t('admin.ux.unsaved'))
   const label = (p: string) => t('admin.permissions.' + permKey(p))
   const toggle = (p: string, on: boolean) => setSel((s) => { const n = new Set(s); if (on) n.add(p); else n.delete(p); return n })
   const setMany = (ps: string[], on: boolean) => setSel((s) => { const n = new Set(s); ps.forEach((p) => (on ? n.add(p) : n.delete(p))); return n })
@@ -103,6 +103,7 @@ export function PermissionMatrix({ roleId, name, description, groups, initial, a
         {changed > 0 && <button type="button" className="btn ghost" onClick={() => setSel(new Set(base))}>{t('admin.ux.discard')}</button>}
         <Submit className={'btn primary'}>{t('common.save')}</Submit>
       </div>
+      {leaveDialog}
     </ActionForm>
   )
 }

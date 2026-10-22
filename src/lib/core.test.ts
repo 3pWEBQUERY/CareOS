@@ -72,3 +72,13 @@ test('Braden-Skala Bewertung', () => {
   assert.equal(r.score, 12)
   assert.equal(r.level, 'crit')
 })
+
+test('Diensttyp-Namen: Standardnamen übersetzt, eigene Namen unverändert', async () => {
+  const { shiftName } = await import('./shift-name')
+  const t = (k: string) => `<${k}>`
+  assert.equal(shiftName(t, { code: 'F', name: 'Frühdienst' }), '<common.shifts.early>')
+  assert.equal(shiftName(t, { code: 'N', name: 'Nachtdienst' }, { short: true }), '<common.shifts.nightShort>')
+  assert.equal(shiftName(t, { code: 'F', name: 'Tagdienst' }), 'Tagdienst')
+  assert.equal(shiftName(t, { code: 'X', name: 'Zwischendienst' }, { short: true }), 'Zwischen')
+  assert.equal(shiftName(t, { code: 'S', name: 'Frühdienst' }), 'Frühdienst')
+})

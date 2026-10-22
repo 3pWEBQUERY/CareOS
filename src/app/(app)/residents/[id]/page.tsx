@@ -6,8 +6,12 @@ import { taskTitle } from '@/lib/task-title'
 import { addDays, fmtDayMonth, fmtDbDate, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
 import { Spark } from '../_components/Spark'
-import { pageResident, userNames } from '../_lib/resident'
+import { pageResident, userNames, residentTitle } from '../_lib/resident'
 import { AiSummary } from './AiSummary'
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  return residentTitle((await params).id)
+}
 
 /** Resident 360 (PRD §47): aktueller Zustand, Veränderungen, Anstehendes, Trends. */
 export default async function ResidentOverview({ params }: { params: Promise<{ id: string }> }) {

@@ -9,9 +9,11 @@ import { AdminHead } from '../../Head'
 import { PermissionMatrix } from '../Matrix'
 import { deleteRoleAction, updateRoleAction } from '../actions'
 
-export async function generateMetadata() {
-  const { t } = await getCtx()
-  return { title: `${t('admin.nav.roles')} · ${t('nav.admin')}` }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const role = ctx.can('admin.roles') ? await db.role.findFirst({ where: { id: (await params).id, orgId: ctx.org.id }, select: { name: true } }) : null
+  return { title: `${role ? role.name : t('admin.nav.roles')} · ${t('nav.admin')}` }
 }
 
 export default async function RoleDetail({ params }: { params: Promise<{ id: string }> }) {

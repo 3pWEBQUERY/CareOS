@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, useTransition } from 'react'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
+import { useConfirm, splitQuestion, type ConfirmOptions } from '@/components/ui/ConfirmDialog'
 
 type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 
@@ -20,8 +21,12 @@ export function ActionForm({
   className?: string
   onDone?: (r: Result) => void
   id?: string
-  /** Bestätigungsfrage vor sicherheitskritischen Aktionen (PRD §32). */
-  confirm?: string
+  /**
+   * Bestätigung vor sicherheitskritischen Aktionen (PRD §32): i18n-Schlüssel oder Text (an der ersten
+   * Frage in Titel und Erläuterung geteilt) oder Optionen des ConfirmDialog. Ohne Angabe wird
+   * die Beschriftung des Absende-Knopfs übernommen, `danger` folgt dessen Klasse.
+   */
+  confirm?: string | ConfirmOptions
 }) {
   const t = useT()
   const ref = useRef<HTMLFormElement>(null)
@@ -36,7 +41,33 @@ export function ActionForm({
     }
   }, [pending, error])
   const tr = (s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
+  const [ask, confirmDialog] = useConfirm()
+  const submit = (formEl: HTMLFormElement) => {
+    // Markierungen aus dem letzten Versuch entfernen
+    formEl.querySelectorAll(`[aria-describedby="${errId}"]`).forEach((x) => { x.removeAttribute('aria-invalid'); x.removeAttribute('aria-describedby') })
+    const form = new FormData(formEl)
+    start(async () => {
+      const r = await action(form)
+      if (r.ok) {
+        setError(null)
+        if (reset) ref.current?.reset()
+        const msg = r.message ?? success
+        if (msg) toast(tr(msg))
+      } else {
+        setError(tr(r.error))
+        // Fehler am Feld: markieren und fokussieren (PRD §32); sonst liest die Live-Region die Meldung vor.
+        const el = r.field ? (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null) : null
+        if (el) {
+          el.setAttribute('aria-invalid', 'true')
+          el.setAttribute('aria-describedby', errId)
+          focusAfter.current = el // erst fokussieren, wenn das Fieldset wieder aktiv ist
+        }
+      }
+      onDone?.(r)
+    })
+  }
   return (
+    <>
     <form
       ref={ref}
       id={id}
@@ -46,29 +77,18 @@ export function ActionForm({
       aria-busy={pending || undefined}
       onSubmit={(e) => {
         e.preventDefault()
-        if (confirm && !window.confirm(tr(confirm))) return
-        // Markierungen aus dem letzten Versuch entfernen
-        e.currentTarget.querySelectorAll(`[aria-describedby="${errId}"]`).forEach((x) => { x.removeAttribute('aria-invalid'); x.removeAttribute('aria-describedby') })
-        const form = new FormData(e.currentTarget)
-        start(async () => {
-          const r = await action(form)
-          if (r.ok) {
-            setError(null)
-            if (reset) ref.current?.reset()
-            const msg = r.message ?? success
-            if (msg) toast(tr(msg))
-          } else {
-            setError(tr(r.error))
-            // Fehler am Feld: markieren und fokussieren (PRD §32); sonst liest die Live-Region die Meldung vor.
-            const el = r.field ? (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null) : null
-            if (el) {
-              el.setAttribute('aria-invalid', 'true')
-              el.setAttribute('aria-describedby', errId)
-              focusAfter.current = el // erst fokussieren, wenn das Fieldset wieder aktiv ist
-            }
-          }
-          onDone?.(r)
-        })
+        const formEl = e.currentTarget
+        if (!confirm) return submit(formEl)
+        const btn = (e.nativeEvent as SubmitEvent).submitter as HTMLElement | null
+        const o: ConfirmOptions = typeof confirm === 'string' ? splitQuestion(tr(confirm)) : confirm
+        ask({
+          ...o,
+          title: tr(o.title),
+          text: o.text && tr(o.text),
+          ack: o.ack && tr(o.ack),
+          confirmLabel: o.confirmLabel ? tr(o.confirmLabel) : btn?.textContent?.trim() || undefined,
+          danger: o.danger ?? (!!btn?.classList.contains('danger') || !!o.ack),
+        }).then((yes) => { if (yes && formEl.isConnected) submit(formEl) })
       }}
     >
       <fieldset disabled={pending} style={{ border: 0, padding: 0, margin: 0, minWidth: 0, display: 'contents' }}>
@@ -76,6 +96,8 @@ export function ActionForm({
       </fieldset>
       {error && <p className="err" id={errId} role="alert" style={{ margin: 0 }}>{error}</p>}
     </form>
+    {confirmDialog}
+    </>
   )
 }
 

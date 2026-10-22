@@ -1476,3 +1476,7 @@ table.cov { background: none; color: inherit; padding: 0; border-radius: 0; font
 /* Assessments: auf Tablet bleibt «Durchführen» sichtbar (Verlauf/Datum weichen, Datum steht im Ergebnis-Verlauf) */
 @media (max-width: 1180px) { .stable .as-trend { display: none } }
 @media (max-width: 1023px) { .stable .as-date { display: none } }
+/* Sweep: «nicht zutreffend»/«gesperrt» als Text lesbar (≥ 4.5:1) – --line-strong ist nur für Linien gedacht */
+.cm.na, .nodose, .steps li[data-state="locked"] { color: var(--fg-3) }
+/* Bestätigungsdialoge, die in Tabellenzellen oder Kopfzeilen stehen, erben keine Zellen-Ausrichtung */
+td dialog.dlg, th dialog.dlg { text-align: left; white-space: normal; font-size: 14px; font-weight: 400 }

@@ -53,7 +53,7 @@ export function FormBuilder({ initial }: { initial: Initial }) {
   const saved = useRef<string | null>(null)
   if (saved.current === null) saved.current = snapshot()
   const dirty = snapshot() !== saved.current
-  useUnsavedGuard(dirty, t('admin.ux.unsaved'))
+  const leaveDialog = useUnsavedGuard(dirty, t('admin.ux.unsaved'))
 
   const fieldName = (f: Draft, i: number) => f.label.trim() || t('forms.admin.fieldN', { n: i + 1 })
   const set = (i: number, patch: Partial<Draft>) => setFields((cur) => cur.map((f, n) => (n === i ? { ...f, ...patch } : f)))
@@ -267,6 +267,7 @@ export function FormBuilder({ initial }: { initial: Initial }) {
           </div>
         </div>
       </section>
+      {leaveDialog}
     </div>
   )
 }

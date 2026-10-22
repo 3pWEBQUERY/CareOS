@@ -10,9 +10,12 @@ import { deleteFormAction } from '../actions'
 import { formUsage } from '../usage'
 import { FormBuilder } from './FormBuilder'
 
-export async function generateMetadata() {
-  const { t } = await getCtx()
-  return { title: `${t('admin.nav.forms')} · ${t('nav.admin')}` }
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const ctx = await getCtx()
+  const { t } = ctx
+  const { id } = await params
+  const def = id !== 'new' && ctx.can('admin.config') ? await db.formDefinition.findFirst({ where: { id, orgId: ctx.org.id }, select: { name: true } }) : null
+  return { title: `${def ? def.name : id === 'new' ? t('forms.admin.new') : t('admin.nav.forms')} · ${t('nav.admin')}` }
 }
 
 export default async function FormEditPage({ params }: { params: Promise<{ id: string }> }) {

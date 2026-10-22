@@ -5,6 +5,7 @@ import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
+import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { IconPlus } from '@/components/icons'
 import { deleteContact, saveContact } from './actions'
 
@@ -15,8 +16,9 @@ export function Contacts({ residentId, who, contacts, canEdit }: { residentId: s
   const [edit, setEdit] = useState<C | 'new' | null>(null)
   const [pending, start] = useTransition()
   const cur = edit === 'new' ? null : edit
-  const remove = (c: C) => {
-    if (!window.confirm(t('residents.contacts.confirmDelete', { name: c.name }))) return
+  const [ask, confirmDialog] = useConfirm()
+  const remove = async (c: C) => {
+    if (!(await ask({ title: t('residents.contacts.confirmDelete', { name: c.name }), context: <span><strong>{who}</strong> · {c.name} ({c.relation})</span>, confirmLabel: t('common.delete'), danger: true }))) return
     start(async () => {
       const r = await deleteContact(residentId, c.id)
       if (!r.ok) return void toast(t(r.error), { kind: 'crit' })
@@ -78,6 +80,7 @@ export function Contacts({ residentId, who, contacts, canEdit }: { residentId: s
           </ActionForm>
         )}
       </Dialog>
+      {confirmDialog}
     </>
   )
 }

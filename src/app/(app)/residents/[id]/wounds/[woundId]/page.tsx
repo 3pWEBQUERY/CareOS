@@ -10,9 +10,11 @@ import { LineChart } from '@/components/ui/LineChart'
 import { Empty } from '@/components/ui/Empty'
 import { WoundEntryForm, WoundStatusButtons } from '../WoundClient'
 import { StatusTag } from '../ui'
+import { residentTitle } from '../../../_lib/resident'
 
-export async function generateMetadata() {
-  return { title: (await getCtx()).t('residents.tabs.wounds') }
+export async function generateMetadata({ params }: { params: Promise<{ id: string; woundId: string }> }) {
+  const { id, woundId } = await params
+  return residentTitle(id, 'wounds', async (r) => (await db.wound.findFirst({ where: { id: woundId, residentId: r.id }, select: { bodySite: true } }))?.bodySite)
 }
 
 export default async function WoundDetailPage({ params }: { params: Promise<{ id: string; woundId: string }> }) {
@@ -48,7 +50,7 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
           <Link className="linkbtn small" href={`/residents/${r.id}/wounds`}>← {t('care.wounds.back')}</Link>
           <h2 className="sec" style={{ marginTop: 4 }}>{w.bodySite} · {keyLabel(t, 'kinds', WOUND_KINDS, w.kind)} <StatusTag status={w.status} label={t('care.wounds.status.' + w.status)} /></h2>
         </div>
-        {canWrite && <WoundStatusButtons residentId={r.id} woundId={w.id} status={w.status} />}
+        {canWrite && <WoundStatusButtons residentId={r.id} woundId={w.id} status={w.status} who={`${r.lastName} ${r.firstName} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`} label={`${w.bodySite} · ${keyLabel(t, 'kinds', WOUND_KINDS, w.kind)}`} />}
       </div>
 
       <div className="card">

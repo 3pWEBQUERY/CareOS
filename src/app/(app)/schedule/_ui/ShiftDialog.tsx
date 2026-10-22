@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useT } from '@/i18n/client'
+import { shiftName } from '@/lib/shift-name'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { deleteShiftAction, saveShiftAction } from '../actions'
@@ -43,7 +44,7 @@ function ShiftForm({ d, onClose, types, staff, quals, unitId }: { d: ShiftDraft;
             <label className="fld">
               <span className="lbl">{t('schedule.plan.type')}</span>
               <select name="shiftTypeId" className="field" defaultValue={d.typeId ?? types[0]?.id}>
-                {types.map((x) => <option key={x.id} value={x.id}>{x.code} · {x.name} {x.start}–{x.end}</option>)}
+                {types.map((x) => <option key={x.id} value={x.id}>{x.code} · {shiftName(t, x)} {x.start}–{x.end}</option>)}
               </select>
             </label>
             <label className="fld span-all">

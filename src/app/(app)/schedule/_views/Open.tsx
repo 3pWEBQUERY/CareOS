@@ -6,6 +6,7 @@ import { ActButton } from '../../team/_ui/ActButton'
 import { applyOpenShiftAction, cancelSwapAction, decideSwapAction } from '../actions'
 import { dbKey, unitStaff } from '../lib'
 import { OpenShiftCreate } from '../_ui/OpenShiftCreate'
+import { shiftName } from '@/lib/shift-name'
 
 /** Offene Dienste im gewählten Bereich: übernehmen (Mitarbeitende), bestätigen (Leitung). */
 export async function OpenView({ ctx, now, canManage }: { ctx: Ctx; now: Date; canManage: boolean }) {
@@ -58,7 +59,7 @@ export async function OpenView({ ctx, now, canManage }: { ctx: Ctx; now: Date; c
                 return (
                   <tr key={s.id}>
                     <th scope="row" className="nowrap mono">{weekdayShort(d, locale)} {fmtDayMonth(d)}</th>
-                    <td><span className="sh open">{s.shiftType.code}</span> {s.shiftType.name} <span className="r-only mono">{s.shiftType.start}–{s.shiftType.end}</span>{s.note && <div className="small muted">{s.note}</div>}</td>
+                    <td><span className="sh open">{s.shiftType.code}</span> {shiftName(t, s.shiftType)} <span className="r-only mono">{s.shiftType.start}–{s.shiftType.end}</span>{s.note && <div className="small muted">{s.note}</div>}</td>
                     <td className="num nowrap r-desk">{s.shiftType.start}–{s.shiftType.end}</td>
                     <td data-label={t('schedule.cols.qual')}>{s.requiredQualification ? <span className={'tag ' + (lacks ? 'warn' : 'outline')}>{s.requiredQualification}</span> : <span className="muted">–</span>}</td>
                     <td data-label={t('schedule.open.applicants')}>

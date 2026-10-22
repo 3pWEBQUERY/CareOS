@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { ensureTasksForDay, taskView, OPEN_STATUSES } from '@/lib/tasks'
 import { lastShiftEnd, myShiftNow, runningShift } from '@/lib/shift'
+import { shiftName } from '@/lib/shift-name'
 import { addDays, dbDate, fmtDayMonth, fmtNum, fmtRel, fromDbDate, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
 import { taskTitle } from '@/lib/task-title'
@@ -27,7 +28,7 @@ export default async function HomePage() {
   const mine = await myShiftNow(user.id, ctx.org.id, now)
   const station = await runningShift(ctx.org.id, now)
   const window = mine ? mine.bounds : station ? { start: station.from, end: station.to } : { start: startOfDay(now), end: addDays(startOfDay(now), 1) }
-  const shiftLabel = mine ? `${mine.running ? '' : t('home.laterToday') + ': '}${mine.shiftType.name} · ${mine.shiftType.start}–${mine.shiftType.end}` : station ? `${t('home.stationShift')}: ${station.name} · ${station.start}–${station.end}` : null
+  const shiftLabel = mine ? `${mine.running ? '' : t('home.laterToday') + ': '}${shiftName(t, mine.shiftType)} · ${mine.shiftType.start}–${mine.shiftType.end}` : station ? `${t('home.stationShift')}: ${shiftName(t, station)} · ${station.start}–${station.end}` : null
 
   const canClinical = unit && ctx.canHere('resident.read')
   if (unit && ctx.canHere('task.read')) {

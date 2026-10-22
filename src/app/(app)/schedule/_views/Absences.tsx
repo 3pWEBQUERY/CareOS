@@ -46,7 +46,7 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
                     <td className="small fg2">{a.note}</td>
                     <td className="right r-act">
                       {(a.status === 'requested' || a.from >= dbDate(startOfDay(now))) && (
-                        <ActButton action={withdrawAbsenceAction.bind(null, a.id)} className="btn sm ghost" confirm="schedule.absence.withdrawConfirm">{t('schedule.absence.withdraw')}</ActButton>
+                        <ActButton action={withdrawAbsenceAction.bind(null, a.id)} className="btn sm ghost" confirm="schedule.absence.withdrawConfirm" context={<span><strong>{t('schedule.absence.kinds.' + a.kind)}</strong> · {fmtDbDate(a.from, locale)} – {fmtDbDate(a.to, locale)}</span>}>{t('schedule.absence.withdraw')}</ActButton>
                       )}
                     </td>
                   </tr>

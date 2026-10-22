@@ -5,7 +5,8 @@ import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
-import { ConfirmDialog, splitQuestion } from '@/components/ui/ConfirmDialog'
+import { ConfirmDialog, splitQuestion, useConfirm } from '@/components/ui/ConfirmDialog'
+import { useRouter } from 'next/navigation'
 
 type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 
@@ -81,11 +82,22 @@ export function ActBtn({ action, children, className = 'btn sm', confirm, succes
   )
 }
 
+/** «Es gibt … Änderungen. Seite verlassen? Die Änderungen gehen verloren.» → Frage als Titel, Rest als Erläuterung. */
+function questionFirst(s: string) {
+  const parts = s.match(/[^.?!]+[.?!]?/g)?.map((x) => x.trim()).filter(Boolean) ?? [s]
+  const q = parts.findIndex((x) => /[?？]$/.test(x))
+  if (q < 0) return { title: s }
+  return { title: parts[q], text: parts.filter((_, i) => i !== q).join(' ') || undefined }
+}
+
 /**
  * Warnt beim Verlassen der Seite mit ungespeicherten Änderungen: Browser-Navigation (beforeunload)
  * und Klicks auf interne Links (Next.js Link) werden abgefangen.
  */
-export function useUnsavedGuard(dirty: boolean, message: string) {
+export function useUnsavedGuard(dirty: boolean, message: string): React.ReactNode {
+  const t = useT()
+  const router = useRouter()
+  const [ask, dialog] = useConfirm()
   useEffect(() => {
     if (!dirty) return
     const onUnload = (e: BeforeUnloadEvent) => {
@@ -98,10 +110,11 @@ export function useUnsavedGuard(dirty: boolean, message: string) {
       if (!a || a.target === '_blank' || a.hasAttribute('download')) return
       const url = new URL(a.href, location.href)
       if (url.origin !== location.origin || (url.pathname === location.pathname && url.search === location.search)) return
-      if (!window.confirm(message)) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
+      e.preventDefault()
+      e.stopPropagation()
+      void ask({ ...questionFirst(message), confirmLabel: t('admin.ux.leavePage'), danger: true }).then((yes) => {
+        if (yes) router.push(url.pathname + url.search + url.hash)
+      })
     }
     window.addEventListener('beforeunload', onUnload)
     document.addEventListener('click', onClick, true)
@@ -109,7 +122,8 @@ export function useUnsavedGuard(dirty: boolean, message: string) {
       window.removeEventListener('beforeunload', onUnload)
       document.removeEventListener('click', onClick, true)
     }
-  }, [dirty, message])
+  }, [dirty, message, ask, router, t])
+  return dialog
 }
 
 /** Knopf, der einen Dialog mit Formular öffnet. Schliesst nach erfolgreichem Speichern. */
