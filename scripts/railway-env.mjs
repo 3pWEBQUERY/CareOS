@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Erzeugt den Variablenblock für den CareOS-Service auf Railway (Raw Editor → einfügen).
 // Neue Geheimnisse (APP_SECRET, VAPID-Schlüssel) werden bei jedem Aufruf frisch erzeugt.
-// Aufruf: node scripts/railway-env.mjs [--demo] [--admin=mail@example.ch] [--org="Alterszentrum Muster"]
+// Aufruf: node scripts/railway-env.mjs [--demo] [--admin=mail@example.ch] [--org="Alterszentrum Muster"] [--bucket=Bucket]
 import { randomBytes } from 'node:crypto'
 import webpush from 'web-push'
 
@@ -10,17 +10,19 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   return [k, v.length ? v.join('=') : true]
 }))
 const vapid = webpush.generateVAPIDKeys()
+const B = args.bucket && args.bucket !== true ? args.bucket : 'Bucket'
 const lines = [
   '# Datenbank (Railway Postgres)',
   'DATABASE_URL=${{Postgres.DATABASE_URL}}',
   '',
-  '# Railway Bucket – Dienstname "Bucket" anpassen, falls anders benannt',
-  'BUCKET=${{Bucket.BUCKET}}',
-  'ENDPOINT=${{Bucket.ENDPOINT}}',
-  'REGION=${{Bucket.REGION}}',
-  'ACCESS_KEY_ID=${{Bucket.ACCESS_KEY_ID}}',
-  'SECRET_ACCESS_KEY=${{Bucket.SECRET_ACCESS_KEY}}',
-  'S3_FORCE_PATH_STYLE=true',
+  `# Railway Bucket – Dienstname «${B}» (mit --bucket=<Name> anpassen)`,
+  `BUCKET=\${{${B}.BUCKET}}`,
+  `ENDPOINT=\${{${B}.ENDPOINT}}`,
+  `REGION=\${{${B}.REGION}}`,
+  `ACCESS_KEY_ID=\${{${B}.ACCESS_KEY_ID}}`,
+  `SECRET_ACCESS_KEY=\${{${B}.SECRET_ACCESS_KEY}}`,
+  '# Tab «Credentials» des Buckets: «virtual-hosted» → false (neue Railway Buckets), «path-style» → true',
+  'S3_FORCE_PATH_STYLE=false',
   '',
   '# Anwendung',
   'APP_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}',

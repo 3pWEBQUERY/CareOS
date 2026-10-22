@@ -24,7 +24,7 @@ npm run railway:env -- --demo
 
 Das Skript erzeugt frische Geheimnisse (`APP_SECRET`, VAPID-Schlüssel für Push, ein Startpasswort) und setzt die
 Referenzen auf Postgres (`${{Postgres.DATABASE_URL}}`) und Bucket (`${{Bucket.BUCKET}}` usw.).
-Die Bucket-Variablennamen mit dem Tab **Credentials** des Buckets abgleichen.
+Heisst der Bucket-Dienst nicht `Bucket`, den Namen mit `--bucket=<Name>` mitgeben (Gross-/Kleinschreibung zählt). Im Tab **Credentials** des Buckets steht die URL-Art: neue Railway Buckets nutzen «virtual-hosted» → `S3_FORCE_PATH_STYLE=false` (Standard des Skripts); nur bei «path-style» auf `true` setzen.
 
 Ausgabe sicher aufbewahren (Passwortmanager) und nicht ins Repository übernehmen.
 
