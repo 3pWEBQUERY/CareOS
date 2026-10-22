@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { ResidentWorkspace } from '@/components/shell/ListDrawer'
-import type { PrefetchKind } from 'next/dist/client/components/router-reducer/router-reducer-types'
 
 export type ResRow = { id: string; room: string; name: string; meta: string; over: number; open: number; changed: boolean; search: string }
 
@@ -65,7 +64,7 @@ export function ResidentList({ rows }: { rows: ResRow[] }) {
     let alive = true
     const timers: ReturnType<typeof setTimeout>[] = []
     const load = (h: string) => router.prefetch(h, {
-      kind: 'full' as PrefetchKind,
+      kind: 'full' as NonNullable<Parameters<ReturnType<typeof useRouter>['prefetch']>[1]>['kind'],
       onInvalidate: () => { if (alive) timers.push(setTimeout(() => { if (alive && document.visibilityState === 'visible') load(h) }, 3000)) },
     })
     const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 300))
@@ -101,12 +100,13 @@ export function ResidentList({ rows }: { rows: ResRow[] }) {
             <Link className="res" href={href(r.id)} scroll={false} aria-current={r.id === currentId ? 'true' : 'false'}>
               <span className="room">{r.room}</span>
               <span style={{ minWidth: 0 }}>
-                <div className="nm">{r.name}{r.changed && <i className="chg" title={t('residents.list.changed')} />}</div>
+                <div className="nm">{r.name}{r.changed && <><i className="chg" title={t('residents.list.changed')} /><span className="sr-only">, {t('residents.list.changed')}</span></>}</div>
                 <div className="meta">{r.meta}</div>
               </span>
               <span className="counts">
-                {r.over > 0 && <span className="pill crit" title={t('residents.list.overdue')}>{r.over}</span>}
-                <span className={'pill' + (r.open ? '' : ' ok')} title={t('residents.list.openToday')}>{r.open || '✓'}</span>
+                {/* Zahlen mit Bedeutung für Screenreader (title allein wird nicht zuverlässig vorgelesen) */}
+                {r.over > 0 && <span className="pill crit" title={t('residents.list.overdue')}><span aria-hidden="true">{r.over}</span><span className="sr-only">{r.over} {t('residents.list.overdue')}</span></span>}
+                <span className={'pill' + (r.open ? '' : ' ok')} title={t('residents.list.openToday')}><span aria-hidden="true">{r.open || '✓'}</span><span className="sr-only">{r.open} {t('residents.list.openToday')}</span></span>
               </span>
             </Link>
           </li>

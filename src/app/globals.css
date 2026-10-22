@@ -1680,6 +1680,10 @@ td dialog.dlg, th dialog.dlg { text-align: left; white-space: normal; font-size:
 .charts { grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)) }
 /* Scrollbare Tabellen/Listen, die per Tastatur fokussierbar gemacht werden (ScrollRegions): Ring innen, da der Rahmen am Rand liegt */
 [data-scroll-focus]:focus-visible { outline-offset: -2px }
+/* 1.4.4 Text bis 200 %: Personenliste schneidet Sicherheitsangaben (Allergie, REA) nicht ab, sondern bricht um;
+   lange Wörter in Kennzahlen und Medikamentenrunde brechen statt in die Nachbarspalte zu laufen */
+.res .meta { white-space: normal; text-overflow: clip }
+.metric, .round-line .drug, .round-line .drug-sub { overflow-wrap: break-word; hyphens: auto }
 @media (max-width: 720px) {
   /* Touch-Ziele ≥ 40 px (PRD §28/§30): Quittier-Kästchen bleiben optisch 28 px, die Trefferfläche wächst auf 40 px */
   .chk { position: relative }

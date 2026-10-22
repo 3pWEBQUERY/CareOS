@@ -30,7 +30,7 @@ export function Busy() {
 export function SkelHead({ actions = 1, sub = true, title = 240 }: { actions?: number; sub?: boolean; title?: Size }) {
   return (
     <div className="view-head" aria-hidden="true">
-      <div style={{ minWidth: 0, flex: 1 }}>
+      <div style={{ minWidth: 0, flex: '1 1 16rem' }}>
         <span className="lbl" style={{ display: 'block' }}><Bar w={120} /></span>
         <h1><Bar w={title} /></h1>
         {sub && <p className="sub"><Bar w={180} /></p>}

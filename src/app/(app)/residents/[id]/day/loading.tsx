@@ -24,7 +24,7 @@ export default function Loading() {
               <div className="ttl"><Bar w={['46%', '58%', '40%', '52%', '36%', '48%', '44%'][i]} /></div>
               <div className="sub"><Bar w={120} /></div>
             </div>
-            <Bar w={96} h={18} />
+            <span className="tag" style={{ background: 'transparent', borderColor: 'transparent', padding: 0 }}><Bar w={96} h={18} /></span>
             <span className="mins"><Bar w={40} /></span>
           </li>
         ))}
