@@ -9,6 +9,7 @@ export const LABELLED_ACTIONS = [
   'admin.api_token.create', 'admin.api_token.revoke', 'admin.webhook.create', 'admin.webhook.delete', 'admin.webhook.rotate_secret',
   'admin.org.update', 'admin.org.branding', 'admin.privacy.retention', 'retention.run', 'admin.audit.export', 'admin.export.org', 'resident.view',
   'import.residents', 'import.staff', 'import.shifts',
+  'task.template.create', 'task.template.update', 'task.template.end', 'task.template.resume', 'workflow.task', 'incident.action.assign',
 ] as const
 
 const SET = new Set<string>(LABELLED_ACTIONS)

@@ -5,6 +5,7 @@ import { LineChart, type Point } from '@/components/ui/LineChart'
 import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { VitalForm, Thresholds } from './VitalForm'
 import { VitalCorrect } from './VitalCorrect'
+import { ReviewTag } from '@/components/residents/ReviewTag'
 import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
 import { FormEntry } from '@/components/forms/FormEntry'
 import { focusFor } from '../../_lib/focus'
@@ -34,7 +35,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
   const orgLimits = mergeLimits(limitRows)
   const individual = new Set(limitRows.filter((l) => l.residentId === r.id).map((l) => l.key))
   const showGlucose = glucoseCount > 0 || r.risks.some((x) => /diab/i.test(x))
-  const names = await userNames(ctx, recent.flatMap((v) => [v.recordedById, v.voidedById]))
+  const names = await userNames(ctx, recent.flatMap((v) => [v.recordedById, v.voidedById, v.reviewedById]))
   const f = (k: VitalKey, v: number | null | undefined) => fmtNum(v, VITALS[k].dec, locale)
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   const todayAbn = recent.filter((v) => !v.voidedAt && sameDay(v.at, now)).reduce((a, v) => a + abnormalKeys(v, limits).length, 0)
@@ -163,6 +164,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
                   <td className="small muted vt-by">
                     {v.supersedesId && <><span className="tag outline">{t('chart.void.correctionTag')}</span> </>}
                     {names.get(v.recordedById)?.short ?? '–'}{v.note ? ` · ${v.note}` : ''}
+                    {v.reviewedAt && !v.voidedAt && <div><ReviewTag kind={v.reviewKind} label={t(v.reviewKind === 'action' ? 'home.review.action' : 'home.review.seen')} time={hm(v.reviewedAt)} by={names.get(v.reviewedById ?? '')?.initials ?? '?'} note={v.reviewNote} />{v.reviewKind === 'action' && v.reviewNote ? <span className="small"> {v.reviewNote}</span> : null}</div>}
                     {v.voidedAt && <div><VoidedNote tag={t('chart.void.voidedTag')} detail={t('chart.void.voidedBy', { by: names.get(v.voidedById ?? '')?.short ?? '–', at: rel(v.voidedAt) }) + (v.voidReason ? ' · ' + v.voidReason : '')} /></div>}
                   </td>
                   {visitCol && <td><span className="row" style={{ gap: 12, flexWrap: 'nowrap', justifyContent: 'flex-end' }}>{visitCell(v)}{correctCell(v)}</span></td>}

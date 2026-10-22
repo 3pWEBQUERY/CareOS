@@ -354,7 +354,8 @@ async function Workforce({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
   const absData = d.absDays.map((a) => ({ label: `${a.day.getDate()}.`, title: `${weekdayShort(a.day, locale)} ${fmtDayMonth(a.day, locale)}: ${t('insights.workforce.approved')} ${a.approved}, ${t('insights.workforce.requested')} ${a.requested}`, values: [a.approved, a.requested] }))
   const trainingValid = d.training.reduce((s, c) => s + c.valid, 0)
   const trainingAll = d.training.reduce((s, c) => s + c.staff, 0)
-  const ackAvg = d.ackItems.length && d.staff ? (d.ackItems.reduce((s, a) => s + a.n, 0) / (d.ackItems.length * d.staff)) * 100 : null
+  const ackTotal = d.ackItems.reduce((s, a) => s + a.total, 0)
+  const ackAvg = ackTotal ? (d.ackItems.reduce((s, a) => s + a.n, 0) / ackTotal) * 100 : null
   const tone = (v: number): 'ok' | 'warn' | 'crit' => (v >= 90 ? 'ok' : v >= 70 ? 'warn' : 'crit')
   return (
     <>
@@ -436,11 +437,11 @@ async function Workforce({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
                 ariaLabel={t('insights.workforce.ackTitle')}
                 max={100}
                 rows={d.ackItems.map((a) => {
-                  const v = d.staff ? (a.n / d.staff) * 100 : 0
-                  return { label: `${a.kind === 'post' ? t('insights.workforce.post') : t('insights.workforce.document')}: ${a.title}`, value: v, text: pct(v, locale), tone: tone(v), hint: `(${a.n}/${d.staff})` }
+                  const v = a.total ? (a.n / a.total) * 100 : 0
+                  return { label: `${a.kind === 'post' ? t('insights.workforce.post') : t('insights.workforce.document')}: ${a.title}`, value: v, text: pct(v, locale), tone: tone(v), hint: `(${a.n}/${a.total})` }
                 })}
               />
-              <DataTable labels={L} csvName={csvName(ctx, 'kenntnisnahmen')} table={{ head: [t('insights.workforce.item'), t('insights.workforce.acked'), t('insights.staff'), t('insights.value')], rows: d.ackItems.map((a) => [a.title, a.n, d.staff, pct(d.staff ? (a.n / d.staff) * 100 : null, locale)]) }} />
+              <DataTable labels={L} csvName={csvName(ctx, 'kenntnisnahmen')} table={{ head: [t('insights.workforce.item'), t('insights.workforce.acked'), t('insights.staff'), t('insights.value')], rows: d.ackItems.map((a) => [a.title, a.n, a.total, pct(a.total ? (a.n / a.total) * 100 : null, locale)]) }} />
             </>
           ) : <p className="small muted" style={{ margin: 0 }}>{t('insights.workforce.noAck')}</p>}
         </div>

@@ -3,8 +3,9 @@ import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
 import { OPEN_STATUSES } from '@/lib/tasks'
-import { addDays, addMinutes, age, fmtNum, fmtRel, startOfDay } from '@/lib/time'
+import { addDays, addMinutes, age, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
+import { ReviewTag } from '@/components/residents/ReviewTag'
 import { Admit } from './Admit'
 
 export async function generateMetadata() {
@@ -39,6 +40,9 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
   const cnt = (rows: { residentId: string | null; _count: number }[], id: string) => rows.find((r) => r.residentId === id)?._count ?? 0
   const latest = new Map<string, (typeof vitals)[number]>()
   for (const v of vitals) if (!latest.has(v.residentId)) latest.set(v.residentId, v)
+  // Bearbeitungsstand auffälliger Werte (gesehen / Massnahme) mit Kürzel der Person
+  const reviewerIds = [...new Set([...latest.values()].map((v) => v.reviewedById).filter((x): x is string => !!x))]
+  const reviewers = new Map((reviewerIds.length ? await db.user.findMany({ where: { id: { in: reviewerIds }, orgId: ctx.org.id }, select: { id: true, initials: true } }) : []).map((u) => [u.id, u.initials]))
   const freeRooms = rooms.filter((r) => r.residents.length < r.beds).map((r) => ({ id: r.id, label: `${r.number}${r.beds > 1 ? ` (${r.residents.length}/${r.beds})` : ''}` }))
   const canAdmit = !!unit && ctx.canHere('resident.create')
 
@@ -102,9 +106,12 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
                         </td>
                         <td className="small">
                           {ab.length ? (
-                            <span className="crit-text">
-                              {ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(v![k] as number, VITALS[k].dec, locale)}${flag(k, v![k], lim) === 'hi' ? ' ▲' : ' ▼'}`).join(' · ')}
-                            </span>
+                            <>
+                              <span className={v!.reviewedAt ? undefined : 'crit-text'}>
+                                {ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(v![k] as number, VITALS[k].dec, locale)}${flag(k, v![k], lim) === 'hi' ? ' ▲' : ' ▼'}`).join(' · ')}
+                              </span>
+                              {v!.reviewedAt && <> <ReviewTag kind={v!.reviewKind} label={t(v!.reviewKind === 'action' ? 'home.review.action' : 'home.review.seen')} time={hm(v!.reviewedAt)} by={reviewers.get(v!.reviewedById ?? '') ?? '?'} note={v!.reviewNote} /></>}
+                            </>
                           ) : v ? <span className="muted">{t('residents.unit.vitalsOk')}</span> : <span className="muted">{t('residents.unit.noVitals')}</span>}
                         </td>
                         <td className="num small nowrap">{ln ? rel(ln) : '–'}</td>

@@ -52,7 +52,11 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 ### Aufgaben
 - `src/lib/tasks.ts`: `ensureTasksForDay(unitId, day)` erzeugt Aufgaben aus Interventionen (Pflegeplanung), Medikamenten-Zeitpunkten und fälligen Assessments. Nach Änderungen an diesen Quellen `invalidateTaskGeneration(unitId)` aufrufen.
 - `taskView(task)` → `done | partial | skipped | escalated | in_progress | over | due | up`.
-- Systemtitel sind Schlüssel (`medication.slot`, `assessment.<key>`, `incident.<step>`): Anzeige immer über `taskTitle(t, task)`.
+- Systemtitel sind Schlüssel (`medication.slot`, `assessment.<key>[:Name]`, `evaluation.<domain>[:Name]`, `rule.<regel>`, `incident.<step>`): Anzeige immer über `taskTitle(t, task)`.
+- Weitere Quellen in `ensureTasksForDay`: fällige Evaluationen der Pflegeplanung (`source: 'careplan'`, `sourceId: eval:<residentId>:<domain>`, 14:00, werden nicht automatisch eskaliert und mit der Evaluation erledigt) und wiederkehrende Aufgaben aus `TaskTemplate` (`source: 'recurring'`, Rhythmus in `src/lib/recurrence.ts`; Pflege in Aufgaben → «Wiederholen» bzw. Admin → Klinische Konfiguration).
+- Smart Workflows (`src/lib/workflow-rules.ts` rein, `src/lib/workflows.ts` Ausführung): auffälliger Vitalwert → Nachkontrolle, Gewichtsverlust → MNA-SF, Braden ≤ Grenze → Lagerungsplan prüfen, Wunde ohne Fortschritt → Wundevaluation. Konfiguration `Organization.settings.workflows`; läuft im Eskalationsjob und beim Aufbau der Aufgaben, idempotent, mit `auditSystem()`.
+- «Jetzt fällig» (`taskView` = `due`, 30 Min. vor bis 15 Min. nach Fälligkeit) entspricht dem PRD-Zustand «bereit»; der gespeicherte Status `ready` wird nicht gesetzt und wie `planned` behandelt.
+- Aufgaben, die sich durch Dokumentation schliessen (Medikamente, Assessments, Evaluationen, Nachkontrollen), zeigen einen Link statt des Häkchens. Ereignis-Massnahmen folgen ihrer Aufgabe (`syncIncidentActions`, Abgleich im Eskalationsjob) – nie beim Rendern schreiben.
 
 ### Visite
 - `/tasks/visit` (`src/lib/visit.ts`, `src/lib/visit-data.ts`): Pflege merkt Fragen vor (`VisitQuestion`, Akte → Übersicht), die Visite (`Visit`) beantwortet sie und erfasst Anordnungen (`VisitOrder`). Jede Anordnung wird eine Aufgabe (`source: 'order'`), die Zusammenfassung ein Verlaufseintrag (Kategorie `physician`). Medikamente werden in der Visite nie verordnet, nur als Aufgabe «Verordnung anpassen» mit Link in die Medikation. Berechtigung `resident.visit.conduct`.

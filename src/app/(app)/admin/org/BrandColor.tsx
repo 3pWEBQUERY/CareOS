@@ -26,7 +26,8 @@ export function BrandColorField({ initial }: { initial: string | null }) {
         {ratio != null && <span className={'tag ' + (pass ? 'ok' : 'crit')}>{(pass ? '✓ ' : '✕ ') + t('admin.org.ratio', { ratio: ratio.toFixed(2) })}</span>}
       </ColorField>
       {valid && (
-        <div className="row" style={{ marginTop: 6 }} aria-hidden="true">
+        // Vorschau der hellen Darstellung (dort wirkt die Akzentfarbe) – auch im Dunkelmodus auf hellem Grund
+        <div className="row" style={{ marginTop: 6, padding: 8, background: '#fff', border: '1px solid var(--line)', borderRadius: 'var(--r)', alignSelf: 'flex-start' }} aria-hidden="true">
           <span className="btn sm" style={{ background: v, borderColor: v, color: '#fff' }}>{t('admin.org.previewButton')}</span>
           <span className="tag" style={{ background: `color-mix(in srgb, ${v} 14%, #fff)`, color: v }}>{t('admin.org.previewTag')}</span>
           <span style={{ color: v, fontWeight: 500 }}>{t('admin.org.previewLink')}</span>

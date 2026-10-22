@@ -78,6 +78,8 @@ FHIR-Endpunkte liefern Fehler als `OperationOutcome`.
 
 Liefert die Aufgaben eines Tages (Standard: heute, Zeitzone der Organisation), ohne `unitId` für alle Bereiche. Aufgaben aus Pflegeplanung, Medikation und Assessments werden vorher automatisch erzeugt. `title` ist in der gewünschten Sprache, `titleKey` der gespeicherte Wert.
 
+`status` ist der gespeicherte Zustand (`planned`, `in_progress`, `done`, `partial`, `skipped`, `escalated`). `state` ist der Anzeigezustand wie in der App: zusätzlich `over` (überfällig, ab 15 Min. nach Fälligkeit), `due` (bereit / jetzt fällig, ab 30 Min. vorher) und `up` (geplant).
+
 `POST /api/v1/tasks`
 
 ```json

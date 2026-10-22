@@ -2,6 +2,7 @@ import 'server-only'
 import { db } from '@/lib/db'
 import { ensureTasksForDay, OPEN_STATUSES } from '@/lib/tasks'
 import { LIVE } from '@/lib/vitals'
+import { inAudience, roleKeysByUserIds } from '@/lib/audience'
 import { addDays, addMinutes, dateKey, dbDate, fromDbDate, shiftBounds, startOfDay } from '@/lib/time'
 
 /**
@@ -353,22 +354,29 @@ export async function workforceData(s: Scope & { canTeam: boolean; canDocs: bool
             requireAck: true, publishedAt: { gte: addDays(now, -90) },
             channel: { orgId, archived: false, OR: [{ unitId: { in: unitIds } }, { unitId: null, locationId: { in: locationIds } }, { unitId: null, locationId: null }] },
           },
-          select: { id: true, title: true, publishedAt: true, channel: { select: { name: true } } },
+          select: { id: true, title: true, publishedAt: true, audienceRoles: true, channel: { select: { name: true } } },
           orderBy: { publishedAt: 'desc' },
           take: 20,
         })
       : [],
-    s.canDocs ? db.document.findMany({ where: { orgId, requireAck: true, status: 'approved' }, select: { id: true, title: true, currentVersion: true } }) : [],
+    s.canDocs ? db.document.findMany({ where: { orgId, requireAck: true, status: 'approved' }, select: { id: true, title: true, currentVersion: true, audienceRoles: true } }) : [],
   ])
   const acks = staffIds.length
     ? await db.acknowledgement.findMany({
         where: { userId: { in: staffIds }, OR: [{ subjectType: 'post', subjectId: { in: posts.map((p) => p.id) } }, { subjectType: 'document', subjectId: { in: docs.map((d) => d.id) } }] },
-        select: { subjectType: true, subjectId: true, version: true },
+        select: { userId: true, subjectType: true, subjectId: true, version: true },
       })
     : []
+  // Grundgesamtheit je Eintrag = Mitarbeitende des Bereichs in der Zielgruppe (Rollen; leer = alle)
+  const roleKeys = await roleKeysByUserIds(staffIds)
+  const audience = (roles: string[]) => new Set(staffIds.filter((u) => inAudience(roles, roleKeys.get(u) ?? [])))
+  const item = (kind: 'post' | 'document', id: string, title: string, sub: string, roles: string[], match: (a: (typeof acks)[number]) => boolean) => {
+    const who = audience(roles)
+    return { kind, id, title, sub, total: who.size, n: acks.filter((a) => who.has(a.userId) && match(a)).length }
+  }
   const ackItems = [
-    ...posts.map((p) => ({ kind: 'post' as const, id: p.id, title: p.title, sub: p.channel.name, n: acks.filter((a) => a.subjectType === 'post' && a.subjectId === p.id).length })),
-    ...docs.map((d) => ({ kind: 'document' as const, id: d.id, title: d.title, sub: d.currentVersion ? 'v' + d.currentVersion : '', n: acks.filter((a) => a.subjectType === 'document' && a.subjectId === d.id && a.version === (d.currentVersion ?? '')).length })),
+    ...posts.map((p) => item('post', p.id, p.title, p.channel.name, p.audienceRoles, (a) => a.subjectType === 'post' && a.subjectId === p.id)),
+    ...docs.map((d) => item('document', d.id, d.title, d.currentVersion ? 'v' + d.currentVersion : '', d.audienceRoles, (a) => a.subjectType === 'document' && a.subjectId === d.id && a.version === (d.currentVersion ?? ''))),
   ]
   return {
     staff: staffIds.length,

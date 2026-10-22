@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -12,6 +12,7 @@ import { correctWoundEntryAction, createWoundAction, saveWoundEntryAction, setWo
 import { CorrectionDialog } from '@/components/residents/CorrectionDialog'
 import { Combobox, DateField, DateTimeField, FileField, NumberField, Select, TextField, Textarea } from '@/components/ui/fields'
 import { MAX_UPLOAD_BYTES } from '@/lib/upload-limits'
+import { CameraCapture } from '@/components/residents/CameraCapture'
 
 export function NewWoundButton({ residentId, today, contextLabel }: { residentId: string; today: string; contextLabel: string }) {
   const t = useT()
@@ -56,6 +57,20 @@ export function NewWoundButton({ residentId, today, contextLabel }: { residentId
 
 export function WoundEntryForm({ residentId, woundId, now, storage }: { residentId: string; woundId: string; now: string; storage: boolean }) {
   const t = useT()
+  // Kontrollierte Kamera (PRD §15): Aufnahmen bleiben im Arbeitsspeicher und gehen mit dem Eintrag direkt in die Ablage
+  const [shots, setShots] = useState<File[]>([])
+  const [cam, setCam] = useState(false)
+  const [pending, setPending] = useState<File | null>(null)
+  const camInput = useRef<HTMLInputElement>(null)
+  const [urls, setUrls] = useState<string[]>([])
+  useEffect(() => {
+    const dt = new DataTransfer()
+    shots.forEach((f) => dt.items.add(f))
+    if (camInput.current) camInput.current.files = dt.files
+    const u = shots.map((f) => URL.createObjectURL(f))
+    setUrls(u)
+    return () => u.forEach((x) => URL.revokeObjectURL(x))
+  }, [shots])
   const sel = (name: string, group: string, list: readonly string[]) => (
     <Select label={t('care.wounds.' + group + 'L')} id={'we-' + name} name={name} defaultValue="">
         <option value="">–</option>
@@ -63,7 +78,7 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
       </Select>
   )
   return (
-    <ActionForm action={(f) => saveWoundEntryAction(residentId, woundId, f)} success="care.wounds.entrySaved" >
+    <ActionForm action={(f) => saveWoundEntryAction(residentId, woundId, f)} success="care.wounds.entrySaved" onDone={(r) => { if (r.ok) setShots([]) }}>
       <div className="vform" style={{ border: 0, padding: 0 }}>
         <DateTimeField label={t('care.wounds.entryAt')} wrapStyle={{ gridColumn: '1 / -1', maxWidth: 260 }} id="we-at" name="at" defaultValue={now} max={now} />
         <NumberField label={t('care.wounds.length')} id="we-l" name="length" min={0} max={1000} />
@@ -83,8 +98,34 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
         <TextField label={t('care.wounds.material')} id="we-mat" name="material" maxLength={300} />
         <DateTimeField label={t('care.wounds.nextChange')} hint={t('care.wounds.nextChangeHint')} id="we-next" name="nextChange" min={now} />
         {storage ? (
-          <FileField label={t('care.wounds.photos')} hint={t('care.wounds.photoHint')} id="we-photo" name="photos" accept="image/*" capture="environment" multiple
-            maxSize={MAX_UPLOAD_BYTES} chooseLabel={t('care.wounds.photoTake')} wrapClassName="span-all" />
+          <div className="fld span-all wound-photos">
+            <span className="lbl">{t('care.wounds.photos')}</span>
+            <div className="row" style={{ gap: 8 }}>
+              <button type="button" className="btn" onClick={() => setCam(true)} disabled={shots.length >= 6}>{t('care.wounds.photoTake')}</button>
+              {shots.length > 0 && <span className="small">{t('care.wounds.photoSelected', { n: shots.length })}</span>}
+            </div>
+            <p className="hint fld-hint" style={{ margin: 0 }}>{t('care.wounds.photoHint')}</p>
+            {/* raw-field-ok: verstecktes Datei-Feld trägt die Kamera-Aufnahmen ins Formular (wie name=photos der Dateiauswahl) */}
+            <input ref={camInput} type="file" name="photos" multiple hidden tabIndex={-1} aria-hidden="true" />
+            {urls.length > 0 && (
+              <ul className="cam-thumbs">
+                {urls.map((u, i) => (
+                  <li key={u}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt={t('care.wounds.photoN', { n: i + 1 })} />
+                    <button type="button" className="btn sm ghost" onClick={() => setShots((c) => c.filter((_, j) => j !== i))}>{t('care.wounds.photoRemove')}</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <FileField label={t('care.wounds.photoFiles')} optional hint={t('care.wounds.photoFilesHint')} id="we-photo" name="photos" accept="image/*" multiple maxSize={MAX_UPLOAD_BYTES} />
+            {cam && (
+              <Dialog open onClose={() => { setCam(false); setPending(null) }} title={t('care.wounds.photoTake')} wide
+                footer={<><button type="button" className="btn" onClick={() => { setCam(false); setPending(null) }}>{t('common.close')}</button><button type="button" className="btn primary" disabled={!pending} onClick={() => { if (pending) setShots((c) => [...c, pending].slice(0, 6)); setPending(null); setCam(false) }}>{t('care.wounds.photoUse')}</button></>}>
+                <CameraCapture maxSize={1600} onCapture={setPending} />
+              </Dialog>
+            )}
+          </div>
         ) : (
           <div className="fld span-all">
             <span className="lbl">{t('care.wounds.photos')}</span>

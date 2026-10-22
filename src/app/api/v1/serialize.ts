@@ -3,6 +3,7 @@ import type { Resident, Task } from '@prisma/client'
 import { dateKey, fromDbDate } from '@/lib/time'
 import type { TFn } from '@/i18n/core'
 import { taskTitle } from '@/lib/task-title'
+import { taskView } from '@/lib/tasks'
 
 /** JSON-Abbildungen der REST API v1. Felder sind stabil; neue Felder werden nur ergänzt. */
 export function residentJson(r: Resident & { unit?: { id: string; name: string } | null; room?: { number: string } | null }) {
@@ -37,6 +38,8 @@ export function taskJson(k: Task, t: TFn) {
     durationMin: k.durationMin,
     priority: k.priority,
     status: k.status,
+    /** Anzeigezustand wie in der App: done | partial | skipped | escalated | in_progress | over (überfällig) | due (bereit) | up (geplant) */
+    state: taskView(k),
     source: k.source,
     assigneeId: k.assigneeId,
     completedAt: k.completedAt?.toISOString() ?? null,

@@ -107,7 +107,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {settings.demo && <span className="demo" title={t('common.demoDataHint')}>{t('common.demoData')}</span>}
           <ThemeToggle />
           <Notifications unread={unread} critical={critical} />
-          <Link className="me" href="/profile">
+          <Link className="me" href="/profile" aria-label={`${user.firstName} ${user.lastName} – ${t('nav.profile')}`}>
             <Avatar src={user.avatarFileId ? `/api/files/${user.avatarFileId}` : null} initials={user.initials} />
             <div>{user.firstName.charAt(0)}. {user.lastName}<small>{user.jobTitle ?? ctx.roleNames[0] ?? ''}</small></div>
           </Link>

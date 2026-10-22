@@ -125,6 +125,9 @@ function hasTerm(text: string, term: string) {
   return false
 }
 
+/** Längster Treffer zuerst («co-amoxi» vor «amoxi») für eine verständliche Anzeige. */
+const byLength = (list: string[]) => [...list].sort((a, b) => b.length - a.length)
+
 /** Wörter aus Freitext, die für einen direkten Abgleich taugen (mind. 4 Zeichen, keine Füllwörter). */
 const STOP = new Set(['allergie', 'allergien', 'unvertraglichkeit', 'intoleranz', 'gegen', 'auf', 'bei', 'und', 'oder', 'mit', 'nach', 'allergy', 'allergie', 'allergia', 'tabletten', 'tablette', 'mg', 'tropfen'])
 function words(s: string) {
@@ -149,7 +152,7 @@ export function checkAllergies(allergies: string[], medication: string): Allergy
     const classes = ALLERGY_CLASSES.filter((c) => c.allergy.some((x) => hasTerm(a, x)))
     if (!hit) {
       for (const c of classes) {
-        const term = c.drugs.find((d) => hasTerm(med, d))
+        const term = byLength(c.drugs).find((d) => hasTerm(med, d))
         if (term) { hit = { allergy, kind: 'class', classKey: c.key, term: term.trim() }; break }
       }
     }
@@ -157,7 +160,7 @@ export function checkAllergies(allergies: string[], medication: string): Allergy
       for (const c of classes) {
         for (const ck of c.cross ?? []) {
           const cc = ALLERGY_CLASSES.find((x) => x.key === ck)
-          const term = cc?.drugs.find((d) => hasTerm(med, d))
+          const term = cc ? byLength(cc.drugs).find((d) => hasTerm(med, d)) : undefined
           if (term) { hit = { allergy, kind: 'cross', classKey: ck, term: term.trim() }; break }
         }
         if (hit) break

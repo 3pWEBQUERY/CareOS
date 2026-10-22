@@ -8,6 +8,7 @@ import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { EFFECT_CHECK_MIN, openDoses } from '@/lib/medication'
 import { doseText } from '@/components/meds/dose'
 import { orderAndPlanChanges } from './changes'
+import { assessmentLabel } from '@/lib/care'
 
 export type Tone = 'c' | 'w' | ''
 /** `flag`: Status als Text neben der Farbe (PRD §51 «nie nur über Farbe»), z. B. «überfällig». */
@@ -85,10 +86,10 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
   const ini = (id: string | null) => (id ? users.find((u) => u.id === id)?.initials ?? '' : '')
   const prevEntries = prevHandover?.entries ?? []
   const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d, locale) + ' ' + hm(d))
-  const assessName = (key: string) => {
-    const n = t('care.assessments.names.' + key)
-    return n.startsWith('care.') ? key : n
-  }
+  // Eigene Instrumente (Admin) tragen ihren Namen in der Definition
+  const defNames = new Map((await db.assessmentDefinition.findMany({ where: { orgId: ctx.org.id }, select: { key: true, name: true } })).map((d) => [d.key, d.name]))
+  const assessName = (key: string) => assessmentLabel(t, key, defNames.get(key))
+
 
   const blocks: Block[] = residents.map((r) => {
     const happened: (Item & { at: number })[] = []

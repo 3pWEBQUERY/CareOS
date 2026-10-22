@@ -5,7 +5,7 @@ import { db } from '@/lib/db'
 import { createSession, destroySession, getSession, requestMeta } from '@/lib/auth/session'
 import { verifyPassword } from '@/lib/auth/password'
 import { verifyTotp } from '@/lib/auth/mfa'
-import { rateLimit } from '@/lib/rate-limit'
+import { peekRateLimit, rateLimit } from '@/lib/rate-limit'
 import { auditSystem } from '@/lib/audit'
 
 export type LoginState = { error?: string; retry?: number; email?: string } | undefined
@@ -19,16 +19,24 @@ export async function loginAction(_: LoginState, form: FormData): Promise<LoginS
   const email = String(form.get('email') ?? '').trim().toLowerCase()
   const password = String(form.get('password') ?? '')
   const meta = await requestMeta()
-  const rl = await rateLimit(`login:${meta.ip}:${email}`, process.env.NODE_ENV === 'production' ? 8 : 200, 10 * 60_000)
+  // Fehlversuche je Konto und IP (8 in 10 Min.); erfolgreiche Anmeldungen zählen nicht.
+  const accKey = `login:${meta.ip}:${email}`
+  const accLimit = process.env.NODE_ENV === 'production' ? 8 : 200
+  const rl = await peekRateLimit(accKey, accLimit - 1)
   if (!rl.ok) return { error: 'locked', retry: rl.retryAfter, email }
-  // Zusätzlich je IP über alle Konten (Credential Stuffing), gilt über alle Instanzen (PRD §37).
-  const ipRl = await rateLimit(`login-ip:${meta.ip}`, process.env.NODE_ENV === 'production' ? 40 : 2000, 10 * 60_000)
+  // Zusätzlich Fehlversuche je IP über alle Konten (Credential Stuffing), über alle Instanzen (PRD §37).
+  // Nur Fehlversuche zählen: viele Stationsgeräte teilen sich eine öffentliche IP (Schichtwechsel).
+  const ipKey = `login-ip-fail:${meta.ip ?? 'unknown'}`
+  const ipLimit = process.env.NODE_ENV === 'production' ? 50 : 2000
+  const ipRl = await peekRateLimit(ipKey, ipLimit - 1)
   if (!ipRl.ok) return { error: 'locked', retry: ipRl.retryAfter, email }
 
   const user = await db.user.findUnique({ where: { email } })
   const ok = user ? await verifyPassword(user.passwordHash, password) : await verifyPassword(null, password)
   if (!user || !ok) {
     await auditSystem({ action: 'auth.login_failed', entityType: 'User', entityId: user?.id, orgId: user?.orgId, context: { email }, ...meta })
+    await rateLimit(ipKey, ipLimit, 10 * 60_000)
+    await rateLimit(accKey, accLimit, 10 * 60_000)
     return { error: 'invalid', email }
   }
   if (!user.active) return { error: 'inactive', email }

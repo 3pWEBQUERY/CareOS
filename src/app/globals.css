@@ -1744,7 +1744,9 @@ td dialog.dlg, th dialog.dlg { text-align: left; white-space: normal; font-size:
 .chk-fld > .fld-hint, .chk-fld > .fld-err { padding-left: 24px }
 .chk-fld:has(.sw) > .fld-hint, .chk-fld:has(.sw) > .fld-err { padding-left: 46px }
 .fld-opts { display: flex; flex-direction: column; gap: 2px }
-.sw, .check input.sw { appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 36px; height: 20px; margin: 0; border: 1.5px solid var(--line-ui); border-radius: 999px; background: var(--surface-2); cursor: pointer; transition: background-color .12s, border-color .12s }
+.sw { appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 36px; height: 20px; margin: 0; border: 1.5px solid var(--line-ui); border-radius: 999px; background: var(--surface-2); cursor: pointer; transition: background-color .12s, border-color .12s }
+/* .check input setzt 16 px – für Schalter nur die Grösse überschreiben (Zustände bleiben bei .sw:checked) */
+.check input.sw { width: 36px; height: 20px }
 .sw::before { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--fg-2); transition: transform .12s }
 .sw:hover:not(:disabled) { border-color: var(--accent) }
 .sw:checked { background: var(--accent); border-color: var(--accent) }
@@ -1990,3 +1992,7 @@ img.pav { background: var(--sunken) }
 
 /* Topbar: Profilbild in der Grösse des bisherigen Kürzels */
 .me .pav { width: 1.75rem; height: 1.75rem; font-size: 0.75rem }
+.cam-thumbs { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px }
+.cam-thumbs li { display: grid; gap: 4px; justify-items: center }
+.cam-thumbs img { width: 5rem; height: 5rem; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line) }
+.wound-photos { display: grid; gap: 8px }

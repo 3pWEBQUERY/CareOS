@@ -42,3 +42,16 @@ export async function sweepRateLimits(now = new Date()) {
   const r = await db.rateLimit.deleteMany({ where: { resetAt: { lt: new Date(now.getTime() - 60_000) } } })
   return r.count
 }
+
+/** Nur prüfen, ohne zu zählen (z. B. Fehlversuche je IP vor der Passwortprüfung). */
+export async function peekRateLimit(key: string, limit: number): Promise<RateResult> {
+  const k = storageKey(key)
+  try {
+    const rows = await db.$queryRaw<{ count: number; resetAt: Date; now: Date }[]>`
+      SELECT "count", "resetAt", now() AS "now" FROM "RateLimit" WHERE "key" = ${k} AND "resetAt" > now()`
+    const r = rows[0]
+    return r ? decide(Number(r.count), new Date(r.resetAt), new Date(r.now), limit) : { ok: true, retryAfter: 0, count: 0 }
+  } catch {
+    return { ok: true, retryAfter: 0, count: 0 }
+  }
+}
