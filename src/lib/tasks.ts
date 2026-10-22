@@ -74,7 +74,7 @@ export async function ensureTasksForDay(unitId: string, day = new Date()) {
       if (!a.nextDue) continue
       rows.push({
         orgId: unit.orgId, unitId, residentId: r.id, title: 'assessment.' + a.key, category: 'Assessment',
-        dueAt: a.nextDue < startOfDay(day) ? atTime(day, '10:00') : a.nextDue, durationMin: 15, source: 'assessment', sourceId: `${r.id}:${a.key}`,
+        dueAt: a.nextDue < startOfDay(day) || (a.nextDue.getHours() === 0 && a.nextDue.getMinutes() === 0) ? atTime(day, '10:00') : a.nextDue, // Fälligkeit ohne Uhrzeit → 10:00 statt Mitternacht durationMin: 15, source: 'assessment', sourceId: `${r.id}:${a.key}`,
         priority: 'important',
       })
     }

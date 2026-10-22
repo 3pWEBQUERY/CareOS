@@ -1553,7 +1553,7 @@ td dialog.dlg, th dialog.dlg { text-align: left; white-space: normal; font-size:
 .dtf-sheet-title { font-weight: 600; padding: 2px 10px 8px; border-bottom: 1px solid var(--line); margin-bottom: 4px }
 
 @media (max-width: 720px) {
-  .dtf-in { padding-right: 46px }
+  .dtf-in { padding-right: 46px; min-height: 42px }
   .dtf-btn { width: 42px }
   /* Feldschrift ist hier 1rem: Datum braucht mehr Platz, sonst bricht die Zeit in die nächste Zeile */
   .dtf-pair > .dtf:not(.dtf-time) { flex-basis: 10rem }

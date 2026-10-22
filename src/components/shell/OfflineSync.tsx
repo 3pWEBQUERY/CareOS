@@ -59,10 +59,18 @@ export function OfflineSync({ userId, offline }: { userId: string; offline: bool
   }, [counts.queued, offline, sync])
 
   const pending = counts.queued + counts.conflicts
-  if (!offline && !pending) return <SyncPanel open={open} onClose={() => setOpen(false)} onSync={() => sync(true)} busy={busy} offline={offline} />
+  // Live-Region bleibt dauerhaft im DOM, damit Screenreader Änderungen zuverlässig ansagen.
+  const announce = [
+    offline && t('common.offline'),
+    counts.queued > 0 && t('common.offlineQueued', { n: counts.queued }),
+    counts.conflicts > 0 && t('common.offlineSync.conflicts', { n: counts.conflicts }),
+  ].filter(Boolean).join(' · ')
+  const live = <div className="sr-only" role="status">{announce}</div>
+  if (!offline && !pending) return <>{live}<SyncPanel open={open} onClose={() => setOpen(false)} onSync={() => sync(true)} busy={busy} offline={offline} /></>
   return (
     <>
-      <div className="offline-bar" role="status" data-conflict={!offline && counts.conflicts > 0 ? '' : undefined}>
+      {live}
+      <div className="offline-bar" data-conflict={!offline && counts.conflicts > 0 ? '' : undefined}>
         {offline && <span>{t('common.offline')}</span>}
         {counts.queued > 0 && <span>{t('common.offlineQueued', { n: counts.queued })}</span>}
         {counts.conflicts > 0 && <span>{t('common.offlineSync.conflicts', { n: counts.conflicts })}</span>}

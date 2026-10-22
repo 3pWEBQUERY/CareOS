@@ -54,6 +54,9 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 - `taskView(task)` → `done | partial | skipped | escalated | in_progress | over | due | up`.
 - Systemtitel sind Schlüssel (`medication.slot`, `assessment.<key>`, `incident.<step>`): Anzeige immer über `taskTitle(t, task)`.
 
+### Visite
+- `/tasks/visit` (`src/lib/visit.ts`, `src/lib/visit-data.ts`): Pflege merkt Fragen vor (`VisitQuestion`, Akte → Übersicht), die Visite (`Visit`) beantwortet sie und erfasst Anordnungen (`VisitOrder`). Jede Anordnung wird eine Aufgabe (`source: 'order'`), die Zusammenfassung ein Verlaufseintrag (Kategorie `physician`). Medikamente werden in der Visite nie verordnet, nur als Aufgabe «Verordnung anpassen» mit Link in die Medikation. Berechtigung `resident.visit.conduct`.
+
 ### Zeit
 - Server läuft mit `TZ=Europe/Zurich`. Hilfen in `src/lib/time.ts`. `@db.Date`-Felder mit `dbDate()` schreiben und `fromDbDate()` lesen.
 
@@ -75,6 +78,9 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 - Status nie nur über Farbe: immer Text/Symbol dazu (▲▼, „überfällig“, Tags).
 - Zahlen in `.mono`, Labels in `.lbl`, Tabellen `.tablewrap > table.stable`, Kennzahlen `.metrics > .metric`, Listen `ul.list > li > .li`.
 - Hell ist Standard; jede Komponente muss in Dunkel funktionieren (nur Tokens, keine festen Farben).
+- Schriftgrössen nur in `rem` (Basis 16 px). Profil → Schriftgrösse setzt `html[data-text="l"|"xl"]` (112.5 % / 125 %, Cookie `careos_text`, pro Gerät); die Schriftgrösse des Browsers wirkt zusätzlich.
+- Datum und Zeit nie als native `<input type="date|time">`: `DateField`, `TimeField`, `DateTimeField` aus `src/components/ui/` (Format der App-Sprache, Kalender und Zeitliste per Tastatur, Wert im versteckten Feld wie bisher `YYYY-MM-DD` / `HH:MM` / `YYYY-MM-DDTHH:MM`). Parsing in `src/lib/date-input.ts`.
+- Häufige Aktionen optimistisch (`useOptimistic`, bei Fehler zurück mit Toast); sicherheitskritische Aktionen (Medikation, Begründungen, Löschungen) nur mit Pending-Zustand. Server-Actions prüfen den Status beim Speichern, damit Doppelklicks oder zwei Geräte nicht doppelt buchen.
 - Mobile: Touch-Ziele ≥ 40 px, Einhandbedienung, keine horizontale Seitenscroll (Tabellen in `.tablewrap`).
 
 ### KI (CareOS AI)
