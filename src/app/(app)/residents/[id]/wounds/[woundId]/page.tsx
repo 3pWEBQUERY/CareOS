@@ -85,7 +85,7 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
         </div>
         <div className="metric">
           <span className="lbl">{t('care.wounds.nextNow')}</span>
-          <span className={'val' + (nextOver ? ' crit' : '')} style={{ fontSize: 16 }}>{next && w.status !== 'closed' ? `${fmtDayMonth(next)} ${hm(next)}` : '–'}</span>
+          <span className={'val' + (nextOver ? ' crit' : '')} style={{ fontSize: '1rem' }}>{next && w.status !== 'closed' ? `${fmtDayMonth(next)} ${hm(next)}` : '–'}</span>
           <span className={'small ' + (nextOver ? 'crit-text' : 'muted')}>{nextOver ? '▲ ' + t('care.wounds.overdue') : !next || w.status === 'closed' ? t('care.wounds.noNext') : ''}</span>
         </div>
       </div>

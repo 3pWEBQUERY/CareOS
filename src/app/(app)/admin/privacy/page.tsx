@@ -84,7 +84,7 @@ export default async function PrivacyPage() {
                             <td>{anonymise ? <span className="tag accent">{t('admin.privacy.anonymise')}</span> : <span className="tag outline">{t('admin.privacy.delete')}</span>}</td>
                             <td className="small nowrap">
                               <div className={n > 0 ? 'warn-text' : 'muted'}>{t(anonymise ? 'admin.privacy.wouldAnonymise' : 'admin.privacy.wouldDelete', { n })}</div>
-                              <div className="muted mono" style={{ fontSize: 11 }}>{t('admin.privacy.cutoff', { date: fmtDate(cutoffs[c], locale) })}</div>
+                              <div className="muted mono" style={{ fontSize: '0.6875rem' }}>{t('admin.privacy.cutoff', { date: fmtDate(cutoffs[c], locale) })}</div>
                             </td>
                           </tr>
                         )

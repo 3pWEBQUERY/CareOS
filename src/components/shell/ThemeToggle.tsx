@@ -35,7 +35,7 @@ export function ThemeToggle() {
   }
   const label = dark ? t('common.theme.toggleToLight') : t('common.theme.toggleToDark')
   return (
-    <button type="button" className="icon-btn" onClick={toggle} aria-label={label} title={label}>
+    <button type="button" className="icon-btn theme-btn" onClick={toggle} aria-label={label} title={label}>
       {dark ? <IconSun size={18} /> : <IconMoon size={18} />}
     </button>
   )

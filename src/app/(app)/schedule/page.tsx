@@ -58,7 +58,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
     <main className="panel main" style={{ flex: 1 }}>
       <div className="view-head">
         <div>
-          <span className="lbl">{t('schedule.label')}{unit ? ` · ${unit.location.name} · ${unit.name}` : ''}</span>
+          <span className="lbl">{unit ? `${unit.location.name} · ${unit.name}` : t('schedule.title')}</span>
           <h1>{t('schedule.title')}</h1>
           {(weekBased || view === 'month') && <p className="sub">{period}</p>}
         </div>

@@ -6,7 +6,7 @@ import { startRegistration } from '@simplewebauthn/browser'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
-import { setThemeAction } from '@/app/(app)/shell-actions'
+import { setTextSizeAction, setThemeAction } from '@/app/(app)/shell-actions'
 import { LOCALES, LOCALE_NAMES, type Locale } from '@/i18n/core'
 import { auditThemeAction, confirmMfaAction, disableMfaAction, regenerateMfaAction, renamePasskeyAction, setLocaleAction, startMfaSetupAction } from './actions'
 
@@ -28,6 +28,26 @@ export function ThemeChooser({ current }: { current: Theme }) {
     <div className="seg" role="group" aria-label={t('common.theme.label')} style={{ alignSelf: 'flex-start' }}>
       {(['light', 'dark', 'system'] as const).map((x) => (
         <button key={x} type="button" aria-pressed={v === x} onClick={() => pick(x)}>{t('common.theme.' + x)}</button>
+      ))}
+    </div>
+  )
+}
+
+type TextSize = 'm' | 'l' | 'xl'
+
+export function TextSizeChooser({ current }: { current: TextSize }) {
+  const t = useT()
+  const [v, setV] = useState<TextSize>(current)
+  const [, start] = useTransition()
+  const pick = (x: TextSize) => {
+    document.documentElement.dataset.text = x
+    setV(x)
+    start(() => setTextSizeAction(x))
+  }
+  return (
+    <div className="seg" role="group" aria-label={t('profile.appearance.textSize')} style={{ alignSelf: 'flex-start' }}>
+      {(['m', 'l', 'xl'] as const).map((x) => (
+        <button key={x} type="button" aria-pressed={v === x} onClick={() => pick(x)}>{t('profile.appearance.textSizes.' + x)}</button>
       ))}
     </div>
   )

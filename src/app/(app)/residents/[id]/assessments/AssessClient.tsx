@@ -56,7 +56,7 @@ export function PerformAssessment({ residentId, def, name, contextLabel, nextDue
           <>
             <span className="row" style={{ marginRight: 'auto', gap: 8 }} aria-live="polite">
               <span className="lbl">{t('care.assessments.liveScore')}</span>
-              <span className="mono" style={{ fontSize: 17, fontWeight: 500 }}>{live.score}</span>
+              <span className="mono" style={{ fontSize: '1.0625rem', fontWeight: 500 }}>{live.score}</span>
               {complete ? <span className={'tag ' + live.level}>{live.result}</span> : <span className="small muted">{t('care.assessments.answered', { n: answered, total: qs.length })}</span>}
             </span>
             <button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button>

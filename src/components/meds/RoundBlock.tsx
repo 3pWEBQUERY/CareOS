@@ -103,7 +103,7 @@ export function RoundBlock({ data, time, slotKey, day, editable, colleagues, nex
                     )
                   ) : (
                     <>
-                      <span className={'tag ' + (c.state === 'given' ? 'ok' : 'warn')} style={{ fontSize: 12 }}>
+                      <span className={'tag ' + (c.state === 'given' ? 'ok' : 'warn')} style={{ fontSize: '0.75rem' }}>
                         {c.state === 'given' ? '✓ ' : '✕ '}{t('meds.state.' + c.state)}
                       </span>
                       <span className="small muted mono">{c.state === 'given' ? stateLabel(t, c) : [c.at, c.by].filter(Boolean).join(' ')}</span>

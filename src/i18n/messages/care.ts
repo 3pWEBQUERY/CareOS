@@ -183,7 +183,7 @@ const de = {
       weightweekly: { title: 'Gewicht wöchentlich kontrollieren', text: 'Gleiche Waage, gleiche Tageszeit, nüchtern.' },
       painassess: { title: 'Schmerzeinschätzung NRS 3× täglich', text: 'NRS erfassen, Wirkung von Massnahmen und Reserve dokumentieren.' },
       mobilisation: { title: 'Mobilisation nach Plan', text: 'Transfer und Gehtraining mit Hilfsmittel, Ressourcen fördern.' },
-      woundcare: { title: 'Wundversorgung gemäss Wunddokumentation', text: 'Verbandwechsel nach Intervall, Beurteilung in CareOS Wounds erfassen.' },
+      woundcare: { title: 'Wundversorgung gemäss Wunddokumentation', text: 'Verbandwechsel nach Intervall, Beurteilung in der Wunddokumentation erfassen.' },
     },
   },
   assessments: {
@@ -588,7 +588,7 @@ const fr = {
       weightweekly: { title: 'Contrôler le poids chaque semaine', text: 'Même balance, même heure, à jeun.' },
       painassess: { title: 'Évaluation de la douleur EN 3× par jour', text: 'Saisir l’EN, documenter l’effet des mesures et des réserves.' },
       mobilisation: { title: 'Mobilisation selon le plan', text: 'Transferts et entraînement à la marche avec moyen auxiliaire, encourager les ressources.' },
-      woundcare: { title: 'Soins de plaie selon la documentation', text: 'Changement de pansement selon l’intervalle, saisir l’évaluation dans CareOS Wounds.' },
+      woundcare: { title: 'Soins de plaie selon la documentation', text: 'Changement de pansement selon l’intervalle, saisir l’évaluation dans la documentation des plaies.' },
     },
   },
   assessments: {
@@ -993,7 +993,7 @@ const it = {
       weightweekly: { title: 'Controllare il peso ogni settimana', text: 'Stessa bilancia, stessa ora, a digiuno.' },
       painassess: { title: 'Valutazione del dolore NRS 3× al giorno', text: 'Registrare la NRS, documentare l’effetto delle misure e delle riserve.' },
       mobilisation: { title: 'Mobilizzazione secondo piano', text: 'Trasferimenti e allenamento al cammino con ausilio, promuovere le risorse.' },
-      woundcare: { title: 'Cura della ferita secondo documentazione', text: 'Cambio della medicazione secondo intervallo, registrare la valutazione in CareOS Wounds.' },
+      woundcare: { title: 'Cura della ferita secondo documentazione', text: 'Cambio della medicazione secondo intervallo, registrare la valutazione nella documentazione delle ferite.' },
     },
   },
   assessments: {
@@ -1398,7 +1398,7 @@ const en = {
       weightweekly: { title: 'Check weight weekly', text: 'Same scale, same time of day, before breakfast.' },
       painassess: { title: 'Pain assessment NRS 3× daily', text: 'Record NRS, document effect of measures and PRN medication.' },
       mobilisation: { title: 'Mobilisation according to plan', text: 'Transfers and walking practice with aids, promote resources.' },
-      woundcare: { title: 'Wound care according to wound record', text: 'Change dressing at the set interval, record the assessment in CareOS Wounds.' },
+      woundcare: { title: 'Wound care according to wound record', text: 'Change dressing at the set interval, record the assessment in the wound record.' },
     },
   },
   assessments: {

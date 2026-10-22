@@ -379,7 +379,7 @@ async function Workforce({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
                   { label: t('insights.workforce.assigned'), n: c.assigned + c.missing, tone: 'none' },
                   { label: t('insights.workforce.overdue'), n: c.overdue + c.expired, tone: 'crit' },
                 ]} />
-                <div className="legend" style={{ fontSize: 12 }}>
+                <div className="legend" style={{ fontSize: '0.75rem' }}>
                   <span><span className="ins-key ok" />{t('insights.workforce.valid')} {c.valid}</span>
                   <span><span className="ins-key accent" />{t('insights.workforce.progress')} {c.progress}</span>
                   <span><span className="ins-key" />{t('insights.workforce.assigned')} {c.assigned + c.missing}</span>

@@ -16,7 +16,7 @@ export default async function NotFound() {
       <div className="auth-card">
         <header><Brand /></header>
         <div className="body">
-          <h1 style={{ margin: 0, fontSize: 18 }}>{t('common.notFoundPage.title')}</h1>
+          <h1 style={{ margin: 0, fontSize: '1.125rem' }}>{t('common.notFoundPage.title')}</h1>
           <p className="fg2" style={{ margin: 0 }}>{t('common.notFoundPage.text')}</p>
           <Link className="btn primary" href="/">{t('common.notFoundPage.back')}</Link>
         </div>

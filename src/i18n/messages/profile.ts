@@ -20,6 +20,9 @@ export default defineMessages({
     appearance: {
       title: 'Darstellung und Sprache',
       themeHint: 'Hell ist Standard. «Wie System» folgt der Einstellung des Geräts.',
+      textSize: 'Schriftgrösse',
+      textSizes: { m: 'Normal', l: 'Gross', xl: 'Sehr gross' },
+      textSizeHint: 'Gilt nur für dieses Gerät. Die Schriftgrösse des Browsers wird zusätzlich berücksichtigt.',
       language: 'Sprache',
       languageHint: 'Gilt für Oberfläche, Benachrichtigungen und Ausdrucke.',
     },
@@ -187,6 +190,9 @@ export default defineMessages({
     appearance: {
       title: 'Affichage et langue',
       themeHint: 'Clair est le standard. « Comme le système » suit le réglage de l’appareil.',
+      textSize: 'Taille du texte',
+      textSizes: { m: 'Normale', l: 'Grande', xl: 'Très grande' },
+      textSizeHint: 'S’applique uniquement à cet appareil. La taille de police du navigateur est également prise en compte.',
       language: 'Langue',
       languageHint: 'S’applique à l’interface, aux notifications et aux impressions.',
     },
@@ -354,6 +360,9 @@ export default defineMessages({
     appearance: {
       title: 'Aspetto e lingua',
       themeHint: 'Chiaro è lo standard. «Come il sistema» segue l’impostazione del dispositivo.',
+      textSize: 'Dimensione del testo',
+      textSizes: { m: 'Normale', l: 'Grande', xl: 'Molto grande' },
+      textSizeHint: 'Vale solo per questo dispositivo. Viene considerata anche la dimensione del carattere del browser.',
       language: 'Lingua',
       languageHint: 'Vale per interfaccia, notifiche e stampe.',
     },
@@ -521,6 +530,9 @@ export default defineMessages({
     appearance: {
       title: 'Appearance and language',
       themeHint: 'Light is the default. “Match system” follows the device setting.',
+      textSize: 'Text size',
+      textSizes: { m: 'Normal', l: 'Large', xl: 'Extra large' },
+      textSizeHint: 'Applies to this device only. The browser’s font size is taken into account as well.',
       language: 'Language',
       languageHint: 'Applies to the interface, notifications and printouts.',
     },

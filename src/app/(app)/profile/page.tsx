@@ -3,7 +3,8 @@ import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { fmtDate, fmtRel } from '@/lib/time'
 import { parseUserAgent } from '@/lib/admin-shared'
-import { normalizeTheme } from '@/lib/theme'
+import { cookies } from 'next/headers'
+import { TEXT_COOKIE, normalizeTextSize, normalizeTheme } from '@/lib/theme'
 import { SignOutForm } from '@/components/shell/SignOutForm'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn } from '@/components/admin/ui'
@@ -11,7 +12,7 @@ import { Empty } from '@/components/ui/Empty'
 import { MfaSetupBanner } from './MfaSetupBanner'
 import { PushSection } from './PushSection'
 import { InstallApp } from '@/components/shell/InstallApp'
-import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, ThemeChooser } from './ProfileClient'
+import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, TextSizeChooser, ThemeChooser } from './ProfileClient'
 import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updatePhoneAction } from './actions'
 
 export async function generateMetadata() {
@@ -45,7 +46,7 @@ export default async function ProfilePage() {
     <main className="panel main" style={{ flex: 1 }}>
       <div className="view-head">
         <div className="row" style={{ gap: 12, flexWrap: 'nowrap', minWidth: 0 }}>
-          <span className="av" style={{ width: 40, height: 40, fontSize: 15 }} aria-hidden="true">{user.initials}</span>
+          <span className="av" style={{ width: 40, height: 40, fontSize: '0.9375rem' }} aria-hidden="true">{user.initials}</span>
           <div style={{ minWidth: 0 }}>
             <span className="lbl">{t('profile.title')}</span>
             <h1>{user.firstName} {user.lastName}</h1>
@@ -88,6 +89,11 @@ export default async function ProfilePage() {
                   <span className="lbl">{t('common.theme.label')}</span>
                   <ThemeChooser current={normalizeTheme(user.theme)} />
                   <span className="small muted">{t('profile.appearance.themeHint')}</span>
+                </div>
+                <div className="stack-sm">
+                  <span className="lbl">{t('profile.appearance.textSize')}</span>
+                  <TextSizeChooser current={normalizeTextSize((await cookies()).get(TEXT_COOKIE)?.value)} />
+                  <span className="small muted">{t('profile.appearance.textSizeHint')}</span>
                 </div>
                 <div className="stack-sm">
                   <span className="lbl">{t('profile.appearance.language')}</span>

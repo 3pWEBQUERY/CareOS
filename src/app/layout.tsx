@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { cookies } from 'next/headers'
-import { THEME_COOKIE, normalizeTheme } from '@/lib/theme'
+import { THEME_COOKIE, TEXT_COOKIE, normalizeTheme, normalizeTextSize } from '@/lib/theme'
 import { getSession } from '@/lib/auth/session'
 import { pickLocale } from '@/i18n/core'
 import { headers } from 'next/headers'
@@ -48,9 +48,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const jar = await cookies()
   const session = await getSession()
   const theme = normalizeTheme(session?.user.theme ?? jar.get(THEME_COOKIE)?.value)
+  const text = normalizeTextSize(jar.get(TEXT_COOKIE)?.value)
   const lang = session?.user.locale ?? pickLocale(jar.get('careos_locale')?.value ?? (await headers()).get('accept-language'))
   return (
-    <html lang={lang} data-theme={theme} suppressHydrationWarning>
+    <html lang={lang} data-theme={theme} data-text={text} suppressHydrationWarning>
       <body>
         {children}
         <ServiceWorker />

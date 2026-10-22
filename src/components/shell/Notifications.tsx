@@ -77,7 +77,7 @@ export function Notifications({ unread, critical }: { unread: number; critical: 
       {open && (
         <div ref={pop} id="notif-pop" className="popover" role="dialog" aria-labelledby="notif-title" tabIndex={-1}>
           <div className="popover-head">
-            <h2 id="notif-title" className="sec" style={{ fontSize: 14 }}>{t('common.notifications.title')}</h2>
+            <h2 id="notif-title" className="sec" style={{ fontSize: '0.875rem' }}>{t('common.notifications.title')}</h2>
             {hasUnread && (
               <button
                 className="linkbtn small"

@@ -179,7 +179,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 <section className="card" aria-labelledby="acks">
                   <div className="card-head"><h2 id="acks">{t('team.ack.title')}</h2></div>
                   <div className="card-body stack-sm">
-                    <div className="mono" style={{ fontSize: 20 }}>{stats.confirmed.length} <small className="muted" style={{ fontSize: 13 }}>/ {stats.total}</small></div>
+                    <div className="mono" style={{ fontSize: '1.25rem' }}>{stats.confirmed.length} <small className="muted" style={{ fontSize: '0.8125rem' }}>/ {stats.total}</small></div>
                     <div>{t('team.ack.summary', { n: stats.confirmed.length, total: stats.total })}</div>
                     <div className="bar" role="img" aria-label={t('team.ack.summary', { n: stats.confirmed.length, total: stats.total })}>
                       <i className={stats.missing.length ? 'warn' : 'ok'} style={{ width: `${stats.total ? Math.round((stats.confirmed.length / stats.total) * 100) : 0}%` }} />

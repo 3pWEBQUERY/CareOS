@@ -163,16 +163,16 @@ export default async function CarePlanPage({ params, searchParams }: { params: P
               <span className="lbl">{t('care.plan.approvedLabel')}</span>
               {plan!.approvedAt ? (
                 <>
-                  <span className="val" style={{ fontSize: 15 }}>{fmtDate(plan!.approvedAt, locale)}</span>
+                  <span className="val" style={{ fontSize: '0.9375rem' }}>{fmtDate(plan!.approvedAt, locale)}</span>
                   <span className="small muted">{users.get(plan!.approvedById ?? '') ?? '–'}</span>
                 </>
               ) : (
-                <><span className="val warn" style={{ fontSize: 15 }}>–</span><span className="small muted">{t('care.plan.notApproved')}</span></>
+                <><span className="val warn" style={{ fontSize: '0.9375rem' }}>–</span><span className="small muted">{t('care.plan.notApproved')}</span></>
               )}
             </div>
             <div className="metric">
               <span className="lbl">{t('care.plan.nextEval')}</span>
-              <span className={'val' + (evalOverdue ? ' crit' : '')} style={{ fontSize: 15 }}>{plan!.nextEvaluation ? fmtDate(plan!.nextEvaluation, locale) : '–'}</span>
+              <span className={'val' + (evalOverdue ? ' crit' : '')} style={{ fontSize: '0.9375rem' }}>{plan!.nextEvaluation ? fmtDate(plan!.nextEvaluation, locale) : '–'}</span>
               <span className={'small ' + (evalOverdue ? 'crit-text' : 'muted')}>{evalOverdue ? '▲ ' + t('care.plan.overdue') : plan!.nextEvaluation ? t('care.plan.inDays', { n: Math.round((plan!.nextEvaluation.getTime() - today.getTime()) / 86_400_000) }) : t('care.plan.noEval')}</span>
             </div>
             <div className="metric">
