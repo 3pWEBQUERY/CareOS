@@ -9,6 +9,7 @@ import { taskTitle } from '@/lib/task-title'
 import { shiftTypes } from '@/lib/shift'
 import { addDays, currentShiftBounds, dateKey, fmtDayMonth, hm, sameDay, shiftAt, shiftBounds, startOfDay } from '@/lib/time'
 import { openDoses } from '@/lib/medication'
+import { doseText } from '@/components/meds/dose'
 import { Forbidden, Empty } from '@/components/ui/Empty'
 import { CreateTask, RememberFilter, TaskTable, type StaffDto, type TaskRowDto } from '@/components/tasks/TaskTable'
 
@@ -192,7 +193,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                             <Link className="linkbtn" href={`/residents/${d.residentId}/meds`}>{r ? `${r.lastName} ${r.firstName}` : '–'}</Link>
                             {r?.room && <div className="small muted mono">{t('meds.roomShort', { room: r.room.number })}</div>}
                           </td>
-                          <td>{d.medication.name}<div className="small muted mono">{d.dose}</div></td>
+                          <td>{d.medication.name}<div className="small muted mono">{doseText(d.dose, d.medication.form)} · {d.medication.route}</div></td>
                           <td className="right small crit-text nowrap">{t('meds.state.overdue')}</td>
                         </tr>
                       )

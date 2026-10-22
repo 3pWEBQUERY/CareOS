@@ -6,6 +6,7 @@ import { parseUserAgent } from '@/lib/admin-shared'
 import { Forbidden, Empty } from '@/components/ui/Empty'
 import { AdminHead } from '../Head'
 import { auditWhere, type AuditFilter } from './filter'
+import { auditLabel } from '../audit-label'
 
 export const metadata = { title: 'Admin · Audit-Protokoll' }
 
@@ -87,6 +88,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                         <td className="num nowrap">{dt(r.at)}<div className="small muted">#{String(r.id)}</div></td>
                         <td className="small">{r.userId ? <Link href={`/admin/audit?${qs({ user: r.userId, page: undefined })}`}>{name.get(r.userId) ?? r.userId.slice(0, 8)}</Link> : <span className="muted">{t('admin.audit.system')}</span>}</td>
                         <td>
+                          {auditLabel(t, r.action) && <div className="small">{auditLabel(t, r.action)}</div>}
                           <code className="mono small">{r.action}</code>
                           {r.action.includes('failed') && <> <span className="tag crit">{t('admin.audit.failed')}</span></>}
                         </td>

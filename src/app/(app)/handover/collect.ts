@@ -6,6 +6,7 @@ import { taskTitle } from '@/lib/task-title'
 import { addDays, dbDate, fmtDayMonth, fmtNum, hm, sameDay, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
 import { abnormalKeys, flag, mergeLimits, VITALS } from '@/lib/vitals'
 import { EFFECT_CHECK_MIN, openDoses } from '@/lib/medication'
+import { doseText } from '@/components/meds/dose'
 
 export type Tone = 'c' | 'w' | ''
 export type Item = { text: string; time?: string; tone?: Tone; muted?: boolean }
@@ -153,7 +154,7 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
       open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k) + (v === 'escalated' ? ` (${t('tasks.view.escalated')})` : ''), tone: v === 'over' || v === 'escalated' ? 'c' : '' })
     }
     for (const d of doses.filter((d) => d.residentId === r.id)) {
-      open.push({ at: d.at.getTime(), time: d.time, text: t(d.over ? 'tasks.handover.auto.doseOver' : 'tasks.handover.auto.dosePlanned', { drug: d.medication.name, dose: d.dose }), tone: d.over ? 'c' : '' })
+      open.push({ at: d.at.getTime(), time: d.time, text: t(d.over ? 'tasks.handover.auto.doseOver' : 'tasks.handover.auto.dosePlanned', { drug: d.medication.name, dose: doseText(d.dose, d.medication.form) }), tone: d.over ? 'c' : '' })
     }
     if (entry?.open) open.push({ at: Number.MAX_SAFE_INTEGER, text: entry.open, tone: entry.important ? 'w' : '' })
 

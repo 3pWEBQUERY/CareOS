@@ -246,7 +246,7 @@ export async function seedDemo(client: PrismaClient = db) {
 
     // Pflegeplanung mit Interventionen → erzeugt den Tagesplan
     const plan = await client.carePlan.create({
-      data: { residentId: res.id, status: 'active', createdById: U[r.ref], approvedById: U.DS, approvedAt: addDays(today, -40), nextEvaluation: addDays(today, 14 + i * 3) },
+      data: { residentId: res.id, status: 'active', createdById: U[r.ref], approvedById: U.DS, approvedAt: addDays(today, -40), createdAt: addDays(today, -45), nextEvaluation: addDays(today, 14 + i * 3) },
     })
     const areaIds: Record<string, string> = {}
     const areaDefs: Record<string, Partial<Prisma.CarePlanAreaCreateInput>> = {

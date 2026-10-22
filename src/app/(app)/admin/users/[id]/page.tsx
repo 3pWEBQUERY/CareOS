@@ -8,6 +8,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn, SecretDialog } from '@/components/admin/ui'
 import { AdminHead } from '../../Head'
 import { UserFields } from '../fields'
+import { auditLabel } from '../../audit-label'
 import { ModeFields } from '../ModeFields'
 import {
   addAssignmentAction, addUserQualificationAction, removeAssignmentAction, removeUserQualificationAction,
@@ -43,6 +44,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
   const dt = (d: Date) => fmtDate(d, locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
   const canRoles = ctx.can('admin.roles')
+  const who = <span><strong>{user.firstName} {user.lastName}</strong> · {user.email}{user.roles.length ? ` · ${user.roles.map((r) => r.role.name).join(', ')}` : ''}</span>
 
   return (
     <main className="panel main">
@@ -63,9 +65,9 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
               <p className="fg2" style={{ margin: 0 }}>{t('admin.users.resetHint')}</p>
               <ModeFields linkLabel={t('admin.users.modeResetLink')} linkHint={t('admin.users.modeInviteHint')} />
             </SecretDialog>
-            {user.mfaEnabled && <ActBtn action={resetMfaAction.bind(null, user.id)} className="btn" confirm="admin.users.mfaResetConfirm">{t('admin.users.resetMfa')}</ActBtn>}
+            {user.mfaEnabled && <ActBtn action={resetMfaAction.bind(null, user.id)} className="btn" confirm="admin.users.mfaResetConfirm" context={who}>{t('admin.users.resetMfa')}</ActBtn>}
             {user.active
-              ? <ActBtn action={setUserActiveAction.bind(null, user.id, false)} className="btn danger" confirm="admin.users.deactivateConfirm">{t('admin.users.deactivate')}</ActBtn>
+              ? <ActBtn action={setUserActiveAction.bind(null, user.id, false)} className="btn danger" confirm="admin.users.deactivateConfirm" context={who} consequences={[t('admin.ux.deactivateRoles', { n: user.roles.length }), t('admin.ux.deactivateUndo')]}>{t('admin.users.deactivate')}</ActBtn>
               : <ActBtn action={setUserActiveAction.bind(null, user.id, true)} className="btn">{t('admin.users.reactivate')}</ActBtn>}
           </>
         )}
@@ -89,7 +91,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
               <section className="card" aria-labelledby="ud-sec">
                 <div className="card-head">
                   <h2 id="ud-sec">{t('admin.users.security')}</h2>
-                  {sessions > 0 && !self && <ActBtn action={revokeUserSessionsAction.bind(null, user.id)} className="btn sm" confirm="admin.users.revokeSessionsConfirm">{t('admin.users.revokeSessions')}</ActBtn>}
+                  {sessions > 0 && !self && <ActBtn action={revokeUserSessionsAction.bind(null, user.id)} className="btn sm" confirm="admin.users.revokeSessionsConfirm" context={who} consequences={[t('admin.ux.sessionsN', { n: sessions })]}>{t('admin.users.revokeSessions')}</ActBtn>}
                 </div>
                 <div className="card-body">
                   <dl className="kv">
@@ -115,7 +117,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
                             <div className="small muted">{a.unit ? `${t('profile.roles.unit')}: ${a.unit.name}` : a.location ? `${t('profile.roles.location')}: ${a.location.name}` : t('profile.roles.org')}</div>
                           </div>
                           <span className="pill" title={t('admin.roles.permissionCount')}>{a.role.permissions.length}</span>
-                          <ActBtn action={removeAssignmentAction.bind(null, a.id)} className="btn sm ghost" confirm="admin.users.removeRoleConfirm">{t('admin.common.remove')}</ActBtn>
+                          <ActBtn action={removeAssignmentAction.bind(null, a.id)} className="btn sm ghost" confirm="admin.users.removeRoleConfirm" context={<span><strong>{user.firstName} {user.lastName}</strong> · {a.role.name} · {a.unit ? a.unit.name : a.location ? a.location.name : t('profile.roles.org')}</span>} consequences={[t('admin.ux.removeRoleEffect', { n: a.role.permissions.length })]} confirmLabel={t('admin.ux.removeRole')}>{t('admin.common.remove')}</ActBtn>
                         </div>
                       </li>
                     ))}
@@ -128,7 +130,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
                       <option value="" disabled>{t('admin.users.role')}</option>
                       {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                     </select>
-                    <select className="field grow" name="scope" defaultValue="org" aria-label={t('admin.users.scope')} style={{ minWidth: 150 }}>
+                    <select className="field grow" name="scope" defaultValue={user.primaryUnitId ? 'unit:' + user.primaryUnitId : 'org'} aria-label={t('admin.users.scope')} style={{ minWidth: 150 }}>
                       <option value="org">{t('admin.users.scopeOrg')}</option>
                       <optgroup label={t('admin.structure.locations')}>{locations.map((l) => <option key={l.id} value={'loc:' + l.id}>{l.name}</option>)}</optgroup>
                       <optgroup label={t('admin.structure.unitsTitle')}>{units.map((u) => <option key={u.id} value={'unit:' + u.id}>{u.name}</option>)}</optgroup>
@@ -179,7 +181,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
                   <thead><tr><th>{t('admin.audit.at')}</th><th>{t('admin.audit.action')}</th><th>{t('admin.audit.entity')}</th><th>{t('admin.audit.ip')}</th></tr></thead>
                   <tbody>
                     {activity.map((a) => (
-                      <tr key={String(a.id)}><td className="num nowrap">{rel(a.at)}</td><td className="mono small">{a.action}</td><td className="small">{a.entityType}</td><td className="num">{a.ip ?? '–'}</td></tr>
+                      <tr key={String(a.id)}><td className="num nowrap">{rel(a.at)}</td><td className="small">{auditLabel(t, a.action) ?? <span className="mono">{a.action}</span>}</td><td className="small">{a.entityType}</td><td className="num">{a.ip ?? '–'}</td></tr>
                     ))}
                   </tbody>
                 </table>
