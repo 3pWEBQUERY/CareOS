@@ -22,10 +22,11 @@ export default async function ResidentsLayout({ children }: { children: React.Re
     orderBy: [{ room: { number: 'asc' } }, { lastName: 'asc' }],
   })
   const ids = residents.map((r) => r.id)
-  const [open, over, changed] = await Promise.all([
+  const [open, over, changed, today] = await Promise.all([
     db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, _count: true }),
     db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addMinutes(now, -15) } }, _count: true }),
     db.observation.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, at: { gte: last.at }, authorId: { not: ctx.user.id } }, _count: true }),
+    db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, _count: true }),
   ])
   const cnt = (rows: { residentId: string | null; _count: number }[], id: string) => rows.find((r) => r.residentId === id)?._count ?? 0
   const rows: ResRow[] = residents.map((r) => ({
@@ -35,6 +36,7 @@ export default async function ResidentsLayout({ children }: { children: React.Re
     meta: [`${age(r.birthDate)} ${t('common.years')}`, r.careLevel != null && `${t('residents.banner.careLevel')} ${r.careLevel}`, r.allergies.length && t('residents.list.allergy'), r.rea === 'no' && t('residents.list.reaNo'), r.status === 'absent' && t('residents.banner.absent')].filter(Boolean).join(' · '),
     over: cnt(over, r.id),
     open: cnt(open, r.id),
+    today: cnt(today, r.id),
     changed: cnt(changed, r.id) > 0,
     search: `${r.lastName} ${r.firstName} ${r.room?.number ?? ''}`.toLowerCase(),
   }))

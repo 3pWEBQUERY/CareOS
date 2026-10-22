@@ -1,7 +1,7 @@
 # CareOS auf Railway einrichten
 
 Ziel: ein Railway-Projekt mit drei Diensten – **CareOS** (diese App), **Postgres** und **Bucket** – plus öffentlicher Domain.
-Dauer: etwa 10 Minuten. `railway.json` im Repository regelt Build, Migration, Start und Health Check automatisch.
+Dauer: etwa 10 Minuten. `railway.json` und `scripts/start.mjs` regeln Build, Migration, Erstbefüllung, Start und Health Check automatisch.
 
 ## 1. Projekt und Dienste
 
@@ -18,6 +18,8 @@ Lokal ausführen und die Ausgabe im CareOS-Dienst unter **Variables → Raw Edit
 
 ```bash
 npm run railway:env -- --admin=it@ihre-organisation.ch --org="Alterszentrum Muster"
+# mit Namen der Administration und zufälliger Erstbefüllung (siehe Abschnitt 4):
+npm run railway:env -- --admin=it@ihre-organisation.ch --org="Alterszentrum Muster" --first=Martina --last=Keller --units=4 --staff=15 --residents=100
 # oder für eine Testumgebung mit Demodaten:
 npm run railway:env -- --demo
 ```
@@ -36,10 +38,80 @@ Passkeys und Single Sign-on hängen an genau dieser Adresse.
 
 ## 4. Deploy und erster Login
 
-- Railway baut und startet automatisch. Vor jedem Deploy laufen die Migrationen (`prisma migrate deploy`), danach prüft Railway `/api/health`.
-- **Produktiv:** Mit `INIT_ADMIN_EMAIL` / `INIT_ADMIN_PASSWORD` anmelden, sofort unter Profil → Sicherheit MFA oder Passkey einrichten,
-  dann `INIT_ADMIN_PASSWORD` in Railway löschen. Weitere Personen unter Admin → Benutzer einladen.
-- **Demo:** `anna.muster@lindenhof.ch` / `careos-demo` (weitere Konten im README).
+- Railway baut und startet automatisch. Beim Start führt `scripts/start.mjs` zuerst `prisma migrate deploy` aus
+  (zusätzlich als `preDeployCommand` in `railway.json`; idempotent, mit Advisory Lock). Schlägt die Migration fehl,
+  startet die App nicht – der Fehler steht im Deploy-Log. Danach prüft Railway `/api/health`.
+- **Demo:** `SEED_DEMO=true` → `anna.muster@lindenhof.ch` / `careos-demo` (weitere Konten im README).
+
+### Erststart einer echten Organisation
+
+Auf einer **leeren** Datenbank legt `prisma/bootstrap.ts` (Logik in `src/lib/org-setup.ts`, eine Transaktion –
+bei Abbruch bleibt die Datenbank leer und der nächste Start versucht es erneut) Folgendes an:
+
+| Variable | Standard | Wirkung |
+|---|---|---|
+| `INIT_ADMIN_EMAIL`, `INIT_ADMIN_PASSWORD` | – | Pflicht. Konto der Systemadministration (Passwort min. 12 Zeichen) |
+| `INIT_ADMIN_FIRST_NAME`, `INIT_ADMIN_LAST_NAME` | System, Administration | Name der Systemadministration, Kürzel daraus |
+| `INIT_ORG_NAME`, `INIT_LOCATION_NAME` | Meine Organisation, Hauptstandort | Organisation und Standort |
+| `INIT_UNITS`, `INIT_UNIT_NAME` | 4, Wohngruppe | Anzahl Wohngruppen und Namenspräfix (Wohngruppe 1, 2 …) |
+| `INIT_STAFF` | 0 | Zufällig erzeugte Mitarbeitende mit Rollen-Mix (siehe unten), **ohne Passwort** |
+| `INIT_STAFF_DOMAIN` | example.ch | Platzhalter-Domain der Mitarbeiter-Adressen (`vorname.nachname@…`) |
+| `INIT_RESIDENTS` | 0 | Zufällig erzeugte Bewohnende, gleichmässig auf die Wohngruppen verteilt |
+| `INIT_SEED` | – | Gesetzt: reproduzierbare Zufallsdaten (gleicher Wert → gleiche Personen) |
+
+Beispiel für eine Pilotumgebung mit 15 Mitarbeitenden und 100 Bewohnenden:
+
+```
+INIT_ORG_NAME=Alterszentrum Muster
+INIT_ADMIN_EMAIL=it@alterszentrum-muster.ch
+INIT_ADMIN_PASSWORD=<min. 12 Zeichen>
+INIT_ADMIN_FIRST_NAME=Martina
+INIT_ADMIN_LAST_NAME=Keller
+INIT_UNITS=4
+INIT_STAFF=15
+INIT_RESIDENTS=100
+```
+
+- **Bewohnende:** realistische Schweizer Namen (keine Doppelungen), Geschlecht passend zum Vornamen, Jahrgang 1925–1952,
+  Eintritt in den letzten fünf Jahren, Pflegestufe, Einzelzimmer (Wohngruppe 1: 101–125, Wohngruppe 2: 201–225 …),
+  Aufenthalt «Eintritt». Es werden **keine klinischen Daten** erfunden: Diagnosen, Medikation, Vitalwerte, Verlauf,
+  Pflegeplanung und Kontakte sind leer und werden in CareOS erfasst.
+- **Mitarbeitende:** 1 Pflegedienstleitung (für den Standort), je Wohngruppe eine Stationsleitung (sofern genug Personal),
+  dann etwa 40 % Pflegefachpersonen HF, 30 % FaGe, 30 % Pflegehelfer/innen SRK – jeweils mit Rolle in ihrer Wohngruppe,
+  Stammbereich, Funktion und Team der Wohngruppe. Für 15 Personen und 4 Wohngruppen: 1 PDL, 4 Stationsleitungen,
+  4 HF, 3 FaGe, 3 Pflegehilfe.
+- Ohne `INIT_STAFF`/`INIT_RESIDENTS` entsteht nur die Struktur mit der Systemadministration.
+- Ist bereits eine Organisation vorhanden, passiert nichts (auch nicht bei mehreren Instanzen gleichzeitig).
+
+### Erster Login und Einladungen verteilen
+
+1. Mit `INIT_ADMIN_EMAIL` / `INIT_ADMIN_PASSWORD` anmelden, sofort unter Profil → Sicherheit MFA oder Passkey einrichten,
+   dann `INIT_ADMIN_PASSWORD` (und bei Bedarf die übrigen `INIT_*`-Variablen) in Railway löschen.
+2. **Admin → Benutzer → Einladungen** listet alle Konten ohne Zugang. Die Adressen unter `INIT_STAFF_DOMAIN` sind
+   Platzhalter (markiert): zuerst unter der Person die echte Adresse und den Namen eintragen.
+3. «Links für alle erzeugen» zeigt je Person einen Einmal-Link (7 Tage gültig, «Alle kopieren» als Tabelle).
+   Gespeichert wird nur ein Hash – deshalb erzeugt CareOS die Links erst auf Knopfdruck und zeigt sie nur einmal;
+   ein neuer Link ersetzt den alten. Mit dem Link setzt die Person ihr Passwort.
+   CareOS versendet keine E-Mails: Links über einen vertraulichen Kanal weitergeben.
+
+### Registrierung von Personen (PRD §33)
+
+- **Admin → Benutzer → Registrierung:** Registrierung aktivieren. CareOS erzeugt einen Registrierungscode
+  (`XXXX-XXXX-XXXX`, nur für Personen mit Benutzerverwaltung sichtbar, verschlüsselt gespeichert, jederzeit erneuerbar).
+  Code intern weitergeben, die Adresse lautet `<APP_URL>/register` (Link «Konto beantragen» auf der Anmeldeseite).
+- Die Person gibt Code, Name, E-Mail, Passwort (min. 12 Zeichen) und optional Funktion/Bereich an und bestätigt den
+  Datenschutzhinweis. Das Konto ist danach **wartend** und kann sich nicht anmelden («Ihr Konto wartet auf Freigabe»).
+- Personen mit Benutzerverwaltung erhalten eine Benachrichtigung. Unter **Admin → Benutzer → Anfragen**: *Freigeben*
+  (Rolle und Bereich wählen) oder *Ablehnen* (das beantragte Konto wird gelöscht). Alles wird im Audit-Protokoll erfasst.
+- Es gibt **keine E-Mail-Bestätigung** (kein Mailversand angebunden) – die Freigabe durch die Administration ersetzt sie.
+  Name und Adresse vor der Freigabe prüfen. Die Antwort auf der Registrierungsseite ist gleich, ob die Adresse schon
+  existiert oder nicht; Anfragen und falsche Codes sind je IP begrenzt.
+
+### Neue Organisationen registrieren (optional)
+
+`ORG_SIGNUP=true` zeigt auf `/register` zusätzlich «Neue Organisation»: Name der Organisation und Daten der
+Systemadministration; angelegt wird die Standardkonfiguration mit einer Wohngruppe, ohne Personen. Gedacht für
+Mehrmandanten-Instanzen; Standard ist aus. Je IP höchstens 3 pro Tag.
 
 ## 5. Betrieb
 

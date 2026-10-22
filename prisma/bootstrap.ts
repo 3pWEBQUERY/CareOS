@@ -1,16 +1,19 @@
 /**
- * Erststart ohne Demodaten: legt Organisation, Standort, Bereich, Standardkonfiguration und
- * einen Systemadministrator an – nur wenn die Datenbank leer ist.
- * Variablen: INIT_ORG_NAME, INIT_LOCATION_NAME, INIT_UNIT_NAME, INIT_ADMIN_EMAIL, INIT_ADMIN_PASSWORD
+ * Erststart ohne Demodaten: legt Organisation, Standort, Wohngruppen, Standardkonfiguration und
+ * eine Systemadministration an – nur wenn die Datenbank leer ist (Logik: src/lib/org-setup.ts).
+ *
+ * Pflicht:  INIT_ADMIN_EMAIL, INIT_ADMIN_PASSWORD (min. 12 Zeichen)
+ * Optional: INIT_ORG_NAME, INIT_LOCATION_NAME, INIT_UNIT_NAME (Präfix, Standard «Wohngruppe»), INIT_UNITS (Standard 4),
+ *           INIT_ADMIN_FIRST_NAME, INIT_ADMIN_LAST_NAME,
+ *           INIT_STAFF (zufällige Mitarbeitende ohne Passwort, Standard 0), INIT_STAFF_DOMAIN (Standard example.ch),
+ *           INIT_RESIDENTS (zufällige Bewohnende, nur Stammdaten, Standard 0), INIT_SEED (reproduzierbare Zufallsdaten)
  */
-import { PrismaClient, type Prisma } from '@prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { hash } from '@node-rs/argon2'
-import { DEFAULT_ROLES } from '../src/lib/permissions'
-import { ASSESSMENTS, CARE_DOMAINS, INCIDENT_TYPES } from '../src/lib/clinical-config'
-import { DEFAULT_FORMS } from '../src/lib/forms'
-import { VITALS, VITAL_KEYS } from '../src/lib/vitals'
+import { setupOrganization } from '../src/lib/org-setup'
 
 const db = new PrismaClient()
+const num = (v: string | undefined, d: number) => (v && /^\d+$/.test(v.trim()) ? Number(v.trim()) : d)
 
 async function main() {
   if (await db.organization.count()) return console.log('Bootstrap übersprungen: Datenbank enthält bereits eine Organisation.')
@@ -18,40 +21,28 @@ async function main() {
   const password = process.env.INIT_ADMIN_PASSWORD ?? ''
   if (!email || password.length < 12) return console.log('Bootstrap übersprungen: INIT_ADMIN_EMAIL und INIT_ADMIN_PASSWORD (min. 12 Zeichen) setzen.')
 
-  const name = process.env.INIT_ORG_NAME || 'Meine Organisation'
-  const org = await db.organization.create({ data: { name, slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'org' } })
-  const loc = await db.location.create({ data: { orgId: org.id, name: process.env.INIT_LOCATION_NAME || 'Hauptstandort' } })
-  const unit = await db.unit.create({ data: { orgId: org.id, locationId: loc.id, name: process.env.INIT_UNIT_NAME || 'Bereich 1' } })
-
-  let adminRole = ''
-  for (const r of DEFAULT_ROLES) {
-    const role = await db.role.create({ data: { orgId: org.id, key: r.key, name: r.name, permissions: r.permissions, system: true } })
-    if (r.key === 'sysadmin') adminRole = role.id
-  }
-  for (const s of [
-    { code: 'F', name: 'Frühdienst', start: '07:00', end: '15:30' },
-    { code: 'S', name: 'Spätdienst', start: '14:45', end: '23:00' },
-    { code: 'N', name: 'Nachtdienst', start: '22:45', end: '07:15' },
-  ]) await db.shiftType.create({ data: { orgId: org.id, ...s } })
-  for (const [i, d] of CARE_DOMAINS.entries()) await db.careDomain.create({ data: { orgId: org.id, key: d.key, name: d.de, order: i } })
-  for (const a of ASSESSMENTS) await db.assessmentDefinition.create({ data: { orgId: org.id, key: a.key, name: a.name, description: a.description, items: a.items as unknown as Prisma.InputJsonValue, intervalDays: a.intervalDays } })
-  for (const f of DEFAULT_FORMS) await db.formDefinition.create({ data: { orgId: org.id, key: f.key, name: f.name, category: f.category, description: f.description, fields: f.fields as unknown as Prisma.InputJsonValue, active: true } })
-  for (const it of INCIDENT_TYPES) await db.incidentType.create({ data: { orgId: org.id, key: it.key, name: it.de, workflow: it.workflow as unknown as Prisma.InputJsonValue } })
-  for (const k of VITAL_KEYS.filter((k) => k !== 'weight')) await db.vitalThreshold.create({ data: { orgId: org.id, key: k, lo: VITALS[k].lo, hi: VITALS[k].hi } })
-  for (const c of [
-    { name, kind: 'company' as const },
-    { name: loc.name, kind: 'location' as const, locationId: loc.id },
-    { name: unit.name, kind: 'unit' as const, unitId: unit.id },
-    { name: 'Pflege', kind: 'care' as const },
-  ]) await db.channel.create({ data: { orgId: org.id, ...c } })
-  await db.featureFlag.createMany({ data: [{ orgId: org.id, key: 'ai', enabled: true }, { orgId: org.id, key: 'voice', enabled: true }, { orgId: org.id, key: 'medication', enabled: true }] })
-
-  const user = await db.user.create({
-    data: { orgId: org.id, email, firstName: 'System', lastName: 'Administration', initials: 'SA', jobTitle: 'Systemadministration', passwordHash: await hash(password, { memoryCost: 19456, timeCost: 2, parallelism: 1 }), primaryUnitId: unit.id },
+  const r = await setupOrganization(db, {
+    source: 'bootstrap',
+    onlyIfEmpty: true,
+    orgName: process.env.INIT_ORG_NAME || 'Meine Organisation',
+    locationName: process.env.INIT_LOCATION_NAME,
+    unitName: process.env.INIT_UNIT_NAME,
+    units: num(process.env.INIT_UNITS, 4),
+    admin: {
+      email,
+      firstName: process.env.INIT_ADMIN_FIRST_NAME,
+      lastName: process.env.INIT_ADMIN_LAST_NAME,
+      passwordHash: await hash(password, { memoryCost: 19456, timeCost: 2, parallelism: 1 }),
+    },
+    staff: num(process.env.INIT_STAFF, 0),
+    staffDomain: process.env.INIT_STAFF_DOMAIN || 'example.ch',
+    residents: num(process.env.INIT_RESIDENTS, 0),
+    seed: process.env.INIT_SEED || null,
   })
-  await db.roleAssignment.create({ data: { userId: user.id, roleId: adminRole } })
-  await db.auditLog.create({ data: { orgId: org.id, userId: user.id, action: 'org.bootstrap', entityType: 'Organization', entityId: org.id } })
-  console.log(`Organisation "${name}" angelegt. Anmeldung: ${email}`)
+  if (!r) return console.log('Bootstrap übersprungen: Datenbank enthält bereits eine Organisation.')
+  const c = r.counts
+  console.log(`Organisation "${process.env.INIT_ORG_NAME || 'Meine Organisation'}" angelegt: ${c.units} Wohngruppen, ${c.rooms} Zimmer, ${c.staff} Mitarbeitende, ${c.residents} Bewohnende. Anmeldung: ${email}`)
+  if (c.staff) console.log('Einladungslinks für die Mitarbeitenden: Admin → Benutzer → Einladungen → «Links erzeugen».')
 }
 
 main().catch((e) => { console.error(e); process.exit(1) }).finally(() => db.$disconnect())

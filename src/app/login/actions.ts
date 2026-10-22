@@ -39,7 +39,8 @@ export async function loginAction(_: LoginState, form: FormData): Promise<LoginS
     await rateLimit(accKey, accLimit, 10 * 60_000)
     return { error: 'invalid', email }
   }
-  if (!user.active) return { error: 'inactive', email }
+  // Selbstregistrierung (PRD §33): Konto wartet auf Freigabe – erst nach korrektem Passwort verraten (keine Kontenaufzählung)
+  if (!user.active) return { error: user.pendingSince ? 'pending' : 'inactive', email }
 
   await createSession(user.id, !user.mfaEnabled, 'password')
   await auditSystem({ action: 'auth.login', entityType: 'User', entityId: user.id, orgId: user.orgId, userId: user.id, context: { method: 'password' }, ...meta })

@@ -7,7 +7,7 @@ import { useT } from '@/i18n/client'
 import { ResidentWorkspace } from '@/components/shell/ListDrawer'
 import { TextField } from '@/components/ui/fields'
 
-export type ResRow = { id: string; room: string; name: string; meta: string; over: number; open: number; changed: boolean; search: string }
+export type ResRow = { id: string; room: string; name: string; meta: string; over: number; open: number; today: number; changed: boolean; search: string }
 
 /** Register der Akte, das beim Personenwechsel erhalten bleibt (PRD §31 «schnelle Bewohnerwechsel»). */
 export function residentHref(id: string, path: string, pick?: string | null) {
@@ -107,7 +107,8 @@ export function ResidentList({ rows }: { rows: ResRow[] }) {
               <span className="counts">
                 {/* Zahlen mit Bedeutung für Screenreader (title allein wird nicht zuverlässig vorgelesen) */}
                 {r.over > 0 && <span className="pill crit" title={t('residents.list.overdue')}><span aria-hidden="true">{r.over}</span><span className="sr-only">{r.over} {t('residents.list.overdue')}</span></span>}
-                <span className={'pill' + (r.open ? '' : ' ok')} title={t('residents.list.openToday')}><span aria-hidden="true">{r.open || '✓'}</span><span className="sr-only">{r.open} {t('residents.list.openToday')}</span></span>
+                {/* ✓ nur, wenn es heute Massnahmen gab und alle erledigt sind; ohne Massnahmen kein Zeichen */}
+                {r.today > 0 && <span className={'pill' + (r.open ? '' : ' ok')} title={t('residents.list.openToday')}><span aria-hidden="true">{r.open || '✓'}</span><span className="sr-only">{r.open} {t('residents.list.openToday')}</span></span>}
               </span>
             </Link>
           </li>

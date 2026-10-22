@@ -2088,3 +2088,16 @@ select.field::-ms-expand { display: none }
 .ds-colors th[scope="row"] { white-space: nowrap }
 @media (max-width: 720px) { .ds-toc { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px } }
 @media (max-width: 720px) { .ds-states:has(.seg) { grid-template-columns: minmax(0, 1fr) } }
+/* Registrierung (/register) und Einladungen/Anfragen unter Admin → Benutzer */
+.reg-seg { align-self: flex-start; max-width: 100% }
+.reg-seg a { min-height: 32px; display: inline-flex; align-items: center }
+.reg-done { margin: 0; font-size: 1rem; font-weight: 600 }
+.reg-done:focus { outline: none }
+.reg-privacy > summary { cursor: pointer; font-size: 0.8125rem; color: var(--accent); min-height: 24px; display: inline-flex; align-items: center }
+.reg-privacy > p { margin: 6px 0 0 }
+.inv-row { align-items: center; gap: 12px }
+.inv-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px }
+.inv-links { border: 1px solid var(--line); border-radius: var(--r) }
+.inv-link { display: block; margin-top: 4px; font-size: 0.75rem; word-break: break-all; color: var(--fg-2) }
+@media (max-width: 720px) { .reg-seg a { min-height: 40px } }
+.reg-code { font-size: 1rem; letter-spacing: .08em; font-weight: 500 }

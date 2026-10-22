@@ -13,9 +13,9 @@ export async function verifyPassword(stored: string | null | undefined, pw: stri
   }
 }
 
-/** Mindestanforderung: 10 Zeichen, nicht nur Ziffern. */
-export function passwordProblem(pw: string): string | null {
-  if (pw.length < 10) return 'min_length'
+/** Mindestanforderung: 10 Zeichen (Registrierung: 12), nicht nur Ziffern. */
+export function passwordProblem(pw: string, min = 10): string | null {
+  if (pw.length < min) return 'min_length'
   if (/^\d+$/.test(pw)) return 'only_digits'
   return null
 }

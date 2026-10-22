@@ -11,6 +11,8 @@ import { UserFields } from './fields'
 import { ModeFields } from './ModeFields'
 import { createUserAction, deleteQualificationAction, saveQualificationAction } from './actions'
 import { Select, TextField } from '@/components/ui/fields'
+import { awaitingAccessWhere } from '@/lib/invites'
+import { InvitesTab, RegistrationTab, RequestsTab } from './access'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -18,28 +20,35 @@ export async function generateMetadata() {
 }
 
 const PAGE = 100
+const TABS = ['people', 'invites', 'requests', 'registration'] as const
+type Tab = (typeof TABS)[number]
 
-export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; role?: string; n?: string }> }) {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; role?: string; n?: string; tab?: string }> }) {
   const ctx = await getCtx()
   const { t, org } = ctx
   if (!ctx.can('admin.users')) return <Forbidden text={t('common.notAllowed')} />
   const sp = await searchParams
+  const tab: Tab = (TABS as readonly string[]).includes(sp.tab ?? '') ? (sp.tab as Tab) : 'people'
   const q = (sp.q ?? '').trim()
   const status = sp.status === 'inactive' ? 'inactive' : sp.status === 'all' ? 'all' : 'active'
   const where: Prisma.UserWhereInput = {
     orgId: org.id,
+    // Anfragen aus der Selbstregistrierung erscheinen nur unter «Anfragen»
+    pendingSince: null,
     ...(status === 'all' ? {} : { active: status === 'active' }),
     ...(q ? { OR: [{ firstName: { contains: q, mode: 'insensitive' } }, { lastName: { contains: q, mode: 'insensitive' } }, { email: { contains: q, mode: 'insensitive' } }, { employeeNo: { contains: q, mode: 'insensitive' } }, { jobTitle: { contains: q, mode: 'insensitive' } }] } : {}),
     ...(sp.role ? { roles: { some: { roleId: sp.role } } } : {}),
   }
   // Grosse Organisationen (PRD §66): erste 100 Personen, «Mehr laden» erweitert um je 100 (Suche und Filter bleiben serverseitig)
   const limit = Math.min(5000, Math.max(PAGE, Math.ceil((Number(sp.n) || PAGE) / PAGE) * PAGE))
-  const [users, total, units, roles, quals] = await Promise.all([
+  const [users, total, units, roles, quals, invites, requests] = await Promise.all([
     db.user.findMany({ where, include: { roles: { include: { role: true, unit: true, location: true } } }, orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }, { id: 'asc' }], take: limit }),
     db.user.count({ where }),
     db.unit.findMany({ where: { orgId: org.id }, include: { location: true }, orderBy: { name: 'asc' } }),
     db.role.findMany({ where: { orgId: org.id }, orderBy: { name: 'asc' } }),
     db.qualification.findMany({ where: { orgId: org.id }, include: { _count: { select: { users: true } } }, orderBy: [{ level: 'desc' }, { name: 'asc' }] }),
+    db.user.count({ where: awaitingAccessWhere(org.id) }),
+    db.user.count({ where: { orgId: org.id, pendingSince: { not: null } } }),
   ])
   const unitName = new Map(units.map((u) => [u.id, u.name]))
   const now = new Date()
@@ -79,8 +88,23 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
           <ModeFields linkLabel={t('admin.users.modeInvite')} linkHint={t('admin.users.modeInviteHint')} />
         </SecretDialog>
       </AdminHead>
+      <nav className="tabs" aria-label={t('admin.nav.users')}>
+        {TABS.map((k) => (
+          <Link key={k} href={k === 'people' ? '/admin/users' : `/admin/users?tab=${k}`} aria-current={tab === k ? 'page' : undefined}>
+            {t('register.admin.tabs.' + k)}
+            {k === 'invites' && invites > 0 && <span className="pill">{invites}</span>}
+            {k === 'requests' && requests > 0 && <span className="pill warn">{requests}</span>}
+          </Link>
+        ))}
+      </nav>
       <div className="scroll">
         <div className="tabpanel">
+          {tab === 'invites' && <InvitesTab ctx={ctx} />}
+          {tab === 'requests' && <RequestsTab ctx={ctx} />}
+          {tab === 'registration' && <RegistrationTab ctx={ctx} />}
+          {tab === 'people' && <>
+          {requests > 0 && <div className="alert warn"><span className="grow">{t('register.admin.bannerRequests', { n: requests })}</span><Link className="btn sm" href="/admin/users?tab=requests">{t('register.admin.open')}</Link></div>}
+          {invites > 0 && <div className="alert info"><span className="grow">{t('register.admin.banner', { n: invites })}</span><Link className="btn sm" href="/admin/users?tab=invites">{t('register.admin.open')}</Link></div>}
           <form className="row" role="search" action="/admin/users">
             <TextField type="search" name="q" defaultValue={q} placeholder={t('admin.users.search')} aria-label={t('admin.users.search')} style={{ minWidth: 200 }} className="grow" />
             {status !== 'active' && <input type="hidden" name="status" value={status} />}
@@ -152,6 +176,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               </ActionForm>
             </div>
           </section>
+          </>}
         </div>
       </div>
     </main>

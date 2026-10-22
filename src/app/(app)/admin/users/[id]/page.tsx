@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { fmtDate, fmtRel } from '@/lib/time'
@@ -37,6 +37,8 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
     },
   })
   if (!user) notFound()
+  // Offene Kontoanfrage (Selbstregistrierung): Freigabe oder Ablehnung unter «Anfragen»
+  if (user.pendingSince) redirect('/admin/users?tab=requests')
   const now = new Date()
   const [units, locations, roles, quals, sessions, activity] = await Promise.all([
     db.unit.findMany({ where: { orgId: org.id }, include: { location: true }, orderBy: { name: 'asc' } }),

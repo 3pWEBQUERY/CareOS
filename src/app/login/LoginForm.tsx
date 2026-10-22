@@ -5,7 +5,7 @@ import { startAuthentication } from '@simplewebauthn/browser'
 import { loginAction, type LoginState } from './actions'
 import { TextField } from '@/components/ui/fields'
 
-type Labels = Record<'email' | 'password' | 'submit' | 'passkey' | 'or' | 'invalid' | 'locked' | 'inactive' | 'passkeyFailed', string>
+type Labels = Record<'email' | 'password' | 'submit' | 'passkey' | 'or' | 'invalid' | 'locked' | 'inactive' | 'pending' | 'passkeyFailed', string>
 
 export function LoginForm({ labels, next, sso }: { labels: Labels; next: string; sso: { label: string } | null }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(loginAction, undefined)
