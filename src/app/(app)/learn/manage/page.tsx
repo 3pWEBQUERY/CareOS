@@ -5,7 +5,10 @@ import { Empty, Forbidden } from '@/components/ui/Empty'
 import { LearnHead, LearnTabs } from '../LearnTabs'
 import { NewCourseButton } from '../LearnClient'
 
-export const metadata = { title: 'Learn' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.learn') + ' · ' + t('learn.tabs.manage') }
+}
 
 export default async function ManageCoursesPage() {
   const ctx = await getCtx()

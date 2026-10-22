@@ -64,7 +64,7 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      <div className="metrics">
+      <div className="metrics metrics-2">
         <div className="metric">
           <span className="lbl">{t('care.wounds.sizeNow')}</span>
           <span className="val">{lastSized ? `${fmtNum(lastSized.lengthMm, 0, locale)} × ${fmtNum(lastSized.widthMm, 0, locale)}${lastSized.depthMm != null ? ' × ' + fmtNum(lastSized.depthMm, 0, locale) : ''}` : '–'} <small>mm</small></span>

@@ -6,7 +6,10 @@ import { canModerate, canPostTo, myRoleKeys, visibleChannels } from '../lib'
 import { publishPostAction } from '../actions'
 import { ackSettings } from '@/lib/acks'
 
-export const metadata = { title: 'Team' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.team') }
+}
 
 export default async function NewPostPage({ searchParams }: { searchParams: Promise<{ ch?: string }> }) {
   const ctx = await getCtx()

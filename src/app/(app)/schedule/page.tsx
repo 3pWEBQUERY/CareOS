@@ -9,7 +9,10 @@ import { AbsencesView } from './_views/Absences'
 import { SwapsView } from './_views/Swaps'
 import { PlanView, CoverageView } from './_views/Plan'
 
-export const metadata = { title: 'Dienstplan' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.schedule') }
+}
 
 const VIEWS = ['week', 'month', 'open', 'absences', 'swaps', 'team', 'coverage'] as const
 type View = (typeof VIEWS)[number]

@@ -7,7 +7,10 @@ import { CATEGORY_TONE, DOC_CATEGORIES, queryTerms, scoreDoc, snippet, userNames
 import { fmtDate } from '@/lib/time'
 import { AssistantAi, NewDocButton } from './DocsClient'
 
-export const metadata = { title: 'Docs' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.docs') }
+}
 
 type SP = { q?: string; cat?: string; f?: string }
 

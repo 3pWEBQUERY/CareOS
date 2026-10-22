@@ -152,7 +152,7 @@ export default async function CarePlanPage({ params, searchParams }: { params: P
             <div className="alert"><span className="grow">{t(plan!.approvedAt ? 'care.plan.archivedHint' : 'care.plan.archivedDraftHint', { v: plan!.version })}</span></div>
           )}
 
-          <div className="metrics">
+          <div className="metrics metrics-2">
             <div className="metric">
               <span className="lbl">{t('care.plan.version')}</span>
               <span className="val">v{plan!.version} <small>{statusTag(plan!.status, view === 'draft' && Boolean(submission))}</small></span>

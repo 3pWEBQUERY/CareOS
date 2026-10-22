@@ -274,7 +274,7 @@ function QuizBuilder({ initial }: { initial: ModuleData['quiz'] }) {
           {q.options.map((o, j) => (
             <div key={j} className="row" style={{ flexWrap: 'nowrap' }}>
               <label className="check" title={t('learn.edit.correct')}>
-                <input type="radio" name={`correct-${i}`} checked={q.answer === j} onChange={() => upd(i, (x) => ({ ...x, answer: j }))} aria-label={t('learn.edit.correct')} />
+                <input type="radio" name={`correct-${i}`} checked={q.answer === j} onChange={() => upd(i, (x) => ({ ...x, answer: j }))} aria-label={`${t('learn.edit.correct')}: ${t('learn.edit.option', { n: j + 1 })}`} />
               </label>
               <input className="field grow" value={o} onChange={(e) => upd(i, (x) => ({ ...x, options: x.options.map((y, k) => (k === j ? e.target.value : y)) }))} placeholder={t('learn.edit.option', { n: j + 1 })} aria-label={t('learn.edit.option', { n: j + 1 })} />
               <button type="button" className="btn sm ghost" disabled={q.options.length <= 2} onClick={() => upd(i, (x) => ({ ...x, options: x.options.filter((_, k) => k !== j), answer: x.answer === j ? 0 : x.answer > j ? x.answer - 1 : x.answer }))} aria-label={t('common.delete')}>−</button>

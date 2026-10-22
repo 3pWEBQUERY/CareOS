@@ -219,7 +219,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
             </div>
           )}
 
-          <div className="grid-2 q-detail">
+          <div className="grid-2 q-detail" data-new={justReported || undefined}>
             <div className="stack">
             <section className="card q-o1" aria-labelledby="stage-h">
               <div className="card-head">

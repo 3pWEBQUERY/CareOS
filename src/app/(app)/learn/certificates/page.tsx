@@ -6,7 +6,10 @@ import { certState, EXPIRING_DAYS } from '@/lib/learn'
 import { fmtDate } from '@/lib/time'
 import { LearnHead, LearnTabs } from '../LearnTabs'
 
-export const metadata = { title: 'Learn' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.learn') + ' · ' + t('learn.tabs.certificates') }
+}
 
 export default async function CertificatesPage() {
   const ctx = await getCtx()

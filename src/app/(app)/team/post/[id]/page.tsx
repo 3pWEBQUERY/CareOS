@@ -10,7 +10,10 @@ import { canModerate, channelAudience, channelVisible } from '../../lib'
 import { ackPostAction, commentAction, deletePostAction, pinPostAction, remindAckAction } from '../../actions'
 import { ActButton } from '../../_ui/ActButton'
 
-export const metadata = { title: 'Team' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.team') }
+}
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()

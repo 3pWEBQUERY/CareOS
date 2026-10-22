@@ -6,7 +6,10 @@ import { certState, progress, syncExpired } from '@/lib/learn'
 import { fmtDate } from '@/lib/time'
 import { LearnHead, LearnTabs } from './LearnTabs'
 
-export const metadata = { title: 'Learn' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.learn') }
+}
 
 export default async function LearnPage() {
   const ctx = await getCtx()
@@ -35,7 +38,7 @@ export default async function LearnPage() {
       <LearnTabs ctx={ctx} current="mine" />
       <div className="scroll">
         <div className="tabpanel">
-          <div className="metrics">
+          <div className="metrics metrics-sm2">
             <div className="metric"><span className="lbl">{t('learn.mine.open')}</span><span className="val">{open.length}</span></div>
             <div className="metric"><span className="lbl">{t('learn.mine.overdue')}</span><span className={'val' + (overdue.length ? ' crit' : '')}>{overdue.length}</span></div>
             <div className="metric"><span className="lbl">{t('learn.mine.completed')}</span><span className="val">{done.length}</span></div>

@@ -3,7 +3,6 @@
 import { useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
-import { toast } from '@/components/toast'
 import { reportIncidentAction } from '../actions'
 
 type Step = { key: string; title: string; offsetMin: number }
@@ -79,7 +78,6 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
     start(async () => {
       const r = await reportIncidentAction(fd)
       if (r.ok && r.data) {
-        toast(t('quality.report.done'))
         router.push(`/quality/${r.data.id}?new=1`)
       } else if (!r.ok) {
         fail(r.error, r.field)

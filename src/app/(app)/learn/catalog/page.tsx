@@ -5,7 +5,10 @@ import { Empty, Forbidden } from '@/components/ui/Empty'
 import { applicableTo, progress } from '@/lib/learn'
 import { LearnHead, LearnTabs } from '../LearnTabs'
 
-export const metadata = { title: 'Learn' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.learn') + ' · ' + t('learn.tabs.catalog') }
+}
 
 export default async function CatalogPage({ searchParams }: { searchParams: Promise<{ cat?: string }> }) {
   const ctx = await getCtx()

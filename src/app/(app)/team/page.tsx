@@ -8,7 +8,10 @@ import { canModerate, canPostTo, channelAudience, channelLabel, liveFilter, myRo
 import { ackPostAction, archiveChannelAction } from './actions'
 import { ActButton } from './_ui/ActButton'
 
-export const metadata = { title: 'Team' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.team') }
+}
 
 export default async function TeamPage({ searchParams }: { searchParams: Promise<{ ch?: string }> }) {
   const ctx = await getCtx()
@@ -149,7 +152,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
               </ul>
             </section>
           )}
-          <div className="metrics team-metrics">
+          <div className="metrics metrics-sm2">
             <a className="metric" href={toAck.length ? '#ack' : '#feed'}><span className="lbl">{t('team.metrics.toAck')}</span><span className={'val' + (toAck.length ? ' warn' : '')}>{toAck.length}</span></a>
             {ctx.can('schedule.read') && <Link className="metric" href="/schedule?view=open"><span className="lbl">{t('team.metrics.openShifts')}</span><span className="val">{openShifts}</span></Link>}
             {ctx.can('learn.read') && <Link className="metric" href="/learn"><span className="lbl">{t('team.metrics.trainings')}</span><span className={'val' + (trainings ? ' warn' : '')}>{trainings}</span></Link>}

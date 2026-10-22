@@ -104,7 +104,7 @@ export async function CoverageView({ ctx, week, now }: { ctx: Ctx; week: Date; n
 
   return (
     <>
-      <div className="metrics">
+      <div className="metrics metrics-sm2">
         <div className="metric"><span className="lbl">{t('schedule.coverage.metricsRate')}</span><span className={'val' + (pct < 100 ? ' warn' : ' ok')}>{pct} <small>%</small></span><div className="bar"><i className={pct < 100 ? 'warn' : 'ok'} style={{ width: pct + '%' }} /></div></div>
         <div className="metric"><span className="lbl">{t('schedule.coverage.metricsUnder')}</span><span className={'val' + (under ? ' crit' : '')}>{under} <small>/ {slots.length}</small></span></div>
         {p.key && <div className="metric"><span className="lbl">{t('schedule.coverage.metricsQual', { qual: p.key.name })}</span><span className={'val' + (noQual ? ' crit' : '')}>{noQual}</span></div>}

@@ -113,7 +113,7 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
         </div>
       )}
 
-      <div className="metrics">
+      <div className="metrics metrics-2">
         <div className="metric">
           <span className="lbl">{t('care.nutrition.fluidToday')}</span>
           <span className={'val' + (pct != null && pct >= 100 ? ' ok' : '')}>{todaySum} <small>{target ? `/ ${target} ml` : 'ml'}</small></span>

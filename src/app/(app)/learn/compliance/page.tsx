@@ -7,7 +7,10 @@ import { fmtDate } from '@/lib/time'
 import { LearnHead, LearnTabs } from '../LearnTabs'
 import { AssignButton } from '../LearnClient'
 
-export const metadata = { title: 'Learn · Compliance' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.learn') + ' · ' + t('learn.tabs.compliance') }
+}
 
 const SYMBOL: Record<CellState, string> = { valid: '✓', expiring: '!', expired: '✕', overdue: '✕', missing: '○', na: '' }
 
@@ -86,7 +89,7 @@ export default async function CompliancePage({ searchParams }: { searchParams: P
       <LearnTabs ctx={ctx} current="compliance" />
       <div className="scroll">
         <div className="tabpanel">
-          <div className="metrics">
+          <div className="metrics metrics-sm2">
             <div className="metric"><span className="lbl">{t('learn.compliance.rate')}</span><span className={'val' + (pct < 80 ? ' crit' : pct < 95 ? ' warn' : ' ok')}>{pct} <small>%</small></span><div className="bar"><i className={pct < 80 ? 'crit' : pct < 95 ? 'warn' : 'ok'} style={{ width: pct + '%' }} /></div></div>
             <Link className="metric" href={href({ only: only === 'expiring' ? null : 'expiring' })}><span className="lbl">{t('learn.compliance.expiring', { days: EXPIRING_DAYS })}</span><span className={'val' + (n(['expiring']) ? ' warn' : '')}>{n(['expiring'])}</span></Link>
             <Link className="metric" href={href({ only: only === 'gaps' ? null : 'gaps' })}><span className="lbl">{t('learn.compliance.expired')}</span><span className={'val' + (n(['expired', 'overdue']) ? ' crit' : '')}>{n(['expired', 'overdue'])}</span></Link>

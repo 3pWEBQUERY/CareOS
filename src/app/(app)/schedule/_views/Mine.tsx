@@ -39,7 +39,7 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
 
   return (
     <>
-      <div className="metrics">
+      <div className="metrics metrics-sm2">
         <div className="metric"><span className="lbl">{t('schedule.mine.shifts')}</span><span className="val">{shifts.length}</span></div>
         <div className="metric"><span className="lbl">{t('schedule.mine.hours')}</span><span className="val">{fmtNum(total, total % 1 ? 1 : 0, locale)} <small>h</small></span></div>
         <div className="metric">
@@ -125,7 +125,7 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
 
   return (
     <>
-      <div className="metrics">
+      <div className="metrics metrics-sm2">
         <div className="metric"><span className="lbl">{t('schedule.mine.shifts')}</span><span className="val">{inMonth.length}</span></div>
         <div className="metric"><span className="lbl">{t('schedule.mine.hours')}</span><span className="val">{fmtNum(total, total % 1 ? 1 : 0, locale)} <small>h</small></span></div>
         <div className="metric"><span className="lbl">{t('schedule.mine.nights')}</span><span className="val">{inMonth.filter((s) => s.shiftType.code === 'N').length}</span></div>

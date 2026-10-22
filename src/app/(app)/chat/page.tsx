@@ -8,7 +8,10 @@ import { fmtRel, hm, sameDay } from '@/lib/time'
 import { ChatView, type ChatMsg } from './ChatView'
 import { NewConversation } from './NewConversation'
 
-export const metadata = { title: 'Chat' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.chat') }
+}
 
 export default async function ChatPage({ searchParams }: { searchParams: Promise<{ c?: string; with?: string }> }) {
   const ctx = await getCtx()

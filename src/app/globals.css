@@ -1287,6 +1287,8 @@ dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
   .q-steps li:nth-child(n + 4) { border-top: 1px solid var(--line) }
   .q-detail > .stack { display: contents }
   .q-o1 { order: 1 } .q-o2 { order: 2 } .q-o3 { order: 3 } .q-o4 { order: 4 }
+  .q-detail[data-new] .q-o2 { order: 0 }
+  .q-step-name { font-size: 12px }
 }
 /* QIA-END */
 /* Bewohnerübersicht Mobile: die Liste (mit Filter, Allergie/REA, offenen Massnahmen) ersetzt die breite Tabelle – keine Doppelanzeige */
@@ -1338,12 +1340,10 @@ dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
   .task-table .chk { width: 40px; height: 40px }
   .task-table .row-menu { min-width: 40px; min-height: 40px }
 }
-/* Team (Handy): Kennzahlen 2×2, Kanäle als eine wischbare Zeile – «Bitte lesen und bestätigen» bleibt oben sichtbar */
+/* Team, Dienstplan, Learn (Handy): Kennzahlen 2×2 (.metrics-sm2), Kanäle als eine wischbare Zeile – «Bitte lesen und bestätigen» bleibt oben sichtbar */
 @media (max-width: 720px) {
-  .team-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-  .team-metrics .metric + .metric { border-top: 0 }
-  .team-metrics .metric:nth-child(n + 3) { border-top: 1px solid var(--line) }
-  .team-metrics .metric:nth-child(even) { border-left: 1px solid var(--line) }
+  .metrics-sm2 { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .metrics-sm2 .metric { padding: 8px 12px }
   .team-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -12px; padding-inline: 12px }
   .team-chips .chip { min-height: 36px; display: inline-flex; align-items: center }
 }
@@ -1366,3 +1366,13 @@ dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
   .rtable.r-inline tr > td.r-title { font-size: 14px }
 }
 .thumbs > img { width: 56px; height: 56px; object-fit: cover; border: 1px solid var(--line); border-radius: var(--r-sm) }
+/* Dialoge, die in Tabellenzellen stehen (z. B. Tausch anfragen), erben sonst Ausrichtung/Schriftgrösse der Zelle */
+.rtable dialog.dlg { text-align: left; white-space: normal; font-size: 14px }
+/* Planungsfluss: Schrittnamen mit Silbentrennung statt Bruch mitten im Wort */
+.steps .step-btn > span:last-child { overflow-wrap: normal; hyphens: auto }
+.dlg .steps li { min-width: 104px }
+@media (max-width: 920px) {
+  /* Abgabeliste: Präparat bleibt beim seitlichen Scrollen sichtbar */
+  .mar tbody th, .mar thead th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--line) }
+  .mar thead th:first-child { background: var(--surface-2) }
+}
