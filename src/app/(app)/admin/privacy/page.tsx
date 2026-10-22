@@ -9,7 +9,10 @@ import { ActBtn } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { runRetentionNowAction, saveRetentionAction } from './actions'
 
-export const metadata = { title: 'Admin · Datenschutz' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.privacy')} · ${t('nav.admin')}` }
+}
 
 const SUMMARY_KEYS = [...RETENTION_CATEGORIES, 'files'] as const
 

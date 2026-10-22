@@ -1327,6 +1327,7 @@ dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
 /* Admin: Berechtigungen einer Rolle (Matrix.tsx) und Matrix über alle Rollen (RoleMatrix.tsx) */
 .pm-tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center }
 .pm-tools > .field { flex: 1 1 220px; min-width: 0 }
+.pm-tools > .seg-x { min-width: 0 }
 .pm-group { border: 1px solid var(--line); border-radius: var(--r); padding: 0; margin: 0; min-width: 0; background: var(--surface) }
 .pm-ghead { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); border-radius: var(--r) var(--r) 0 0 }
 .pm-gcheck { min-height: 32px }

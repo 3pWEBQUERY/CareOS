@@ -9,7 +9,10 @@ import { AdminHead } from '../../Head'
 import { PermissionMatrix } from '../Matrix'
 import { deleteRoleAction, updateRoleAction } from '../actions'
 
-export const metadata = { title: 'Admin · Rolle' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.roles')} · ${t('nav.admin')}` }
+}
 
 export default async function RoleDetail({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()

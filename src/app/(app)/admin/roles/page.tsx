@@ -8,7 +8,10 @@ import { AdminHead } from '../Head'
 import { createRoleAction } from './actions'
 import { RoleMatrix } from './RoleMatrix'
 
-export const metadata = { title: 'Admin · Rollen' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.roles')} · ${t('nav.admin')}` }
+}
 
 export default async function RolesPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const ctx = await getCtx()

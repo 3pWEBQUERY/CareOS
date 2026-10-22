@@ -6,7 +6,10 @@ import { countOrgAdmins } from '@/lib/admin'
 import { ADMIN_SECTIONS } from './sections'
 import { auditLabel } from './audit-label'
 
-export const metadata = { title: 'Admin' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('admin.title') }
+}
 
 export default async function AdminHome() {
   const ctx = await getCtx()
@@ -108,7 +111,7 @@ export default async function AdminHome() {
                     {recent.map((r) => (
                       <li key={String(r.id)}>
                         <div className="li">
-                          <span className="mono small muted nowrap" style={{ width: 96 }}>{rel(r.at)}</span>
+                          <span className="mono small muted" style={{ minWidth: 96, flex: 'none' }}>{rel(r.at)}</span>
                           <div className="grow"><div className="small">{auditLabel(t, r.action) ?? <span className="mono">{r.action}</span>}</div><div className="small muted">{who(r.userId)}</div></div>
                           {(r.action.endsWith('_failed') || r.action.includes('failed')) && <span className="tag crit">{t('admin.audit.failed')}</span>}
                         </div>

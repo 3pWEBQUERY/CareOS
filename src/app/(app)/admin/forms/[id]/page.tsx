@@ -10,7 +10,10 @@ import { deleteFormAction } from '../actions'
 import { formUsage } from '../usage'
 import { FormBuilder } from './FormBuilder'
 
-export const metadata = { title: 'Admin · Formular' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.forms')} · ${t('nav.admin')}` }
+}
 
 export default async function FormEditPage({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()

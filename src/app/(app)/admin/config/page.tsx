@@ -17,7 +17,10 @@ import {
   saveFlagsAction, saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
 } from './actions'
 
-export const metadata = { title: 'Admin · Klinische Konfiguration' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.config')} · ${t('nav.admin')}` }
+}
 
 const TABS = ['domains', 'assessments', 'vitals', 'incidents', 'shifts', 'features', 'escalations', 'acks'] as const
 type Tab = (typeof TABS)[number]

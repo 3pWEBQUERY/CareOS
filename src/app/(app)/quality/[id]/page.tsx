@@ -10,7 +10,10 @@ import { ActionCheck } from '../client'
 import { actionTitle, canManageUnit, qualityUnits, SEVERITIES, STAGES, stageIndex, toLocalInput } from '../_lib'
 import { StageForm } from './StageForm'
 
-export const metadata = { title: 'Quality' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.quality') }
+}
 
 export default async function IncidentPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const ctx = await getCtx()

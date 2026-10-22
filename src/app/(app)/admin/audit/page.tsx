@@ -8,7 +8,10 @@ import { AdminHead } from '../Head'
 import { auditWhere, type AuditFilter } from './filter'
 import { auditLabel } from '../audit-label'
 
-export const metadata = { title: 'Admin · Audit-Protokoll' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.audit')} · ${t('nav.admin')}` }
+}
 
 const PER_PAGE = 50
 const json = (v: unknown) => JSON.stringify(v, null, 2)

@@ -5,7 +5,10 @@ import { ActBtn, FormDialog } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { deleteChannelAction, saveChannelAction } from './actions'
 
-export const metadata = { title: 'Admin · Kommunikation' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.channels')} · ${t('nav.admin')}` }
+}
 
 const KINDS = ['company', 'location', 'unit', 'care', 'admin', 'events', 'offers', 'custom'] as const
 

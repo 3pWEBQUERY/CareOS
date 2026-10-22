@@ -12,7 +12,10 @@ import { AdminHead } from '../Head'
 import { BrandColorField } from './BrandColor'
 import { removeLogoAction, resetBrandColorAction, updateBrandingAction, updateOrgAction, uploadLogoAction } from './actions'
 
-export const metadata = { title: 'Admin · Organisation' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.org')} · ${t('nav.admin')}` }
+}
 
 export default async function OrgPage() {
   const ctx = await getCtx()

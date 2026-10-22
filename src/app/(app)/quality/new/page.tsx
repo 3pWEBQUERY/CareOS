@@ -7,7 +7,10 @@ import { age, hm } from '@/lib/time'
 import { toLocalInput, workflowSteps } from '../_lib'
 import { ReportForm } from './ReportForm'
 
-export const metadata = { title: 'Quality' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('quality.report.title')} · ${t('nav.quality')}` }
+}
 
 export default async function NewIncidentPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const ctx = await getCtx()

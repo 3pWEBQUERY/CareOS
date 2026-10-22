@@ -6,7 +6,10 @@ import { fmtDate, fmtDayMonth, fmtNum, weekdayShort } from '@/lib/time'
 import { careData, managementData, workforceData } from './_data'
 import { Filter } from './Filter'
 
-export const metadata = { title: 'Insights' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('insights.title') }
+}
 
 const TABS = ['care', 'management', 'workforce'] as const
 type Tab = (typeof TABS)[number]

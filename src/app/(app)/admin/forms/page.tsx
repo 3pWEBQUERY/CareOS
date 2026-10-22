@@ -9,7 +9,10 @@ import { AdminHead } from '../Head'
 import { setFormActiveAction } from './actions'
 import { formUsage } from './usage'
 
-export const metadata = { title: 'Admin · Formulare' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.forms')} · ${t('nav.admin')}` }
+}
 
 const TONE: Record<string, string> = { care: 'accent', observation: 'warn', physician: 'violet', relatives: '', incident: 'crit', handover: 'ok' }
 

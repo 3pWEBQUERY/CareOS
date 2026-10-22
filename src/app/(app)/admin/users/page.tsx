@@ -11,7 +11,10 @@ import { UserFields } from './fields'
 import { ModeFields } from './ModeFields'
 import { createUserAction, deleteQualificationAction, saveQualificationAction } from './actions'
 
-export const metadata = { title: 'Admin · Benutzer' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.users')} · ${t('nav.admin')}` }
+}
 
 export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; role?: string }> }) {
   const ctx = await getCtx()

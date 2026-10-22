@@ -11,7 +11,10 @@ import {
   removeTeamMemberAction, saveLocationAction, saveRoomAction, saveTeamAction, saveUnitAction,
 } from './actions'
 
-export const metadata = { title: 'Admin · Struktur' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.structure')} · ${t('nav.admin')}` }
+}
 
 export default async function StructurePage({ searchParams }: { searchParams: Promise<{ unit?: string }> }) {
   const ctx = await getCtx()

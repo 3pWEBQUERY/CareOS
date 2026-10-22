@@ -14,5 +14,7 @@ const SET = new Set<string>(LABELLED_ACTIONS)
 
 /** Lesbare Bezeichnung einer Audit-Aktion oder `null`, wenn keine hinterlegt ist. */
 export function auditLabel(t: TFn, action: string): string | null {
-  return SET.has(action) ? t('admin.ux.act.' + action.replace(/\./g, '_')) : null
+  if (SET.has(action)) return t('admin.ux.act.' + action.replace(/\./g, '_'))
+  if (action.startsWith('admin.config.')) return t('admin.ux.act.admin_config')
+  return null
 }

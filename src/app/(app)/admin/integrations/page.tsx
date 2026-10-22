@@ -13,7 +13,10 @@ import {
   rotateWebhookSecretAction, saveIntegrationAction, testWebhookAction, updateWebhookAction,
 } from './actions'
 
-export const metadata = { title: 'Admin · Integrationen & API' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.integrations')} · ${t('nav.admin')}` }
+}
 
 const TABS = ['api', 'webhooks', 'integrations', 'export'] as const
 type Tab = (typeof TABS)[number]

@@ -10,7 +10,10 @@ import { addDays, fmtDate, fmtNum, hm } from '@/lib/time'
 import { AutoFilter, PatternAssistant } from './client'
 import { median, patternHints, qualityUnits, STAGES } from './_lib'
 
-export const metadata = { title: 'Quality' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: t('nav.quality') }
+}
 
 type SP = Promise<Record<string, string | string[] | undefined>>
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''

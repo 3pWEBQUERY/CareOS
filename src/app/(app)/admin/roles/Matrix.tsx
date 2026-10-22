@@ -54,11 +54,11 @@ export function PermissionMatrix({ roleId, name, description, groups, initial, a
       {[...sel].filter((p) => !shown.some((g) => g.list.includes(p))).map((p) => <input key={p} type="hidden" name="perm" value={p} />)}
       <div className="pm-tools" role="search">
         <input className="field" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.ux.permSearch')} aria-label={t('admin.ux.permSearch')} />
-        <div className="seg" role="group" aria-label={t('admin.ux.permFilter')}>
+        <div className="seg-x"><div className="seg" role="group" aria-label={t('admin.ux.permFilter')}>
           {(['all', 'on', 'off', 'changed'] as const).map((f) => (
             <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}>{t('admin.ux.pf.' + f)}{f === 'changed' && changed ? ` (${changed})` : ''}</button>
           ))}
-        </div>
+        </div></div>
       </div>
       {shown.length === 0 && <p className="small muted" style={{ margin: 0 }}>{t('admin.ux.permNone')}</p>}
       {shown.map((g) => {

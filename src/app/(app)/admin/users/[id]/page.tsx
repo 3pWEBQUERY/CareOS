@@ -15,7 +15,10 @@ import {
   resetMfaAction, resetPasswordAction, revokeUserSessionsAction, setUserActiveAction, updateUserAction,
 } from '../actions'
 
-export const metadata = { title: 'Admin · Benutzer' }
+export async function generateMetadata() {
+  const { t } = await getCtx()
+  return { title: `${t('admin.nav.users')} · ${t('nav.admin')}` }
+}
 
 export default async function UserDetail({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
