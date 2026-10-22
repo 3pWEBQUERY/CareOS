@@ -3,6 +3,16 @@ import { defineMessages } from '../core'
 // Bewohnerakte: Tagesplan, Verlauf, Vitalwerte, Timeline (PRD §8.3, §10, §14).
 export default defineMessages({
   de: {
+    bedside: {
+      identity: 'Identität prüfen',
+      born: 'geb. {date} ({age} J.)',
+      now: 'Jetzt',
+      nowHint: 'Offene Massnahmen bis in 2 Stunden',
+      nothingNow: 'Keine Massnahmen in den nächsten 2 Stunden.',
+      note: 'Verlaufseintrag',
+      noteSaved: 'Eintrag gespeichert',
+      woundAssess: 'Beurteilung erfassen',
+    },
     dictation: {
       hintBrowser: 'Diktat über die Spracherkennung des Browsers. Text wird erst nach Ihrer Prüfung gespeichert.',
       hintServer: 'Diktat über {service}. Text wird erst nach Ihrer Prüfung gespeichert.',
@@ -290,6 +300,16 @@ export default defineMessages({
     },
   },
   fr: {
+    bedside: {
+      identity: 'Vérifier l’identité',
+      born: 'naissance : {date} ({age} ans)',
+      now: 'Maintenant',
+      nowHint: 'Mesures ouvertes dans les 2 prochaines heures',
+      nothingNow: 'Aucune mesure dans les 2 prochaines heures.',
+      note: 'Entrée au suivi',
+      noteSaved: 'Entrée enregistrée',
+      woundAssess: 'Saisir une évaluation',
+    },
     dictation: {
       hintBrowser: 'Dictée via la reconnaissance vocale du navigateur. Le texte n’est enregistré qu’après votre vérification.',
       hintServer: 'Dictée via {service}. Le texte n’est enregistré qu’après votre vérification.',
@@ -577,6 +597,16 @@ export default defineMessages({
     },
   },
   it: {
+    bedside: {
+      identity: 'Verificare l’identità',
+      born: 'nascita: {date} ({age} anni)',
+      now: 'Adesso',
+      nowHint: 'Misure aperte entro 2 ore',
+      nothingNow: 'Nessuna misura nelle prossime 2 ore.',
+      note: 'Registrazione nel decorso',
+      noteSaved: 'Registrazione salvata',
+      woundAssess: 'Registrare la valutazione',
+    },
     dictation: {
       hintBrowser: 'Dettatura tramite il riconoscimento vocale del browser. Il testo viene salvato solo dopo la sua verifica.',
       hintServer: 'Dettatura tramite {service}. Il testo viene salvato solo dopo la sua verifica.',
@@ -864,6 +894,16 @@ export default defineMessages({
     },
   },
   en: {
+    bedside: {
+      identity: 'Check identity',
+      born: 'born {date} ({age} yrs)',
+      now: 'Now',
+      nowHint: 'Open tasks due within 2 hours',
+      nothingNow: 'No tasks in the next 2 hours.',
+      note: 'Progress note',
+      noteSaved: 'Note saved',
+      woundAssess: 'Record assessment',
+    },
     dictation: {
       hintBrowser: 'Dictation via the browser’s speech recognition. Text is only saved after you have checked it.',
       hintServer: 'Dictation via {service}. Text is only saved after you have checked it.',

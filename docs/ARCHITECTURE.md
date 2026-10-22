@@ -78,6 +78,23 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 - `cleanup` (stündlich): abgelaufene Anmelde-Challenges und Sitzungen.
 - `reminders` (täglich 06:30, `src/lib/reminders.ts`, Fristen in `src/lib/reminder-policy.ts`): ablaufende Zertifikate/Qualifikationen, Schulungsfristen, Dokument-Gültigkeit. Jede Stufe wird nur einmal gemeldet (Merker: Audit-Eintrag `reminder.*`).
 
+### Sicherheit und Betrieb (PRD §37, §38, §66)
+- **Content-Security-Policy** setzt `src/proxy.ts` mit neuer Nonce pro Anfrage (`src/lib/csp.ts`): Skripte nur mit Nonce (`'strict-dynamic'`, kein `'unsafe-eval'` in Produktion), `<style>` nur mit Nonce, `style`-Attribute erlaubt. Keine Inline-Skripte oder `<style>`-Blöcke schreiben; Branding kommt als Stylesheet von `/api/brand`. Neue Fremdquellen über `CSP_*`-Variablen, nie im Code verstreuen. zod läuft im Browser `jitless` (`src/instrumentation-client.ts`), weil der eval-Test sonst einen Verstoss meldet. `/api/*` erhält eine eigene strenge CSP (`next.config.ts`).
+- **Rate-Limit**: `await rateLimit(key, limit, windowMs)` aus `src/lib/rate-limit.ts` (Postgres, über alle Instanzen; Schlüssel werden gehasht). Bei Fehlversuchen nur Fehler zählen (`peekRateLimit` vor der Prüfung, `rateLimit` nach dem Fehlschlag) – Stationsgeräte teilen sich oft eine IP.
+- **Audit-Überwachung**: Job `security` (alle 5 Min.) wertet das Audit-Protokoll mit `src/lib/security-rules.ts` aus (Fehlanmeldungen, Zweitfaktor-Fehler, Massenzugriffe auf Akten, Exporte, Rechteänderungen, API-Fehler), speichert `SecurityAlert` und benachrichtigt Personen mit `admin.audit`. Neue sicherheitsrelevante Audit-Aktionen bei Bedarf dort und in `WATCHED` (`src/lib/security-alerts.ts`) ergänzen. Admin → Sicherheit: Alarme, Vorfallregister (`SecurityIncident`, Meldefrist 72 h), Betrieb.
+- **Logging**: `log.info|warn|error(msg, fields)` aus `src/lib/log.ts` statt `console.*` – JSON-Zeilen in Produktion, sensible Felder (E-Mail, Token, Passwort) werden maskiert. Nie Gesundheitsdaten loggen.
+- **Fehler**: `onRequestError` in `src/instrumentation.ts` und `run()` (abgefangene Action-Fehler) melden an `captureError()` (`src/lib/errors.ts`): Log, Zähler je Tag in `ErrorEvent` (ohne Meldung), optional `ERROR_WEBHOOK_URL`. Zähler mit `count()` aus `src/lib/metrics.ts` (Labels ohne Kennungen, Routen über `routeLabel()`).
+- **Health/Metriken**: `/api/health` (öffentlich, ohne Details), `/api/metrics` (Prometheus, `METRICS_TOKEN`). Neue Jobs in `JOB_EXPECT_MS` (`src/lib/health-core.ts`) eintragen, sonst erscheinen sie nicht im Betriebszustand.
+- **CI**: `.github/workflows/ci.yml` (Migrationen, Abgleich Schema↔Migrationen, Typecheck, Tests mit Postgres, Build), Dependabot `.github/dependabot.yml`.
+
+### Benachrichtigungen dienstbewusst (PRD §25)
+- `notify()` filtert klinische Meldungen an mehrere Personen nach Dienst (`src/lib/notify-prefs.ts` → `selectRecipients`, Daten aus `src/lib/duty.ts`): im Dienstplan geführte Personen nur während ihres Dienstes im Bereich (±15 Min.), nicht geplante Personen (Leitung) immer, Abwesende nie; ist niemand im Dienst → Stellvertretung (Dienst im selben Standort, dann Bereichsleitung, dann alle). Bereich über `unitId` mitgeben (sonst aus dem Link abgeleitet); `dutyAware: false` für ausdrücklich adressierte Personen.
+- Einstellungen je Art (`User.notificationPrefs`, Profil → Benachrichtigungen): In-App für nicht klinische Arten abschaltbar, Push je Art, «keine Push-Nachrichten ausserhalb meiner Dienste». Klinische Meldungen, Aufgaben und Sicherheit bleiben in der App immer an; `critical` wird immer zugestellt.
+- Ist ein Anlass erledigt (z. B. auffälliger Vitalwert «gesehen»), `settleNotifications(orgId, groupKey)` aufrufen – markiert die gebündelte Meldung bei allen Empfangenden als gelesen.
+
+### Integrationen (PRD §40/§41)
+- Adapter je `Integration.kind` in `src/lib/integrations/registry.ts` (`test`, optional `import`), jede Ausführung in `IntegrationRun` (nur Zählwerte). «prepared» = Schnittstelle vorbereitet. Labor: Format `src/lib/integrations/lab.ts`, Eingang `POST /api/v1/labs` (Scope `labs:write`) oder Admin-Import; Anzeige `<LabResults residentId />` (`src/components/labs/LabResults.tsx`).
+
 ### Zielgruppen
 - `Post.audienceRoles` und `Document.audienceRoles` (Rollen-Schlüssel, leer = alle). Prüfen mit `inAudience(audience, roleKeys)` aus `src/lib/audience.ts` – überall, wo Mitteilungen/Dokumente angezeigt, bestätigt, gezählt oder benachrichtigt werden.
 

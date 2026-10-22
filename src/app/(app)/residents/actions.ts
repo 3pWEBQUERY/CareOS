@@ -75,7 +75,12 @@ export async function updateResident(residentId: string, form: FormData): Promis
           error: ctx.t('residents.conflict.master', {
             by: u ? `${u.firstName.charAt(0)}. ${u.lastName}` : '–',
             at: last ? (sameDay(last.at, now) ? hm(last.at) : `${fmtDayMonth(last.at, ctx.locale)} ${hm(last.at)}`) : '–',
-            fields: tw.conflicts.map((k) => ctx.t('residents.conflict.fields.' + k)).join(', '),
+            fields: tw.conflicts.map((k) => {
+              // Aktuellen Wert mitnennen (kurz), damit die Entscheidung ohne Suchen möglich ist
+              const cur = (r as Record<string, unknown>)[k]
+              const v = Array.isArray(cur) ? cur.join(', ') : cur instanceof Date ? cur.toLocaleDateString(ctx.locale) : cur == null || cur === '' ? '–' : ['roomId', 'primaryNurseId'].includes(k) ? null : String(cur)
+              return ctx.t('residents.conflict.fields.' + k) + (v ? ` («${v.length > 60 ? v.slice(0, 59) + '…' : v}»)` : '')
+            }).join(', '),
           }),
         }
       }

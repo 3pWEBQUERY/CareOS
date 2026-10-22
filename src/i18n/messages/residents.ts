@@ -97,6 +97,7 @@ export default defineMessages({
       files: 'Dokumente',
       contacts: 'Kontakte',
       history: 'Historie',
+      bedside: 'Am Bett',
       label: 'Bereiche der Akte',
     },
     rec: {
@@ -509,6 +510,7 @@ export default defineMessages({
       files: 'Documents',
       contacts: 'Contacts',
       history: 'Historique',
+      bedside: 'Au lit',
       label: 'Sections du dossier',
     },
     rec: {
@@ -921,6 +923,7 @@ export default defineMessages({
       files: 'Documenti',
       contacts: 'Contatti',
       history: 'Cronistoria',
+      bedside: 'Al letto',
       label: 'Sezioni della cartella',
     },
     rec: {
@@ -1333,6 +1336,7 @@ export default defineMessages({
       files: 'Documents',
       contacts: 'Contacts',
       history: 'History',
+      bedside: 'At bedside',
       label: 'Record sections',
     },
     rec: {

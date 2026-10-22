@@ -4,7 +4,7 @@ import { getCtx } from '@/lib/context'
 import { fmtDate } from '@/lib/time'
 import { metricsToken } from '@/lib/env'
 import { healthReport } from '@/lib/health'
-import { securityThresholds, RULES, type Rule } from '@/lib/security-rules'
+import { securityThresholds, type Rule } from '@/lib/security-rules'
 import { Forbidden, Empty } from '@/components/ui/Empty'
 import { ActBtn, FormDialog } from '@/components/admin/ui'
 import { Checkbox, DateTimeField, NumberField, RadioGroup, Select, TextField, Textarea } from '@/components/ui/fields'
@@ -192,24 +192,20 @@ async function Alerts({ ctx, all, focus }: { ctx: Ctx; all: boolean; focus?: str
         <Empty title={all ? t('platform.security.noneAll') : t('platform.security.none')}>{t('platform.security.noneHint')}</Empty>
       )}
       <h2 className="sec">{t('platform.security.thresholds.title')}</h2>
-      <ul className="list" style={{ border: '1px solid var(--line)', borderRadius: 'var(--r)', background: 'var(--surface)' }}>
-        {RULES.map((r) => (
-          <li key={r}><div className="li"><div className="grow">{t('platform.security.rules.' + r)}</div><span className="small muted mono">{thresholdText(r, th)}</span></div></li>
-        ))}
-      </ul>
+      <div className="tablewrap">
+        <table className="stable">
+          <thead><tr><th>{t('platform.security.col.rule')}</th><th className="right">{t('platform.security.thresholds.warn')}</th><th className="right">{t('platform.security.thresholds.crit')}</th></tr></thead>
+          <tbody>
+            {(['loginUser', 'loginIp', 'mfa', 'massAccess', 'residentExports', 'api'] as const).map((k) => (
+              <tr key={k}><th scope="row" style={{ fontWeight: 400 }}>{t('platform.security.thresholds.' + k)}</th><td className="num right">{th[k][0]}</td><td className="num right">{th[k][1]}</td></tr>
+            ))}
+            <tr><th scope="row" style={{ fontWeight: 400 }}>{t('platform.security.thresholds.permissionBurst')}</th><td className="num right">{th.permissionBurst}</td><td className="num right">–</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p className="small muted" style={{ margin: 0, maxWidth: '80ch' }}>{t('platform.security.thresholds.hint')}</p>
     </>
   )
-}
-
-function thresholdText(r: Rule, th: ReturnType<typeof securityThresholds>) {
-  switch (r) {
-    case 'login_failures': return `${th.loginUser.join(' / ')} · IP ${th.loginIp.join(' / ')}`
-    case 'mfa_failures': return th.mfa.join(' / ')
-    case 'mass_access': return th.massAccess.join(' / ')
-    case 'export': return th.residentExports.join(' / ')
-    case 'permission_change': return `≥ 1 · ${th.permissionBurst}`
-    case 'api_failures': return th.api.join(' / ')
-  }
 }
 
 type IncidentPreset = {
@@ -284,7 +280,7 @@ async function Incidents({ ctx }: { ctx: Ctx }) {
             <thead>
               <tr>
                 <th className="right">{t('platform.incidents.number')}</th><th>{t('platform.incidents.fields.title')}</th><th>{t('platform.incidents.fields.discoveredAt')}</th>
-                <th>{t('platform.incidents.fields.risk')}</th><th>{t('platform.incidents.fields.authorityRequired')}</th><th>{t('platform.incidents.fields.status')}</th>
+                <th>{t('platform.incidents.fields.risk')}</th><th>{t('platform.incidents.colDeadline')}</th><th>{t('platform.incidents.fields.status')}</th>
                 <th><span className="sr-only">{t('admin.common.actions')}</span></th>
               </tr>
             </thead>
@@ -307,8 +303,8 @@ async function Incidents({ ctx }: { ctx: Ctx }) {
                     <td><span className={'tag' + (r.risk === 'high' ? ' crit' : r.risk === 'medium' ? ' warn' : '')}>{t('platform.incidents.risks.' + r.risk)}</span></td>
                     <td className="small">
                       {d.kind === 'none' && <span className="muted">{r.authorityRequired === false ? t('platform.incidents.notRequired') : '–'}</span>}
-                      {d.kind === 'notified' && <span className="tag ok">✓ {t('platform.incidents.notified', { date: dt(d.at, ctx) })}</span>}
-                      {d.kind === 'open' && <span className={'tag ' + (d.hoursLeft < 24 ? 'warn' : 'outline')}>{t('platform.incidents.deadline', { time: dt(d.due, ctx) })} · {t('platform.incidents.deadlineLeft', { h: d.hoursLeft })}</span>}
+                      {d.kind === 'notified' && <span className="tag ok">✓ {t('platform.incidents.notified', { date: fmtDate(d.at, ctx.locale) })}</span>}
+                      {d.kind === 'open' && <span className={'tag ' + (d.hoursLeft < 24 ? 'warn' : 'outline')}>{t('platform.incidents.deadline', { time: fmtDate(d.due, ctx.locale, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })} · {t('platform.incidents.deadlineLeft', { h: d.hoursLeft })}</span>}
                       {d.kind === 'over' && <span className="tag crit">▲ {t('platform.incidents.deadlineOver')}</span>}
                     </td>
                     <td><span className={'tag' + (r.status === 'closed' ? ' ok' : r.status === 'open' ? ' warn' : '')}>{t('platform.incidents.status.' + r.status)}</span></td>

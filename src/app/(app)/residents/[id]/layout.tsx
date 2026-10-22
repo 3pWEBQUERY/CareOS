@@ -44,6 +44,7 @@ export default async function ResidentLayout({ children, params }: { children: R
     { slug: '', label: t('residents.tabs.overview') },
     { slug: 'timeline', label: t('residents.tabs.timeline') },
     { slug: 'day', label: t('residents.tabs.day'), badge: over ? <span className="pill crit">{over}</span> : null },
+    { slug: 'bedside', label: t('residents.tabs.bedside') },
     { slug: 'notes', label: t('residents.tabs.notes') },
     { slug: 'careplan', label: t('residents.tabs.careplan') },
     ...(can('resident.medication.read') ? [{ slug: 'meds', label: t('residents.tabs.meds') }] : []),

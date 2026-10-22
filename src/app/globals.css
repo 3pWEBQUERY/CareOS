@@ -1996,3 +1996,31 @@ img.pav { background: var(--sunken) }
 .cam-thumbs li { display: grid; gap: 4px; justify-items: center }
 .cam-thumbs img { width: 5rem; height: 5rem; object-fit: cover; border-radius: var(--r-sm); border: 1px solid var(--line) }
 .wound-photos { display: grid; gap: 8px }
+
+/* ── Paket C: Wundverlauf als Karten (PRD §29, Tablet hoch ohne horizontales Scrollen) ───── */
+.wound-log { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.wl-entry { padding: 12px 14px; border-bottom: 1px solid var(--line) }
+.wl-entry:last-child { border-bottom: 0 }
+.wl-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline }
+.wl-act { margin-left: auto }
+.wl-body { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 16px; margin: 8px 0 0 }
+.wl-body > div { min-width: 0 }
+.wl-body dt { margin-bottom: 2px }
+.wl-body dd { margin: 0; overflow-wrap: anywhere }
+.wl-body .wl-wide { grid-column: span 2 }
+.wl-entry.voided .wl-strike { text-decoration: line-through; text-decoration-color: var(--fg-3); color: var(--fg-3) }
+.wl-entry.voided .wl-body dd { color: var(--fg-3) }
+@media (max-width: 720px) { .wl-body { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+
+/* ── Paket C: Am Bett (PRD §29, Tablet) ───────────────────────────────────────────────── */
+.bedside { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px }
+.bedside-id { display: flex; gap: 16px; align-items: center; padding: 14px 16px; flex-wrap: wrap }
+.bedside-name { margin: 0; font-size: 1.375rem; font-weight: 600 }
+.bedside-col { display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.bedside-snips { display: flex; flex-wrap: wrap; gap: 8px }
+.bedside .vform .field, .bedside textarea.field { min-height: 48px; font-size: 1.0625rem }
+.bedside .btn { min-height: 44px }
+@media (min-width: 900px) {
+  .bedside { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
+  .bedside-id, .bedside-wide { grid-column: 1 / -1 }
+}

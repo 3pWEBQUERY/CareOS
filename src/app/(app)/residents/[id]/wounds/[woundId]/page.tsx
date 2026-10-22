@@ -124,74 +124,65 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
           <span className="small muted">{t('care.wounds.entries', { n: entries.length })}</span>
         </div>
         {allEntries.length ? (
-          <div className="tablewrap">
-            <table className="stable">
-              <thead>
-                <tr>
-                  <th>{t('care.wounds.colAt')}</th>
-                  <th>{t('care.wounds.colMeasure')}</th>
-                  <th className="right">{t('care.wounds.colArea')}</th>
-                  <th>{t('care.wounds.colFindings')}</th>
-                  <th className="right">{t('care.wounds.colPain')}</th>
-                  <th>{t('care.wounds.colTreatment')}</th>
-                  <th>{t('care.wounds.colNext')}</th>
-                  <th>{t('care.wounds.colPhotos')}</th>
-                  {canWrite && <th><span className="sr-only">{t('chart.void.colActions')}</span></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {[...allEntries].reverse().map((e) => {
-                  const a = woundArea(e.lengthMm, e.widthMm)
-                  const mayFix = canWrite && !e.voidedAt && (e.authorId === ctx.user.id || canCorrectAll)
-                  return (
-                    <tr key={e.id} className={e.voidedAt ? 'voided' : undefined}>
-                      <td className="nowrap">
-                        <span className="mono">{dt(e.at)}</span><div className="small muted">{authors.get(e.authorId) ?? '–'}</div>
-                        {e.supersedesId && <span className="tag outline">{t('chart.void.correctionTag')}</span>}
-                        {e.voidedAt && <VoidedNote tag={t('chart.void.voidedTag')} detail={t('chart.void.voidedBy', { by: authors.get(e.voidedById ?? '') ?? '–', at: dt(e.voidedAt) }) + (e.voidReason ? ' · ' + e.voidReason : '')} />}
-                      </td>
-                      <td className="num nowrap">{e.lengthMm != null ? `${e.lengthMm} × ${e.widthMm ?? '–'} × ${e.depthMm ?? '–'}` : '–'}</td>
-                      <td className="num right nowrap">{a != null ? `${a} mm²` : '–'}</td>
-                      <td style={{ minWidth: 180 }}>
-                        <div className="small">
-                          <span className="muted">{t('care.wounds.exudateL')}:</span> {keyLabel(t, 'exudate', EXUDATE, e.exudate)} · <span className="muted">{t('care.wounds.tissueL')}:</span> {keyLabel(t, 'tissue', TISSUE, e.tissue)} · <span className="muted">{t('care.wounds.edgeL')}:</span> {keyLabel(t, 'edge', EDGE, e.edge)}
-                        </div>
-                        {e.description && <div className="small fg2 ws-pre" style={{ marginTop: 2 }}>{e.description}</div>}
-                      </td>
-                      <td className="num right">{e.pain ?? '–'}</td>
-                      <td style={{ minWidth: 180 }}>
-                        <div className="small">{e.treatment ?? '–'}</div>
-                        {e.material && <div className="small muted">{e.material}</div>}
-                      </td>
-                      <td className="num nowrap">{e.nextChange ? `${fmtDayMonth(e.nextChange, locale)} ${hm(e.nextChange)}` : '–'}</td>
-                      <td>
-                        {/* Fotos stornierter Einträge (z. B. falsche Person) nicht mehr anzeigen */}
-                        {e.voidedAt && e.photoIds.length ? <span className="small muted">{t('care.wounds.photoHidden', { n: e.photoIds.length })}</span> : e.photoIds.length ? (
-                          <div className="thumbs">
-                            {e.photoIds.map((pid) => (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <a key={pid} href={fileUrl(pid)} target="_blank" rel="noopener noreferrer"><img src={fileUrl(pid)} alt={t('care.wounds.photoAlt', { date: fmtDate(e.at, locale) })} loading="lazy" /></a>
-                            ))}
-                          </div>
-                        ) : <span className="muted">–</span>}
-                      </td>
-                      {canWrite && (
-                        <td className="right">
-                          {mayFix && (
-                            <CorrectWoundEntry
-                              residentId={r.id} entryId={e.id} who={who} when={dt(e.at)}
-                              summary={`${w.bodySite}${e.lengthMm != null ? ` · ${e.lengthMm} × ${e.widthMm ?? '–'} × ${e.depthMm ?? '–'} mm` : ''}${e.pain != null ? ` · NRS ${e.pain}` : ''}`}
-                              values={{ lengthMm: e.lengthMm, widthMm: e.widthMm, depthMm: e.depthMm, pain: e.pain, exudate: e.exudate, tissue: e.tissue, edge: e.edge, description: e.description, treatment: e.treatment, material: e.material }}
-                            />
+          // Karten statt breiter Tabelle: auf Tablet hoch und Mobile ohne horizontales Scrollen (PRD §29)
+          <ol className="wound-log">
+            {[...allEntries].reverse().map((e) => {
+              const a = woundArea(e.lengthMm, e.widthMm)
+              const mayFix = canWrite && !e.voidedAt && (e.authorId === ctx.user.id || canCorrectAll)
+              return (
+                <li key={e.id} className={'wl-entry' + (e.voidedAt ? ' voided' : '')}>
+                  <div className="wl-head">
+                    <span className="mono wl-strike">{dt(e.at)}</span>
+                    <span className="small muted">{authors.get(e.authorId) ?? '–'}</span>
+                    {e.supersedesId && <span className="tag outline">{t('chart.void.correctionTag')}</span>}
+                    {e.voidedAt && <VoidedNote tag={t('chart.void.voidedTag')} detail={t('chart.void.voidedBy', { by: authors.get(e.voidedById ?? '') ?? '–', at: dt(e.voidedAt) }) + (e.voidReason ? ' · ' + e.voidReason : '')} />}
+                    {mayFix && (
+                      <span className="wl-act">
+                        <CorrectWoundEntry
+                          residentId={r.id} entryId={e.id} who={who} when={dt(e.at)}
+                          summary={`${w.bodySite}${e.lengthMm != null ? ` · ${e.lengthMm} × ${e.widthMm ?? '–'} × ${e.depthMm ?? '–'} mm` : ''}${e.pain != null ? ` · NRS ${e.pain}` : ''}`}
+                          values={{ lengthMm: e.lengthMm, widthMm: e.widthMm, depthMm: e.depthMm, pain: e.pain, exudate: e.exudate, tissue: e.tissue, edge: e.edge, description: e.description, treatment: e.treatment, material: e.material }}
+                        />
+                      </span>
+                    )}
+                  </div>
+                  <dl className="wl-body">
+                    <div><dt className="lbl">{t('care.wounds.colMeasure')}</dt><dd className="mono wl-strike">{e.lengthMm != null ? `${e.lengthMm} × ${e.widthMm ?? '–'} × ${e.depthMm ?? '–'} mm` : '–'}</dd></div>
+                    <div><dt className="lbl">{t('care.wounds.colArea')}</dt><dd className="mono wl-strike">{a != null ? `${a} mm²` : '–'}</dd></div>
+                    <div><dt className="lbl">{t('care.wounds.colPain')}</dt><dd className="mono wl-strike">{e.pain != null ? `${e.pain} NRS` : '–'}</dd></div>
+                    <div><dt className="lbl">{t('care.wounds.colNext')}</dt><dd className="mono">{e.nextChange ? `${fmtDayMonth(e.nextChange, locale)} ${hm(e.nextChange)}` : '–'}</dd></div>
+                    <div className="wl-wide">
+                      <dt className="lbl">{t('care.wounds.colFindings')}</dt>
+                      <dd className="small">
+                        <span className="muted">{t('care.wounds.exudateL')}:</span> {keyLabel(t, 'exudate', EXUDATE, e.exudate)} · <span className="muted">{t('care.wounds.tissueL')}:</span> {keyLabel(t, 'tissue', TISSUE, e.tissue)} · <span className="muted">{t('care.wounds.edgeL')}:</span> {keyLabel(t, 'edge', EDGE, e.edge)}
+                        {e.description && <div className="fg2 ws-pre" style={{ marginTop: 2 }}>{e.description}</div>}
+                      </dd>
+                    </div>
+                    <div className="wl-wide">
+                      <dt className="lbl">{t('care.wounds.colTreatment')}</dt>
+                      <dd className="small">{e.treatment ?? '–'}{e.material && <div className="muted">{e.material}</div>}</dd>
+                    </div>
+                    {e.photoIds.length > 0 && (
+                      <div className="wl-wide">
+                        <dt className="lbl">{t('care.wounds.colPhotos')}</dt>
+                        <dd>
+                          {/* Fotos stornierter Einträge (z. B. falsche Person) nicht mehr anzeigen */}
+                          {e.voidedAt ? <span className="small muted">{t('care.wounds.photoHidden', { n: e.photoIds.length })}</span> : (
+                            <div className="thumbs">
+                              {e.photoIds.map((pid) => (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <a key={pid} href={fileUrl(pid)} target="_blank" rel="noopener noreferrer"><img src={fileUrl(pid)} alt={t('care.wounds.photoAlt', { date: fmtDate(e.at, locale) })} loading="lazy" /></a>
+                              ))}
+                            </div>
                           )}
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </li>
+              )
+            })}
+          </ol>
         ) : <Empty title={t('care.wounds.noEntries')} />}
       </section>
     </>

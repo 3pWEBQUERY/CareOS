@@ -46,10 +46,14 @@ Passkeys und Single Sign-on hängen an genau dieser Adresse.
 | Thema | Empfehlung |
 |---|---|
 | Backups | Postgres-Dienst → *Backups* aktivieren (täglich, Aufbewahrung nach Organisationsvorgabe) |
-| Skalierung | Mehrere Replikas möglich: Hintergrundjobs sind über Advisory Locks abgesichert. Login-Rate-Limit ist pro Instanz. |
+| Skalierung | Mehrere Replikas möglich: Hintergrundjobs sind über Advisory Locks abgesichert, Rate-Limits liegen in Postgres (Tabelle `RateLimit`) und gelten über alle Instanzen. |
 | Jobs abschalten | `JOBS_DISABLED=true` in einer Instanz |
 | Updates | Push auf den verbundenen Branch → automatischer Deploy; der Service Worker meldet Nutzenden «Neue Version – Neu laden» |
-| Monitoring | Railway *Observability* (Logs, Metriken); Health Check `/api/health` meldet DB und Speicher |
+| Monitoring | Railway *Observability* (Logs, Metriken). Logs sind JSON-Zeilen (`level`, `msg`, Felder) – in Railway nach `level:error` oder `msg:security.alert` filtern. Health Check `/api/health` meldet Datenbank, Bucket, Jobs, Echtzeit und Push (`503` nur ohne Datenbank). Übersicht unter Admin → Sicherheit → Betrieb |
+| Metriken | `METRICS_TOKEN` setzen, dann `GET /api/metrics` mit `Authorization: Bearer …` (Prometheus-Format, z. B. für Grafana Cloud oder Better Stack) |
+| Fehlererfassung | Serverfehler werden geloggt, je Tag gezählt (Admin → Sicherheit → Betrieb) und optional an `ERROR_WEBHOOK_URL` gesendet (JSON ohne Anfragedaten, z. B. Slack-/Teams-Webhook oder Incident-Tool) |
+| Sicherheit | Content-Security-Policy mit Nonce pro Anfrage. Neue Fremdquellen (z. B. eigenes CDN) über `CSP_IMG_SRC`, `CSP_CONNECT_SRC`, `CSP_FRAME_SRC`, `CSP_MEDIA_SRC` freigeben; für eine vorsichtige Einführung `CSP_REPORT_ONLY=true` (Verstösse erscheinen im Log als `csp.violation`). Audit-Überwachung meldet Auffälligkeiten an Personen mit Zugriff auf das Audit-Protokoll |
+| Bucket-Verschlüsselung | Railway Buckets sind immer verschlüsselt (at rest) und unterstützen den SSE-Header nicht – `S3_SSE` leer lassen. Für andere S3-Anbieter `S3_SSE=AES256` |
 
 ## 6. App auf Geräten installieren (PWA)
 

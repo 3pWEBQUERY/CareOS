@@ -14,8 +14,8 @@ export async function NotificationSection() {
   // Sicherheitsalarme nur für Personen mit Zugriff auf das Audit-Protokoll
   const cats = NOTIFY_CATEGORIES.filter((c) => c !== 'security' || ctx.can('admin.audit'))
   return (
-    <section className="card" aria-labelledby="p-notify" id="p-notify">
-      <div className="card-head"><h2 id="p-notify">{t('platform.notifications.title')}</h2></div>
+    <section className="card" aria-labelledby="p-notify-h" id="p-notify">
+      <div className="card-head"><h2 id="p-notify-h">{t('platform.notifications.title')}</h2></div>
       <div className="card-body">
         <ActionForm action={saveNotificationPrefsAction} success="platform.notifications.saved" reset={false}>
           <p className="small fg2" style={{ margin: 0 }}>{t('platform.notifications.hint')}</p>
@@ -31,6 +31,7 @@ export async function NotificationSection() {
                   return (
                     <tr key={c}>
                       <th scope="row" style={{ fontWeight: 400 }}>
+                        <input type="hidden" name="cats" value={c} />
                         <div>{kind}</div>
                         <div className="small muted">{t('platform.notifications.categoryHints.' + c)}</div>
                       </th>

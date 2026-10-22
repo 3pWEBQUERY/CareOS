@@ -45,5 +45,19 @@ if (args.demo) {
     '',
   )
 }
+lines.push(
+  '# Betrieb (PRD §38, §66): Metrik-Endpunkt /api/metrics (Bearer-Token); leer = abgeschaltet',
+  `METRICS_TOKEN=${randomBytes(24).toString('base64url')}`,
+  '# Optional: Serverfehler zusätzlich als JSON an einen Webhook (Slack, Teams, Incident-Tool)',
+  '# ERROR_WEBHOOK_URL=',
+  '# Optional: LOG_LEVEL=info (debug | info | warn | error)',
+  '# Optional: Content-Security-Policy nur melden statt blockieren (Einführung) bzw. zusätzliche Quellen',
+  '# CSP_REPORT_ONLY=false',
+  '# CSP_IMG_SRC=',
+  '# CSP_CONNECT_SRC=',
+  '# Bucket: Railway verschlüsselt immer und unterstützt keinen SSE-Header; S3_SSE=AES256 nur für andere S3-Anbieter',
+  '# S3_SSE=',
+  '',
+)
 lines.push('# Optional: CareOS AI', '# ANTHROPIC_API_KEY=', '# AI_MODEL=claude-opus-5-5', '', '# Optional: Single Sign-on (OpenID Connect)', '# OIDC_ISSUER=', '# OIDC_CLIENT_ID=', '# OIDC_CLIENT_SECRET=', '# OIDC_LABEL=Mit Microsoft anmelden')
 console.log(lines.join('\n'))

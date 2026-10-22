@@ -32,10 +32,12 @@ Authorization: Bearer cos_…
 | `observations:write` | `POST /api/v1/observations` |
 | `events:read` | `GET /api/v1/events` |
 | `fhir:read` | alle Ressourcen unter `/api/fhir` |
+| `labs:write` | `POST /api/v1/labs` (Laborbefunde, Schnittstelle vorbereitet) |
 
 ### Rate Limits und Fehler
 
-- 600 Anfragen pro Minute und Token; 30 fehlgeschlagene Anmeldungen pro Minute und IP. Bei Überschreitung `429` mit `Retry-After`.
+- 600 Anfragen pro Minute und Token; 30 fehlgeschlagene Anmeldungen pro Minute und IP. Bei Überschreitung `429` mit `Retry-After`. Die Zähler liegen in Postgres und gelten über alle Instanzen.
+- Gehäufte fehlgeschlagene API-Anmeldungen lösen einen Sicherheitsalarm aus (Admin → Sicherheit).
 - Fehlerformat REST: `{ "error": { "code": "…", "message": "…" } }`
 
 | Status | code | Bedeutung |
@@ -123,6 +125,21 @@ Löst `task.completed` aus. Bereits abgeschlossene Aufgaben → `409`.
 ```
 
 `text` oder mindestens ein Vitalwert ist Pflicht. Werte ausserhalb der Plausibilitätsgrenzen → `422`. Die Antwort enthält bei Vitalwerten `abnormal` (Parameter ausserhalb der Grenzwerte der Organisation bzw. der Person). Events: `observation.created`, `vitals.recorded`, ggf. `vitals.abnormal`.
+
+### Laborbefunde (Schnittstelle vorbereitet)
+
+`POST /api/v1/labs` – Befunde eines Labors übernehmen (PRD §40). Zuordnung über die CareOS-Kennung (`residentId`) oder die Versichertennummer (`insuranceNo`). Befunde mit bereits übernommener `externalId` werden übersprungen; Korrekturen des Labors kommen als neuer Befund. Die Beurteilung (`flag`) wird, falls nicht angegeben, aus dem Referenzbereich abgeleitet.
+
+```json
+{
+  "results": [
+    { "residentId": "cmv…", "externalId": "L-2026-0042", "code": "2951-2", "name": "Natrium", "value": "131", "unit": "mmol/l",
+      "refRange": "135-145", "flag": "low", "collectedAt": "2026-10-22T07:30:00+02:00" }
+  ]
+}
+```
+
+Antwort `201`: `{ "data": { "imported": 1, "skipped": 0, "runId": "…" } }`. Jeder Aufruf erscheint unter **Admin → Integrationen → Schnittstellen → Letzte Läufe** (nur Zählwerte) und im Audit-Protokoll (`api.labs.import`). Ist eine Integration der Art «Labor» aktiv, wird der Lauf ihr zugeordnet. Höchstens 500 Befunde pro Aufruf.
 
 ### Domain Events (Polling)
 
@@ -228,3 +245,12 @@ def verify(raw_body: bytes, header: str, secret: str) -> bool:
 ## Datenexport
 
 **Admin → Integrationen und API → Datenexport** (Berechtigung `admin.org`) lädt die gesamte Organisation als JSON herunter (`/admin/export`, Format `careos-export` v1): Struktur, Konfiguration, Mitarbeitende ohne Zugangsdaten und alle Daten der Bewohnenden (PRD §36, Datenportabilität). Nicht enthalten sind Passwort-Hashes, MFA-Geheimnisse, Passkeys, Sitzungen, Token-Hashes und Webhook-Secrets. Jeder Export wird im Audit-Protokoll vermerkt. Das Audit-Protokoll selbst ist als CSV unter **Admin → Audit-Protokoll** exportierbar.
+
+## Betrieb: Health Check und Metriken
+
+| Endpunkt | Schutz | Inhalt |
+|---|---|---|
+| `GET /api/health` | öffentlich | `status` (`ok` · `degraded` · `error`), Zustand von Datenbank, Bucket (`HeadBucket`, 60 s zwischengespeichert), Hintergrundjobs (`ok` · `stale` · `failing` · `pending` · `disabled`), Echtzeit und Push. `503` nur ohne Datenbank, damit Railway Deploys bei Bucket-Störungen nicht blockiert. Keine Fehlermeldungen oder Kennungen. |
+| `GET /api/metrics` | `Authorization: Bearer <METRICS_TOKEN>`; ohne gesetztes `METRICS_TOKEN` abgeschaltet (`404`) | Prometheus-Textformat: Erreichbarkeit, DB-Latenz, Jobs (`careos_job_ok`, `careos_job_last_run_age_seconds`), aktive Sitzungen, offene Sicherheitsalarme, Serverfehler 24 h, Benachrichtigungen, Domain Events, offene Offline-Vorgänge, neue Rückmeldungen sowie Prozesszähler dieser Instanz (`careos_server_errors_total`, `careos_csp_violations_total`, `careos_notifications_total{category,mode}`, `careos_push_sent_total` …). Nur Summen, keine Personendaten. |
+| `POST /api/csp-report` | öffentlich, je IP begrenzt | Empfängt CSP-Verstossberichte des Browsers (`report-uri`/`report-to`) und schreibt Richtlinie, blockierte Herkunft und Routenmuster ins Log. |
+

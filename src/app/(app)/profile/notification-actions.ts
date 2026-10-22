@@ -13,8 +13,10 @@ export async function saveNotificationPrefsAction(form: FormData): Promise<Actio
     const ctx = await getCtx()
     const current = await db.user.findUniqueOrThrow({ where: { id: ctx.user.id }, select: { notificationPrefs: true } })
     const before = normalizePrefs(current.notificationPrefs)
+    const shown = new Set(form.getAll('cats').map(String))
     const next = normalizePrefs({
-      kinds: Object.fromEntries(NOTIFY_CATEGORIES.map((c) => [c, { app: LOCKED_IN_APP.includes(c) || form.get('app.' + c) === 'on', push: form.get('push.' + c) === 'on' }])),
+      // Nur angezeigte Arten übernehmen; andere (z. B. Sicherheit ohne Berechtigung) behalten ihren Wert.
+      kinds: Object.fromEntries(NOTIFY_CATEGORIES.map((c) => [c, shown.has(c) ? { app: LOCKED_IN_APP.includes(c) || form.get('app.' + c) === 'on', push: form.get('push.' + c) === 'on' } : before.kinds[c]])),
       quietOffDuty: form.get('quietOffDuty') === 'on',
     })
     await db.user.update({ where: { id: ctx.user.id }, data: { notificationPrefs: next as unknown as Prisma.InputJsonValue } })
