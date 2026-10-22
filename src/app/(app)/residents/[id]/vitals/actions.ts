@@ -10,10 +10,15 @@ import { fmtNum } from '@/lib/time'
 import { abnormalKeys, mergeLimits, VITALS, VITAL_KEYS, type VitalKey, type VitalRow } from '@/lib/vitals'
 import { actionResident, residentName } from '../../_lib/resident'
 import { AlreadyVoided, correctionSchema, mayCorrect, voidData } from '../../_lib/correction'
-import type { TFn } from '@/i18n/core'
+import type { Locale, TFn } from '@/i18n/core'
+import type { Prisma } from '@prisma/client'
+import { customFlag, customVitals, parseCustom, readExtra, type CustomVital } from '@/lib/vitals-custom'
 
-/** Werte aus dem Formular: Plausibilität (Fehler am Feld), Blutdruck nur paarweise und sys > dia. */
-function parseVitals(form: FormData, t: TFn): { row: VitalRow } | { error: { ok: false; error: string; field?: string } } {
+/**
+ * Werte aus dem Formular: Plausibilität (Fehler am Feld), Blutdruck nur paarweise und sys > dia,
+ * dazu organisationseigene Parameter (Felder x_<key>, gespeichert in VitalSign.extra).
+ */
+function parseVitals(form: FormData, t: TFn, defs: CustomVital[] = []): { row: VitalRow; extra: Record<string, number> } | { error: { ok: false; error: string; field?: string } } {
   const row: VitalRow = {}
   for (const k of VITAL_KEYS) {
     const v = fdNum(form, k)
@@ -26,9 +31,15 @@ function parseVitals(form: FormData, t: TFn): { row: VitalRow } | { error: { ok:
   }
   if ((row.sys == null) !== (row.dia == null)) return { error: { ok: false, error: 'chart.vitals.errors.bpPair', field: row.sys == null ? 'sys' : 'dia' } }
   if (row.sys != null && row.dia != null && row.dia >= row.sys) return { error: { ok: false, error: 'chart.vitals.errors.bpOrder', field: 'dia' } }
-  if (!Object.keys(row).length) return { error: { ok: false, error: 'chart.vitals.errors.none' } }
-  return { row }
+  const c = parseCustom((n) => fd(form, n), defs)
+  if ('error' in c) return { error: { ok: false, field: c.error.key, error: t('chart.vitals.errors.implausible', { label: c.error.def.label, value: c.error.raw, min: c.error.def.min, max: c.error.def.max, unit: c.error.def.unit }) } }
+  if (!Object.keys(row).length && !Object.keys(c.values).length) return { error: { ok: false, error: 'chart.vitals.errors.none' } }
+  return { row, extra: c.values }
 }
+
+/** Auffällige eigene Parameter als Text für die Benachrichtigung. */
+const customAbnormal = (defs: CustomVital[], extra: Record<string, number>, locale: Locale) =>
+  defs.filter((d) => customFlag(d, extra[d.key])).map((d) => `${d.label} ${fmtNum(extra[d.key], d.dec, locale)} ${d.unit}`.trim())
 
 const vitalData = (row: VitalRow) => ({
   sys: row.sys as number | undefined, dia: row.dia as number | undefined, pulse: row.pulse as number | undefined,
@@ -41,18 +52,20 @@ export async function recordVitals(residentId: string, form: FormData): Promise<
   return run(async () => {
     const { ctx, r } = await actionResident(residentId, 'resident.vitals.write')
     const { t, locale } = ctx
-    const parsed = parseVitals(form, t)
+    const defs = customVitals(ctx.org.settings)
+    const parsed = parseVitals(form, t, defs)
     if ('error' in parsed) return parsed.error
-    const { row } = parsed
+    const { row, extra } = parsed
     const note = fd(form, 'note').slice(0, 500) || null
 
-    const v = await db.vitalSign.create({ data: { residentId: r.id, recordedById: ctx.user.id, note, ...vitalData(row) } })
+    const v = await db.vitalSign.create({ data: { residentId: r.id, recordedById: ctx.user.id, note, ...vitalData(row), ...(Object.keys(extra).length ? { extra: extra as Prisma.InputJsonValue } : {}) } })
     const limits = mergeLimits(await db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }), r.id)
     const ab = abnormalKeys(row, limits)
-    await audit(ctx, { action: 'vitals.create', entityType: 'VitalSign', entityId: v.id, after: { ...row, note }, context: { residentId: r.id, abnormal: ab } })
+    const cab = customAbnormal(defs, extra, locale)
+    await audit(ctx, { action: 'vitals.create', entityType: 'VitalSign', entityId: v.id, after: { ...row, ...(Object.keys(extra).length ? { extra } : {}), note }, context: { residentId: r.id, abnormal: ab } })
     await emit({ orgId: ctx.org.id, type: 'vitals.recorded', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { vitalId: v.id } })
-    if (ab.length) {
-      const text = ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(row[k] as number, VITALS[k].dec, locale)} ${VITALS[k].unit}`).join(', ')
+    if (ab.length || cab.length) {
+      const text = [...ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(row[k] as number, VITALS[k].dec, locale)} ${VITALS[k].unit}`), ...cab].join(', ')
       await emit({ orgId: ctx.org.id, type: 'vitals.abnormal', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { vitalId: v.id, keys: ab } })
       const users = (await usersWithPermission(ctx.org.id, 'resident.read', r.unitId)).filter((u) => u !== ctx.user.id)
       await notify({
@@ -62,7 +75,7 @@ export async function recordVitals(residentId: string, form: FormData): Promise<
       })
     }
     refresh()
-    return { ok: true, data: { abnormal: ab.length } }
+    return { ok: true, data: { abnormal: ab.length + cab.length } }
   })
 }
 
@@ -122,13 +135,15 @@ export async function correctVitals(residentId: string, vitalId: string, form: F
     const before = Object.fromEntries(VITAL_KEYS.filter((k) => old[k] != null).map((k) => [k, old[k]]))
 
     let row: VitalRow | null = null
+    let extra: Record<string, number> = {}
     let note: string | null = null
     if (mode === 'correct') {
-      const parsed = parseVitals(form, t)
+      const parsed = parseVitals(form, t, customVitals(ctx.org.settings))
       if ('error' in parsed) return parsed.error
       row = parsed.row
+      extra = parsed.extra
       note = fd(form, 'note').slice(0, 500) || null
-      const same = VITAL_KEYS.every((k) => (row![k] ?? null) === (old[k] ?? null)) && note === old.note
+      const same = VITAL_KEYS.every((k) => (row![k] ?? null) === (old[k] ?? null)) && note === old.note && JSON.stringify(extra) === JSON.stringify(readExtra(old.extra))
       if (same) return { ok: false, error: 'chart.void.errors.unchanged' }
     }
 
@@ -139,7 +154,7 @@ export async function correctVitals(residentId: string, vitalId: string, form: F
         const res = await tx.vitalSign.updateMany({ where: { id: old.id, voidedAt: null }, data: voidData(ctx, reason, now) })
         if (res.count !== 1) throw new AlreadyVoided()
         if (!row) return null
-        return tx.vitalSign.create({ data: { residentId: r.id, at: old.at, recordedById: ctx.user.id, note, supersedesId: old.id, ...vitalData(row) }, select: { id: true } })
+        return tx.vitalSign.create({ data: { residentId: r.id, at: old.at, recordedById: ctx.user.id, note, supersedesId: old.id, ...vitalData(row), ...(Object.keys(extra).length ? { extra: extra as Prisma.InputJsonValue } : {}) }, select: { id: true } })
       })
     } catch (e) {
       if (e instanceof AlreadyVoided) return { ok: false, error: 'chart.void.errors.already' }
@@ -150,8 +165,8 @@ export async function correctVitals(residentId: string, vitalId: string, form: F
     const ab = row ? abnormalKeys(row, limits) : []
     await audit(ctx, {
       action: created ? 'vitals.correct' : 'vitals.void', entityType: 'VitalSign', entityId: old.id,
-      before: { ...before, note: old.note, at: old.at, recordedById: old.recordedById },
-      after: { voided: true, reason, ...(created ? { correctionId: created.id, ...row, note } : {}) },
+      before: { ...before, ...(old.extra ? { extra: old.extra } : {}), note: old.note, at: old.at, recordedById: old.recordedById },
+      after: { voided: true, reason, ...(created ? { correctionId: created.id, ...row, ...(Object.keys(extra).length ? { extra } : {}), note } : {}) },
       context: { residentId: r.id, abnormal: ab },
     })
     await emit({ orgId: ctx.org.id, type: 'vitals.corrected', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { vitalId: old.id, correctionId: created?.id ?? null } })

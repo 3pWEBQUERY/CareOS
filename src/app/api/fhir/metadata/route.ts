@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     publisher: 'CareOS',
     kind: 'instance',
     software: { name: 'CareOS', version: '1.0' },
-    implementation: { description: 'CareOS FHIR R4 (read-only)', url: fhirBase(req) },
+    implementation: { description: 'CareOS FHIR R4 (lesend; Observation Vitalparameter auch schreibend)', url: fhirBase(req) },
     fhirVersion: '4.0.1',
     format: ['application/fhir+json'],
     rest: [
@@ -28,8 +28,8 @@ export async function GET(req: Request) {
           },
           {
             type: 'Observation', profile: 'http://hl7.org/fhir/StructureDefinition/vitalsigns',
-            interaction: [{ code: 'read' }, { code: 'search-type' }],
-            searchParam: [search('patient', 'reference'), search('subject', 'reference'), search('code', 'token', 'LOINC: 8480-6, 8462-4, 8867-4, 8310-5, 59408-5, 2339-0, 29463-7, 9279-1'), search('category', 'token', 'vital-signs'), search('date', 'date', 'ge/le/gt/lt prefixes'), search('_count', 'number')],
+            interaction: [{ code: 'read' }, { code: 'search-type' }, { code: 'create', documentation: 'Scope observations:write. LOINC 8867-4, 8310-5, 59408-5, 2339-0, 29463-7, 9279-1, 72514-3 oder Blutdruck-Panel 85354-9; UCUM-Einheiten.' }],
+            searchParam: [search('patient', 'reference'), search('subject', 'reference'), search('code', 'token', 'LOINC: 8480-6, 8462-4, 8867-4, 8310-5, 59408-5, 2339-0, 29463-7, 9279-1, 72514-3'), search('category', 'token', 'vital-signs'), search('date', 'date', 'ge/le/gt/lt prefixes'), search('_count', 'number')],
           },
           {
             type: 'MedicationStatement', interaction: [{ code: 'search-type' }],

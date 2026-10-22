@@ -29,7 +29,7 @@ export async function admitResident(form: FormData): Promise<ActionResult<{ id: 
     if (!p.ok) return p
     if (p.data.roomId && !(await roomFree(p.data.roomId, unit.id))) return { ok: false, error: 'residents.form.errors.roomTaken', field: 'roomId' }
     const r = await db.resident.create({
-      data: { ...p.data, orgId: ctx.org.id, unitId: unit.id, status: 'active', nutrition: { create: {} } },
+      data: { ...p.data, orgId: ctx.org.id, unitId: unit.id, status: 'active', nutrition: { create: {} }, episodes: { create: { start: new Date(), reason: ctx.t('residents.history.admitted') } } },
     })
     await audit(ctx, { action: 'resident.create', entityType: 'Resident', entityId: r.id, after: { ...p.data, unitId: unit.id }, context: { residentId: r.id } })
     await emit({ orgId: ctx.org.id, type: 'resident.updated', unitId: unit.id, residentId: r.id, actorId: ctx.user.id, payload: { created: true } })
@@ -106,6 +106,8 @@ export async function updateResident(residentId: string, form: FormData): Promis
     // Zwei gleichzeitige Speichervorgänge: nur der erste gewinnt, der zweite erhält den Konflikthinweis beim nächsten Versuch
     const res = await db.resident.updateMany({ where: { id: r.id, updatedAt: r.updatedAt }, data: next })
     if (res.count !== 1) { refresh(); return { ok: false, error: 'residents.conflict.retry' } }
+    // Austritt schliesst den laufenden Aufenthalt (Pflegeepisode)
+    if (leaving && next.dischargedAt) await db.careEpisode.updateMany({ where: { residentId: r.id, end: null }, data: { end: next.dischargedAt } })
     await audit(ctx, { action: 'resident.update', entityType: 'Resident', entityId: r.id, before, after, context: { residentId: r.id } })
     await emit({ orgId: ctx.org.id, type: 'resident.updated', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { fields: Object.keys(after) } })
     if ('status' in after) invalidateTaskGeneration(r.unitId)

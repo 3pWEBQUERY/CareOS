@@ -12,6 +12,11 @@ export default defineMessages({
       note: 'Verlaufseintrag',
       noteSaved: 'Eintrag gespeichert',
       woundAssess: 'Beurteilung erfassen',
+      done: 'Erledigt',
+      doneNow: 'soeben',
+      reopen: 'Wieder öffnen',
+      overdue: 'überfällig',
+      toDay: 'Teilweise oder nicht durchgeführt: im Tagesplan begründen',
     },
     dictation: {
       hintBrowser: 'Diktat über die Spracherkennung des Browsers. Text wird erst nach Ihrer Prüfung gespeichert.',
@@ -302,13 +307,18 @@ export default defineMessages({
   fr: {
     bedside: {
       identity: 'Vérifier l’identité',
-      born: 'naissance : {date} ({age} ans)',
+      born: 'née/né le {date} ({age} ans)',
       now: 'Maintenant',
       nowHint: 'Mesures ouvertes dans les 2 prochaines heures',
       nothingNow: 'Aucune mesure dans les 2 prochaines heures.',
       note: 'Entrée au suivi',
       noteSaved: 'Entrée enregistrée',
       woundAssess: 'Saisir une évaluation',
+      done: 'Effectué',
+      doneNow: 'à l’instant',
+      reopen: 'Rouvrir',
+      overdue: 'en retard',
+      toDay: 'Partiellement ou non effectué : motiver dans le plan du jour',
     },
     dictation: {
       hintBrowser: 'Dictée via la reconnaissance vocale du navigateur. Le texte n’est enregistré qu’après votre vérification.',
@@ -599,13 +609,18 @@ export default defineMessages({
   it: {
     bedside: {
       identity: 'Verificare l’identità',
-      born: 'nascita: {date} ({age} anni)',
+      born: 'nata/o il {date} ({age} anni)',
       now: 'Adesso',
       nowHint: 'Misure aperte entro 2 ore',
       nothingNow: 'Nessuna misura nelle prossime 2 ore.',
       note: 'Registrazione nel decorso',
       noteSaved: 'Registrazione salvata',
       woundAssess: 'Registrare la valutazione',
+      done: 'Eseguito',
+      doneNow: 'ora',
+      reopen: 'Riaprire',
+      overdue: 'in ritardo',
+      toDay: 'Parzialmente o non eseguito: motivare nel piano giornaliero',
     },
     dictation: {
       hintBrowser: 'Dettatura tramite il riconoscimento vocale del browser. Il testo viene salvato solo dopo la sua verifica.',
@@ -903,6 +918,11 @@ export default defineMessages({
       note: 'Progress note',
       noteSaved: 'Note saved',
       woundAssess: 'Record assessment',
+      done: 'Done',
+      doneNow: 'just now',
+      reopen: 'Reopen',
+      overdue: 'overdue',
+      toDay: 'Partly or not done: give the reason in the day plan',
     },
     dictation: {
       hintBrowser: 'Dictation via the browser’s speech recognition. Text is only saved after you have checked it.',

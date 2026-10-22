@@ -10,7 +10,7 @@ import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
 import { FormEntry } from '@/components/forms/FormEntry'
 import { pageResident, residentName, residentTitle, taskCategory, userNames } from '../../_lib/resident'
 import { focusFor } from '../../_lib/focus'
-import { DayPlan, type DayTask } from '../day/DayPlan'
+import { BedsideTasks, type BedsideTask } from './BedsideTasks'
 import { VitalForm } from '../vitals/VitalForm'
 import { BedsideNote } from './BedsideNote'
 
@@ -39,12 +39,12 @@ export default async function BedsidePage({ params }: { params: Promise<{ id: st
   const soon = addMinutes(now, 120)
   const relevant = tasks.filter((k) => (['planned', 'ready', 'in_progress', 'escalated'].includes(k.status) && k.dueAt <= soon) || (k.completedAt && k.completedAt >= addMinutes(now, -60)))
   const names = await userNames(ctx, relevant.map((k) => k.completedById))
-  const rows: DayTask[] = relevant.map((k) => {
+  const rows: BedsideTask[] = relevant.map((k) => {
     const cat = taskCategory(t, k.category)
+    const done = ['done', 'partial', 'skipped'].includes(k.status)
     return {
-      id: k.id, time: hm(k.dueAt), due: k.dueAt.toISOString(), title: taskTitle(t, k), description: k.description, category: cat.label, tone: cat.tone,
-      min: k.durationMin, status: k.status, view: taskView(k, now), source: k.source, at: k.completedAt ? hm(k.completedAt) : null,
-      by: k.completedById ? names.get(k.completedById)?.short ?? null : null, note: k.note,
+      id: k.id, time: hm(k.dueAt), title: taskTitle(t, k), category: cat.label, tone: cat.tone, over: !done && taskView(k, now) === 'over', now: !done && k.dueAt <= addMinutes(now, 30), done,
+      doneLabel: done ? `${t('chart.day.statusText.' + k.status)} ${k.completedAt ? hm(k.completedAt) : ''} · ${k.completedById ? names.get(k.completedById)?.short ?? '' : ''}` : null,
     }
   })
   const limits = mergeLimits(limitRows, r.id)
@@ -79,7 +79,7 @@ export default async function BedsidePage({ params }: { params: Promise<{ id: st
         <section className="bedside-col" aria-labelledby="bs-now">
           <div className="sec-head"><h2 className="sec" id="bs-now">{t('chart.bedside.now')}</h2><span className="small muted">{t('chart.bedside.nowHint')}</span></div>
           {rows.length ? (
-            <DayPlan residentId={r.id} who={who} tasks={rows} dateLabel={fmtDayMonth(now, locale)} canComplete={can('task.complete')} canManage={false} now={now.toISOString()} me={`${ctx.user.firstName.charAt(0)}. ${ctx.user.lastName}`} categories={[]} />
+            <BedsideTasks residentId={r.id} who={who} tasks={rows} canComplete={can('task.complete')} />
           ) : <p className="empty">{t('chart.bedside.nothingNow')}</p>}
           {wounds.length > 0 && (
             <>

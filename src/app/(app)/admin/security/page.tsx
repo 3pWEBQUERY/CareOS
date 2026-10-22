@@ -36,7 +36,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
       <nav className="tabs" aria-label={t('platform.security.title')}>
         {TABS.map((k) => <Link key={k} href={`/admin/security?tab=${k}`} aria-current={tab === k ? 'page' : undefined}>{t('platform.security.tabs.' + k)}</Link>)}
       </nav>
-      <div className="scroll">
+      <div className="scroll" data-scroll>
         <div className="tabpanel">
           {tab === 'alerts' && <Alerts ctx={ctx} all={sp.show === 'all'} focus={sp.alert} />}
           {tab === 'incidents' && <Incidents ctx={ctx} />}

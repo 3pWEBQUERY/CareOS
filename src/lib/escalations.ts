@@ -75,7 +75,7 @@ async function escalateTasks(org: { id: string; settings: unknown }, now: Date, 
       orgId: org.id, userIds: users, priority: 'critical', kind: 'task.escalated',
       titleKey: 'admin.escalation.notify.tasksTitle', bodyKey: 'admin.escalation.notify.tasksBody',
       vars: { n: g.items.length, unit: g.unit, list: g.items.slice(0, 6).join(' · ') + (g.items.length > 6 ? ' …' : '') },
-      href: '/tasks', groupKey: 'task-esc-unit:' + unitId,
+      href: '/tasks', groupKey: 'task-esc-unit:' + unitId, unitId, // Bereich für dienstbewusste Zustellung
     })
   }
 }
@@ -123,7 +123,7 @@ async function escalateHandovers(org: { id: string; settings: unknown }, now: Da
       orgId: org.id, userIds: users, priority: 'action', kind: 'handover.unacked',
       titleKey: 'admin.escalation.notify.handoverTitle', bodyKey: 'admin.escalation.notify.handoverBody',
       vars: { n: g.items.length, unit: g.unit, list: g.items.slice(0, 6).join(' · '), min: p.unackedImportantHandoverMinutes },
-      href: '/handover', groupKey: 'handover-esc:' + unitId,
+      href: '/handover', groupKey: 'handover-esc:' + unitId, unitId,
     })
   }
 }
@@ -162,7 +162,7 @@ async function forwardEvents(orgs: { id: string; settings: unknown }[], cursor: 
       await notifyT({
         orgId: org.id, userIds: users, priority: 'critical', kind: 'incident.severe',
         titleKey: 'admin.escalation.notify.incidentTitle', bodyKey: 'admin.escalation.notify.incidentBody', vars: { unit: unit?.name ?? '' },
-        href: `/quality/${payload.incidentId}`, groupKey: 'incident-esc:' + payload.incidentId,
+        href: `/quality/${payload.incidentId}`, groupKey: 'incident-esc:' + payload.incidentId, unitId: ev.unitId,
       })
     }
   }

@@ -2,6 +2,7 @@ import 'server-only'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { overdueCount } from '@/lib/tasks'
+import { approvalCount } from '@/lib/careplan-review'
 import { runningShift, shiftTypes } from '@/lib/shift'
 import { addDays, dbDate, fmtNum, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
@@ -99,10 +100,8 @@ export async function leadDecisions(ctx: Ctx, unitIds: string[], now: Date) {
   const [absences, swaps, drafts] = await Promise.all([
     canSchedule ? db.absence.count({ where: { userId: { in: staffIds }, status: 'requested' } }) : 0,
     canSchedule ? db.swapRequest.count({ where: { status: 'requested', acceptedAt: { not: null }, shift: { unitId: { in: unitIds }, status: 'swap_requested' } } }) : 0,
-    canApprove ? db.carePlan.findMany({ where: { status: 'draft', resident: { orgId: ctx.org.id, unitId: { in: unitIds }, status: { in: ['active', 'absent'] } } }, select: { id: true } }) : [],
+    // Gleiche Zählung wie die Freigabeliste /tasks/approvals (nach Einreichung weiter bearbeitet = wieder Entwurf)
+    canApprove ? approvalCount(ctx, unitIds.filter((u) => ctx.can('resident.careplan.approve', { unitId: u, locationId: ctx.units.find((x) => x.id === u)?.locationId }))) : 0,
   ])
-  const submitted = drafts.length
-    ? await db.auditLog.findMany({ where: { orgId: ctx.org.id, entityType: 'CarePlan', entityId: { in: drafts.map((d) => d.id) }, action: 'careplan.submit' }, select: { entityId: true }, distinct: ['entityId'] })
-    : []
-  return { canSchedule, canApprove, absences, swaps, plans: submitted.length }
+  return { canSchedule, canApprove, absences, swaps, plans: drafts }
 }

@@ -2024,3 +2024,31 @@ img.pav { background: var(--sunken) }
   .bedside { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
   .bedside-id, .bedside-wide { grid-column: 1 / -1 }
 }
+.workspace:has(.bedside) { grid-template-columns: minmax(0, 1fr) }
+.workspace:has(.bedside) > aside, .workspace:has(.bedside) > .ws-list-toggle { display: none }
+.bedside-tasks { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.bedside-tasks > li { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); min-height: 64px }
+.bedside-tasks > li:last-child { border-bottom: 0; min-height: 0 }
+.bedside-tasks .bt-time { flex: none; width: 3.25rem }
+.bedside-tasks .bt-main { flex: 1; min-width: 0 }
+.bedside-tasks .bt-title { font-weight: 500; overflow-wrap: anywhere }
+.bedside-tasks li.is-over .bt-time { color: var(--crit) }
+.bedside-tasks li.is-done .bt-title { color: var(--fg-3) }
+.bedside-tasks .btn.lg { flex: none; min-width: 8.5rem }
+@media (max-width: 720px) { .bedside-tasks > li { flex-wrap: wrap } .bedside-tasks .btn.lg { width: 100% } }
+
+/* ── Felder: Select mit demselben Pfeil wie Combobox (IconChevron, 16 px, --fg-2), Vitalwert-Raster ohne Springen ── */
+:root { --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%2345555E' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.5 7.5 10 13 4.5 7.5'/%3E%3C/svg%3E") }
+:root[data-theme="dark"] { --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%23A8B5BC' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.5 7.5 10 13 4.5 7.5'/%3E%3C/svg%3E") }
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] { --select-chev: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 20 20' fill='none' stroke='%23A8B5BC' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15.5 7.5 10 13 4.5 7.5'/%3E%3C/svg%3E") }
+}
+select.field, select.field:focus { appearance: none; -webkit-appearance: none; padding-right: 32px; background-image: var(--select-chev); background-repeat: no-repeat; background-position: right 8px center; background-size: 16px 16px }
+select.field::-ms-expand { display: none }
+@media (forced-colors: active) { select.field { appearance: auto; -webkit-appearance: auto; background-image: none } }
+/* Vitalwert-Raster (.vform): Label, Feld und Meldung als Zeilen eines Subgrids – eine Warnung unter einem Feld
+   verschiebt die Felder derselben Rasterzeile nicht mehr (vorher align-items: end). */
+.vform > .fld { display: grid; grid-row: span 3; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); row-gap: 4px; align-content: start }
+.vform > .fld > * { grid-column: 1; grid-row: 2; min-width: 0 }
+.vform > .fld > .lbl { grid-row: 1; align-self: end }
+.vform > .fld > :is(.fld-warn, .fld-hint, .fld-err, .fld-slot, .hint, .err) { grid-row: 3; align-self: start }

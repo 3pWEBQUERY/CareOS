@@ -1,4 +1,5 @@
 import 'server-only'
+import { customVitals, parseCustom } from '@/lib/vitals-custom'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { audit } from '@/lib/audit'
@@ -97,7 +98,10 @@ async function applyOne(ctx: Ctx, op: OfflineOp, at: Date, now: Date): Promise<O
     }
 
     case 'vitals': {
-      const v = validateVitals(op.data.values)
+      // Eigene Parameter gegen die aktuelle Organisationsdefinition prüfen (PRD §45)
+      const custom = op.data.extra && Object.keys(op.data.extra).length ? parseCustom((n) => (n.startsWith('x_') && op.data.extra![n.slice(2)] != null ? String(op.data.extra![n.slice(2)]) : ''), customVitals(ctx.org.settings)) : { values: {} as Record<string, number> }
+      if ('error' in custom) return { id: op.id, status: 'conflict', reason: 'implausible' }
+      const v = Object.keys(op.data.values).length || !Object.keys(custom.values).length ? validateVitals(op.data.values) : { row: {} }
       if ('reason' in v) return { id: op.id, status: 'conflict', reason: v.reason }
       const row = v.row
       const note = [op.data.note?.trim().slice(0, 450), marker].filter(Boolean).join(' · ')
@@ -107,6 +111,7 @@ async function applyOne(ctx: Ctx, op: OfflineOp, at: Date, now: Date): Promise<O
           sys: row.sys as number | undefined, dia: row.dia as number | undefined, pulse: row.pulse as number | undefined,
           temp: row.temp, spo2: row.spo2 as number | undefined, glucose: row.glucose, weight: row.weight,
           pain: row.pain as number | undefined, respRate: row.respRate as number | undefined,
+          ...(Object.keys(custom.values).length ? { extra: custom.values } : {}),
         },
       })
       const limits = mergeLimits(await db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }), r.id)

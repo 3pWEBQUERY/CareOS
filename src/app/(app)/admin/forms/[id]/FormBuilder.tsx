@@ -8,7 +8,7 @@ import { useUnsavedGuard } from '@/components/admin/ui'
 import { FormFields, type RawValues } from '@/components/forms/FormFields'
 import { FORM_FIELD_TYPES, FORM_LIMITS, fieldKey, normalizeFields, validateFormValues, type FieldError, type FormField, type FormFieldType } from '@/lib/forms'
 import { saveFormAction } from '../actions'
-import { Checkbox, Select, TextField, Textarea } from '@/components/ui/fields'
+import { Checkbox, NumberField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 const CATEGORIES = ['care', 'observation', 'physician', 'relatives', 'incident', 'handover'] as const
 
@@ -191,8 +191,8 @@ export function FormBuilder({ initial }: { initial: Initial }) {
                       )}
                       {hasRange && (
                         <>
-                          <TextField label={t('forms.admin.min')} inputMode="decimal" value={f.min} onChange={(e) => set(i, { min: e.target.value })} className="mono" />
-                          <TextField label={t('forms.admin.max')} inputMode="decimal" value={f.max} onChange={(e) => set(i, { max: e.target.value })} className="mono" />
+                          <NumberField label={t('forms.admin.min')} value={f.min === '' ? '' : Number(f.min)} max={f.max === '' ? undefined : Number(f.max)} onChange={(v) => set(i, { min: v === '' ? '' : String(v) })} />
+                          <NumberField label={t('forms.admin.max')} value={f.max === '' ? '' : Number(f.max)} min={f.min === '' ? undefined : Number(f.min)} onChange={(v) => set(i, { max: v === '' ? '' : String(v) })} />
                         </>
                       )}
                       {hasUnit && (

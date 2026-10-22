@@ -23,7 +23,7 @@ export const opSchema = z.discriminatedUnion('kind', [
   }),
   z.object({
     ...base, kind: z.literal('vitals'),
-    data: z.object({ values: z.record(z.string(), z.number()), note: z.string().max(500).nullish() }),
+    data: z.object({ values: z.record(z.string(), z.number()), note: z.string().max(500).nullish(), extra: z.record(z.string().max(40), z.number()).optional() }),
   }),
   z.object({
     ...base, kind: z.literal('task'),

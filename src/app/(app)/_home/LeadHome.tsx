@@ -24,7 +24,7 @@ export async function LeadHome({ ctx, now, greet, view, views }: { ctx: Ctx; now
   const decide = [
     decisions.canSchedule && { n: decisions.absences, text: t('home.lead.absences', { n: decisions.absences }), href: '/schedule?view=absences' },
     decisions.canSchedule && { n: decisions.swaps, text: t('home.lead.swaps', { n: decisions.swaps }), href: '/schedule?view=swaps' },
-    decisions.canApprove && { n: decisions.plans, text: t('home.lead.plans', { n: decisions.plans }), href: '/residents' },
+    decisions.canApprove && { n: decisions.plans, text: t('home.lead.plans', { n: decisions.plans }), href: '/tasks/approvals' },
     canQuality && { n: openIncidents.filter((i) => i.stage === 'reported').length, text: t('home.lead.incidentsNew', { n: openIncidents.filter((i) => i.stage === 'reported').length }), href: '/quality' },
   ].filter((x): x is { n: number; text: string; href: string } => !!x)
 

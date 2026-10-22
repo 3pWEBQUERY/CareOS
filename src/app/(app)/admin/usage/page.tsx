@@ -38,7 +38,7 @@ export default async function UsagePage() {
   return (
     <main className="panel main">
       <AdminHead section={t('admin.title')} title={t('platform.usage.title')} sub={t('platform.usage.sub')} />
-      <div className="scroll">
+      <div className="scroll" data-scroll>
         <div className="tabpanel">
           <div className="metrics">
             <div className="metric"><span className="lbl">{t('platform.usage.dau')}</span><span className="val">{r.dau}</span></div>

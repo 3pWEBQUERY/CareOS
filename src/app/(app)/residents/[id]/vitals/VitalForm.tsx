@@ -59,7 +59,10 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
     start(async () => {
       // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
       const note = String(form.get('note') ?? '').trim().slice(0, 500) || null
-      const r = await orQueue(() => recordVitals(residentId, form), { kind: 'vitals', residentId, data: { values: out, note } }, { who })
+      // Eigene Parameter (x_<key>) getrennt vormerken – sie werden beim Synchronisieren gegen die Organisationsdefinition geprüft
+      const std = Object.fromEntries(Object.entries(out).filter(([k]) => !k.startsWith('x_')))
+      const extra = Object.fromEntries(Object.entries(out).filter(([k]) => k.startsWith('x_')).map(([k, v]) => [k.slice(2), v]))
+      const r = await orQueue(() => recordVitals(residentId, form), { kind: 'vitals', residentId, data: { values: std, note, ...(Object.keys(extra).length ? { extra } : {}) } }, { who })
       if (isQueued(r)) { setVals({}); setWarn(null); toast(t(r.message)); return }
       if (!r.ok) {
         setErr({ msg: /^[a-z]+\.[\w.]+$/.test(r.error) ? t(r.error) : r.error, field: r.field })

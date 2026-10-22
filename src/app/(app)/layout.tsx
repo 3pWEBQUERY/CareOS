@@ -19,6 +19,7 @@ import { ScrollRegions } from '@/components/shell/ScrollRegions'
 import { currentShiftLabel } from '@/lib/shift'
 import { overdueCount } from '@/lib/tasks'
 import { enforceMfaSetup } from '@/lib/auth/mfa-gate'
+import { approvalUnitIds } from '@/lib/careplan-review'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getCtx()
@@ -70,6 +71,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ...nav.map((n) => ({ group: t('common.palette.groupView'), label: n.label, href: n.href })),
     ...(ctx.can('resident.medication.administer') ? [{ group: t('common.palette.groupAction'), label: t('nav.medround'), href: '/tasks/medround' }] : []),
     ...(ctx.can('resident.read') ? [{ group: t('common.palette.groupAction'), label: t('visit.title'), href: '/tasks/visit' }] : []),
+    ...(approvalUnitIds(ctx).length ? [{ group: t('common.palette.groupView'), label: t('care.approvals.title'), href: '/tasks/approvals' }] : []),
+    ...(ctx.can('admin.config') ? [{ group: t('common.palette.groupView'), label: t('design.title'), href: '/admin/design' }] : []),
     ...(ctx.can('quality.report') ? [{ group: t('common.palette.groupAction'), label: t('common.quick.incident'), href: '/quality/new' }] : []),
     ...(ctx.can('task.manage') ? [{ group: t('common.palette.groupAction'), label: t('common.quick.task'), href: '/tasks?new=1' }] : []),
     { group: t('common.palette.groupAction'), label: t('common.quick.document'), href: '/residents?pick=notes' },

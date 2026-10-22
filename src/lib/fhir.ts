@@ -58,6 +58,7 @@ export const LOINC: Partial<Record<keyof typeof VITALS, { code: string; display:
   glucose: { code: '2339-0', display: 'Glucose [Mass/volume] in Blood', unit: 'mmol/l', ucum: 'mmol/L' },
   weight: { code: '29463-7', display: 'Body weight', unit: 'kg', ucum: 'kg' },
   respRate: { code: '9279-1', display: 'Respiratory rate', unit: '/min', ucum: '/min' },
+  pain: { code: '72514-3', display: 'Pain severity - 0-10 verbal numeric rating [Score] - Reported', unit: 'NRS', ucum: '{score}' },
 }
 export const LOINC_KEYS = Object.keys(LOINC) as (keyof typeof LOINC)[]
 export const keyForLoinc = (code: string) => LOINC_KEYS.find((k) => LOINC[k]!.code === code)
@@ -73,7 +74,8 @@ export function vitalObservations(v: VitalSign, only?: (keyof typeof LOINC)[]) {
       resourceType: 'Observation',
       id: `${v.id}-${k}`,
       meta: { profile: ['http://hl7.org/fhir/StructureDefinition/vitalsigns'] },
-      status: 'final',
+      // Storno/Korrektur (PRD §35): stornierte Messungen als «entered-in-error», Korrekturen als «corrected»
+      status: v.voidedAt ? 'entered-in-error' : v.supersedesId ? 'corrected' : 'final',
       category: [{ coding: [{ system: 'http://terminology.hl7.org/CodeSystem/observation-category', code: 'vital-signs', display: 'Vital Signs' }] }],
       code: { coding: [{ system: 'http://loinc.org', code: l.code, display: l.display }], text: l.display },
       subject: { reference: `Patient/${v.residentId}` },

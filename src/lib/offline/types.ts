@@ -15,7 +15,7 @@ export const FUTURE_SKEW_MS = 5 * 60_000
 export const NOTE_CATEGORIES = ['care', 'observation', 'physician', 'relatives', 'incident', 'handover'] as const
 
 export type NoteData = { category: string; text: string; important: boolean }
-export type VitalsData = { values: Record<string, number>; note?: string | null }
+export type VitalsData = { values: Record<string, number>; note?: string | null; /** organisationseigene Parameter (PRD §45) */ extra?: Record<string, number> }
 export type TaskData = { taskId: string; status: 'done' | 'partial' | 'skipped'; reason?: string; note?: string }
 export type IntakeData = { type: 'drink'; ml: number; item?: string } | { type: 'meal'; meal: string; portion: number } | { type: 'fluid'; fluid: string; ml: number; item?: string }
 

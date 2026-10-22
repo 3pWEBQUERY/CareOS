@@ -241,7 +241,7 @@ async function Integrations() {
               {runs.map((r) => (
                 <tr key={r.id}>
                   <td className="num nowrap">{dtm(r.startedAt)}</td>
-                  <td>{itName.get(r.integrationId) ?? <span className="muted mono small">{r.integrationId.replace(/^kind:/, '')}</span>}</td>
+                  <td>{itName.get(r.integrationId) ?? <span className="muted">{r.integrationId.startsWith('kind:') ? t('admin.integrations.kinds.' + r.integrationId.slice(5)) : '–'}</span>}</td>
                   <td>{t('platform.integrations.operations.' + r.operation)}{r.trigger !== 'manual' ? <span className="small muted"> · {r.trigger}</span> : null}</td>
                   <td>{r.ok ? <span className="tag ok">✓ {t('platform.integrations.ok')}</span> : r.ok === false ? <span className="tag crit">✕ {t('platform.integrations.failed')}</span> : <span className="tag">…</span>}{r.error && <div className="small muted mono" style={{ overflowWrap: 'anywhere' }}>{r.error}</div>}</td>
                   <td className="num right">{r.records}</td>

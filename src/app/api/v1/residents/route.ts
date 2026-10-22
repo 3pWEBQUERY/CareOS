@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import type { Prisma, ResidentStatus } from '@prisma/client'
 import { db } from '@/lib/db'
-import { apiAuth, apiError, clampInt, isErr } from '@/lib/api-auth'
+import { apiAudit, apiAuth, apiError, clampInt, isErr, readJson } from '@/lib/api-auth'
+import { AdmitBody, AdtError, admit } from '@/lib/adt'
 import { residentJson } from '../serialize'
 
 const STATUSES: ResidentStatus[] = ['active', 'absent', 'discharged', 'deceased']
@@ -32,4 +33,22 @@ export async function GET(req: NextRequest) {
   const more = rows.length > limit
   const data = rows.slice(0, limit)
   return NextResponse.json({ data: data.map(residentJson), next: more ? data[data.length - 1].id : null })
+}
+
+/**
+ * POST /api/v1/residents – Eintritt (ADT A01) aus dem Klinik- oder Heiminformationssystem (PRD §41, Scope residents:adt).
+ * Pflicht: unitId, firstName, lastName, birthDate (YYYY-MM-DD); optional roomId, sex, insuranceNo, physician, allergies, rea, admittedAt, reason.
+ */
+export async function POST(req: NextRequest) {
+  const api = await apiAuth(req, 'residents:adt')
+  if (isErr(api)) return api
+  const parsed = AdmitBody.safeParse(await readJson(req))
+  if (!parsed.success) return apiError(422, 'validation_failed', parsed.error.issues.map((i) => `${i.path.join('.') || 'body'}: ${i.message}`).join('; '))
+  try {
+    const r = await admit({ orgId: api.orgId, actorId: api.actorId, audit: (e) => apiAudit(api, e) }, parsed.data)
+    return NextResponse.json({ data: residentJson(r) }, { status: 201, headers: { location: `/api/v1/residents/${r.id}` } })
+  } catch (e) {
+    if (e instanceof AdtError) return apiError(e.status, e.code, e.message)
+    throw e
+  }
 }

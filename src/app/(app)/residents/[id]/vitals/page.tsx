@@ -6,6 +6,8 @@ import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { VitalForm, Thresholds } from './VitalForm'
 import { VitalCorrect } from './VitalCorrect'
 import { ReviewTag } from '@/components/residents/ReviewTag'
+import { CustomVitalsEditor } from '@/components/residents/CustomVitalsEditor'
+import { customFlag, customVitals, readExtra } from '@/lib/vitals-custom'
 import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
 import { FormEntry } from '@/components/forms/FormEntry'
 import { focusFor } from '../../_lib/focus'
@@ -51,16 +53,22 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
     { key: 'pain', label: `${t('common.vitals.pain')} NRS` },
     { key: 'weight', label: `${t('common.vitals.weight')} kg` },
   ]
+  // Organisationseigene Parameter (PRD §45): Formularfelder x_<key>, Werte in VitalSign.extra
+  const custom = customVitals(ctx.org.settings)
+  const extraOf = new Map(recent.map((v) => [v.id, readExtra(v.extra)]))
+  const usedCustom = custom.filter((d) => recent.some((v) => extraOf.get(v.id)?.[d.key] != null))
+  const fc = (d: (typeof custom)[number], v: number | null | undefined) => fmtNum(v, d.dec, locale)
+  const customFields = custom.map((d) => ({ key: 'x_' + d.key, label: d.label, unit: d.unit, min: d.min, max: d.max, dec: d.dec, lo: d.lo ?? d.min, hi: d.hi ?? d.max }))
   const usedCols = cols.filter((c) => c.key === 'bp' ? recent.some((v) => v.sys != null) : recent.some((v) => v[c.key as VitalKey] != null) || ['pulse', 'temp', 'spo2'].includes(c.key))
   // Storno/Korrektur (PRD §35): eigene Messungen oder mit «Einträge korrigieren»
   const canCorrectAll = can('resident.chart.correct')
-  const corrFields = formKeys.map((k) => ({ key: k, label: t('common.vitals.' + k), unit: VITALS[k].unit, dec: VITALS[k].dec }))
+  const corrFields = [...formKeys.map((k) => ({ key: k, label: t('common.vitals.' + k), unit: VITALS[k].unit, dec: VITALS[k].dec })), ...custom.map((d) => ({ key: 'x_' + d.key, label: d.label, unit: d.unit, dec: d.dec }))]
   const correctCell = (v: (typeof recent)[number]) => {
     if (v.voidedAt || !can('resident.vitals.write') || (v.recordedById !== ctx.user.id && !canCorrectAll)) return null
     return (
       <VitalCorrect
         residentId={r.id} vitalId={v.id} who={who} when={rel(v.at)} note={v.note} fields={corrFields}
-        values={Object.fromEntries(formKeys.map((k) => [k, v[k]]))}
+        values={{ ...Object.fromEntries(formKeys.map((k) => [k, v[k]])), ...Object.fromEntries(custom.map((d) => ['x_' + d.key, extraOf.get(v.id)?.[d.key] ?? null])) }}
       />
     )
   }
@@ -107,6 +115,23 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
     chartFor(t('common.vitals.respRate'), 'respRate'),
     chartFor(t('common.vitals.pain'), 'pain'),
     chartFor(t('common.vitals.weight'), 'weight'),
+    ...custom.map((d) => {
+      const pts = week.map((v) => ({ v, x: readExtra(v.extra)[d.key] })).filter((p) => p.x != null)
+      if (!pts.length) return null
+      const vals = pts.map((p) => p.x)
+      const lo = d.lo ?? Math.min(...vals), hi = d.hi ?? Math.max(...vals)
+      const last = pts[pts.length - 1].x
+      return (
+        <LineChart
+          key={'x_' + d.key} title={d.label} unit={d.unit} dec={d.dec} lo={lo} hi={hi}
+          points={pts.map((p, i) => ({ label: i > 0 && sameDay(pts[i - 1].v.at, p.v.at) ? '' : weekdayShort(p.v.at, locale), title: `${weekdayShort(p.v.at, locale)} ${hm(p.v.at)}: ${fc(d, p.x)} ${d.unit}`, v: p.x }))}
+          current={fc(d, last)} alarm={!!customFlag(d, last)}
+          legend={{ band: d.lo != null || d.hi != null ? t('chart.vitals.reference', { range: `${fc(d, lo)}–${fc(d, hi)}` }) : t('chart.vitals.span', { range: `${fc(d, lo)}–${fc(d, hi)}` }) }}
+          ariaLabel={t('chart.vitals.chartAria', { title: d.label })}
+          formatValue={(x) => fc(d, x)}
+        />
+      )
+    }),
   ].filter(Boolean)
 
   const canWrite = can('resident.vitals.write')
@@ -129,7 +154,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
           <VitalForm
             residentId={r.id}
             who={`${r.lastName} ${r.firstName}`}
-            fields={formKeys.map((k) => ({ key: k, label: t('common.vitals.' + k), unit: VITALS[k].unit, min: VITALS[k].min, max: VITALS[k].max, dec: VITALS[k].dec, lo: limits[k].lo, hi: limits[k].hi }))}
+            fields={[...formKeys.map((k) => ({ key: k, label: t('common.vitals.' + k), unit: VITALS[k].unit, min: VITALS[k].min, max: VITALS[k].max, dec: VITALS[k].dec, lo: limits[k].lo, hi: limits[k].hi })), ...customFields]}
           />
         </>
       )}
@@ -147,7 +172,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
       {recent.length ? (
         <div className="tablewrap">
           <table className="vt">
-            <thead><tr><th>{t('chart.vitals.measurement')}</th>{usedCols.map((c) => <th key={c.key}>{c.label}</th>)}<th>{t('chart.vitals.by')}</th>{visitCol && <th><span className="sr-only">{t('visit.ask.forVisit')}</span></th>}</tr></thead>
+            <thead><tr><th>{t('chart.vitals.measurement')}</th>{usedCols.map((c) => <th key={c.key}>{c.label}</th>)}{usedCustom.map((d) => <th key={d.key}>{d.label} {d.unit}</th>)}<th>{t('chart.vitals.by')}</th>{visitCol && <th><span className="sr-only">{t('visit.ask.forVisit')}</span></th>}</tr></thead>
             <tbody>
               {recent.map((v) => (
                 <tr key={v.id} className={v.voidedAt ? 'voided' : undefined}>
@@ -160,6 +185,11 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
                     const k = c.key as VitalKey
                     const fl = k === 'weight' || v.voidedAt ? '' : flag(k, v[k], limits)
                     return <td key={k} className={'num' + (fl ? ' ' + fl : '')}>{f(k, v[k])}</td>
+                  })}
+                  {usedCustom.map((d) => {
+                    const x = extraOf.get(v.id)?.[d.key]
+                    const fl = v.voidedAt ? '' : customFlag(d, x)
+                    return <td key={d.key} className={'num' + (fl ? ' ' + fl : '')}>{x != null ? fc(d, x) : '–'}</td>
                   })}
                   <td className="small muted vt-by">
                     {v.supersedesId && <><span className="tag outline">{t('chart.void.correctionTag')}</span> </>}

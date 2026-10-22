@@ -31,6 +31,8 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
   const { ctx, r, can } = await pageResident(id)
   const { t, locale } = ctx
   const withViews = sp.views === '1'
+  // Aufenthalte (Pflegeepisoden), z. B. aus ADT-Meldungen (PRD §43)
+  const episodes = await db.careEpisode.findMany({ where: { residentId: r.id }, orderBy: { start: 'desc' }, take: 20 })
   const logs = await db.auditLog.findMany({
     where: {
       orgId: ctx.org.id,
@@ -122,6 +124,16 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
           {r.dischargedAt && <><dt>{t('residents.history.discharged')}</dt><dd className="mono">{fmtDate(r.dischargedAt, locale)}</dd></>}
           <dt>{t('residents.form.insuranceNo')}</dt><dd className="mono">{r.insuranceNo ?? '–'}</dd>
           <dt>{t('residents.form.sex')}</dt><dd>{r.sex ? t('residents.form.sex' + r.sex.toUpperCase()) : '–'}</dd>
+          {episodes.length > 0 && (
+            <>
+              <dt>{t('residents.history.episodes')}</dt>
+              <dd>
+                <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none" }}>
+                  {episodes.map((e) => <li key={e.id}><span className="mono">{fmtDate(e.start, locale)} – {e.end ? fmtDate(e.end, locale) : t('residents.history.episodeOpen')}</span> · {e.reason}</li>)}
+                </ul>
+              </dd>
+            </>
+          )}
         </dl>
       </div>
 
