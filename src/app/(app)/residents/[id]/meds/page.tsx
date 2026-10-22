@@ -10,6 +10,8 @@ import { EffectChecks, PrnTable, type EffectDto, type PrnAdminDto, type PrnDto }
 import { Orders, type OrderDto } from '@/components/meds/Orders'
 import type { MarRowDto, ResidentCtxDto } from '@/components/meds/types'
 import { residentTitle } from '../../_lib/resident'
+import { checkAllergies } from '@/lib/allergy-check'
+import { checkInteractions, providerFor, SEVERITY_ORDER } from '@/lib/integrations/drug-interactions'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return residentTitle((await params).id, 'meds')
@@ -59,7 +61,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       const cells = cellsFor(m, slotTimes, day, dayAdmins.filter((a) => !a.voidedAt), now)
       return {
         id: m.id, name: m.name, form: m.form, route: m.route, indication: m.indication, notes: m.notes, kind: m.kind, requiresDoubleCheck: m.requiresDoubleCheck,
-        stoppedAt: m.stoppedAt ? stamp(m.stoppedAt) : null,
+        stoppedAt: m.stoppedAt ? stamp(m.stoppedAt) : null, allergy: checkAllergies(r.allergies, [m.name, m.form].filter(Boolean).join(' ')),
         cells: cells.map((c) => c && {
           time: c.time, dose: c.dose || c.admin?.dose || '', applicable: c.applicable, state: c.state, over: c.over, adminId: c.admin?.id ?? '',
           at: c.admin ? hm(c.admin.at) : null, by: ini(c.admin?.byId), checkedBy: ini(c.admin?.checkedById), note: c.admin?.note ?? null,
@@ -101,8 +103,14 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
     active: m.active, stopped: m.stoppedAt ? fmtDate(m.stoppedAt, ctx.locale) + ' ' + hm(m.stoppedAt) : null, createdBy: ini(m.createdById) ?? '?',
   }))
   const low = orders.filter((m) => m.active && lowStock(m))
+  // Interaktionsprüfung über die Schnittstelle (PRD §13.1); ohne Datenquelle ausdrücklich «nicht geprüft»
+  const ia = await checkInteractions(providerFor(interaction), orders.filter((m) => m.active).map((m) => ({ id: m.id, name: m.name })), ctx.locale)
+  const iaText = ia.status === 'checked'
+    ? (ia.interactions.length ? null : t('meds.interactions.none', { name: ia.source, at: hm(new Date(ia.checkedAt)) }))
+    : t(ia.reason === 'not_configured' ? 'meds.interactions.notConfigured' : ia.reason === 'no_adapter' ? 'meds.interactions.noAdapter' : 'meds.interactions.error', { name: ia.source ?? '' })
+  const iaNote = ia.status === 'checked' ? t('meds.interactions.orderNoteChecked', { name: ia.source }) : t(ia.reason === 'error' ? 'meds.interactions.orderNoteError' : 'meds.interactions.orderNote')
 
-  const resident: ResidentCtxDto = { id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null, allergies: r.allergies }
+  const resident: ResidentCtxDto = { id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null, allergies: r.allergies, photoId: r.photoFileId }
   const colleagues = users.filter((u) => colleagueIds.includes(u.id) && u.id !== ctx.user.id && u.active).map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName} (${u.initials})` })).sort((a, b) => a.name.localeCompare(b.name))
   const base = `/residents/${r.id}/meds`
   const dayHref = (d: Date) => (sameDay(d, today) ? base : `${base}?d=${dateKey(d)}`)
@@ -150,15 +158,25 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       <EffectChecks items={effects} canRecord={canAdminister} resident={resident} />
       <PrnTable items={prnItems} recent={recent} canGive={canAdminister} resident={resident} colleagues={colleagues} />
 
-      <Orders orders={orderDtos} canEdit={canEdit} resident={resident} defaultSlots={[...new Set([...DEFAULT_SLOTS, ...slotsOf(orders.filter((o) => o.active))])].sort()} defaultPrescriber={r.physician} todayKey={dateKey(today)} />
+      <Orders orders={orderDtos} canEdit={canEdit} resident={resident} defaultSlots={[...new Set([...DEFAULT_SLOTS, ...slotsOf(orders.filter((o) => o.active))])].sort()} defaultPrescriber={r.physician} todayKey={dateKey(today)} interactionNote={iaNote} />
 
       <section className="card" aria-labelledby="ia">
         <div className="card-head">
           <h3 id="ia">{t('meds.interactions.title')}</h3>
-          <span className={'tag ' + (interaction ? 'ok' : 'outline')}>{interaction ? t('meds.interactions.connected') : t('meds.interactions.notConnected')}</span>
+          <span className={'tag ' + (ia.status === 'checked' ? 'ok' : 'warn')}>{t(ia.status === 'checked' ? 'meds.interactions.checked' : 'meds.interactions.notChecked')}</span>
         </div>
         <div className="card-body small fg2">
-          {interaction ? t('meds.interactions.connectedText', { name: interaction.name }) : t('meds.interactions.placeholder')}
+          {iaText && <p style={{ margin: 0 }}>{iaText}</p>}
+          {ia.status === 'checked' && ia.interactions.length > 0 && (
+            <ul className="list">
+              {[...ia.interactions].sort((a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity)).map((x, i) => (
+                <li key={i}><div className="li">
+                  <span className={'tag ' + (x.severity === 'contraindicated' || x.severity === 'major' ? 'crit' : x.severity === 'moderate' ? 'warn' : '')}>{t('meds.interactions.severity.' + x.severity)}</span>
+                  <span><strong>{x.drugs.join(' + ')}</strong> · {x.text}{x.management ? ' ' + x.management : ''}</span>
+                </div></li>
+              ))}
+            </ul>
+          )}
         </div>
       </section>
     </>

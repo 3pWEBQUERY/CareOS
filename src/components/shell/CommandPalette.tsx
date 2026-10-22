@@ -136,6 +136,7 @@ export function CommandPalette({ items }: { items: PalItem[] }) {
       {open && (
         <div className="scrim" onMouseDown={(e) => e.target === e.currentTarget && hide()}>
           <div className="pal" role="dialog" aria-modal="true" aria-label={t('common.palette.label')}>
+            {/* raw-field-ok: Suchfeld der Befehlspalette (eigenes Combobox-Muster mit Ergebnisliste) */}
             <input
               ref={inputRef}
               value={q}

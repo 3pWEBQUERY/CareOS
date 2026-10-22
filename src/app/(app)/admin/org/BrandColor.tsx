@@ -20,8 +20,8 @@ export function BrandColorField({ initial }: { initial: string | null }) {
         value={v}
         onChange={setV}
         optional
-        hint={v === '' ? t('admin.org.brandColorDefault') : valid && pass ? t('admin.org.contrastOk') : undefined}
-        error={v === '' ? undefined : !valid ? t('admin.org.badColor') : !pass ? t('admin.org.contrastLow') : undefined}
+        hint={v === '' ? t('admin.org.brandColorDefault') : valid && pass ? t('admin.org.contrastOk') : !valid && v.length < 7 ? t('admin.org.badColor') : undefined}
+        error={v === '' || (!valid && v.length < 7) ? undefined : !valid ? t('admin.org.badColor') : !pass ? t('admin.org.contrastLow') : undefined}
       >
         {ratio != null && <span className={'tag ' + (pass ? 'ok' : 'crit')}>{(pass ? '✓ ' : '✕ ') + t('admin.org.ratio', { ratio: ratio.toFixed(2) })}</span>}
       </ColorField>

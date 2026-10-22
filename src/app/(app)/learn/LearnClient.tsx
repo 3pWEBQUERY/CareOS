@@ -7,7 +7,8 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { Dialog } from '@/components/ui/Dialog'
 import { toast } from '@/components/toast'
 import { assignCourse, confirmPractical, saveCourse, saveModule, submitQuiz, type QuizResult } from './actions'
-import { Checkbox, DateField, NumberField, Select, TextField, Textarea } from '@/components/ui/fields'
+import { Checkbox, Combobox, DateField, FileField, NumberField, RadioGroup, SegmentedControl, Select, TextField, Textarea } from '@/components/ui/fields'
+import { ACCEPT_UPLOADS, MAX_UPLOAD_BYTES } from '@/lib/upload-limits'
 
 const tr = (t: (k: string) => string, s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
 
@@ -26,24 +27,21 @@ export function QuizForm({ courseId, moduleId, questions, pass, passed }: { cour
   const [missing, setMissing] = useState<Set<number>>(new Set())
   const [pending, start] = useTransition()
   const wrong = new Set(res?.wrong ?? [])
-  const focusQ = (i: number) => ref.current?.querySelector<HTMLInputElement>(`input[name="q${i}"]`)?.focus()
+  const focusQ = (i: number) => ref.current?.querySelector<HTMLElement>(`[data-field="q${i}"] [tabindex="0"]`)?.focus()
+  const onAnswer = (i: number) => {
+    setAnswered((cur) => new Set(cur).add(i))
+    setMissing((cur) => { if (!cur.has(i)) return cur; const n = new Set(cur); n.delete(i); return n })
+  }
   return (
     <form
       ref={ref}
       className="form"
       noValidate
       aria-labelledby="mod-title"
-      onChange={(e) => {
-        const name = (e.target as unknown as HTMLInputElement).name
-        if (!/^q\d+$/.test(name)) return
-        const i = Number(name.slice(1))
-        setAnswered((cur) => new Set(cur).add(i))
-        setMissing((cur) => { if (!cur.has(i)) return cur; const n = new Set(cur); n.delete(i); return n })
-      }}
       onSubmit={(e) => {
         e.preventDefault()
         const form = new FormData(e.currentTarget)
-        const open = questions.map((_, i) => i).filter((i) => !form.has('q' + i))
+        const open = questions.map((_, i) => i).filter((i) => !form.get('q' + i))
         if (open.length) {
           setMissing(new Set(open))
           setErr(t('learn.ux.unanswered', { list: open.map((i) => i + 1).join(', ') }))
@@ -71,11 +69,8 @@ export function QuizForm({ courseId, moduleId, questions, pass, passed }: { cour
             <li key={i}>
               <fieldset className="quiz-q" data-state={isWrong ? 'wrong' : isMissing ? 'missing' : undefined} disabled={pending || !!res?.passed} aria-describedby={isWrong || isMissing ? `qh${i}` : undefined}>
                 <legend><span className="mono muted">{i + 1}.</span> {q.q}</legend>
-                <div className="stack-sm">
-                  {q.options.map((o, j) => (
-                    <label key={j} className="opt"><input type="radio" name={'q' + i} value={j} /> <span>{o}</span></label>
-                  ))}
-                </div>
+                <RadioGroup name={'q' + i} aria-label={q.q} variant="card" onChange={() => onAnswer(i)}
+                  aria-invalid={isWrong || isMissing || undefined} options={q.options.map((o, j) => ({ value: String(j), label: o }))} />
                 {isWrong && <p id={`qh${i}`} className="small crit-text" style={{ margin: '6px 0 0' }}>✕ {t('learn.quiz.wrong')}</p>}
                 {isMissing && !isWrong && <p id={`qh${i}`} className="small crit-text" style={{ margin: '6px 0 0' }}>{t('learn.ux.pick')}</p>}
               </fieldset>
@@ -117,11 +112,8 @@ export function PracticalConfirm({ courseId, moduleId, people }: { courseId: str
   return (
     <ActionForm action={confirmPractical.bind(null, courseId, moduleId)} className="form">
       <div className="form-grid">
-        <Select label={t('learn.practical.person')} name="userId" required defaultValue="">
-            <option value="" disabled>{t('learn.practical.choose')}</option>
-            {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </Select>
-        <TextField label={<>{t('learn.practical.note')} <span className="muted">({t('common.optional')})</span></>} name="note" maxLength={200} />
+        <Combobox label={t('learn.practical.person')} name="userId" required placeholder={t('learn.practical.choose')} options={people.map((p) => ({ value: p.id, label: p.name }))} />
+        <TextField label={t('learn.practical.note')} optional name="note" maxLength={200} />
       </div>
       <div className="form-actions"><span className="small muted">{t('learn.practical.hint')}</span><span className="spacer" /><Submit>{t('learn.practical.confirm')}</Submit></div>
     </ActionForm>
@@ -166,7 +158,7 @@ export function AssignButton({ courses, people, roles, units, defaultCourse }: {
               <div className="card" style={{ maxHeight: 260, overflow: 'auto', padding: '4px 10px' }}>
                 {people.map((p) => (
                   <label key={p.id} className="check" style={{ display: shown.includes(p) ? 'flex' : 'none', minHeight: 36 }}>
-                    <input type="checkbox" name="userIds" value={p.id} /> <span className="grow">{p.name}</span>{p.unit && <span className="small muted">{p.unit}</span>}
+                    <Checkbox name="userIds" value={p.id} /> <span className="grow">{p.name}</span>{p.unit && <span className="small muted">{p.unit}</span>}
                   </label>
                 ))}
               </div>
@@ -198,8 +190,8 @@ export function CourseFields({ c, roles }: { c?: CourseData; roles: { key: strin
       <div className="form-grid">
         <TextField label={t('learn.edit.title')} wrapClassName="span-all" name="title" defaultValue={c?.title} required maxLength={200} />
         <Select label={t('learn.edit.category')} name="category" defaultValue={c?.category ?? 'general'}>{COURSE_CATS.map((k) => <option key={k} value={k}>{t('learn.cat.' + k)}</option>)}</Select>
-        <TextField label={t('learn.edit.minutes')} name="estMinutes" inputMode="numeric" defaultValue={c?.estMinutes ?? 30} className="mono" />
-        <TextField label={t('learn.edit.validity')} name="validityMonths" inputMode="numeric" defaultValue={c?.validityMonths ?? ''} placeholder={t('learn.edit.validityHint')} className="mono" />
+        <NumberField label={t('learn.edit.minutes')} name="estMinutes" defaultValue={c?.estMinutes ?? 30} min={1} max={1000} step={1} unit={t('common.minutes')} />
+        <NumberField label={t('learn.edit.validity')} name="validityMonths" min={1} max={120} step={1} defaultValue={c?.validityMonths ?? ''} placeholder={t('learn.edit.validityHint')} className="mono" />
         <Textarea label={t('learn.edit.description')} wrapClassName="span-all" name="description" rows={3} defaultValue={c?.description ?? ''} />
       </div>
       <div className="row">
@@ -210,7 +202,7 @@ export function CourseFields({ c, roles }: { c?: CourseData; roles: { key: strin
         <legend className="lbl">{t('learn.edit.audience')}</legend>
         <p className="small muted" style={{ margin: '0 0 6px' }}>{t('learn.edit.audienceHint')}</p>
         <div className="row" style={{ gap: '4px 16px' }}>
-          {roles.map((r) => <label key={r.key} className="check"><input type="checkbox" name="audienceRoles" value={r.key} defaultChecked={c?.audienceRoles.includes(r.key)} /> {r.name}</label>)}
+          {roles.map((r) => <Checkbox key={r.key} name="audienceRoles" value={r.key} defaultChecked={c?.audienceRoles.includes(r.key)} label={r.name} />)}
         </div>
       </fieldset>
     </>
@@ -264,13 +256,12 @@ function QuizBuilder({ initial }: { initial: ModuleData['quiz'] }) {
           <TextField value={q.q} onChange={(e) => upd(i, (x) => ({ ...x, q: e.target.value }))} placeholder={t('learn.edit.questionText')} aria-label={t('learn.edit.questionText')} />
           {q.options.map((o, j) => (
             <div key={j} className="row" style={{ flexWrap: 'nowrap' }}>
-              <label className="check" title={t('learn.edit.correct')}>
-                <input type="radio" name={`correct-${i}`} checked={q.answer === j} onChange={() => upd(i, (x) => ({ ...x, answer: j }))} aria-label={`${t('learn.edit.correct')}: ${t('learn.edit.option', { n: j + 1 })}`} />
-              </label>
               <TextField value={o} onChange={(e) => upd(i, (x) => ({ ...x, options: x.options.map((y, k) => (k === j ? e.target.value : y)) }))} placeholder={t('learn.edit.option', { n: j + 1 })} aria-label={t('learn.edit.option', { n: j + 1 })} className="grow" />
               <button type="button" className="btn sm ghost" disabled={q.options.length <= 2} onClick={() => upd(i, (x) => ({ ...x, options: x.options.filter((_, k) => k !== j), answer: x.answer === j ? 0 : x.answer > j ? x.answer - 1 : x.answer }))} aria-label={t('common.delete')}>−</button>
             </div>
           ))}
+          <SegmentedControl label={t('learn.edit.correct')} value={String(q.answer)} onChange={(v) => upd(i, (x) => ({ ...x, answer: Number(v) }))}
+            options={q.options.map((o, j) => ({ value: String(j), label: <span className="mono">{j + 1}</span>, title: o || t('learn.edit.option', { n: j + 1 }) }))} />
           <div className="row">
             <button type="button" className="btn sm" disabled={q.options.length >= 6} onClick={() => upd(i, (x) => ({ ...x, options: [...x.options, ''] }))}>{t('learn.edit.addOption')}</button>
             <span className="spacer grow" />
@@ -301,7 +292,7 @@ export function ModuleButton({ courseId, m, label, className = 'btn' }: { course
           </div>
           {kind === 'video' && <TextField label={t('learn.edit.videoUrl')} hint={t('learn.edit.videoHint')} name="videoUrl" type="url" defaultValue={m?.videoUrl ?? ''} placeholder="https://" />}
           {kind === 'document' && (
-            <label className="fld"><span className="lbl">{t('learn.edit.file')}</span><input className="field" type="file" name="file" />{m?.fileName && <span className="hint">{t('learn.edit.currentFile', { name: m.fileName })}</span>}</label>
+            <FileField label={t('learn.edit.file')} name="file" accept={ACCEPT_UPLOADS} maxSize={MAX_UPLOAD_BYTES} typesLabel="PDF, DOCX, PPTX, MP4" hint={m?.fileName ? t('learn.edit.currentFile', { name: m.fileName }) : undefined} />
           )}
           {kind === 'quiz' ? <QuizBuilder initial={m?.quiz ?? null} /> : (
             <Textarea label={kind === 'practical' ? t('learn.edit.practicalBody') : t('learn.edit.body')} hint={t('docs.f.bodyHint')} name="body" rows={kind === 'text' ? 12 : 5} defaultValue={m?.body ?? ''} />

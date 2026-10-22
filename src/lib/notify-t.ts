@@ -1,7 +1,7 @@
 import 'server-only'
 import type { NotificationPriority } from '@prisma/client'
 import { db } from '@/lib/db'
-import { notify } from '@/lib/notify'
+import { dutyRecipients, notify } from '@/lib/notify'
 import { dictionary } from '@/i18n'
 import { makeT, type Locale, type Terminology, type Vars } from '@/i18n/core'
 
@@ -19,8 +19,12 @@ export async function notifyT(n: {
   vars?: Vars
   href?: string
   groupKey?: string
+  /** Bereich für die dienstbewusste Zustellung (src/lib/notify.ts) */
+  unitId?: string | null
+  dutyAware?: boolean
 }) {
-  const ids = [...new Set(n.userIds)]
+  // Dienstbewusste Auswahl einmal für alle Empfangenden, danach nach Sprache aufteilen.
+  const ids = (await dutyRecipients(n)).userIds
   if (!ids.length) return
   const [users, org] = await Promise.all([
     db.user.findMany({ where: { id: { in: ids }, orgId: n.orgId, active: true }, select: { id: true, locale: true } }),
@@ -39,6 +43,8 @@ export async function notifyT(n: {
       body: n.bodyKey ? t(n.bodyKey, n.vars) : undefined,
       href: n.href,
       groupKey: n.groupKey,
+      unitId: n.unitId,
+      dutyAware: false,
     })
   }
 }

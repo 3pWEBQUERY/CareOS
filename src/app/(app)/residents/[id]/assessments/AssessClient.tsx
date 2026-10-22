@@ -6,7 +6,9 @@ import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { scoreAssessment, type AssessmentDef } from '@/lib/clinical-config'
-import { saveAssessmentAction } from './actions'
+import { correctAssessmentAction, saveAssessmentAction } from './actions'
+import { CorrectionDialog } from '@/components/residents/CorrectionDialog'
+import { RadioGroup } from '@/components/ui/fields'
 
 /** Assessment durchführen: Fragen als grosse Auswahlflächen, Punktwert live (CareOS Assess). */
 export function PerformAssessment({ residentId, def, name, contextLabel, nextDueLabel, planHref }: {
@@ -81,15 +83,13 @@ export function PerformAssessment({ residentId, def, name, contextLabel, nextDue
                 return (
                   <fieldset key={q.key} className="care-q" data-missing={missing || undefined} style={{ border: 0, padding: 0 }}>
                     <legend className="lbl">{q.label}{missing ? ' · ' + t('common.required') : ''}</legend>
-                    <div className={'care-opts' + (q.options.length > 6 ? ' nrs' : '')}>
-                      {q.options.map((o) => (
-                        <label key={o.v} className="opt">
-                          <input type="radio" name={q.key} value={o.v} checked={answers[q.key] === o.v} onChange={() => { setAnswers({ ...answers, [q.key]: o.v }); setErr(null) }} />
-                          <span>{o.label}</span>
-                          {q.options.length <= 6 && <span className="pts">{o.v}</span>}
-                        </label>
-                      ))}
-                    </div>
+                    <RadioGroup
+                      name={q.key} aria-label={q.label} variant="card" className={'care-opts' + (q.options.length > 6 ? ' nrs' : '')}
+                      aria-invalid={missing || undefined}
+                      value={answers[q.key] != null ? String(answers[q.key]) : ''}
+                      onChange={(v) => { setAnswers({ ...answers, [q.key]: Number(v) }); setErr(null) }}
+                      options={q.options.map((o) => ({ value: String(o.v), label: <span className="rg-row"><span>{o.label}</span>{q.options.length <= 6 && <span className="pts">{o.v}</span>}</span> }))}
+                    />
                   </fieldset>
                 )
               })}
@@ -99,6 +99,56 @@ export function PerformAssessment({ residentId, def, name, contextLabel, nextDue
           </>
         )}
       </Dialog>
+    </>
+  )
+}
+
+/** «Korrigieren» in der Assessment-Historie: Antworten vorbelegt, Punktwert neu berechnet, Begründung Pflicht (PRD §35). */
+export function CorrectAssessment({ residentId, assessmentId, def, name, who, when, answers, summary }: {
+  residentId: string
+  assessmentId: string
+  def: AssessmentDef
+  name: string
+  who: string
+  when: string
+  answers: Record<string, number>
+  summary: string
+}) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  const [cur, setCur] = useState<Record<string, number>>(answers)
+  const live = useMemo(() => scoreAssessment(def, cur), [def, cur])
+  const complete = def.items.questions.every((q) => cur[q.key] != null)
+  return (
+    <>
+      <button type="button" className="linkbtn small" onClick={() => { setCur(answers); setOpen(true) }} aria-label={`${t('chart.void.action')}: ${name} ${when}`}>{t('chart.void.action')}</button>
+      {open && (
+        <CorrectionDialog
+          open
+          onClose={() => setOpen(false)}
+          title={t('chart.void.titleAssessment')}
+          who={who}
+          original={<><strong>{name}</strong> · <span className="mono">{when}</span> · {summary}</>}
+          action={(f) => correctAssessmentAction(residentId, assessmentId, f)}
+          fields={
+            <div className="stack-sm">
+              {def.items.questions.map((q) => (
+                <RadioGroup
+                  key={q.key} name={'q_' + q.key} label={q.label} inline
+                  value={cur[q.key] != null ? String(cur[q.key]) : ''}
+                  onChange={(v) => setCur((c) => ({ ...c, [q.key]: Number(v) }))}
+                  options={q.options.map((o) => ({ value: String(o.v), label: q.options.length <= 6 ? `${o.label} (${o.v})` : o.label }))}
+                />
+              ))}
+              <p className="row" style={{ gap: 8, margin: 0 }} aria-live="polite">
+                <span className="lbl">{t('care.assessments.liveScore')}</span>
+                <span className="mono">{live.score}</span>
+                {complete && <span className={'tag ' + live.level}>{live.result}</span>}
+              </p>
+            </div>
+          }
+        />
+      )}
     </>
   )
 }

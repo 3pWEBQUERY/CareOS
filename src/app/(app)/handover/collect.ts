@@ -4,12 +4,14 @@ import type { Ctx } from '@/lib/context'
 import { isClosed, taskView } from '@/lib/tasks'
 import { taskTitle } from '@/lib/task-title'
 import { addDays, dbDate, fmtDayMonth, fmtNum, hm, sameDay, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
-import { abnormalKeys, flag, mergeLimits, VITALS } from '@/lib/vitals'
+import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { EFFECT_CHECK_MIN, openDoses } from '@/lib/medication'
 import { doseText } from '@/components/meds/dose'
+import { orderAndPlanChanges } from './changes'
 
 export type Tone = 'c' | 'w' | ''
-export type Item = { text: string; time?: string; tone?: Tone; muted?: boolean }
+/** `flag`: Status als Text neben der Farbe (PRD §51 «nie nur über Farbe»), z. B. «überfällig». */
+export type Item = { text: string; time?: string; tone?: Tone; muted?: boolean; flag?: string }
 export type Block = {
   resident: { id: string; firstName: string; lastName: string; room: string | null; careLevel: number | null; rea: string; allergies: string[]; risks: string[] }
   happened: Item[]
@@ -46,6 +48,8 @@ const short = (s: string, n = 140) => (s.length > n ? s.slice(0, n - 2).trimEnd(
  */
 export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: Date, handoverId: string | null, now = new Date()) {
   const { t, locale } = ctx
+  const unitScope = ctx.units.find((u) => u.id === unitId)
+  const canMeds = ctx.can('resident.medication.read', { unitId, locationId: unitScope?.locationId })
   const residents = await db.resident.findMany({
     where: { unitId, orgId: ctx.org.id, status: { in: ['active', 'absent'] } },
     include: { room: true },
@@ -60,20 +64,22 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
 
   const [observations, vitals, limits, incidents, medIssues, prnGiven, tasks, woundEntries, intake, appointments, assessments, entries, prevHandover, users] = await Promise.all([
     db.observation.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: until }, correctedBy: { none: {} }, category: { not: 'handover' } }, orderBy: { at: 'asc' } }),
-    db.vitalSign.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: until } }, orderBy: { at: 'asc' } }),
+    db.vitalSign.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: until }, ...LIVE }, orderBy: { at: 'asc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: { in: rIds } }] } }),
     db.incident.findMany({ where: { unitId, orgId: ctx.org.id, occurredAt: { gte: from, lt: until } }, include: { type: true } }),
     db.medicationAdministration.findMany({ where: { residentId: { in: rIds }, voidedAt: null, status: { in: ['refused', 'omitted', 'held'] }, OR: [{ scheduledFor: { gte: from, lt: to } }, { scheduledFor: null, at: { gte: from, lt: until } }] }, include: { medication: true } }),
     db.medicationAdministration.findMany({ where: { residentId: { in: rIds }, voidedAt: null, status: 'given', scheduledFor: null, at: { gte: addDays(from, -1), lt: until } }, include: { medication: true } }),
     db.task.findMany({ where: { unitId, residentId: { in: rIds }, dueAt: { gte: from, lt: to } }, orderBy: { dueAt: 'asc' } }),
-    db.woundAssessment.findMany({ where: { wound: { residentId: { in: rIds } }, at: { gte: from, lt: until } }, include: { wound: true }, orderBy: { at: 'asc' } }),
+    db.woundAssessment.findMany({ where: { wound: { residentId: { in: rIds } }, at: { gte: from, lt: until }, ...LIVE }, include: { wound: true }, orderBy: { at: 'asc' } }),
     db.intakeLog.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: until } } }),
     db.appointment.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: addDays(to, 1) } }, orderBy: { at: 'asc' } }),
-    db.assessment.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: until } } }),
+    db.assessment.findMany({ where: { residentId: { in: rIds }, at: { gte: from, lt: until }, ...LIVE } }),
     handoverId ? db.handoverEntry.findMany({ where: { handoverId } }) : Promise.resolve([]),
     db.handover.findFirst({ where: { unitId, submittedAt: { gte: addDays(from, -2), lt: new Date(from.getTime() + 3 * 3600_000) }, date: { lte: dbDate(from) }, ...(handoverId ? { id: { not: handoverId } } : {}) }, orderBy: { submittedAt: 'desc' }, include: { entries: true } }),
     db.user.findMany({ where: { orgId: ctx.org.id }, select: { id: true, initials: true } }),
   ])
+  // Neue/geänderte/abgesetzte Verordnungen und freigegebene Pflegeplanung (PRD §11.1)
+  const orderChanges = await orderAndPlanChanges(ctx, rIds, from, until, { meds: canMeds })
   let doses: Awaited<ReturnType<typeof openDoses>> = []
   for (const d of days) doses = doses.concat(await openDoses(rIds, d, now, { from: doseFrom, to, includeUpcoming: true }))
   const ini = (id: string | null) => (id ? users.find((u) => u.id === id)?.initials ?? '' : '')
@@ -93,7 +99,10 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
     let abnormal = 0
 
     for (const o of observations.filter((o) => o.residentId === r.id)) {
-      happened.push({ at: o.at.getTime(), time: stamp(o.at), text: short(o.text), tone: o.category === 'incident' ? 'c' : o.important ? 'w' : '' })
+      happened.push({
+        at: o.at.getTime(), time: stamp(o.at), text: short(o.text), tone: o.category === 'incident' ? 'c' : o.important ? 'w' : '',
+        flag: o.category === 'incident' ? t('home.changeKinds.incident') : o.important ? t('chart.notes.importantTag') : undefined,
+      })
     }
     for (const i of incidents.filter((i) => i.residentId === r.id)) {
       happened.push({ at: i.occurredAt.getTime(), time: stamp(i.occurredAt), text: t('tasks.handover.auto.incident', { type: i.type.name, text: short(i.description, 90) }), tone: 'c' })
@@ -102,14 +111,20 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
       const ab = abnormalKeys(v, lim)
       if (!ab.length) continue
       abnormal += ab.length
+      // Gesehen / Massnahme eingeleitet (PRD §14): bleibt sichtbar, aber nicht mehr als kritisch
+      const review = v.reviewedAt ? (v.reviewKind === 'action' && v.reviewNote ? t('home.review.inHandoverAction', { by: ini(v.reviewedById), note: short(v.reviewNote, 80) }) : t('home.review.inHandoverSeen', { by: ini(v.reviewedById) })) : ''
       happened.push({
-        at: v.at.getTime(), time: stamp(v.at), tone: 'c',
-        text: ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(v[k] as number, VITALS[k].dec, locale)} ${VITALS[k].unit} ${flag(k, v[k] as number, lim) === 'hi' ? '▲' : '▼'}`).join(', '),
+        at: v.at.getTime(), time: stamp(v.at), tone: v.reviewedAt ? 'w' : 'c',
+        text: ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(v[k] as number, VITALS[k].dec, locale)} ${VITALS[k].unit} ${flag(k, v[k] as number, lim) === 'hi' ? '▲' : '▼'}`).join(', ') + (review ? ' · ' + review : ''),
+        flag: v.reviewedAt ? undefined : t('home.ho.abnormal'),
       })
     }
     for (const a of medIssues.filter((a) => a.residentId === r.id)) {
       const when = a.scheduledFor ?? a.at
       happened.push({ at: when.getTime(), time: hm(when), tone: 'w', text: t('tasks.handover.auto.med_' + a.status, { drug: a.medication.name }) + (a.note ? ' – ' + short(a.note, 60) : '') })
+    }
+    for (const c of orderChanges.filter((c) => c.residentId === r.id)) {
+      happened.push({ at: c.at.getTime(), time: stamp(c.at), tone: 'w', flag: t('home.changeKinds.' + c.kind), text: c.text + (c.by ? ` (${c.by})` : '') })
     }
     for (const a of appointments.filter((a) => a.residentId === r.id)) {
       if (a.at < until && a.at >= from) happened.push({ at: a.at.getTime(), time: stamp(a.at), text: t('tasks.handover.auto.appointment', { title: a.title }) })
@@ -140,7 +155,7 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
     if (entry?.watch) watch.push({ text: entry.watch, tone: entry.important ? 'w' : '' })
     for (const a of prnGiven.filter((a) => a.residentId === r.id && !a.effectAt)) {
       const due = new Date(a.at.getTime() + EFFECT_CHECK_MIN * 60_000)
-      watch.push({ time: hm(due), text: t('tasks.handover.auto.effect', { drug: a.medication.name }), tone: due < now ? 'c' : '' })
+      watch.push({ time: hm(due), text: t('tasks.handover.auto.effect', { drug: a.medication.name }), tone: due < now ? 'c' : '', flag: due < now ? t('tasks.view.over') : undefined })
     }
     const prev = prevEntries.find((e) => e.residentId === r.id)
     if (prev?.watch) watch.push({ text: t('tasks.handover.auto.fromPrevious', { text: prev.watch }), muted: true })
@@ -151,10 +166,10 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
       openCount++
       if (k.source === 'medication' && k.title === 'medication.slot') continue
       const v = taskView(k, now)
-      open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k) + (v === 'escalated' ? ` (${t('tasks.view.escalated')})` : ''), tone: v === 'over' || v === 'escalated' ? 'c' : '' })
+      open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k), tone: v === 'over' || v === 'escalated' ? 'c' : '', flag: v === 'over' || v === 'escalated' ? t('tasks.view.' + v) : undefined })
     }
     for (const d of doses.filter((d) => d.residentId === r.id)) {
-      open.push({ at: d.at.getTime(), time: d.time, text: t(d.over ? 'tasks.handover.auto.doseOver' : 'tasks.handover.auto.dosePlanned', { drug: d.medication.name, dose: doseText(d.dose, d.medication.form) }), tone: d.over ? 'c' : '' })
+      open.push({ at: d.at.getTime(), time: d.time, text: t(d.over ? 'tasks.handover.auto.doseOver' : 'tasks.handover.auto.dosePlanned', { drug: d.medication.name, dose: doseText(d.dose, d.medication.form) }), tone: d.over ? 'c' : '', flag: d.over ? t('tasks.view.over') : undefined })
     }
     if (entry?.open) open.push({ at: Number.MAX_SAFE_INTEGER, text: entry.open, tone: entry.important ? 'w' : '' })
 
@@ -171,7 +186,7 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
 
 /** Reiner Text für die KI-Zusammenfassung – nur Fakten aus der Übergabe. */
 export function handoverText(blocks: Block[], t: Ctx['t']) {
-  const line = (i: Item) => `  - ${i.time ? i.time + ' ' : ''}${i.text}`
+  const line = (i: Item) => `  - ${i.time ? i.time + ' ' : ''}${i.flag ? '[' + i.flag + '] ' : ''}${i.text}`
   return blocks
     .filter((b) => b.happened.length || b.open.length || b.watch.length)
     .map((b) => [

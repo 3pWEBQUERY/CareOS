@@ -1,0 +1,41 @@
+# Dependency Monitoring (PRD §37): wöchentliche Updates, Sicherheitsupdates sofort (GitHub Security Updates).
+# Kleine Updates werden gebündelt; Major-Versionen kommen einzeln und laufen durch die CI (.github/workflows/ci.yml).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Zurich
+    open-pull-requests-limit: 10
+    labels: [dependencies]
+    commit-message:
+      prefix: "deps"
+    groups:
+      next-react:
+        patterns: ["next", "react", "react-dom", "@types/react", "@types/react-dom"]
+      prisma:
+        patterns: ["prisma", "@prisma/*"]
+      aws-sdk:
+        patterns: ["@aws-sdk/*"]
+      auth:
+        patterns: ["@simplewebauthn/*", "jose", "otpauth", "@node-rs/argon2"]
+      minor-and-patch:
+        update-types: [minor, patch]
+        exclude-patterns: ["next", "react", "react-dom", "prisma", "@prisma/*", "@aws-sdk/*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Zurich
+    labels: [dependencies, ci]
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]

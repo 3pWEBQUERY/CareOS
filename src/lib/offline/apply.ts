@@ -183,8 +183,10 @@ async function applyOne(ctx: Ctx, op: OfflineOp, at: Date, now: Date): Promise<O
       const d = op.data
       const log = d.type === 'drink'
         ? await db.intakeLog.create({ data: { residentId: r.id, at, kind: 'drink', amountMl: d.ml, item: d.item?.trim().slice(0, 120) || null, authorId: ctx.user.id } })
-        : await db.intakeLog.create({ data: { residentId: r.id, at, kind: 'meal', item: ctx.t('care.nutrition.mealNames.' + d.meal), portion: d.portion, authorId: ctx.user.id } })
-      await audit(ctx, { action: 'nutrition.intake', entityType: 'IntakeLog', entityId: log.id, after: d.type === 'drink' ? { kind: 'drink', amountMl: d.ml, item: log.item, at } : { kind: 'meal', meal: d.meal, item: log.item, portion: d.portion, at }, context: { residentId: r.id, ...offline } })
+        : d.type === 'fluid'
+          ? await db.intakeLog.create({ data: { residentId: r.id, at, kind: d.fluid, amountMl: d.ml, item: d.item?.trim().slice(0, 120) || null, authorId: ctx.user.id } })
+          : await db.intakeLog.create({ data: { residentId: r.id, at, kind: 'meal', item: ctx.t('care.nutrition.mealNames.' + d.meal), portion: d.portion, authorId: ctx.user.id } })
+      await audit(ctx, { action: d.type === 'fluid' ? 'nutrition.fluid' : 'nutrition.intake', entityType: 'IntakeLog', entityId: log.id, after: d.type === 'drink' ? { kind: 'drink', amountMl: d.ml, item: log.item, at } : d.type === 'fluid' ? { kind: d.fluid, amountMl: d.ml, item: log.item, at } : { kind: 'meal', meal: d.meal, item: log.item, portion: d.portion, at }, context: { residentId: r.id, ...offline } })
       await emit({ orgId: ctx.org.id, type: 'nutrition.recorded', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { kind: d.type, offline: true } })
       return { id: op.id, status: 'applied' }
     }

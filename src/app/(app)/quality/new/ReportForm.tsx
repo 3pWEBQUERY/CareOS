@@ -6,7 +6,7 @@ import { useLocale, useT } from '@/i18n/client'
 import { formatDateTime } from '@/lib/date-input'
 import { onRadioKeys } from '@/components/ui/radio'
 import { reportIncidentAction } from '../actions'
-import { Checkbox, DateTimeField, Select, TextField, Textarea } from '@/components/ui/fields'
+import { Checkbox, Combobox, DateTimeField, SegmentedControl, Select, TextField, Textarea } from '@/components/ui/fields'
 
 type Step = { key: string; title: string; offsetMin: number }
 type TypeOpt = { id: string; key: string; name: string; steps: Step[] }
@@ -110,14 +110,8 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
           </div>
         </fieldset>
 
-        <Select label={<>{t('quality.fields.resident')} <span className="muted">({t('common.optional')})</span></>} name="residentId" value={residentId} onChange={(e) => setResidentId(e.target.value)}>
-            <option value="">{t('quality.report.noResident')}</option>
-            {byUnit.map(([u, list]) => (
-              <optgroup key={u} label={u}>
-                {list.map((r) => <option key={r.id} value={r.id}>{r.name}{r.room ? ` · ${r.room}` : ''}</option>)}
-              </optgroup>
-            ))}
-          </Select>
+        <Combobox label={t('quality.fields.resident')} optional name="residentId" value={residentId} onChange={(v) => setResidentId(v)} placeholder={t('quality.report.noResident')}
+          options={byUnit.flatMap(([u, list]) => list.map((r) => ({ value: r.id, label: r.name, hint: r.room ?? undefined, keywords: r.room ?? undefined, group: u })))} />
         {resident && <input type="hidden" name="unitId" value={resident.unitId} />}
         {resident && (
           <div className="dlg-context q-ctx" aria-live="polite">
@@ -128,23 +122,13 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
 
         <Textarea label={t('quality.report.what')} name="description" rows={3} required maxLength={5000} placeholder={t('quality.report.descriptionHint')} aria-invalid={invalid('description')} aria-describedby={invalid('description') ? 'q-err' : undefined} />
 
-        <div className="fld">
-          <span className="lbl" id="sev-l">{t('quality.fields.severity')}</span>
-          <input type="hidden" name="severity" value={severity} />
-          <div className="seg q-sev" role="radiogroup" aria-labelledby="sev-l" aria-describedby="sev-h" onKeyDown={onRadioKeys}>
-            {SEVERITIES.map((s) => (
-              <button key={s} type="button" role="radio" aria-checked={severity === s} onClick={() => setSeverity(s)}>
-                {t('quality.severity.' + s)}
-              </button>
-            ))}
-          </div>
-          <span className="hint" id="sev-h">{t('quality.severityHint.' + severity)}</span>
-        </div>
+        <SegmentedControl label={t('quality.fields.severity')} hint={t('quality.severityHint.' + severity)} name="severity" className="q-sev" value={severity}
+          onChange={(v) => setSeverity(v as (typeof SEVERITIES)[number])} options={SEVERITIES.map((s) => ({ value: s, label: t('quality.severity.' + s) }))} />
         {(severity === 'severe' || severity === 'moderate') && (
           <div className="alert warn" role="status"><span className="grow">{t('quality.report.severeHint')}</span></div>
         )}
 
-        <Textarea label={<>{t('quality.fields.immediateActions')} <span className="muted">({t('common.optional')})</span></>} name="immediateActions" rows={2} maxLength={5000} placeholder={t('quality.report.immediateHint')} />
+        <Textarea label={t('quality.fields.immediateActions')} optional name="immediateActions" rows={2} maxLength={5000} placeholder={t('quality.report.immediateHint')} />
 
         <details ref={details} className="q-details">
           <summary>
@@ -158,19 +142,14 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
           </summary>
           <div className="form-grid q-details-body">
             <DateTimeField label={t('quality.fields.occurredAt')} name="occurredAt" value={when} onChange={setWhen} max={now.slice(0, 10) + 'T23:59'} required aria-invalid={invalid('occurredAt')} aria-describedby={invalid('occurredAt') ? 'q-err' : undefined} />
-            <label className="fld">
-              <span className="lbl">{t('quality.fields.place')}</span>
-              <TextField name="place" list="q-places" maxLength={200} value={place} onChange={(e) => setPlace(e.target.value)} placeholder={resident?.room ? `${t('quality.report.room')} ${resident.room}` : ''} />
-              <datalist id="q-places">
-                {['room', 'bathroom', 'corridor', 'common', 'outdoor'].map((k) => <option key={k} value={k === 'room' && resident?.room ? `${t('quality.report.room')} ${resident.room}` : t('quality.places.' + k)} />)}
-              </datalist>
-            </label>
+            <Combobox label={t('quality.fields.place')} name="place" freeText maxLength={200} value={place} onChange={(v) => setPlace(v)} placeholder={resident?.room ? `${t('quality.report.room')} ${resident.room}` : ' '}
+              options={['room', 'bathroom', 'corridor', 'common', 'outdoor'].map((k) => k === 'room' && resident?.room ? `${t('quality.report.room')} ${resident.room}` : t('quality.places.' + k)).map((v) => ({ value: v, label: v }))} />
             {!resident && (
               <Select label={t('quality.fields.unit')} name="unitId" value={unitId} onChange={(e) => setUnitId(e.target.value)}>
                   {units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </Select>
             )}
-            <Checkbox name="nearMiss" label={<><span>{t('quality.fields.nearMiss')} <span className="small muted">– {t('quality.report.nearMissHint')}</span></span></>} wrapStyle={{ alignSelf: 'end', minHeight: 34 }} />
+            <Checkbox name="nearMiss" label={t('quality.fields.nearMiss')} hint={t('quality.report.nearMissHint')} wrapStyle={{ alignSelf: 'end' }} />
           </div>
         </details>
 

@@ -8,11 +8,13 @@ import { ensureTasksForDay, isClosed, OPEN_STATUSES, taskView } from '@/lib/task
 import { taskTitle } from '@/lib/task-title'
 import { shiftTypes } from '@/lib/shift'
 import { shiftName } from '@/lib/shift-name'
-import { addDays, currentShiftBounds, dateKey, fmtDayMonth, hm, sameDay, shiftAt, shiftBounds, startOfDay } from '@/lib/time'
+import { addDays, currentShiftBounds, dateKey, fmtDayMonth, fromDbDate, hm, sameDay, shiftAt, shiftBounds, startOfDay } from '@/lib/time'
 import { openDoses } from '@/lib/medication'
 import { doseText } from '@/components/meds/dose'
 import { Forbidden, Empty } from '@/components/ui/Empty'
-import { CreateTask, RememberFilter, TaskTable, type StaffDto, type TaskRowDto } from '@/components/tasks/TaskTable'
+import { CreateTask, RememberFilter, TaskTable, type SeriesDto, type StaffDto, type TaskRowDto } from '@/components/tasks/TaskTable'
+import { describeRecurrence, type TemplateDto } from '@/lib/recurrence'
+import { categoryLabel } from '@/lib/care'
 
 export async function generateMetadata() {
   return { title: (await getCtx()).t('nav.tasks') }
@@ -24,6 +26,7 @@ const TONE: Record<string, string> = {
 }
 const DEFAULT_CATEGORIES = ['Grundpflege', 'Behandlungspflege', 'Medikation', 'Ernährung', 'Mobilität', 'Überwachung', 'Aktivierung', 'Organisation']
 const FILTERS = ['open', 'over', 'mine', 'done'] as const
+const SYS_CATEGORIES: Record<string, string> = { Assessment: 'assessment', Organisation: 'organisation', Planung: 'planning', Qualität: 'quality' }
 
 /** CareOS Tasks – Stationsansicht (PRD §12): offene Massnahmen der Schicht, Universal Actions. */
 export default async function TasksPage({ searchParams }: { searchParams: Promise<{ f?: string; s?: string; new?: string }> }) {
@@ -90,6 +93,23 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   })
 
   const sourceLabel = (k: Task) => t('tasks.source.' + k.source)
+  const seriesLabel = (x: Tpl) => describeRecurrence(t, seriesRule(x), x.times)
+  /** Gespeicherte Kategorien (deutsch) in der App-Sprache anzeigen; eigene Kategorien bleiben, wie erfasst. */
+  const catLabel = (c: string) => (SYS_CATEGORIES[c] ? t('tasks.categories.' + SYS_CATEGORIES[c]) : categoryLabel(t, c))
+  // Wiederkehrende Aufgaben des Bereichs (für Rhythmus-Anzeige und «Serie bearbeiten»)
+  const templates = await db.taskTemplate.findMany({ where: { unitId: unit.id, orgId: ctx.org.id }, orderBy: { title: 'asc' } })
+  const tplById = new Map(templates.map((x) => [x.id, x]))
+  const canAssess = ctx.canHere('resident.assessment.write')
+  const canPlan = ctx.canHere('resident.careplan.edit')
+  const canVitals = ctx.canHere('resident.vitals.write')
+  /** Aufgaben, die sich mit der Dokumentation selbst schliessen (Document Once): Link statt Quittieren. */
+  const docLink = (k: Task): TaskRowDto['link'] => {
+    if (!k.residentId) return null
+    if (k.source === 'assessment' && canAssess) return { href: `/residents/${k.residentId}/assessments?k=${encodeURIComponent(k.title.slice(11).split(':')[0])}`, label: t('tasks.toAssessment') }
+    if (k.source === 'careplan' && k.title.startsWith('evaluation.') && canPlan) { const d = k.title.slice(11).split(':')[0]; return { href: `/residents/${k.residentId}/careplan?eval=${encodeURIComponent(d)}#dom-${encodeURIComponent(d)}`, label: t('tasks.toEvaluation') } }
+    if (k.title === 'rule.vitalsRecheck' && canVitals) return { href: `/residents/${k.residentId}/vitals`, label: t('tasks.toVitals') }
+    return null
+  }
   const rows: TaskRowDto[] = list.map((k) => {
     const r = k.residentId ? rById.get(k.residentId) : null
     const title = taskTitle(t, k)
@@ -97,17 +117,23 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     const medSlot = k.source === 'medication' && k.title === 'medication.slot'
     const prn = k.source === 'medication' && k.sourceId?.startsWith('prn:')
     return {
-      id: k.id, time: hm(k.dueAt), day: sameDay(k.dueAt, now) ? null : fmtDayMonth(k.dueAt, ctx.locale), title, description: k.description, category: k.category, catTone: TONE[k.category] ?? '',
+      id: k.id, time: hm(k.dueAt), day: sameDay(k.dueAt, now) ? null : fmtDayMonth(k.dueAt, ctx.locale), title, description: k.description, category: catLabel(k.category), catTone: TONE[k.category] ?? '',
       durationMin: k.durationMin, priority: k.priority, view: taskView(k, now), due: k.dueAt.toISOString(),
       resident: r ? { id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null } : null,
       assignee: a ? { id: a.id, initials: a.initials, name: `${a.firstName.charAt(0)}. ${a.lastName}` } : null,
       completed: k.completedAt ? t('tasks.completedBy', { time: hm(k.completedAt), by: uName(k.completedById) ?? '–' }) : null,
       note: k.note, createdBy: uName(k.createdById), sourceLabel: sourceLabel(k),
-      link: k.residentId && medSlot && canMeds ? { href: `/residents/${k.residentId}/meds`, label: t('tasks.toMar') } : k.residentId && prn && canMeds ? { href: `/residents/${k.residentId}/meds#effect`, label: t('tasks.toEffect') } : k.residentId && k.source === 'order' && k.title === 'visit.order.medication' && canMeds ? { href: `/residents/${k.residentId}/meds#orders`, label: t('visit.task.toMeds') } : null,
+      link: k.residentId && medSlot && canMeds ? { href: `/residents/${k.residentId}/meds`, label: t('tasks.toMar') } : k.residentId && prn && canMeds ? { href: `/residents/${k.residentId}/meds#effect`, label: t('tasks.toEffect') } : k.residentId && k.source === 'order' && k.title === 'visit.order.medication' && canMeds ? { href: `/residents/${k.residentId}/meds#orders`, label: t('visit.task.toMeds') } : docLink(k),
+      series: k.source === 'recurring' && k.sourceId && tplById.has(k.sourceId) ? { id: k.sourceId, label: seriesLabel(tplById.get(k.sourceId)!) } : null,
     }
   })
   const staff: StaffDto[] = users.filter((u) => staffIds.includes(u.id) && u.active).map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName}`, initials: u.initials })).sort((a, b) => a.name.localeCompare(b.name))
-  const cats = [...new Set([...DEFAULT_CATEGORIES, ...tasks.filter((k) => k.source === 'manual').map((k) => k.category)])]
+  const cats = [...new Set([...DEFAULT_CATEGORIES, ...tasks.filter((k) => k.source === 'manual' || k.source === 'recurring').map((k) => k.category)])]
+  const series: SeriesDto = {
+    templates: templates.filter((x) => x.active).map(templateDto),
+    residents: residents.filter((r) => r.status === 'active').map((r) => ({ id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null, unitId: unit.id })),
+    categories: cats, unitId: unit.id, unitName: unit.name, todayKey: dateKey(now),
+  }
 
   const q = (patch: Record<string, string | null>) => {
     const p = new URLSearchParams()
@@ -175,6 +201,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             canManage={canManage}
             canComplete={canComplete}
             meId={user.id}
+            series={canManage ? series : undefined}
             emptyText={t(filter === 'over' ? 'tasks.empty.over' : filter === 'mine' ? 'tasks.empty.mine' : filter === 'done' ? 'tasks.empty.done' : 'tasks.empty.open')}
           />
 
@@ -213,4 +240,16 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       </div>
     </main>
   )
+}
+
+type Tpl = Awaited<ReturnType<typeof db.taskTemplate.findMany>>[number]
+function seriesRule(x: Tpl) {
+  return { rhythm: x.rhythm, every: x.every, weekdays: x.weekdays, monthDay: x.monthDay, startDate: fromDbDate(x.startDate) }
+}
+function templateDto(x: Tpl): TemplateDto {
+  return {
+    id: x.id, unitId: x.unitId, residentId: x.residentId, title: x.title, description: x.description, category: x.category, rhythm: x.rhythm, every: x.every,
+    weekdays: x.weekdays, monthDay: x.monthDay, times: x.times, startDate: dateKey(fromDbDate(x.startDate)), endDate: x.endDate ? dateKey(fromDbDate(x.endDate)) : null,
+    durationMin: x.durationMin, priority: x.priority, assigneeId: x.assigneeId, active: x.active,
+  }
 }

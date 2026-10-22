@@ -10,6 +10,8 @@ import { dateKey, fmtDate, hm } from '@/lib/time'
 import { IconFile } from '@/components/icons'
 import { acknowledgeDocument, approveVersion, archiveDocument, deleteDraft, remindAck, returnToDraft, submitVersion } from '../actions'
 import { ActBtn, MetaButton, PrintButton, VersionButton } from '../DocsClient'
+import { inAudience, roleOptions } from '@/lib/audience'
+import { myRoleKeys } from '@/app/(app)/team/lib'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
@@ -49,12 +51,15 @@ export default async function DocPage({ params, searchParams }: { params: Promis
   const myAck = doc.currentVersion
     ? await db.acknowledgement.findUnique({ where: { userId_subjectType_subjectId_version: { userId: ctx.user.id, subjectType: 'document', subjectId: doc.id, version: doc.currentVersion } } })
     : null
-  const ackRelevant = doc.requireAck && doc.status === 'approved' && !!current
+  const [myKeys, roles] = await Promise.all([myRoleKeys(ctx.user.id), roleOptions(ctx.org.id)])
+  const roleName = (k: string) => roles.find((r) => r.key === k)?.name ?? k
+  // Kenntnisnahme nur für die Zielgruppe (Rollen, PRD §45); lesen dürfen alle mit docs.read
+  const ackRelevant = doc.requireAck && doc.status === 'approved' && !!current && inAudience(doc.audienceRoles, myKeys)
 
   let overview: { total: number; done: number; missing: { id: string; name: string; unit: string | null }[] } | null = null
-  if (manage && ackRelevant) {
+  if (manage && doc.requireAck && doc.status === 'approved' && current) {
     const [audience, acks] = await Promise.all([
-      ackAudience(ctx.org.id),
+      ackAudience(ctx.org.id, doc.audienceRoles),
       db.acknowledgement.findMany({ where: { subjectType: 'document', subjectId: doc.id, version: doc.currentVersion! }, select: { userId: true } }),
     ])
     const done = new Set(acks.map((a) => a.userId))
@@ -91,8 +96,9 @@ export default async function DocPage({ params, searchParams }: { params: Promis
           {manage && (
             <>
             <MetaButton
-              d={{ id: doc.id, title: doc.title, category: doc.category, tags: doc.tags, requireAck: doc.requireAck, validFrom: doc.validFrom ? dateKey(doc.validFrom) : null, validUntil: doc.validUntil ? dateKey(doc.validUntil) : null, ownerId: doc.ownerId }}
+              d={{ id: doc.id, title: doc.title, category: doc.category, tags: doc.tags, requireAck: doc.requireAck, validFrom: doc.validFrom ? dateKey(doc.validFrom) : null, validUntil: doc.validUntil ? dateKey(doc.validUntil) : null, ownerId: doc.ownerId, audienceRoles: doc.audienceRoles }}
               users={allUsers.map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName}` }))}
+              roles={roles}
             />
             {!pending && doc.status !== 'archived' && (
               <VersionButton className="btn primary" label={t('docs.version.new')} documentId={doc.id} suggest={nextVersion(doc.currentVersion, false)} suggestCritical={nextVersion(doc.currentVersion, true)} baseBody={current?.body ?? ''} hasFile={!!current?.fileId} />
@@ -241,6 +247,7 @@ export default async function DocPage({ params, searchParams }: { params: Promis
                     <dt>{t('docs.f.validUntil')}</dt>
                     <dd>{doc.validUntil ? <span className={valid === 'expired' ? 'crit-text' : valid === 'soon' ? 'warn-text' : ''}><span className="mono">{fmtDate(doc.validUntil, locale)}</span>{valid !== 'ok' && ' · ' + t('docs.valid.' + valid)}</span> : '–'}</dd>
                     <dt>{t('docs.ack.label')}</dt><dd>{doc.requireAck ? t('docs.ack.requiredShort') : t('common.no')}</dd>
+                    <dt>{t('docs.audience.label')}</dt><dd>{doc.audienceRoles.length ? doc.audienceRoles.map(roleName).join(', ') : t('docs.audience.all')}</dd>
                     {doc.tags.length > 0 && <><dt>{t('docs.f.tags')}</dt><dd className="chips">{doc.tags.map((tag) => <Link key={tag} className="chip" href={`/docs?q=${encodeURIComponent(tag)}`}>{tag}</Link>)}</dd></>}
                   </dl>
                 </div>

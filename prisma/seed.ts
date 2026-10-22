@@ -68,6 +68,9 @@ export async function seedDemo(client: PrismaClient = db) {
     hf: (await client.qualification.create({ data: { orgId: org.id, name: 'Pflegefachperson HF', level: 3 } })).id,
     fage: (await client.qualification.create({ data: { orgId: org.id, name: 'FaGe EFZ', level: 2 } })).id,
     srk: (await client.qualification.create({ data: { orgId: org.id, name: 'Pflegehelfer/in SRK', level: 1 } })).id,
+    wound: (await client.qualification.create({ data: { orgId: org.id, name: 'Wundexpertin/Wundexperte SAfW', level: 3 } })).id,
+    trainer: (await client.qualification.create({ data: { orgId: org.id, name: 'Berufsbildner/in', level: 2 } })).id,
+    bls: (await client.qualification.create({ data: { orgId: org.id, name: 'BLS-AED-SRC', level: 1 } })).id,
   }
 
   // Personal
@@ -88,6 +91,12 @@ export async function seedDemo(client: PrismaClient = db) {
     { key: 'PK', first: 'Peter', last: 'Keller', title: 'Hausarzt', role: 'physician', unit: null },
     { key: 'SA', first: 'Simon', last: 'Brandt', title: 'Systemadministration', role: 'sysadmin', unit: null, email: 'admin@lindenhof.ch' },
   ]
+  // Personenverzeichnis (PRD §55): dienstliche Nummern (DECT der Wohngruppe), private Nummer nur teilweise freigegeben
+  const contact: Record<string, { work?: string; phone?: string; shared?: boolean }> = {
+    AM: { work: '044 000 00 21', phone: '079 000 11 22' }, LR: { work: '044 000 00 22', phone: '078 000 33 44', shared: true }, MK: { work: '044 000 00 23' },
+    DS: { work: '044 000 00 24' }, BG: { work: '044 000 00 20', phone: '079 000 55 66' }, TN: { work: '044 000 00 25' }, SB: { work: '044 000 00 26' },
+    JF: { work: '044 000 00 27' }, NM: { work: '044 000 00 11' }, CW: { work: '044 000 00 10' }, QM: { work: '044 000 00 12' }, HR: { work: '044 000 00 13' },
+  }
   const U: Record<string, string> = {}
   for (const s of staff) {
     const email = s.email ?? `${s.first.toLowerCase()}.${s.last.toLowerCase().replace('č', 'c').replace('ü', 'ue')}@lindenhof.ch`
@@ -95,6 +104,7 @@ export async function seedDemo(client: PrismaClient = db) {
       data: {
         orgId: org.id, email, firstName: s.first, lastName: s.last, initials: s.key, jobTitle: s.title, passwordHash: pw,
         primaryUnitId: s.unit ?? wg2.id, theme: 'light', locale: 'de',
+        workPhone: contact[s.key]?.work ?? null, phone: contact[s.key]?.phone ?? null, phoneShared: !!contact[s.key]?.shared,
       },
     })
     U[s.key] = u.id
@@ -103,6 +113,15 @@ export async function seedDemo(client: PrismaClient = db) {
     await client.roleAssignment.create({ data: { userId: u.id, roleId: roles[s.role], ...scope } })
     if (s.qual) await client.userQualification.create({ data: { userId: u.id, qualificationId: s.qual } })
   }
+  // Zusatzqualifikationen mit Ablaufdaten (Erinnerungen, Profil)
+  await client.userQualification.createMany({ data: [
+    { userId: U.AM, qualificationId: quals.bls, validUntil: addDays(today, 25) },
+    { userId: U.LR, qualificationId: quals.bls, validUntil: addDays(today, 300) },
+    { userId: U.DS, qualificationId: quals.wound },
+    { userId: U.DS, qualificationId: quals.bls, validUntil: addDays(today, -5) },
+    { userId: U.SB, qualificationId: quals.trainer },
+    { userId: U.BG, qualificationId: quals.trainer },
+  ] })
   const team = await client.team.create({ data: { orgId: org.id, unitId: wg2.id, name: 'Team Wohngruppe 2' } })
   for (const k of ['AM', 'LR', 'MK', 'DS', 'BG', 'TN', 'SB', 'JF']) await client.teamMember.create({ data: { teamId: team.id, userId: U[k] } })
 
@@ -407,6 +426,63 @@ export async function seedDemo(client: PrismaClient = db) {
   await client.incident.create({ data: { orgId: org.id, unitId: wg2.id, residentId: residentIds['201'], typeId: itypes.fall, occurredAt: addDays(today, -23), description: 'Sturz im Bad, Hämatom Oberarm rechts.', severity: 'minor', stage: 'closed', reportedById: U.DS, closedById: U.BG, closedAt: addDays(today, -15) } })
   await client.incident.create({ data: { orgId: org.id, unitId: wg1.id, typeId: itypes.technical, occurredAt: addDays(today, -2), description: 'Rufanlage Zimmer 103 ausgefallen, Haustechnik informiert.', severity: 'moderate', stage: 'assessment', reportedById: U.NM } })
 
+  // Aufgaben und Workflows (PRD §9.2, §12.1, §22, §45): wiederkehrende Aufgaben, eigenes Assessment-Instrument,
+  // fällige Evaluationen der Pflegeplanung, zugewiesene Ereignis-Massnahme. Smart-Workflow-Aufgaben (Nachkontrolle
+  // auffälliger Vitalwerte, Lagerungsplan bei Braden ≤ 12) erzeugt die App selbst beim ersten Aufruf.
+  {
+    const start = dbDate(addDays(today, -30))
+    const tpl = (data: Omit<Prisma.TaskTemplateUncheckedCreateInput, 'orgId' | 'unitId' | 'startDate' | 'createdById'>) =>
+      client.taskTemplate.create({ data: { orgId: org.id, unitId: wg2.id, startDate: start, createdById: U.BG, ...data } })
+    const fridge = await tpl({ title: 'Kühlschranktemperatur Medikamente kontrollieren (2–8 °C) und eintragen', category: 'Organisation', rhythm: 'daily', times: ['07:00'], durationMin: 5 })
+    await tpl({ title: 'Notfallkoffer und Sauerstoff prüfen (Vollständigkeit, Verfalldaten, Füllstand)', category: 'Organisation', rhythm: 'weekly', weekdays: [1], times: ['10:00'], durationMin: 15, assigneeId: U.DS, priority: 'important' })
+    await tpl({ title: 'Betäubungsmittel-Bestand kontrollieren (Vier-Augen-Prinzip)', category: 'Medikation', rhythm: 'monthly', monthDay: 1, times: ['14:00'], durationMin: 30, priority: 'important' })
+    await tpl({ title: 'Wechseldruckmatratze: Funktion und Einstellung prüfen', category: 'Behandlungspflege', rhythm: 'weekly', weekdays: [3, 6], times: ['14:30'], durationMin: 5, residentId: residentIds['203'] })
+    // Gestern und heute bis vor 30 Minuten wie die übrigen Aufgaben quittiert
+    for (const day of [addDays(today, -1), today]) {
+      const due = at(day, '07:00')
+      const done = due.getTime() < now.getTime() - 30 * 60_000
+      if (day === today && !done && due > now) continue
+      await client.task.create({ data: { orgId: org.id, unitId: wg2.id, title: fridge.title, category: fridge.category, dueAt: due, durationMin: 5, source: 'recurring', sourceId: fridge.id, createdById: U.BG, status: done ? 'done' : 'planned', completedById: done ? U.LR : null, completedAt: done ? new Date(due.getTime() + 6 * 60_000) : null } })
+    }
+
+    // Eigenes Instrument: BESD (Beurteilung von Schmerzen bei Demenz, deutsche Fassung des PAINAD)
+    const o = (...labels: string[]) => labels.map((label, v) => ({ v, label }))
+    await client.assessmentDefinition.create({
+      data: {
+        orgId: org.id, key: 'besd', name: 'BESD – Schmerz bei Demenz', intervalDays: 7,
+        description: 'Fremdeinschätzung bei eingeschränkter Kommunikation. Beobachtung während 2 Minuten, ab 2 Punkten sind Schmerzen wahrscheinlich.',
+        items: {
+          questions: [
+            { key: 'q1', label: 'Atmung (unabhängig von Lautäusserungen)', options: o('normal', 'gelegentlich angestrengt, kurze Phasen von Hyperventilation', 'lautstark angestrengt, lange Phasen von Hyperventilation, Cheyne-Stokes-Atmung') },
+            { key: 'q2', label: 'Negative Lautäusserung', options: o('keine', 'gelegentlich stöhnen oder ächzen, sich leise negativ äussern', 'wiederholt beunruhigt rufen, laut stöhnen oder ächzen, weinen') },
+            { key: 'q3', label: 'Gesichtsausdruck', options: o('lächelnd oder nichtssagend', 'trauriger, ängstlicher oder sorgenvoller Blick', 'grimassieren') },
+            { key: 'q4', label: 'Körpersprache', options: o('entspannt', 'angespannt, nervös hin und her gehen, nesteln', 'starr, geballte Fäuste, angezogene Knie, sich entziehen oder wegstossen, schlagen') },
+            { key: 'q5', label: 'Trost', options: o('trösten nicht notwendig', 'ablenken oder beruhigen durch Stimme oder Berührung möglich', 'trösten, ablenken, beruhigen nicht möglich') },
+          ],
+          ranges: [
+            { min: 0, max: 1, result: 'kein Hinweis auf Schmerzen', level: 'ok' },
+            { min: 2, max: 5, result: 'Schmerzen wahrscheinlich – Ursache abklären, Schmerztherapie prüfen', level: 'warn' },
+            { min: 6, max: 10, result: 'starke Schmerzen wahrscheinlich', level: 'crit' },
+          ],
+        },
+      },
+    })
+    await client.assessment.create({ data: { residentId: residentIds['202'], key: 'besd', score: 1, result: 'kein Hinweis auf Schmerzen', answers: { q1: 0, q2: 1, q3: 0, q4: 0, q5: 0 }, authorId: U.DS, at: at(addDays(today, -7), '15:00'), nextDue: addDays(today, 0) } })
+
+    // Evaluationen der Pflegeplanung: Ernährung Frau Frei heute fällig, Mobilität Frau Brunner seit 2 Tagen überfällig
+    for (const [room, domain, due] of [['205', 'nutrition', today], ['201', 'mobility', addDays(today, -2)]] as const) {
+      await client.carePlanArea.updateMany({ where: { domain, carePlan: { residentId: residentIds[room], status: 'active' } }, data: { evaluateBy: due } })
+      await client.carePlan.updateMany({ where: { residentId: residentIds[room], status: 'active' }, data: { nextEvaluation: due } })
+    }
+
+    // Ereignis-Massnahme «Hausarzt informieren» der zuständigen Fachperson zugewiesen (auch in der Aufgabe)
+    const call = await client.incidentAction.findFirst({ where: { incidentId: fall.id, title: 'Hausarzt informieren' } })
+    if (call) {
+      await client.incidentAction.update({ where: { id: call.id }, data: { assigneeId: U.DS } })
+      if (call.taskId) await client.task.update({ where: { id: call.taskId }, data: { assigneeId: U.DS } })
+    }
+  }
+
   // Übergabe der letzten Schicht
   const ho = await client.handover.create({ data: { unitId: wg2.id, shiftCode: 'F', date: dbDate(today), authorId: U.LR, submittedAt: minsAgo(30) } })
   await client.handoverEntry.create({ data: { handoverId: ho.id, residentId: residentIds['203'], watch: 'Atmung und Temperatur engmaschig, Reserve Morphin bei Atemnot', open: 'Lagerung 17:00', important: true, authorId: U.DS } })
@@ -430,6 +506,23 @@ export async function seedDemo(client: PrismaClient = db) {
     await client.visitQuestion.create({ data: { orgId: org.id, residentId: residentIds[q.room], text: q.text, ...(q.ref ?? {}), createdById: U[q.by], createdAt: minsAgo(q.ago) } })
   }
 
+  // Bewohnerzuordnung (PRD §7, §70): laufende Schicht der Wohngruppe 2 und dieselbe Schicht am Vortag (Grundlage des Vorschlags)
+  {
+    const code = nowMin >= 1365 || nowMin < 420 ? 'N' : nowMin >= 885 ? 'S' : 'F'
+    const current = code === 'N' && nowMin < 420 ? addDays(today, -1) : today
+    const rooms = Object.keys(residentIds).filter((r) => r.startsWith('2')).sort()
+    for (const day of [addDays(current, -1), current]) {
+      const onDuty = (await client.shift.findMany({ where: { unitId: wg2.id, shiftTypeId: st[code], date: dbDate(day), userId: { not: null } }, select: { userId: true } })).map((s) => s.userId!)
+      // Anna zuerst, damit «Meine Bewohnenden» in der Demo gefüllt ist
+      const order = [...new Set([U.AM, ...Object.values(U)])].filter((u) => onDuty.includes(u))
+      if (!order.length) continue
+      const per = Math.ceil(rooms.length / order.length)
+      await client.shiftAssignment.createMany({
+        data: rooms.map((room, i) => ({ orgId: org.id, unitId: wg2.id, shiftCode: code, date: dbDate(day), residentId: residentIds[room], userId: order[Math.floor(i / per)], createdById: U.DS })),
+      })
+    }
+  }
+
   // Kommunikation
   const ch: Record<string, string> = {}
   for (const c of [
@@ -450,6 +543,8 @@ export async function seedDemo(client: PrismaClient = db) {
   await client.post.create({ data: { channelId: ch.offers, authorId: U.HR, title: 'Vergünstigte Velo-Abos', body: 'Mitarbeitende erhalten 20 % auf das Jahresabo bei VeloZürich. Code im HR-Portal.', publishedAt: minsAgo(60 * 120) } })
   await client.post.create({ data: { channelId: ch.company, authorId: U.CW, title: 'Lohnrunde und neue Zulagen Nachtdienst', body: 'Ab Januar steigt die Nachtdienstzulage auf CHF 8.– pro Stunde. Details im HR-Dokument "Zulagenreglement".', important: true, requireAck: true, publishedAt: minsAgo(60 * 30) } })
   for (const k of ['LR', 'DS', 'BG', 'TN', 'SB', 'NM', 'CW', 'QM']) await client.acknowledgement.create({ data: { userId: U[k], subjectType: 'post', subjectId: p1.id } })
+  // Zielgruppe (PRD §45): nur Pflegefachpersonen und Fachverantwortung
+  await client.post.create({ data: { channelId: ch.care, authorId: U.BG, title: 'Praxisanleitung Lernende: neue Checkliste', body: 'Für die Begleitung der Lernenden gilt ab sofort die neue Checkliste Praxisanleitung. Bitte vor dem nächsten Qualifikationsgespräch durchsehen.', requireAck: true, audienceRoles: ['nurse', 'specialist'], publishedAt: minsAgo(60 * 20) } })
 
   const dm = await client.conversation.create({ data: { orgId: org.id, kind: 'direct', createdById: U.LR, lastMessageAt: minsAgo(25) } })
   await client.conversationMember.createMany({ data: [{ conversationId: dm.id, userId: U.AM, lastReadAt: minsAgo(400) }, { conversationId: dm.id, userId: U.LR, lastReadAt: minsAgo(25) }] })
@@ -470,13 +565,15 @@ export async function seedDemo(client: PrismaClient = db) {
     { v: '3.0', days: 2, critical: true, note: 'Glukose-Gel als erste Wahl, Glucagon-Schema ergänzt', body: '## Ziel\nRasche und sichere Behandlung einer Unterzuckerung (BZ < 4 mmol/l).\n\n## Vorgehen\n1. BZ messen und dokumentieren.\n2. **Person kann schlucken:** 1 Tube Glukose-Gel 40 % oder 2 dl Orangensaft.\n3. Nach 15 Minuten erneut messen. Bei BZ < 4 mmol/l Schritt 2 wiederholen.\n4. **Person kann nicht schlucken / bewusstlos:** Seitenlage, Glucagon 1 mg s.c. gemäss Verordnung, Notruf 144, Hausarzt informieren.\n\n## Dokumentation\nVerlaufseintrag Kategorie Beobachtung, Ereignis bei Bewusstlosigkeit.\n\n> Insulindosis nie eigenständig ändern – Rücksprache Hausarzt.' },
   ], true)
   void hypo
-  await doc('Wundstandard Dekubitus', 'guideline', ['wunde', 'dekubitus', 'wundstandard', 'braden'], [{ v: '1.4', days: 120, body: '## Einschätzung\nBraden-Skala bei Eintritt und alle 7 Tage, bei Veränderung sofort.\n\n## Kategorien\n- Kategorie 1: nicht wegdrückbare Rötung\n- Kategorie 2: Teilverlust der Haut\n- Kategorie 3: Verlust der Haut\n- Kategorie 4: vollständiger Gewebeverlust\n\n## Massnahmen\nDruckentlastung, Lagerung 30°, Hautpflege, Ernährung prüfen. Fotodokumentation nur über CareOS Wunden.' }])
+  const woundDoc = await doc('Wundstandard Dekubitus', 'guideline', ['wunde', 'dekubitus', 'wundstandard', 'braden'], [{ v: '1.4', days: 120, body: '## Einschätzung\nBraden-Skala bei Eintritt und alle 7 Tage, bei Veränderung sofort.\n\n## Kategorien\n- Kategorie 1: nicht wegdrückbare Rötung\n- Kategorie 2: Teilverlust der Haut\n- Kategorie 3: Verlust der Haut\n- Kategorie 4: vollständiger Gewebeverlust\n\n## Massnahmen\nDruckentlastung, Lagerung 30°, Hautpflege, Ernährung prüfen. Fotodokumentation nur über CareOS Wunden.' }])
   await doc('Sturzprotokoll und Nachsorge', 'form', ['sturz', 'sturzprotokoll', 'ereignis'], [{ v: '2.0', days: 300, body: '## Sofort\n- Person nicht sofort aufrichten, Verletzungen prüfen\n- Vitalzeichen, Bewusstsein, Schmerzen\n\n## Innerhalb von 24 h\n- Ereignis in CareOS Qualität melden\n- Sturzassessment\n- Hausarzt gemäss Standard informieren\n- Pflegeplanung prüfen' }])
   await doc('Händehygiene', 'hygiene', ['hygiene', 'händedesinfektion'], [{ v: '5.0', days: 200, body: '## 5 Momente der Händehygiene\n1. Vor Patientenkontakt\n2. Vor aseptischen Tätigkeiten\n3. Nach Kontakt mit Körperflüssigkeiten\n4. Nach Patientenkontakt\n5. Nach Kontakt mit der Patientenumgebung' }])
   await doc('Notfallprozess Reanimation', 'emergency', ['notfall', 'reanimation', 'rea'], [{ v: '1.2', days: 500, body: '## Ablauf\n1. REA-Status in der Akte prüfen (Banner)\n2. Hilfe holen, Notruf 144\n3. Bei REA ja: Herzdruckmassage 30:2, AED holen lassen' }])
   await doc('Zulagenreglement', 'hr', ['zulagen', 'nachtdienst', 'lohn'], [{ v: '2026.1', days: 30, body: '## Nachtdienstzulage\nCHF 8.– pro Stunde zwischen 23:00 und 06:00.\n\n## Wochenendzulage\nCHF 5.– pro Stunde.' }])
   await doc('Checkliste Eintritt', 'checklist', ['eintritt', 'aufnahme'], [{ v: '1.0', days: 90, body: '- Stammdaten erfasst\n- Medikamentenplan übernommen und doppelt kontrolliert\n- Assessments Braden, Sturz, MNA innert 72 h\n- Angehörige und Notfallkontakt erfasst' }])
   await client.acknowledgement.createMany({ data: ['LR', 'DS', 'BG'].map((k) => ({ userId: U[k], subjectType: 'document', subjectId: hypo.id, version: '3.0' })) })
+  // Wundstandard: Zielgruppe Pflege, Gültigkeit endet bald (Erinnerung an die verantwortliche Person)
+  await client.document.update({ where: { id: woundDoc.id }, data: { validUntil: addDays(today, 20), audienceRoles: ['nurse', 'specialist', 'ward_lead', 'nursing_director'] } })
 
   // Schulungen
   const CARE_ROLES = ['care_assistant', 'nurse', 'specialist', 'ward_lead', 'nursing_director']

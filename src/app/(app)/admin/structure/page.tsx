@@ -10,7 +10,7 @@ import {
   addTeamMemberAction, deleteLocationAction, deleteRoomAction, deleteTeamAction, deleteUnitAction,
   removeTeamMemberAction, saveLocationAction, saveRoomAction, saveTeamAction, saveUnitAction,
 } from './actions'
-import { NumberField, Select, TextField } from '@/components/ui/fields'
+import { Combobox, NumberField, Select, TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -208,10 +208,8 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                         </div>
                         <ActionForm action={addTeamMemberAction} success="common.saved" className="row">
                           <input type="hidden" name="teamId" value={tm.id} />
-                          <Select name="userId" aria-label={t('admin.structure.addMember')} required defaultValue="" style={{ minWidth: 160 }} className="grow">
-                            <option value="" disabled>{t('admin.structure.pickPerson')}</option>
-                            {users.filter((u) => !memberIds.has(u.id)).map((u) => <option key={u.id} value={u.id}>{u.lastName} {u.firstName}</option>)}
-                          </Select>
+                          <Combobox name="userId" aria-label={t('admin.structure.addMember')} required placeholder={t('admin.structure.pickPerson')} style={{ minWidth: 200 }} className="grow"
+                            options={users.filter((u) => !memberIds.has(u.id)).map((u) => ({ value: u.id, label: `${u.lastName} ${u.firstName}` }))} />
                           <Submit className="btn sm">{t('admin.structure.addMember')}</Submit>
                         </ActionForm>
                       </div>

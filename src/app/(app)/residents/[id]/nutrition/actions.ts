@@ -7,6 +7,7 @@ import { fd, fdNum, run, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { MEALS, PORTIONS, type Meal } from '@/lib/care'
+import { FLUID_KINDS, FLUID_LIMITS, type FluidKind } from '@/lib/fluid-balance'
 
 async function load(residentId: string) {
   const ctx = await getCtx()
@@ -83,5 +84,21 @@ export async function undoIntakeAction(residentId: string, id: string): Promise<
     await emit({ orgId: ctx.org.id, type: 'nutrition.recorded', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { kind: 'undo' } })
     refresh()
     return { ok: true, message: 'care.nutrition.removed' }
+  })
+}
+
+/** Flüssigkeitsbilanz (PRD §14): Einfuhr über Infusion/Sonde und Ausfuhr (Urin, Drainage, Erbrechen, sonstige). */
+export async function addFluidAction(residentId: string, kind: string, ml: number, note: string): Promise<ActionResult<{ id: string }>> {
+  return run<{ id: string }>(async () => {
+    const { ctx, r } = await load(residentId)
+    if (!FLUID_KINDS.includes(kind as FluidKind)) return fail('care.fluid.errors.kind', 'kind')
+    const amountMl = Math.round(Number(ml))
+    if (!Number.isFinite(amountMl) || amountMl < FLUID_LIMITS.min || amountMl > FLUID_LIMITS.max) return fail('care.fluid.errors.amount', 'ml')
+    const item = note.trim().slice(0, 120) || null
+    const log = await db.intakeLog.create({ data: { residentId: r.id, kind, amountMl, item, authorId: ctx.user.id } })
+    await audit(ctx, { action: 'nutrition.fluid', entityType: 'IntakeLog', entityId: log.id, after: { kind, amountMl, item }, context: { residentId: r.id } })
+    await emit({ orgId: ctx.org.id, type: 'nutrition.recorded', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { kind, amountMl } })
+    refresh()
+    return { ok: true, data: { id: log.id } }
   })
 }

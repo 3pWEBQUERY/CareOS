@@ -8,10 +8,10 @@ import { run, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { notify, usersWithPermission } from '@/lib/notify'
-import { invalidateTaskGeneration } from '@/lib/tasks'
+import { invalidateTaskGeneration, OPEN_STATUSES } from '@/lib/tasks'
 import { aiDraft, aiFeedback, AiUnavailable } from '@/lib/ai'
 import { aiConfigured } from '@/lib/env'
-import { atTime, fmtDate, hm, parseDateKey, startOfDay } from '@/lib/time'
+import { addDays, atTime, dateKey, fmtDate, hm, parseDateKey, startOfDay } from '@/lib/time'
 import { IV_CATEGORIES, parseTimes, SUGGESTION_RULES, domainLabel } from '@/lib/care'
 import { CARE_DOMAINS } from '@/lib/clinical-config'
 
@@ -177,6 +177,11 @@ export async function approveAction(residentId: string, planId: string): Promise
             })),
       )
       if (past.length) await tx.task.createMany({ data: past, skipDuplicates: true })
+      // Offene Evaluations-Aufgaben, deren Bereich oder Termin in der neuen Version nicht mehr besteht, entfallen.
+      const evalDue = new Set(draft.areas.filter((a) => a.evaluateBy).map((a) => `eval:${r.id}:${a.domain}|${dateKey(a.evaluateBy!)}`))
+      const evalOpen = await tx.task.findMany({ where: { residentId: r.id, source: 'careplan', sourceId: { startsWith: `eval:${r.id}:` }, status: { in: ['planned', 'ready'] } }, select: { id: true, sourceId: true, dueAt: true } })
+      const evalStale = evalOpen.filter((k) => !evalDue.has(`${k.sourceId}|${dateKey(k.dueAt)}`))
+      if (evalStale.length) await tx.task.deleteMany({ where: { id: { in: evalStale.map((k) => k.id) } } })
     })
 
     await audit(ctx, {
@@ -344,10 +349,17 @@ export async function evaluateAction(residentId: string, areaId: string, text: s
       const dates = (await db.carePlanArea.findMany({ where: { carePlanId: a.carePlanId, evaluateBy: { not: null } }, select: { evaluateBy: true }, orderBy: { evaluateBy: 'asc' }, take: 1 }))
       await db.carePlan.update({ where: { id: a.carePlanId }, data: { nextEvaluation: dates[0]?.evaluateBy ?? null } })
     }
+    // Fällige Evaluations-Aufgaben dieses Bereichs gelten damit als erledigt (PRD §9.2, Document Once).
+    const closed = await db.task.updateMany({
+      where: { residentId: r.id, source: 'careplan', sourceId: `eval:${r.id}:${area.domain}`, status: { in: [...OPEN_STATUSES] }, dueAt: { lt: addDays(startOfDay(), 1) } },
+      data: { status: 'done', completedById: ctx.user.id, completedAt: new Date() },
+    })
+    // Frühere Termine, die durch das neue Datum ersetzt sind, entfallen.
+    await db.task.deleteMany({ where: { residentId: r.id, source: 'careplan', sourceId: `eval:${r.id}:${area.domain}`, status: { in: ['planned', 'ready'] }, dueAt: { gte: addDays(startOfDay(), 1) } } })
     await audit(ctx, {
       action: 'careplan.evaluate', entityType: 'CarePlanArea', entityId: area.id,
       before: { evaluation: area.evaluation, evaluateBy: area.evaluateBy }, after: { evaluation, evaluateBy },
-      context: { residentId: r.id, carePlanId: area.carePlanId },
+      context: { residentId: r.id, carePlanId: area.carePlanId, tasksCompleted: closed.count },
     })
     await done(ctx, r, { areaId: area.id, step: 'evaluated' })
     return { ok: true, message: 'care.plan.evaluationSaved' }

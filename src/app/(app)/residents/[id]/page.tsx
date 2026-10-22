@@ -4,7 +4,7 @@ import { aiConfigured } from '@/lib/env'
 import { OPEN_STATUSES, taskView } from '@/lib/tasks'
 import { taskTitle } from '@/lib/task-title'
 import { addDays, fmtDayMonth, fmtDbDate, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
-import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
+import { abnormalKeys, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { Spark } from '../_components/Spark'
 import { pageResident, userNames, residentTitle } from '../_lib/resident'
 import { AiSummary } from './AiSummary'
@@ -30,15 +30,15 @@ export default async function ResidentOverview({ params }: { params: Promise<{ i
     db.careDomain.findMany({ where: { orgId: ctx.org.id }, select: { key: true, name: true } }),
     db.observation.findMany({ where: { residentId: r.id, important: true, at: { gte: addDays(now, -7) }, correctedBy: { none: {} } }, orderBy: { at: 'desc' }, take: 4 }),
     db.observation.findMany({ where: { residentId: r.id, at: { gte: since48 }, correctedBy: { none: {} } }, orderBy: { at: 'desc' }, take: 12 }),
-    db.vitalSign.findMany({ where: { residentId: r.id, at: { gte: addDays(now, -30) } }, orderBy: { at: 'asc' } }),
-    db.vitalSign.findMany({ where: { residentId: r.id, weight: { not: null }, at: { gte: addDays(now, -180) } }, orderBy: { at: 'asc' }, select: { at: true, weight: true } }),
+    db.vitalSign.findMany({ where: { residentId: r.id, ...LIVE, at: { gte: addDays(now, -30) } }, orderBy: { at: 'asc' } }),
+    db.vitalSign.findMany({ where: { residentId: r.id, ...LIVE, weight: { not: null }, at: { gte: addDays(now, -180) } }, orderBy: { at: 'asc' }, select: { at: true, weight: true } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
     db.incident.findMany({ where: { residentId: r.id, orgId: ctx.org.id, occurredAt: { gte: since48 } }, include: { type: true }, orderBy: { occurredAt: 'desc' } }),
     db.incident.count({ where: { residentId: r.id, orgId: ctx.org.id, occurredAt: { gte: addDays(now, -90) }, type: { key: 'fall' } } }),
     canMeds ? db.medication.findMany({ where: { residentId: r.id, OR: [{ createdAt: { gte: since48 } }, { stoppedAt: { gte: since48 } }] } }) : [],
     canMeds ? db.medicationAdministration.findMany({ where: { residentId: r.id, status: { not: 'given' }, at: { gte: since48 }, voidedAt: null }, include: { medication: { select: { name: true } } } }) : [],
     db.appointment.findMany({ where: { residentId: r.id, done: false, at: { gte: startOfDay(now), lt: addDays(now, 21) } }, orderBy: { at: 'asc' }, take: 6 }),
-    db.assessment.findMany({ where: { residentId: r.id }, orderBy: { at: 'desc' }, select: { key: true, at: true, nextDue: true, result: true, score: true } }),
+    db.assessment.findMany({ where: { residentId: r.id, ...LIVE }, orderBy: { at: 'desc' }, select: { key: true, at: true, nextDue: true, result: true, score: true } }),
     db.assessmentDefinition.findMany({ where: { orgId: ctx.org.id }, select: { key: true, name: true } }),
     can('task.read') ? db.task.findMany({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, orderBy: { dueAt: 'asc' } }) : [],
     db.intakeLog.findMany({ where: { residentId: r.id, at: { gte: startOfDay(addDays(now, -6)) } }, select: { at: true, kind: true, amountMl: true, portion: true } }),

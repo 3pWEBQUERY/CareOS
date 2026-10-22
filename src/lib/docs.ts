@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { plainText } from '@/lib/markdown'
 import { addDays } from '@/lib/time'
+import { inAudience, roleKeysByUserIds } from '@/lib/audience'
 
 /** Kategorien CareOS Docs (PRD §20). Schlüssel sind stabil, Anzeige über docs.cat.<key>. */
 export const DOC_CATEGORIES = ['guideline', 'instruction', 'emergency', 'hygiene', 'form', 'checklist', 'hr', 'standard'] as const
@@ -44,13 +45,19 @@ export async function loadDoc(ctx: Ctx, id: string) {
   })
 }
 
-/** Benutzer, die das Dokument bestätigen müssen (aktive Mitarbeitende mit docs.read). */
-export async function ackAudience(orgId: string) {
+/**
+ * Benutzer, die das Dokument bestätigen müssen (aktive Mitarbeitende mit docs.read).
+ * Mit Zielgruppe (Rollen-Schlüssel, PRD §45) nur Personen mit einer dieser Rollen.
+ */
+export async function ackAudience(orgId: string, audienceRoles: readonly string[] = []) {
   const rows = await db.roleAssignment.findMany({
     where: { role: { orgId, permissions: { has: 'docs.read' } }, user: { active: true, orgId } },
     select: { userId: true },
   })
-  return [...new Set(rows.map((r) => r.userId))]
+  const ids = [...new Set(rows.map((r) => r.userId))]
+  if (!audienceRoles.length) return ids
+  const keys = await roleKeysByUserIds(ids)
+  return ids.filter((id) => inAudience(audienceRoles, keys.get(id) ?? []))
 }
 
 // ── Suche ──

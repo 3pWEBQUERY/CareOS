@@ -28,6 +28,7 @@ test('Erkennung roher Felder', () => {
   assert.equal(findRawFields('<select value={a}>…</select><textarea />').length, 2)
   assert.equal(findRawFields('{/* raw-field-ok: Befehlspalette */}\n<input role="combobox" />').length, 0)
   assert.equal(findRawFields('<inputs /> <Select /> <TextField />').length, 0)
+  assert.equal(findRawFields('/**\n * anders als `<input capture>`\n */\n// <select> im Kommentar\nconst x = 1').length, 0)
 })
 
 test('Keine rohen <input>/<select>/<textarea> ausserhalb von src/components/ui/', () => {

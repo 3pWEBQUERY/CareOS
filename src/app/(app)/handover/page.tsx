@@ -9,6 +9,8 @@ import { Empty, Forbidden } from '@/components/ui/Empty'
 import { HandoverAckMetric, HandoverAckScope, HandoverActions, HandoverCard, type HoBlockDto } from '@/components/handover/HandoverUi'
 import { collectHandover, runningAndPrevious } from './collect'
 import { ackSettings } from '@/lib/acks'
+import { assignmentBoard, assignmentShift } from '@/lib/assignment'
+import { AssignmentButton } from '@/components/handover/Assignment'
 
 export async function generateMetadata() {
   return { title: (await getCtx()).t('nav.handover') }
@@ -17,7 +19,7 @@ export async function generateMetadata() {
 const LIMIT = 6
 
 /** CareOS Handover (PRD §11): automatische Schichtübergabe mit Ergänzungen und Kenntnisnahme. */
-export default async function HandoverPage({ searchParams }: { searchParams: Promise<{ s?: string; d?: string; since?: string }> }) {
+export default async function HandoverPage({ searchParams }: { searchParams: Promise<{ s?: string; d?: string; since?: string; who?: string }> }) {
   const sp = await searchParams
   const ctx = await getCtx()
   const { t, unit, user } = ctx
@@ -47,7 +49,15 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
   const to = last ? now : sel.end
 
   const handover = await db.handover.findUnique({ where: { unitId_shiftCode_date: { unitId: unit.id, shiftCode: sel.def.code, date: dbDate(shiftDay) } } })
-  const blocks = await collectHandover(ctx, unit.id, from, to, handover?.id ?? null, now)
+  const allBlocks = await collectHandover(ctx, unit.id, from, to, handover?.id ?? null, now)
+  // «Meine Übergabe» (PRD §71): Zuteilung meiner (kommenden/laufenden) Schicht; ohne Zuteilung alle Personen
+  const ref = await assignmentShift(ctx, unit.id, now)
+  const board = ref ? await assignmentBoard(ctx, unit.id, ref, shiftName(t, ref.def)) : null
+  const myIds = board ? board.pairs.filter((p) => p.userId === user.id).map((p) => p.residentId).filter((id) => allBlocks.some((b) => b.resident.id === id)) : []
+  const mineMode = myIds.length > 0 && sp.who !== 'all'
+  const blocks = mineMode ? allBlocks.filter((b) => myIds.includes(b.resident.id)) : allBlocks
+  const initials = new Map(board?.staff.map((s) => [s.id, s.initials]) ?? [])
+  const assignedTo = (rid: string) => board?.pairs.filter((p) => p.residentId === rid).map((p) => initials.get(p.userId) ?? '').filter(Boolean) ?? []
   const acks = handover ? await db.acknowledgement.findMany({ where: { subjectType: 'handover', subjectId: handover.id }, include: { user: { select: { initials: true } } }, orderBy: { at: 'asc' } }) : []
   const author = handover?.authorId ? await db.user.findUnique({ where: { id: handover.authorId }, select: { firstName: true, lastName: true } }) : null
   const myAcks = new Map(acks.filter((a) => a.userId === user.id).map((a) => [a.version, a]))
@@ -59,6 +69,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
       resident: {
         id: b.resident.id, name: `${b.resident.lastName} ${b.resident.firstName}`, room: b.resident.room, allergies: b.resident.allergies,
         meta: [b.resident.careLevel != null ? t('tasks.handover.careLevel', { n: b.resident.careLevel }) : null, b.resident.rea === 'no' ? t('residents.banner.reaNo') : null].filter(Boolean).join(' · '),
+        assigned: ref ? { shift: shiftName(t, ref.def, { short: true }), list: assignedTo(b.resident.id) } : undefined,
       },
       cols: { happened: cut('happened'), done: cut('done'), watch: cut('watch'), open: cut('open') },
       more: { happened: Math.max(0, b.happened.length - LIMIT), done: Math.max(0, b.done.length - LIMIT), watch: Math.max(0, b.watch.length - LIMIT), open: Math.max(0, b.open.length - LIMIT) },
@@ -74,12 +85,12 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
     ? dto.filter((b) => b.entry?.important && !b.acked).map((b) => ({ id: b.resident.id, name: b.resident.name, room: b.resident.room, watch: b.entry!.watch, open: b.entry!.open }))
     : []
   const importantOpen = important.length
-  const allAcked = myAcks.has('') && ackN === dto.length
+  const allAcked = (mineMode || myAcks.has('')) && ackN === dto.length
   const aiAvailable = aiConfigured() && ctx.can('ai.use')
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
   const href = (p: Record<string, string | null>) => {
     const q = new URLSearchParams()
-    const v: Record<string, string | null> = { s: sp.s ?? null, d: sp.d ?? null, since: since ? '1' : null, ...p }
+    const v: Record<string, string | null> = { s: sp.s ?? null, d: sp.d ?? null, since: since ? '1' : null, who: sp.who === 'all' ? 'all' : null, ...p }
     for (const [k, val] of Object.entries(v)) if (val) q.set(k, val)
     const s = q.toString()
     return '/handover' + (s ? '?' + s : '')
@@ -116,10 +127,22 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
         <div className="tabpanel">
           <HandoverAckScope>
           <div className="row-between">
-            <nav className="seg seg-x ho-scope" aria-label={t('tasks.handover.scope.label')}>
-              <Link href={href({ since: null })} aria-current={!since ? 'page' : undefined} scroll={false}>{t('tasks.handover.scope.shift')}</Link>
-              <Link href={href({ since: '1' })} aria-current={since ? 'page' : undefined} scroll={false}>{t('tasks.handover.sinceLast')}</Link>
-            </nav>
+            <div className="row ho-filters">
+              <nav className="seg seg-x ho-scope" aria-label={t('tasks.handover.scope.label')}>
+                <Link href={href({ since: null })} aria-current={!since ? 'page' : undefined} scroll={false}>{t('tasks.handover.scope.shift')}</Link>
+                <Link href={href({ since: '1' })} aria-current={since ? 'page' : undefined} scroll={false}>{t('tasks.handover.sinceLast')}</Link>
+              </nav>
+              {myIds.length > 0 && (
+                <nav className="seg seg-x" aria-label={t('home.scope.label')}>
+                  <Link href={href({ who: null })} aria-current={mineMode ? 'page' : undefined} scroll={false}>{t('home.scope.mineN', { n: myIds.length })}</Link>
+                  <Link href={href({ who: 'all' })} aria-current={!mineMode ? 'page' : undefined} scroll={false}>{t('home.scope.all')}</Link>
+                </nav>
+              )}
+              {board && ctx.canHere('task.manage') && (
+                <AssignmentButton className="btn" board={{ shift: board.shift, residents: board.residents, staff: board.staff, pairs: board.pairs, suggestion: board.suggestion }}
+                  label={board.pairs.length ? t('home.assign.editFor', { shift: shiftName(t, ref!.def, { short: true }) }) : t('home.assign.createFor', { shift: shiftName(t, ref!.def, { short: true }) })} />
+              )}
+            </div>
             <HandoverActions
               target={target}
               since={since}
@@ -132,6 +155,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
               note={handover?.note ?? null}
               aiAvailable={aiAvailable && !future}
               canWrite={canWrite}
+              scopeIds={mineMode ? myIds : undefined}
             />
           </div>
           {since && last && <p className="small muted" style={{ margin: 0 }}>{t(last.source === 'shift' ? 'tasks.handover.sinceHint' : 'tasks.handover.sinceHintSession', { at: rel(last.at) })}</p>}

@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const s = await routeSession(req)
   if (!s) return json({ error: 'unauthorized' }, 401)
   if (!sameOrigin(req)) return json({ error: 'forbidden' }, 403)
-  if (!rateLimit(`offline-sync:${s.userId}`, 30, 60_000).ok) return json({ error: 'rate' }, 429)
+  if (!(await rateLimit(`offline-sync:${s.userId}`, 30, 60_000)).ok) return json({ error: 'rate' }, 429)
   if (Number(req.headers.get('content-length') ?? 0) > 1_000_000) return json({ error: 'too_large' }, 413)
   const body = syncSchema.safeParse(await req.json().catch(() => null))
   if (!body.success) return json({ error: 'invalid' }, 400)

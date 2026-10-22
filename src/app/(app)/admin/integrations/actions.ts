@@ -199,3 +199,40 @@ export async function deleteIntegrationAction(id: string): Promise<ActionResult>
     return { ok: true, message: 'admin.common.deleted' }
   })
 }
+
+// ───────── Integration Layer: Prüfung und Import (src/lib/integrations/registry.ts) ─────────
+
+export async function testIntegrationAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    const it = await db.integration.findFirst({ where: { id, orgId: ctx.org.id } })
+    if (!it) return { ok: false, error: 'common.notFound' }
+    const { runIntegration } = await import('@/lib/integrations/registry')
+    const r = await runIntegration(it, ctx.org.id, 'test', { actorId: ctx.user.id })
+    await audit(ctx, { action: 'admin.integration.test', entityType: 'Integration', entityId: id, after: { ok: r.ok, message: r.message ?? null, runId: r.runId } })
+    refresh()
+    return r.ok ? { ok: true, message: ctx.t('platform.integrations.testOk') } : { ok: false, error: ctx.t('platform.integrations.testFailed', { error: r.message ?? '–' }) }
+  })
+}
+
+export async function importIntegrationAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    const it = await db.integration.findFirst({ where: { id: fd(form, 'id'), orgId: ctx.org.id } })
+    if (!it) return { ok: false, error: 'common.notFound' }
+    if (!it.active) return { ok: false, error: 'platform.integrations.errors.inactive' }
+    const { adapterFor, runIntegration } = await import('@/lib/integrations/registry')
+    if (!adapterFor(it.kind)?.import) return { ok: false, error: 'platform.integrations.errors.kind' }
+    let payload: unknown
+    try {
+      payload = JSON.parse(fd(form, 'payload'))
+    } catch {
+      return { ok: false, error: 'platform.integrations.errors.payload', field: 'payload' }
+    }
+    const r = await runIntegration(it, ctx.org.id, 'import', { actorId: ctx.user.id, payload })
+    await audit(ctx, { action: 'admin.integration.import', entityType: 'Integration', entityId: it.id, after: { ok: r.ok, records: r.records ?? 0, skipped: r.skipped ?? 0, runId: r.runId } })
+    refresh()
+    if (!r.ok) return { ok: false, error: 'platform.integrations.errors.payload', field: 'payload' }
+    return { ok: true, message: ctx.t('platform.integrations.imported', { n: r.records ?? 0, skipped: r.skipped ?? 0 }) }
+  })
+}

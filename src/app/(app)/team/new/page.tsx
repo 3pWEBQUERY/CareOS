@@ -5,7 +5,9 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { canModerate, canPostTo, myRoleKeys, visibleChannels } from '../lib'
 import { publishPostAction } from '../actions'
 import { ackSettings } from '@/lib/acks'
-import { Checkbox, DateField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
+import { Checkbox, CheckboxGroup, DateField, FileField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
+import { roleOptions } from '@/lib/audience'
+import { ACCEPT_UPLOADS, MAX_UPLOAD_BYTES } from '@/lib/upload-limits'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -17,7 +19,7 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
   const { t } = ctx
   if (!ctx.can('team.post')) return <Forbidden text={t('common.notAllowed')} />
   const { ch } = await searchParams
-  const [channels, roleKeys] = await Promise.all([visibleChannels(ctx), myRoleKeys(ctx.user.id)])
+  const [channels, roleKeys, roles] = await Promise.all([visibleChannels(ctx), myRoleKeys(ctx.user.id), roleOptions(ctx.org.id)])
   const postable = channels.filter((c) => canPostTo(ctx, c, roleKeys))
   const mayPin = postable.some((c) => canModerate(ctx, c))
   const preset = postable.find((c) => c.id === ch)?.id ?? ''
@@ -57,6 +59,8 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
                 <p className="small muted" style={{ margin: '6px 0 0' }}>{t('team.form.ackHint')}</p>
               </fieldset>
 
+              <CheckboxGroup label={t('team.audience.label')} hint={t('team.audience.hint')} name="audienceRoles" inline small optional options={roles.map((r) => ({ value: r.key, label: r.name }))} />
+
               <fieldset>
                 <legend className="lbl">{t('team.form.event')}</legend>
                 <div className="form-grid">
@@ -68,11 +72,7 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
 
               <div className="form-grid">
                 <DateField label={t('team.form.expiresAt')} hint={t('team.form.expiresHint')} name="expiresAt" />
-                <label className="fld">
-                  <span className="lbl">{t('team.form.attachments')}</span>
-                  <input type="file" name="files" multiple className="field" />
-                  <span className="hint">{t('team.form.attachHint')}</span>
-                </label>
+                <FileField label={t('team.form.attachments')} hint={t('team.form.attachHint')} name="files" multiple accept={ACCEPT_UPLOADS} maxSize={MAX_UPLOAD_BYTES} typesLabel="PDF, JPG, PNG, DOCX, XLSX, PPTX" />
               </div>
 
               <div className="form-actions">

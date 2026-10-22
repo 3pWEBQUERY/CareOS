@@ -18,7 +18,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const meta = await requestMeta()
-  if (!rateLimit('passkey:' + meta.ip, 20, 10 * 60_000).ok) return NextResponse.json({ error: 'rate' }, { status: 429 })
+  if (!(await rateLimit('passkey:' + meta.ip, 20, 10 * 60_000)).ok) return NextResponse.json({ error: 'rate' }, { status: 429 })
   const chId = req.cookies.get(CHALLENGE_COOKIE)?.value
   const ch = chId ? await db.authChallenge.findUnique({ where: { id: chId } }) : null
   if (!ch || ch.kind !== 'login' || ch.expiresAt < new Date()) return NextResponse.json({ error: 'challenge' }, { status: 400 })

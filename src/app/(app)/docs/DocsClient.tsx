@@ -9,7 +9,8 @@ import { Dialog } from '@/components/ui/Dialog'
 import { useConfirm, splitQuestion } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { createDocument, updateDocumentMeta, createVersion, updateDraft, askAssistant, type AssistantAnswer } from './actions'
-import { Checkbox, DateField, Select, TextField, Textarea } from '@/components/ui/fields'
+import { Checkbox, CheckboxGroup, Combobox, DateField, FileField, Select, TextField, Textarea } from '@/components/ui/fields'
+import { ACCEPT_UPLOADS, MAX_UPLOAD_BYTES } from '@/lib/upload-limits'
 
 type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 
@@ -60,7 +61,9 @@ export function PrintButton({ label }: { label: string }) {
   return <button type="button" className="btn ghost doc-print" onClick={() => window.print()}>{label}</button>
 }
 
-function MetaFields({ d, users }: { d?: Meta; users?: { id: string; name: string }[] }) {
+export type RoleOption = { key: string; name: string }
+
+function MetaFields({ d, users, roles }: { d?: Meta; users?: { id: string; name: string }[]; roles: RoleOption[] }) {
   const t = useT()
   return (
     <div className="form-grid">
@@ -69,21 +72,20 @@ function MetaFields({ d, users }: { d?: Meta; users?: { id: string; name: string
           {DOC_CATS.map((c) => <option key={c} value={c}>{t('docs.cat.' + c)}</option>)}
         </Select>
       {users && (
-        <Select label={t('docs.f.owner')} name="ownerId" defaultValue={d?.ownerId}>
-            {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </Select>
+        <Combobox label={t('docs.f.owner')} name="ownerId" defaultValue={d?.ownerId ?? users[0]?.id} required options={users.map((u) => ({ value: u.id, label: u.name }))} />
       )}
       <TextField label={t('docs.f.tags')} wrapClassName="span-all" name="tags" defaultValue={d?.tags.join(', ')} placeholder={t('docs.f.tagsHint')} />
       <DateField label={t('docs.f.validFrom')} name="validFrom" defaultValue={d?.validFrom ?? ''} />
       <DateField label={t('docs.f.validUntil')} name="validUntil" defaultValue={d?.validUntil ?? ''} />
       <Checkbox name="requireAck" defaultChecked={d?.requireAck} label={t('docs.f.requireAck')} wrapClassName="span-all" />
+      <CheckboxGroup label={t('docs.audience.label')} hint={t('docs.audience.hint')} name="audienceRoles" inline small optional wrapClassName="span-all" defaultValue={d?.audienceRoles} options={roles.map((r) => ({ value: r.key, label: r.name }))} />
     </div>
   )
 }
 
-export type Meta = { id: string; title: string; category: string; tags: string[]; requireAck: boolean; validFrom: string | null; validUntil: string | null; ownerId: string }
+export type Meta = { id: string; title: string; category: string; tags: string[]; requireAck: boolean; validFrom: string | null; validUntil: string | null; ownerId: string; audienceRoles: string[] }
 
-export function NewDocButton() {
+export function NewDocButton({ roles }: { roles: RoleOption[] }) {
   const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -92,10 +94,10 @@ export function NewDocButton() {
       <button type="button" className="btn primary" onClick={() => setOpen(true)}>{t('docs.new')}</button>
       <Dialog open={open} onClose={() => setOpen(false)} title={t('docs.new')} wide>
         <ActionForm action={createDocument} success="docs.created" onDone={(r) => { if (r.ok) { setOpen(false); router.push(`/docs/${(r.data as { id: string }).id}`) } }}>
-          <MetaFields />
+          <MetaFields roles={roles} />
           <div className="form-grid">
             <TextField label={t('docs.f.version')} name="version" defaultValue="1.0" className="mono" />
-            <label className="fld"><span className="lbl">{t('docs.f.file')} <span className="muted">({t('common.optional')})</span></span><input className="field" type="file" name="file" /></label>
+            <FileField label={t('docs.f.file')} optional name="file" accept={ACCEPT_UPLOADS} maxSize={MAX_UPLOAD_BYTES} typesLabel="PDF, DOCX, XLSX, PPTX, JPG, PNG, TXT, CSV, MP4" />
           </div>
           <Textarea label={t('docs.f.body')} name="body" rows={12} placeholder={t('docs.f.bodyHint')} className="mono" />
           <div className="form-actions"><span className="small muted">{t('docs.f.draftHint')}</span><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('common.create')}</Submit></div>
@@ -105,7 +107,7 @@ export function NewDocButton() {
   )
 }
 
-export function MetaButton({ d, users }: { d: Meta; users: { id: string; name: string }[] }) {
+export function MetaButton({ d, users, roles }: { d: Meta; users: { id: string; name: string }[]; roles: RoleOption[] }) {
   const t = useT()
   const [open, setOpen] = useState(false)
   return (
@@ -114,7 +116,7 @@ export function MetaButton({ d, users }: { d: Meta; users: { id: string; name: s
       <Dialog open={open} onClose={() => setOpen(false)} title={t('docs.editMeta')} wide>
         <ActionForm action={updateDocumentMeta} success="common.saved" reset={false} onDone={(r) => r.ok && setOpen(false)}>
           <input type="hidden" name="id" value={d.id} />
-          <MetaFields d={d} users={users} />
+          <MetaFields d={d} users={users} roles={roles} />
           <div className="form-actions"><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('common.save')}</Submit></div>
         </ActionForm>
       </Dialog>
@@ -150,7 +152,7 @@ export function VersionButton({ documentId, draft, suggest, suggestCritical, bas
           <p className="small muted" style={{ margin: 0 }}>{t('docs.f.criticalHint')}</p>
           <Textarea label={t('docs.f.body')} hint={t('docs.f.bodyHint')} name="body" rows={16} defaultValue={draft?.body ?? baseBody} className="mono" />
           <div className="form-grid">
-            <label className="fld"><span className="lbl">{t('docs.f.file')} <span className="muted">({t('common.optional')})</span></span><input className="field" type="file" name="file" /></label>
+            <FileField label={t('docs.f.file')} optional name="file" accept={ACCEPT_UPLOADS} maxSize={MAX_UPLOAD_BYTES} typesLabel="PDF, DOCX, XLSX, PPTX, JPG, PNG, TXT, CSV, MP4" />
             {draft?.fileName ? (
               <Checkbox name="removeFile" label={t('docs.f.removeFile', { name: draft.fileName })} wrapStyle={{ alignSelf: 'end' }} />
             ) : !draft && hasFile ? (

@@ -2,12 +2,12 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { useLocale, useT } from '@/i18n/client'
-import { INTL_LOCALE } from '@/i18n/core'
+import { fmtNum } from '@/lib/time'
 import { toast } from '@/components/toast'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { recordVitals, saveThresholds } from './actions'
 import { isQueued, orQueue } from '@/lib/offline/client'
-import { TextField } from '@/components/ui/fields'
+import { NumberField, TextField } from '@/components/ui/fields'
 
 type Field = { key: string; label: string; unit: string; min: number; max: number; dec: number; lo: number; hi: number }
 
@@ -21,17 +21,8 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
   const [err, setErr] = useState<{ msg: string; field?: string } | null>(null)
   const [warn, setWarn] = useState<string[] | null>(null)
   const [pending, start] = useTransition()
-  // Sofortige Rückmeldung direkt am Feld (PRD §32): unplausibel = Fehler, ausserhalb Referenz = Hinweis ▲/▼
-  const [hint, setHint] = useState<Record<string, { kind: 'err' | 'warn'; text: string }>>({})
-  const check = (f: Field) => {
-    const raw = (vals[f.key] ?? '').trim().replace(',', '.')
-    const v = Number(raw)
-    let h: { kind: 'err' | 'warn'; text: string } | null = null
-    if (raw && (!Number.isFinite(v) || v < f.min || v > f.max)) h = { kind: 'err', text: t('chart.vitals.errors.implausible', { label: f.label, value: vals[f.key] ?? '', min: f.min, max: f.max, unit: f.unit }) }
-    else if (raw && f.key !== 'weight' && (v < f.lo || v > f.hi)) h = { kind: 'warn', text: `${v > f.hi ? '▲' : '▼'} ${t('chart.vitals.refShort')} ${nf(f.lo, f.dec)}–${nf(f.hi, f.dec)}` }
-    setHint((cur) => { const n = { ...cur }; if (h) n[f.key] = h; else delete n[f.key]; return n })
-  }
-  const nf = (v: number, dec: number) => new Intl.NumberFormat(INTL_LOCALE[locale], { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)
+  // Sofortige Rückmeldung am Feld (PRD §32) übernimmt NumberField: unplausibel (min/max) = Fehler, ausserhalb Referenz = Hinweis ▲/▼
+  const nf = (v: number, dec: number) => fmtNum(v, dec, locale) // Dezimalkomma wie in der Verlaufstabelle
 
   const parse = () => {
     const out: Record<string, number> = {}
@@ -54,7 +45,7 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
     const p = parse()
     if (p.error) {
       setErr(p.error); setWarn(null)
-      if (p.error.field) (ref.current?.querySelector(`[name="${p.error.field}"]`) as HTMLInputElement | null)?.focus()
+      if (p.error.field) ref.current?.querySelector<HTMLInputElement>('#v_' + p.error.field)?.focus()
       return
     }
     setErr(null)
@@ -69,33 +60,33 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
       // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
       const note = String(form.get('note') ?? '').trim().slice(0, 500) || null
       const r = await orQueue(() => recordVitals(residentId, form), { kind: 'vitals', residentId, data: { values: out, note } }, { who })
-      if (isQueued(r)) { setVals({}); setHint({}); setWarn(null); toast(t(r.message)); return }
+      if (isQueued(r)) { setVals({}); setWarn(null); toast(t(r.message)); return }
       if (!r.ok) {
         setErr({ msg: /^[a-z]+\.[\w.]+$/.test(r.error) ? t(r.error) : r.error, field: r.field })
         return
       }
-      setVals({}); setHint({}); setWarn(null)
+      setVals({}); setWarn(null)
       // Der Absende-Knopf war während des Speicherns deaktiviert: Fokus für die nächste Messung ins erste Feld
       ref.current?.querySelector<HTMLInputElement>('input.field')?.focus()
       toast(t('chart.vitals.saved') + (r.data?.abnormal ? ' · ' + t('chart.vitals.savedAbnormal', { n: r.data.abnormal }) : ''))
     })
   }
 
-  // Dieselbe Meldung steht bereits am Feld (Live-Region dort): nicht ein zweites Mal ausgeben/vorlesen
-  const dupErr = !!err?.field && hint[err.field]?.text === err.msg
+  // Meldungen zu einem Messwert stehen am Feld; unten nur allgemeine
+  const dupErr = !!err?.field && fields.some((f) => f.key === err.field)
   return (
     <form ref={ref} className="vform" noValidate onSubmit={(e) => { e.preventDefault(); submit(false) }}>
       {fields.map((f) => (
-        <label key={f.key} htmlFor={'v_' + f.key}>
-          <span className="lbl">{f.label} <span style={{ textTransform: 'none', letterSpacing: 0 }}>{f.unit}</span></span>
-          <TextField
- id={'v_' + f.key} name={f.key} inputMode="decimal" autoComplete="off" placeholder={PH[f.key] != null ? nf(PH[f.key], f.dec) : ''}
-            value={vals[f.key] ?? ''} aria-invalid={err?.field === f.key || hint[f.key]?.kind === 'err' || undefined}
-            aria-describedby={[hint[f.key] && 'vh_' + f.key, err?.field === f.key && !dupErr && 'v_err'].filter(Boolean).join(' ') || undefined}
-            onChange={(e) => { setVals((v) => ({ ...v, [f.key]: e.target.value })); setWarn(null); if (hint[f.key]) setHint((cur) => { const n = { ...cur }; delete n[f.key]; return n }) }}
-            onBlur={() => check(f)} />
-          {hint[f.key] && <span id={'vh_' + f.key} className={'small mono ' + (hint[f.key].kind === 'err' ? 'crit-text' : 'warn-text')} role={hint[f.key].kind === 'err' ? 'alert' : undefined}>{hint[f.key].text}</span>}
-        </label>
+        <NumberField
+          key={f.key} id={'v_' + f.key} name={f.key} label={f.label} unit={f.unit} min={f.min} max={f.max}
+          placeholder={PH[f.key] != null ? nf(PH[f.key], f.dec) : ''}
+          value={vals[f.key] ? Number(vals[f.key]) : ''}
+          onChange={(v) => { setVals((cur) => ({ ...cur, [f.key]: v === '' ? '' : String(v) })); setWarn(null); if (err?.field === f.key) setErr(null) }}
+          // Ausserhalb des Referenzbereichs: Hinweis ▲/▼ am Feld (PRD §32), Gewicht ohne Referenz
+          warn={f.key !== 'weight' ? { lo: f.lo, hi: f.hi } : undefined}
+          warnText={(d) => `${d === 'high' ? '▲' : '▼'} ${t('chart.vitals.refShort')} ${nf(f.lo, f.dec)}–${nf(f.hi, f.dec)}`}
+          error={err?.field === f.key ? err.msg : undefined}
+        />
       ))}
       <TextField label={t('chart.vitals.note')} wrapStyle={{ gridColumn: 'span 2' }} id="v_note" name="note" autoComplete="off" maxLength={500} style={{ fontFamily: 'var(--font-ui)' }} />
       {warn && (
@@ -124,7 +115,7 @@ type Th = { key: string; label: string; unit: string; dec: number; lo: number; h
 export function Thresholds({ residentId, rows, canEdit }: { residentId: string; rows: Th[]; canEdit: boolean }) {
   const t = useT()
   const locale = useLocale()
-  const nf = (v: number, dec: number) => new Intl.NumberFormat(INTL_LOCALE[locale], { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)
+  const nf = (v: number, dec: number) => fmtNum(v, dec, locale) // Dezimalkomma wie in der Verlaufstabelle
   const [edit, setEdit] = useState(false)
   const n = rows.filter((r) => r.individual).length
   return (
@@ -147,8 +138,8 @@ export function Thresholds({ residentId, rows, canEdit }: { residentId: string; 
                   <td className="num">{nf(r.orgLo, r.dec)}–{nf(r.orgHi, r.dec)}</td>
                   {edit ? (
                     <>
-                      <td><TextField name={'lo_' + r.key} inputMode="decimal" defaultValue={r.individual ? nf(r.lo, r.dec) : ''} placeholder={nf(r.orgLo, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualLo')}`} className="mono" /></td>
-                      <td><TextField name={'hi_' + r.key} inputMode="decimal" defaultValue={r.individual ? nf(r.hi, r.dec) : ''} placeholder={nf(r.orgHi, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualHi')}`} className="mono" /></td>
+                      <td><NumberField name={'lo_' + r.key} defaultValue={r.individual ? r.lo : ''} placeholder={nf(r.orgLo, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualLo')}`} /></td>
+                      <td><NumberField name={'hi_' + r.key} defaultValue={r.individual ? r.hi : ''} placeholder={nf(r.orgHi, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualHi')}`} /></td>
                     </>
                   ) : (
                     <td colSpan={2} className="num">{r.individual ? <><span className="tag accent" style={{ marginRight: 8 }}>{t('chart.vitals.individualTag')}</span>{nf(r.lo, r.dec)}–{nf(r.hi, r.dec)}</> : <span className="muted">–</span>}</td>

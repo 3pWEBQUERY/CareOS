@@ -5,22 +5,30 @@ import { OBS_CATEGORIES, OBS_TONE, pageResident, residentName, userNames, reside
 import { Notes, type NoteRow } from './Notes'
 import { FormEntry } from '@/components/forms/FormEntry'
 import { notesExtras } from './extras'
+import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
+import { focusFor } from '../../_lib/focus'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return residentTitle((await params).id, 'notes')
 }
 
-export default async function NotesPage({ params }: { params: Promise<{ id: string }> }) {
+/** Verlauf seitenweise (PRD §66): neueste 100, «Mehr laden» je 100 weitere. */
+const PAGE = 100
+
+export default async function NotesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ n?: string }> }) {
   const { id } = await params
+  const limit = Math.min(5000, Math.max(PAGE, Math.ceil((Number((await searchParams).n) || PAGE) / PAGE) * PAGE))
   const { ctx, r, can } = await pageResident(id)
   const { t } = ctx
   const now = new Date()
-  const obs = await db.observation.findMany({
+  const page = await db.observation.findMany({
     where: { residentId: r.id },
-    orderBy: [{ at: 'desc' }, { createdAt: 'desc' }],
-    take: 300,
+    orderBy: [{ at: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
+    take: limit + 1,
     include: { correctedBy: { select: { id: true, authorId: true, createdAt: true } } },
   })
+  const more = page.length > limit
+  const obs = more ? page.slice(0, limit) : page
   const [names, asked] = await Promise.all([
     userNames(ctx, [...obs.map((o) => o.authorId), ...obs.flatMap((o) => o.correctedBy.map((c) => c.authorId))]),
     // Bereits für die Visite vorgemerkte Einträge (offene Fragen mit Bezug auf einen Verlaufseintrag)
@@ -53,7 +61,11 @@ export default async function NotesPage({ params }: { params: Promise<{ id: stri
   const aiOn = aiConfigured() && can('ai.use')
   const extras = await notesExtras(ctx, obs, canWrite)
   for (const row of rows) Object.assign(row, extras.row(row.id))
+  // Fokusdokumentation automatisch anbieten (PRD §10.3)
+  const focus = canWrite ? await focusFor(ctx, r) : null
   return (
+    <>
+    {focus && focus.suggestions.length > 0 && <FocusSuggestions items={focus.suggestions} />}
     <Notes
       residentId={r.id}
       who={`${residentName(r)} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`}
@@ -62,7 +74,9 @@ export default async function NotesPage({ params }: { params: Promise<{ id: stri
       categories={OBS_CATEGORIES.map((c) => ({ key: c, label: t('chart.cat.' + c), tone: OBS_TONE[c] }))}
       canWrite={canWrite}
       aiOn={aiOn}
+      moreHref={more ? `/residents/${r.id}/notes?n=${limit + PAGE}` : null}
       formSlot={extras.forms.length ? <FormEntry residentId={r.id} who={`${residentName(r)} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`} forms={extras.forms} /> : null}
     />
+    </>
   )
 }

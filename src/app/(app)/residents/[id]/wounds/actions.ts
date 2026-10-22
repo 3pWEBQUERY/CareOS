@@ -10,6 +10,8 @@ import { saveUpload, UploadError } from '@/lib/files'
 import { invalidateTaskGeneration, OPEN_STATUSES } from '@/lib/tasks'
 import { addDays, dateKey, parseDateKey, startOfDay } from '@/lib/time'
 import { EDGE, EXUDATE, TISSUE, WOUND_KINDS, WOUND_ORIGINS } from '@/lib/care'
+import { actionResident } from '../../_lib/resident'
+import { AlreadyVoided, correctionSchema, mayCorrect, voidData } from '../../_lib/correction'
 
 async function load(residentId: string) {
   const ctx = await getCtx()
@@ -143,5 +145,64 @@ export async function setWoundStatusAction(residentId: string, woundId: string, 
     invalidateTaskGeneration(r.unitId)
     refresh()
     return { ok: true, message: status === 'closed' ? 'care.wounds.closedToast' : 'care.wounds.statusChanged' }
+  })
+}
+
+/**
+ * Storno oder Korrektur einer Wundbeurteilung (PRD §35). Die Korrektur übernimmt Zeitpunkt, Fotos und nächsten
+ * Verbandwechsel des ursprünglichen Eintrags; Masse, Befund und Behandlung können korrigiert werden.
+ * Ein Storno blendet den Eintrag aus Verlauf, Kennzahlen und Übergabe aus (z. B. falsche Person, falsche Wunde).
+ */
+export async function correctWoundEntryAction(residentId: string, entryId: string, form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const { mode, reason } = correctionSchema.parse({ mode: fd(form, 'mode'), reason: fd(form, 'reason') })
+    const { ctx, r, can } = await actionResident(residentId, 'resident.wounds.write')
+    const old = await db.woundAssessment.findFirst({ where: { id: entryId, wound: { residentId: r.id } }, include: { wound: { select: { id: true, bodySite: true } } } })
+    if (!old) return fail('common.notFound')
+    if (!mayCorrect(ctx, can, old.authorId)) return fail('common.notAllowed')
+    if (old.voidedAt) return fail('chart.void.errors.already')
+    let data: Record<string, unknown> | null = null
+    if (mode === 'correct') {
+      const size: Record<'lengthMm' | 'widthMm' | 'depthMm', number | null> = { lengthMm: null, widthMm: null, depthMm: null }
+      for (const [k, f] of [['lengthMm', 'length'], ['widthMm', 'width'], ['depthMm', 'depth']] as const) {
+        const v = fdNum(form, f)
+        if (v != null && (Number.isNaN(v) || v < 0 || v > 1000)) return fail('care.wounds.errors.sizeInvalid', f)
+        size[k] = v
+      }
+      const pain = fdNum(form, 'pain')
+      if (pain != null && (Number.isNaN(pain) || pain < 0 || pain > 10)) return fail('care.wounds.errors.painInvalid', 'pain')
+      data = {
+        ...size, pain: pain == null ? null : Math.round(pain),
+        exudate: pick(fd(form, 'exudate'), EXUDATE), tissue: pick(fd(form, 'tissue'), TISSUE), edge: pick(fd(form, 'edge'), EDGE),
+        description: fd(form, 'description').slice(0, 4000) || null, treatment: fd(form, 'treatment').slice(0, 2000) || null,
+        material: fd(form, 'material').slice(0, 300) || null,
+      }
+      const before = old as unknown as Record<string, unknown>
+      if (Object.entries(data).every(([k, v]) => (before[k] ?? null) === v)) return fail('chart.void.errors.unchanged')
+    }
+    let created: { id: string } | null = null
+    try {
+      created = await db.$transaction(async (tx) => {
+        const res = await tx.woundAssessment.updateMany({ where: { id: old.id, voidedAt: null }, data: voidData(ctx, reason) })
+        if (res.count !== 1) throw new AlreadyVoided()
+        if (!data) return null
+        return tx.woundAssessment.create({
+          data: { woundId: old.woundId, at: old.at, nextChange: old.nextChange, photoIds: old.photoIds, authorId: ctx.user.id, supersedesId: old.id, ...data },
+          select: { id: true },
+        })
+      })
+    } catch (e) {
+      if (e instanceof AlreadyVoided) return fail('chart.void.errors.already')
+      throw e
+    }
+    const { wound: _w, ...plain } = old
+    await audit(ctx, {
+      action: created ? 'wound.correct' : 'wound.void', entityType: 'WoundAssessment', entityId: old.id,
+      before: plain, after: { voided: true, reason, ...(created ? { correctionId: created.id, ...data } : {}) },
+      context: { residentId: r.id, woundId: old.woundId },
+    })
+    await emit({ orgId: ctx.org.id, type: 'wound.updated', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { woundId: old.woundId, step: created ? 'corrected' : 'voided' } })
+    refresh()
+    return { ok: true, message: created ? 'chart.void.corrected' : 'chart.void.voided' }
   })
 }

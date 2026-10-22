@@ -14,15 +14,17 @@ export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & FieldP
   maxRows?: number
   /** Zeichenzähler «n / max» (ab 80 % sichtbar hervorgehoben); nur mit maxLength. */
   counter?: boolean
+  /** Ohne .field-Rahmen (Stil kommt vom Kontext, z. B. Verlaufseintrag) */
+  plain?: boolean
   ref?: Ref<HTMLTextAreaElement>
 }
 
 export function Textarea(props: TextareaProps) {
   const [f, p] = splitField(props)
-  const { className, autoGrow, maxRows, counter, ...rest } = p
+  const { className, autoGrow, maxRows, counter, plain, ...rest } = p
   const ids = useFieldIds(f, rest)
   const showCounter = !!counter && !!rest.maxLength
-  const common = { ...rest, id: ids.id, 'aria-invalid': ids.invalid || undefined, className: cx('field', className) }
+  const common = { ...rest, id: ids.id, 'aria-invalid': ids.invalid || undefined, className: cx(!plain && 'field', className) }
   if (autoGrow || showCounter) {
     const describedBy = cx(ids.describedBy, showCounter && ids.id + '-c')
     return wrap(f, ids, <TextareaEnhanced {...common} aria-describedby={describedBy} autoGrow={autoGrow} maxRows={maxRows} counter={showCounter} />)

@@ -6,6 +6,7 @@ import { toast } from '@/components/toast'
 import { setDoseAction } from '@/app/(app)/residents/[id]/meds/actions'
 import type { ColleagueDto, DoseStateDto, ResidentCtxDto } from './types'
 import { Select, TextField } from '@/components/ui/fields'
+import { ResidentPhoto } from '@/components/residents/ResidentPhoto'
 
 export type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 export const isKey = (s: string) => /^[a-z]+\.[\w.]+$/.test(s)
@@ -52,11 +53,12 @@ export function useDoseCall(day: string) {
   return { pending, busy, record, isBusy: (medId: string, time: string) => busy === medId + '|' + time }
 }
 
-/** Patientenzuordnung in kritischen Dialogen (PRD §32): Name, Zimmer, Allergien. */
+/** Patientenzuordnung in kritischen Dialogen (PRD §32): Foto, Name, Zimmer, Allergien. */
 export function ResidentContext({ r }: { r: ResidentCtxDto }) {
   const t = useT()
   return (
     <>
+      <ResidentPhoto residentId={r.id} photoId={r.photoId} name={r.name} size="md" />
       <strong>{r.name}</strong>
       {r.room && <span className="mono">{t('meds.roomShort', { room: r.room })}</span>}
       {r.allergies.map((a) => <span key={a} className="flag crit">{t('residents.banner.allergy', { name: a })}</span>)}

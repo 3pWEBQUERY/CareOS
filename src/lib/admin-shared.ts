@@ -7,12 +7,12 @@ import type { EventType } from '@/lib/events'
 export const EVENT_TYPES = [
   'task.created', 'task.completed', 'task.reopened', 'task.escalated',
   'observation.created', 'observation.corrected',
-  'vitals.recorded', 'vitals.abnormal',
+  'vitals.recorded', 'vitals.abnormal', 'vitals.corrected', 'vitals.reviewed',
   'medication.administered', 'medication.changed',
   'handover.updated', 'handover.acknowledged',
   'incident.reported', 'incident.updated',
-  'careplan.updated', 'assessment.recorded', 'wound.updated', 'nutrition.recorded',
-  'resident.updated', 'visit.updated',
+  'careplan.updated', 'assessment.recorded', 'assessment.corrected', 'wound.updated', 'nutrition.recorded',
+  'resident.updated', 'visit.updated', 'assignment.updated',
   'post.published', 'message.created',
   'document.published', 'schedule.changed', 'notification.created',
 ] as const satisfies readonly EventType[]
@@ -21,7 +21,7 @@ type MissingEvent = Exclude<EventType, (typeof EVENT_TYPES)[number]>
 export const _eventListComplete: MissingEvent extends never ? true : MissingEvent = true
 
 /** Scopes für API-Tokens (PRD §40). */
-export const API_SCOPES = ['residents:read', 'tasks:read', 'tasks:write', 'observations:write', 'events:read', 'fhir:read'] as const
+export const API_SCOPES = ['residents:read', 'tasks:read', 'tasks:write', 'observations:write', 'events:read', 'fhir:read', 'labs:write'] as const
 export type ApiScope = (typeof API_SCOPES)[number]
 
 /** Integrationsarten (PRD §40/§41) – informativ, die eigentliche Anbindung erfolgt über die Integration Layer. */

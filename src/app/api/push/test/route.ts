@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   if (!s) return json({ error: 'unauthorized' }, 401)
   if (!sameOrigin(req)) return json({ error: 'forbidden' }, 403)
   if (!pushConfigured()) return json({ error: 'not_configured' }, 404)
-  if (!rateLimit(`push-test:${s.userId}`, 5, 60_000).ok) return json({ error: 'rate' }, 429)
+  if (!(await rateLimit(`push-test:${s.userId}`, 5, 60_000)).ok) return json({ error: 'rate' }, 429)
   const locale = s.user.locale as Locale
   const t = makeT(dictionary(locale), locale, 'resident')
   const r = await sendTestPush(s.userId, t)

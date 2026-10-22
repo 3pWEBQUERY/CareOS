@@ -143,12 +143,8 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
             </div>
             {!readOnly && (
               <>
-                <label className="fld" htmlFor={`${id}a${q.id}`}>
-                  <span className="lbl">{t('visit.capture.answer')}</span>
-                  <Textarea id={`${id}a${q.id}`} rows={2} maxLength={2000} value={answers[q.id] ?? ''} aria-describedby={`${id}a${q.id}h`}
-                    onChange={(e) => setAnswers((cur) => ({ ...cur, [q.id]: e.target.value }))} />
-                  <span className="hint" id={`${id}a${q.id}h`}>{t('visit.capture.answerHint')}</span>
-                </label>
+                <Textarea label={t('visit.capture.answer')} hint={t('visit.capture.answerHint')} id={`${id}a${q.id}`} rows={2} maxLength={2000} autoGrow value={answers[q.id] ?? ''}
+                  onChange={(e) => setAnswers((cur) => ({ ...cur, [q.id]: e.target.value }))} />
                 <div><button type="button" className="btn sm" onClick={() => addOrder(q.id)}>+ {t('visit.capture.orderFor')}</button></div>
               </>
             )}
@@ -195,7 +191,7 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
       )}
 
       {!readOnly && (
-        <Textarea label={<>{t('visit.capture.note')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} id={id + 'n'} rows={3} maxLength={4000} value={note} placeholder={t('visit.capture.noteHint')} onChange={(e) => setNote(e.target.value)} />
+        <Textarea label={t('visit.capture.note')} optional id={id + 'n'} rows={3} maxLength={4000} value={note} placeholder={t('visit.capture.noteHint')} onChange={(e) => setNote(e.target.value)} />
       )}
 
       {!readOnly && (

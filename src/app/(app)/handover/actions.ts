@@ -79,6 +79,7 @@ export async function submitHandoverAction(form: FormData): Promise<ActionResult
 
 /**
  * Kenntnisnahme (PRD §11.4). residentId gesetzt → eine Person (version = residentId).
+ * residentIds (Komma-Liste) → «Meine übernehmen»: die zugeteilten Personen (PRD §71), ohne Gesamtbestätigung.
  * Leer → alle: nur möglich, wenn alle wichtigen Einträge einzeln übernommen sind; setzt zusätzlich die Gesamtbestätigung (version '').
  */
 export async function acknowledgeAction(form: FormData): Promise<ActionResult> {
@@ -88,6 +89,7 @@ export async function acknowledgeAction(form: FormData): Promise<ActionResult> {
     const { handover, unit } = await target(ctx, form, true)
     if (!handover) return err('common.genericError')
     const residentId = fd(form, 'residentId')
+    const subset = residentId ? [] : [...new Set(fd(form, 'residentIds').split(',').filter(Boolean))]
     const mine = await db.acknowledgement.findMany({ where: { userId: ctx.user.id, subjectType: 'handover', subjectId: handover.id } })
     const has = new Set(mine.map((a) => a.version))
     let created: string[] = []
@@ -96,6 +98,16 @@ export async function acknowledgeAction(form: FormData): Promise<ActionResult> {
       const r = await residentInScope(ctx, residentId)
       if (!r || r.unitId !== unit.id) return err('common.notFound')
       if (!has.has(r.id)) created = [r.id]
+    } else if (subset.length) {
+      const rs = await db.resident.findMany({ where: { id: { in: subset }, unitId: unit.id, orgId: ctx.org.id }, select: { id: true } })
+      if (rs.length !== subset.length) return err('common.notFound')
+      if (ackSettings(ctx.org.settings).handoverImportantRequiresAck) {
+        const confirmed = new Set(fd(form, 'confirmed').split(',').filter(Boolean))
+        const entries = await db.handoverEntry.findMany({ where: { handoverId: handover.id, important: true, residentId: { in: subset } } })
+        if (entries.some((e) => !has.has(e.residentId) && !confirmed.has(e.residentId))) return err('tasks.handover.errors.importantFirst')
+        importantConfirmed = entries.filter((e) => !has.has(e.residentId)).map((e) => e.residentId)
+      }
+      created = subset.filter((id) => !has.has(id))
     } else {
       if (ackSettings(ctx.org.settings).handoverImportantRequiresAck) {
         // Wichtige Einträge: einzeln übernommen oder im Bestätigungsdialog ausdrücklich je Eintrag bestätigt (PRD §11.4)
@@ -110,10 +122,10 @@ export async function acknowledgeAction(form: FormData): Promise<ActionResult> {
     }
     if (!created.length) return { ok: true }
     await db.acknowledgement.createMany({ data: created.map((version) => ({ userId: ctx.user.id, subjectType: 'handover', subjectId: handover.id, version })), skipDuplicates: true })
-    await audit(ctx, { action: 'handover.acknowledge', entityType: 'Handover', entityId: handover.id, after: { versions: created }, context: residentId ? { residentId } : { all: true, importantConfirmed } })
+    await audit(ctx, { action: 'handover.acknowledge', entityType: 'Handover', entityId: handover.id, after: { versions: created }, context: residentId ? { residentId } : subset.length ? { mine: true, importantConfirmed } : { all: true, importantConfirmed } })
     await emit({ orgId: ctx.org.id, type: 'handover.acknowledged', unitId: unit.id, residentId: residentId || null, actorId: ctx.user.id, payload: { handoverId: handover.id } })
     refresh()
-    return { ok: true, message: ctx.t(residentId ? 'tasks.handover.toast.acked' : 'tasks.handover.toast.ackedAll') }
+    return { ok: true, message: ctx.t(residentId ? 'tasks.handover.toast.acked' : subset.length ? 'home.ho.toastMine' : 'tasks.handover.toast.ackedAll', { n: created.length }) }
   }) as Promise<ActionResult>
 }
 

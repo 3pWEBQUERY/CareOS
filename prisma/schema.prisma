@@ -230,6 +230,7 @@ model Organization {
   tasks          Task[]
   events         DomainEvent[]
   formDefinitions FormDefinition[]
+  taskTemplates  TaskTemplate[]
 }
 
 model Location {
@@ -268,6 +269,8 @@ model Unit {
   tasks      Task[]
   channels   Channel[]
   incidents  Incident[]
+  taskTemplates TaskTemplate[]
+  shiftAssignments ShiftAssignment[]
 
   @@index([orgId])
   @@index([locationId])
@@ -348,6 +351,13 @@ model User {
   /// Web Push (PRD §25): Prioritäten, für die Push-Benachrichtigungen gesendet werden (critical | action | info | social).
   pushPriorities   String[]           @default(["critical", "action"])
   pushSubscriptions PushSubscription[]
+  shiftAssignments  ShiftAssignment[]
+  /// Benachrichtigungen je Art (PRD §25, src/lib/notify-prefs.ts): { kinds: { <art>: { app, push } }, offDutyPush }.
+  notificationPrefs Json              @default("{}")
+  /// Personenverzeichnis (PRD §55): dienstliche Nummer (Stationstelefon, DECT) – für alle Mitarbeitenden sichtbar.
+  workPhone        String?
+  /// `phone` ist die private Nummer: sichtbar für die Person selbst, Leitung/HR im Bereich – und für alle nur, wenn die Person sie freigibt.
+  phoneShared      Boolean            @default(false)
 
   @@index([orgId])
 }
@@ -558,6 +568,8 @@ model Resident {
   /// Löschkonzept (PRD §36): Zeitpunkt der Anonymisierung nach Ablauf der Aufbewahrungsfrist oder manuell.
   anonymisedAt   DateTime?
   createdAt      DateTime       @default(now())
+  /// Versionsprüfung bei Stammdaten (PRD §32 Konflikterkennung).
+  updatedAt      DateTime       @default(now()) @updatedAt
 
   org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   unit         Unit         @relation(fields: [unitId], references: [id])
@@ -584,6 +596,7 @@ model Resident {
   files           ResidentFile[]
   visits          Visit[]
   visitQuestions  VisitQuestion[]
+  shiftAssignments ShiftAssignment[]
 
   @@index([orgId, unitId])
 }
@@ -660,6 +673,8 @@ model Observation {
   correctedBy Observation[] @relation("Correction")
 
   @@index([residentId, at])
+  /// Korrekturen nachschlagen («correctedBy»): sonst Vollscan über alle Verlaufseinträge auf jeder Akte (PRD §66)
+  @@index([supersedesId])
 }
 
 model VitalSign {
@@ -677,6 +692,21 @@ model VitalSign {
   pain         Int?
   respRate     Int?
   note         String?
+  /// Storno/Korrektur (PRD §35): nie überschreiben. Stornierte Werte bleiben sichtbar, fliessen aber nicht in Hinweise/Trends (`LIVE` in lib/vitals.ts).
+  voidedAt     DateTime?
+  voidedById   String?
+  voidReason   String?
+  /// Korrektur ersetzt diesen (stornierten) Eintrag.
+  supersedesId String?
+  /// Organisationseigene Vitalparameter (Admin → Klinische Konfiguration), Schlüssel → Zahl.
+  extra        Json?
+  /// Auffälliger Wert gesehen bzw. Massnahme eingeleitet (PRD §14 «ohne Alarmflut»): nimmt den Wert aus «Kritisch» auf Home und aus dem Akten-Hinweis.
+  reviewedAt   DateTime?
+  reviewedById String?
+  /// seen | action
+  reviewKind   String?
+  /// Eingeleitete Massnahme (bei reviewKind = action, zusätzlich als Verlaufseintrag dokumentiert)
+  reviewNote   String?
   resident     Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 
   @@index([residentId, at])
@@ -782,6 +812,11 @@ model Assessment {
   answers    Json
   authorId   String
   nextDue    DateTime?
+  /// Storno/Korrektur (PRD §35), siehe VitalSign.
+  voidedAt     DateTime?
+  voidedById   String?
+  voidReason   String?
+  supersedesId String?
   resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 
   @@index([residentId, key])
@@ -819,6 +854,11 @@ model WoundAssessment {
   nextChange  DateTime?
   photoIds    String[]
   authorId    String
+  /// Storno/Korrektur (PRD §35), siehe VitalSign.
+  voidedAt     DateTime?
+  voidedById   String?
+  voidReason   String?
+  supersedesId String?
   wound       Wound     @relation(fields: [woundId], references: [id], onDelete: Cascade)
 }
 
@@ -940,6 +980,46 @@ model Task {
   @@index([residentId, dueAt])
 }
 
+enum TaskRhythm {
+  daily
+  weekly
+  monthly
+}
+
+/// Vorlage für wiederkehrende Aufgaben (PRD §12.1, §45): erzeugt in ensureTasksForDay Aufgaben mit source recurring, sourceId = id.
+model TaskTemplate {
+  id          String     @id @default(cuid())
+  orgId       String
+  unitId      String
+  residentId  String?
+  title       String
+  description String?
+  category    String
+  rhythm      TaskRhythm @default(daily)
+  /// alle n Tage / Wochen / Monate (1 = jede/n)
+  every       Int        @default(1)
+  /// Wochentage 0 = So … 6 = Sa (nur weekly)
+  weekdays    Int[]
+  /// Tag im Monat 1–31 (nur monthly; in kürzeren Monaten der letzte Tag)
+  monthDay    Int?
+  /// Zeitpunkte HH:MM
+  times       String[]
+  startDate   DateTime   @db.Date
+  endDate     DateTime?  @db.Date
+  durationMin Int        @default(10)
+  priority    Priority   @default(routine)
+  assigneeId  String?
+  active      Boolean    @default(true)
+  createdById String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  unit Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId, active])
+}
+
 model Handover {
   id          String          @id @default(cuid())
   unitId      String
@@ -968,6 +1048,28 @@ model HandoverEntry {
   resident   Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 
   @@unique([handoverId, residentId])
+}
+
+/// Bewohnerzuordnung pro Dienst (PRD §7, §70 «Für wen ist sie verantwortlich?»): wer betreut wen in welcher Schicht.
+/// Schicht wie bei Handover: Code + Startdatum (Nachtdienst nach Mitternacht gehört zum Vortag). Lesen über src/lib/assignment.ts.
+model ShiftAssignment {
+  id          String   @id @default(cuid())
+  orgId       String
+  unitId      String
+  shiftCode   String
+  date        DateTime @db.Date
+  residentId  String
+  userId      String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  unit     Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, shiftCode, date, residentId, userId])
+  @@index([unitId, date, shiftCode])
+  @@index([userId, date])
 }
 
 /// Generische Kenntnisnahme: Übergabe, Mitteilung, Dokumentversion, wichtige Beobachtung.
@@ -1018,6 +1120,8 @@ model Post {
   fileIds     String[]
   publishedAt DateTime  @default(now())
   expiresAt   DateTime?
+  /// Zielgruppe (PRD §45): Rollen-Schlüssel; leer = alle Mitarbeitenden des Kanals. Gilt für Sichtbarkeit, Benachrichtigung und Lesebestätigung.
+  audienceRoles String[] @default([])
 
   channel  Channel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
   author   User          @relation(fields: [authorId], references: [id])
@@ -1133,6 +1237,8 @@ model Document {
   currentVersion String?
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
+  /// Zielgruppe (PRD §45): Rollen-Schlüssel; leer = alle mit docs.read. Bestimmt Benachrichtigung und Kenntnisnahme; lesen dürfen weiterhin alle mit docs.read.
+  audienceRoles String[]        @default([])
   org         Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   versions    DocumentVersion[]
 
@@ -1293,6 +1399,8 @@ model AuditLog {
 
   @@index([orgId, at])
   @@index([entityType, entityId])
+  /// Sicherheitsüberwachung (alle 5 Min., organisationsübergreifend) und Löschfristen filtern nur nach Zeit (PRD §66)
+  @@index([at])
 }
 
 model FileObject {
@@ -1513,4 +1621,164 @@ model VisitOrder {
 
   @@index([visitId])
   @@index([residentId])
+}
+
+// ───────────────────────── Plattform und Sicherheit ─────────────────────────
+
+/// Rate-Limit über alle Instanzen (src/lib/rate-limit.ts): Fixed Window. key = Namensraum + SHA-256 (keine E-Mail/IP im Klartext).
+model RateLimit {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
+/// Alarm aus der Audit-Überwachung (PRD §37, src/lib/security-alerts.ts, Job «security»).
+model SecurityAlert {
+  id          String    @id @default(cuid())
+  orgId       String
+  /// login_failures | mfa_failures | mass_access | export | permission_change | api_failures
+  rule        String
+  /// critical | warning | info
+  severity    String
+  /// Auslösende Person, falls bekannt
+  userId      String?
+  /// Gruppierung innerhalb der Regel (Person, IP- oder E-Mail-Hash)
+  subject     String
+  count       Int
+  windowStart DateTime
+  windowEnd   DateTime
+  /// Nur Kennungen und Zählwerte, keine Gesundheitsdaten
+  details     Json      @default("{}")
+  /// open | acknowledged | resolved | false_positive
+  status      String    @default("open")
+  handledById String?
+  handledAt   DateTime?
+  note        String?
+  incidentId  String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([orgId, rule, subject, windowStart])
+  @@index([orgId, status, createdAt])
+}
+
+/// Register der Datenschutz- und Sicherheitsvorfälle (PRD §36): Meldung, Bewertung, Meldepflicht (EDÖB, betroffene Personen).
+model SecurityIncident {
+  id                  String    @id @default(cuid())
+  orgId               String
+  /// Fortlaufende Nummer je Organisation
+  number              Int
+  title               String
+  /// confidentiality | integrity | availability
+  kind                String
+  description         String
+  discoveredAt        DateTime
+  occurredAt          DateTime?
+  /// low | medium | high
+  risk                String    @default("medium")
+  dataCategories      String[]
+  affectedCount       Int?
+  measures            String?
+  /// open | assessed | reported | closed
+  status              String    @default("open")
+  /// Meldung an die Aufsichtsbehörde nötig (Art. 24 DSG / Art. 33 DSGVO)
+  authorityRequired   Boolean?
+  authorityNotifiedAt DateTime?
+  subjectsRequired    Boolean?
+  subjectsNotifiedAt  DateTime?
+  reportedById        String
+  closedAt            DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([orgId, number])
+  @@index([orgId, status])
+}
+
+/// Ausführungsprotokoll der Integrationen (PRD §40/§41, src/lib/integrations/registry.ts).
+model IntegrationRun {
+  id            String    @id @default(cuid())
+  orgId         String
+  integrationId String
+  /// test | import | export
+  operation     String
+  /// manual | schedule | api
+  trigger       String    @default("manual")
+  actorId       String?
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+  ok            Boolean?
+  records       Int       @default(0)
+  /// Nur Zählwerte und Kennungen, keine Gesundheitsdaten
+  summary       Json?
+  error         String?
+
+  @@index([integrationId, startedAt])
+  @@index([orgId, startedAt])
+}
+
+/// Laborbefunde (PRD §40): Import über eine Labor-Integration (Schnittstelle vorbereitet).
+model LabResult {
+  id            String   @id @default(cuid())
+  orgId         String
+  residentId    String
+  integrationId String?
+  externalId    String?
+  /// LOINC oder Laborcode
+  code          String?
+  name          String
+  value         String
+  numeric       Float?
+  unit          String?
+  refRange      String?
+  /// normal | low | high | critical | abnormal
+  flag          String?
+  collectedAt   DateTime
+  receivedAt    DateTime @default(now())
+  note          String?
+
+  @@unique([orgId, integrationId, externalId])
+  @@index([residentId, collectedAt])
+}
+
+/// In-App-Rückmeldung (PRD §62–§64): Problem, Idee, Kurzbewertung. Personenbezug nur, wenn die Person ihn wählt.
+model Feedback {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String?
+  /// problem | idea | rating
+  kind      String
+  /// 1–5 (Kurzbewertung)
+  rating    Int?
+  text      String?
+  /// Ansicht ohne Kennungen (z. B. /residents/:id/vitals)
+  path      String?
+  /// new | seen | done
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+
+  @@index([orgId, createdAt])
+}
+
+/// Serverfehler aus onRequestError (src/instrumentation.ts), je Tag und Fingerabdruck gezählt.
+/// Ohne Fehlermeldung und ohne Anfragedaten (können Personendaten enthalten); Details stehen im Log (digest).
+model ErrorEvent {
+  id          String   @id @default(cuid())
+  day         DateTime @db.Date
+  /// SHA-256 aus Fehlername, Route und erster Stack-Zeile
+  fingerprint String
+  name        String
+  /// Routenmuster, z. B. /residents/[id]/vitals
+  route       String
+  /// render | route | action | proxy | job
+  routeType   String
+  method      String?
+  digest      String?
+  count       Int      @default(1)
+  firstAt     DateTime @default(now())
+  lastAt      DateTime @default(now())
+
+  @@unique([day, fingerprint])
+  @@index([lastAt])
 }

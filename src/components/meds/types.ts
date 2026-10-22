@@ -1,3 +1,5 @@
+import type { AllergyMatch } from '@/lib/allergy-check'
+
 /** Serialisierbare Daten für die Medikations-Komponenten (Server → Client). */
 export type DoseStateDto = 'open' | 'given' | 'refused' | 'omitted' | 'held'
 
@@ -27,8 +29,11 @@ export type MarRowDto = {
   kind: 'regular' | 'temporary' | 'prn'
   requiresDoubleCheck: boolean
   stoppedAt: string | null
+  /** Allergie-Treffer aus dem lokalen Abgleich (PRD §13.1) */
+  allergy?: AllergyMatch[]
   cells: (CellDto | null)[]
 }
 
-export type ResidentCtxDto = { id: string; name: string; room: string | null; allergies: string[] }
+/** photoId: Bewohnerfoto zur Identifikation (PRD §32), null = kein Foto */
+export type ResidentCtxDto = { id: string; name: string; room: string | null; allergies: string[]; photoId?: string | null }
 export type ColleagueDto = { id: string; name: string }

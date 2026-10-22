@@ -17,7 +17,9 @@ export async function generateMetadata() {
   return { title: `${t('admin.nav.users')} · ${t('nav.admin')}` }
 }
 
-export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; role?: string }> }) {
+const PAGE = 100
+
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string; role?: string; n?: string }> }) {
   const ctx = await getCtx()
   const { t, org } = ctx
   if (!ctx.can('admin.users')) return <Forbidden text={t('common.notAllowed')} />
@@ -30,8 +32,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     ...(q ? { OR: [{ firstName: { contains: q, mode: 'insensitive' } }, { lastName: { contains: q, mode: 'insensitive' } }, { email: { contains: q, mode: 'insensitive' } }, { employeeNo: { contains: q, mode: 'insensitive' } }, { jobTitle: { contains: q, mode: 'insensitive' } }] } : {}),
     ...(sp.role ? { roles: { some: { roleId: sp.role } } } : {}),
   }
-  const [users, units, roles, quals] = await Promise.all([
-    db.user.findMany({ where, include: { roles: { include: { role: true, unit: true, location: true } } }, orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }], take: 300 }),
+  // Grosse Organisationen (PRD §66): erste 100 Personen, «Mehr laden» erweitert um je 100 (Suche und Filter bleiben serverseitig)
+  const limit = Math.min(5000, Math.max(PAGE, Math.ceil((Number(sp.n) || PAGE) / PAGE) * PAGE))
+  const [users, total, units, roles, quals] = await Promise.all([
+    db.user.findMany({ where, include: { roles: { include: { role: true, unit: true, location: true } } }, orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }, { id: 'asc' }], take: limit }),
+    db.user.count({ where }),
     db.unit.findMany({ where: { orgId: org.id }, include: { location: true }, orderBy: { name: 'asc' } }),
     db.role.findMany({ where: { orgId: org.id }, orderBy: { name: 'asc' } }),
     db.qualification.findMany({ where: { orgId: org.id }, include: { _count: { select: { users: true } } }, orderBy: [{ level: 'desc' }, { name: 'asc' }] }),
@@ -41,7 +46,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
   const qs = (p: Record<string, string | undefined>) => {
     const s = new URLSearchParams()
-    const m = { q: q || undefined, status: status === 'active' ? undefined : status, role: sp.role, ...p }
+    const m = { q: q || undefined, status: status === 'active' ? undefined : status, role: sp.role, n: limit > PAGE ? String(limit) : undefined, ...p }
     for (const [k, v] of Object.entries(m)) if (v) s.set(k, v)
     const str = s.toString()
     return '/admin/users' + (str ? '?' + str : '')
@@ -85,12 +90,12 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
           <div className="row-between">
             <div className="seg" role="group" aria-label={t('admin.users.status')}>
               {(['active', 'inactive', 'all'] as const).map((s) => (
-                <Link key={s} href={qs({ status: s === 'active' ? undefined : s })} aria-current={status === s ? 'page' : undefined}>{t('admin.users.statusFilter.' + s)}</Link>
+                <Link key={s} href={qs({ status: s === 'active' ? undefined : s, n: undefined })} aria-current={status === s ? 'page' : undefined}>{t('admin.users.statusFilter.' + s)}</Link>
               ))}
             </div>
             <div className="row">
-              {sp.role && <Link className="chip" aria-current="page" href={qs({ role: undefined })}>{roles.find((r) => r.id === sp.role)?.name} ✕</Link>}
-              <span className="small muted">{t('admin.users.count', { n: users.length })}</span>
+              {sp.role && <Link className="chip" aria-current="page" href={qs({ role: undefined, n: undefined })}>{roles.find((r) => r.id === sp.role)?.name} ✕</Link>}
+              <span className="small muted">{users.length < total ? t('common.shownOf', { n: users.length, total: t('admin.users.count', { n: total }) }) : t('admin.users.count', { n: total })}</span>
             </div>
           </div>
           {users.length ? (
@@ -119,6 +124,11 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               </table>
             </div>
           ) : <Empty title={t('admin.users.none')} />}
+          {users.length < total && (
+            <div className="row" style={{ justifyContent: 'center' }}>
+              <Link className="btn" href={qs({ n: String(limit + PAGE) })} scroll={false}>{t('common.loadMore')}</Link>
+            </div>
+          )}
 
           <section className="card" aria-labelledby="u-quals">
             <div className="card-head"><h2 id="u-quals">{t('admin.users.qualCatalog')}</h2><span className="small muted">{t('admin.users.qualCatalogHint')}</span></div>

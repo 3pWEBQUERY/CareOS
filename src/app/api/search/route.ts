@@ -4,7 +4,7 @@ import { db } from '@/lib/db'
 import { searchFunctions } from '@/lib/search-functions'
 import { snippet } from '@/lib/search-snippet'
 import { fmtDate } from '@/lib/time'
-import { liveFilter, visibleChannels } from '@/app/(app)/team/lib'
+import { canModerate, liveFilter, myRoleKeys, postAudienceWhere, visibleChannels } from '@/app/(app)/team/lib'
 
 /** Globale Suche, berechtigungsabhängig (PRD §24). Jede Quelle ist begrenzt, Suche ohne Gross-/Kleinschreibung. */
 export async function GET(req: NextRequest) {
@@ -33,9 +33,10 @@ export async function GET(req: NextRequest) {
       : [],
     // Mitteilungen nur aus Kanälen, die die Person sehen darf
     ctx.can('team.read')
-      ? visibleChannels(ctx).then((chs) =>
+      ? Promise.all([visibleChannels(ctx), myRoleKeys(ctx.user.id)]).then(([chs, keys]) =>
           db.post.findMany({
-            where: { channelId: { in: chs.map((c) => c.id) }, AND: [liveFilter(), { OR: [{ title: like }, { body: like }] }] },
+            // Zielgruppe der Mitteilung (Rollen) beachten
+            where: { channelId: { in: chs.map((c) => c.id) }, AND: [liveFilter(), postAudienceWhere(ctx, keys, chs.filter((c) => canModerate(ctx, c)).map((c) => c.id)), { OR: [{ title: like }, { body: like }] }] },
             include: { channel: { select: { name: true } } },
             orderBy: { publishedAt: 'desc' },
             take: 5,
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
   for (const r of residents) items.push({ group: t('common.palette.groupResident'), label: `${r.lastName} ${r.firstName}`, hint: [r.room?.number && t('common.palette.room', { n: r.room.number }), r.unit.name].filter(Boolean).join(' · '), href: `/residents/${r.id}` })
   for (const d of docs) items.push({ group: t('common.palette.groupDocument'), label: d.title, hint: d.currentVersion ? 'v' + d.currentVersion : undefined, href: `/docs/${d.id}` })
   for (const f of forms) items.push({ group: t('common.palette.groupForm'), label: f.name, hint: f.active ? undefined : t('admin.config.inactive'), href: ctx.can('admin.config') ? `/admin/forms/${f.id}` : '/residents?pick=notes' })
-  for (const p of people) items.push({ group: t('common.palette.groupPerson'), label: `${p.firstName} ${p.lastName}`, hint: p.jobTitle ?? undefined, href: `/chat?with=${p.id}` })
+  for (const p of people) items.push({ group: t('common.palette.groupPerson'), label: `${p.firstName} ${p.lastName}`, hint: p.jobTitle ?? undefined, href: ctx.can('team.read') ? `/team/people/${p.id}` : `/chat?with=${p.id}` })
   for (const k of tasks) items.push({ group: t('common.palette.groupTask'), label: k.title, hint: k.resident ? `${k.resident.lastName}` : undefined, href: k.residentId ? `/residents/${k.residentId}` : '/tasks' })
   const seenIv = new Set<string>()
   for (const i of interventions) if (seenIv.size < 5 && !seenIv.has(i.resident.id + i.title) && seenIv.add(i.resident.id + i.title)) items.push({ group: t('common.palette.groupIntervention'), label: i.title, hint: `${i.resident.lastName} ${i.resident.firstName}`, href: `/residents/${i.resident.id}/careplan` })

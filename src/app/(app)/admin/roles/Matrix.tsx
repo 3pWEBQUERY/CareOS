@@ -81,7 +81,7 @@ export function PermissionMatrix({ roleId, name, description, groups, initial, a
                 return (
                   <li key={p} data-changed={diff || undefined}>
                     <label className="pm-row">
-                      <input type="checkbox" name="perm" value={p} checked={sel.has(p)} onChange={(e) => toggle(p, e.target.checked)} />
+                      <Checkbox name="perm" value={p} checked={sel.has(p)} onChange={(e) => toggle(p, e.target.checked)} />
                       <span className="grow">
                         <span>{label(p)}</span>
                         {diff && <span className="tag accent pm-diff">{sel.has(p) ? t('admin.ux.added') : t('admin.ux.removed')}</span>}

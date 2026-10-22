@@ -11,7 +11,7 @@ import { emit } from '@/lib/events'
 import { notify, usersWithPermission } from '@/lib/notify'
 import { aiDraft, aiFeedback, AiUnavailable } from '@/lib/ai'
 import { addDays, addMinutes } from '@/lib/time'
-import { anonymisedAggregates, MANAGE_STAGES, qualityUnits, SEVERITIES, STAGES, stageIndex, workflowSteps } from './_lib'
+import { actionTitle, anonymisedAggregates, MANAGE_STAGES, qualityUnits, SEVERITIES, STAGES, stageIndex, workflowSteps } from './_lib'
 
 const severity = z.enum(SEVERITIES, { message: 'quality.errors.severity' })
 
@@ -177,13 +177,15 @@ export async function addActionAction(id: string, form: FormData): Promise<Actio
     const dueAt = dueRaw ? new Date(dueRaw) : null
     if (dueAt && Number.isNaN(dueAt.getTime())) return { ok: false, error: 'quality.errors.due', field: 'dueAt' }
     const asTask = fdBool(form, 'asTask') && dueAt != null
+    const assigneeId = fd(form, 'assigneeId') || null
+    if (assigneeId && !(await actionStaff(ctx.org.id, inc.unitId)).includes(assigneeId)) return { ok: false, error: 'quality.errors.assignee', field: 'assigneeId' }
     const action = await db.$transaction(async (tx) => {
-      const a = await tx.incidentAction.create({ data: { incidentId: id, title: title.slice(0, 300), dueAt } })
+      const a = await tx.incidentAction.create({ data: { incidentId: id, title: title.slice(0, 300), dueAt, assigneeId } })
       if (asTask && dueAt) {
         const task = await tx.task.create({
           data: {
             orgId: ctx.org.id, unitId: inc.unitId, residentId: inc.residentId, title: title.slice(0, 300), category: ctx.t('quality.taskCategory'),
-            dueAt, durationMin: 10, priority: 'important', source: 'quality', sourceId: `${id}:${a.id}`, createdById: ctx.user.id,
+            dueAt, durationMin: 10, priority: 'important', source: 'quality', sourceId: `${id}:${a.id}`, createdById: ctx.user.id, assigneeId,
           },
         })
         await tx.incidentAction.update({ where: { id: a.id }, data: { taskId: task.id } })
@@ -191,7 +193,8 @@ export async function addActionAction(id: string, form: FormData): Promise<Actio
       }
       return a
     })
-    await audit(ctx, { action: 'incident.action.add', entityType: 'incident_action', entityId: action.id, after: { title, dueAt, taskId: action.taskId }, context: { incidentId: id, residentId: inc.residentId } })
+    await audit(ctx, { action: 'incident.action.add', entityType: 'incident_action', entityId: action.id, after: { title, dueAt, taskId: action.taskId, assigneeId }, context: { incidentId: id, residentId: inc.residentId } })
+    if (assigneeId && assigneeId !== ctx.user.id) await notifyAssignee(ctx, inc, assigneeId, title)
     await emit({ orgId: ctx.org.id, type: 'incident.updated', unitId: inc.unitId, residentId: inc.residentId, actorId: ctx.user.id, payload: { incidentId: id } })
     if (action.taskId) await emit({ orgId: ctx.org.id, type: 'task.created', unitId: inc.unitId, residentId: inc.residentId, actorId: ctx.user.id, payload: { taskId: action.taskId } })
     refresh()
@@ -227,6 +230,47 @@ export async function toggleActionAction(actionId: string): Promise<ActionResult
     if (task) await emit({ orgId: ctx.org.id, type: isDone ? 'task.reopened' : 'task.completed', unitId: task.unitId, residentId: task.residentId, actorId: ctx.user.id, payload: { taskId: task.id } })
     await emit({ orgId: ctx.org.id, type: 'incident.updated', unitId: a.incident.unitId, residentId: a.incident.residentId, actorId: ctx.user.id, payload: { incidentId: a.incidentId } })
     refresh()
+  })
+}
+
+/** Personen, denen Massnahmen eines Bereichs zugewiesen werden können: Aufgaben quittieren oder Ereignisse bearbeiten. */
+async function actionStaff(orgId: string, unitId: string) {
+  const [a, b] = await Promise.all([usersWithPermission(orgId, 'task.complete', unitId), usersWithPermission(orgId, 'quality.manage', unitId)])
+  return [...new Set([...a, ...b])]
+}
+
+async function notifyAssignee(ctx: Ctx, inc: { id: string; unitId: string }, userId: string, title: string) {
+  await notify({
+    orgId: ctx.org.id, userIds: [userId], priority: 'action', kind: 'incident.action',
+    title: ctx.t('quality.notify.actionAssigned', { title: actionTitle(ctx.t, title) }), body: `${ctx.user.firstName} ${ctx.user.lastName}`,
+    href: `/quality/${inc.id}?s=followup`, groupKey: 'incident-action:' + userId,
+  })
+}
+
+/** Assign (PRD §49): Massnahme einer Person zuweisen; eine verknüpfte Aufgabe erhält dieselbe Zuständigkeit. */
+export async function assignIncidentActionAction(actionId: string, form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    const a = await db.incidentAction.findUnique({ where: { id: actionId }, include: { incident: { include: { unit: true } } } })
+    if (!a || a.incident.orgId !== ctx.org.id || !qualityUnits(ctx).some((u) => u.id === a.incident.unitId)) return { ok: false, error: 'common.notFound' }
+    if (a.incident.stage === 'closed') return { ok: false, error: 'quality.errors.closed' }
+    assertCan(ctx, 'quality.report', { unitId: a.incident.unitId, locationId: a.incident.unit.locationId })
+    const assigneeId = fd(form, 'assigneeId') || null
+    if (assigneeId && !(await actionStaff(ctx.org.id, a.incident.unitId)).includes(assigneeId)) return { ok: false, error: 'quality.errors.assignee', field: 'assigneeId' }
+    if (assigneeId === a.assigneeId) return { ok: true }
+    await db.$transaction(async (tx) => {
+      await tx.incidentAction.update({ where: { id: a.id }, data: { assigneeId } })
+      if (a.taskId) await tx.task.updateMany({ where: { id: a.taskId, orgId: ctx.org.id }, data: { assigneeId } })
+      await audit(ctx, {
+        action: 'incident.action.assign', entityType: 'incident_action', entityId: a.id,
+        before: { assigneeId: a.assigneeId }, after: { assigneeId }, context: { incidentId: a.incidentId, residentId: a.incident.residentId, taskId: a.taskId },
+      }, tx)
+    })
+    if (assigneeId && assigneeId !== ctx.user.id) await notifyAssignee(ctx, a.incident, assigneeId, a.title)
+    if (a.taskId) await emit({ orgId: ctx.org.id, type: 'task.created', unitId: a.incident.unitId, residentId: a.incident.residentId, actorId: ctx.user.id, payload: { taskId: a.taskId, action: 'assigned' } })
+    await emit({ orgId: ctx.org.id, type: 'incident.updated', unitId: a.incident.unitId, residentId: a.incident.residentId, actorId: ctx.user.id, payload: { incidentId: a.incidentId } })
+    refresh()
+    return { ok: true, message: assigneeId ? 'tasks.toast.assigned' : 'tasks.toast.unassigned' }
   })
 }
 

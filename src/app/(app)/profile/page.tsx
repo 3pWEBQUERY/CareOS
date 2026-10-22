@@ -11,10 +11,14 @@ import { ActBtn } from '@/components/admin/ui'
 import { Empty } from '@/components/ui/Empty'
 import { MfaSetupBanner } from './MfaSetupBanner'
 import { PushSection } from './PushSection'
+import { NotificationSection } from './NotificationSection'
 import { InstallApp } from '@/components/shell/InstallApp'
 import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, TextSizeChooser, ThemeChooser } from './ProfileClient'
-import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updatePhoneAction } from './actions'
-import { TextField } from '@/components/ui/fields'
+import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updateContactAction } from './actions'
+import { Checkbox, TextField } from '@/components/ui/fields'
+import { Avatar } from '@/components/people/Avatar'
+import { avatarUrl } from '@/lib/people'
+import { AvatarEditor } from './AvatarEditor'
 
 export async function generateMetadata() {
   return { title: (await getCtx()).t('nav.profile') }
@@ -47,7 +51,7 @@ export default async function ProfilePage() {
     <main className="panel main" style={{ flex: 1 }}>
       <div className="view-head">
         <div className="row" style={{ gap: 12, flexWrap: 'nowrap', minWidth: 0 }}>
-          <span className="av" style={{ width: 40, height: 40, fontSize: '0.9375rem' }} aria-hidden="true">{user.initials}</span>
+          <Avatar src={avatarUrl(user.avatarFileId)} initials={user.initials} size="lg" />
           <div style={{ minWidth: 0 }}>
             <span className="lbl">{t('profile.title')}</span>
             <h1>{user.firstName} {user.lastName}</h1>
@@ -73,10 +77,6 @@ export default async function ProfilePage() {
                   <dt>{t('profile.personal.org')}</dt><dd>{ctx.org.name}</dd>
                   <dt>{t('profile.personal.lastLogin')}</dt><dd className="mono">{user.lastLoginAt ? dt(user.lastLoginAt) : '–'}</dd>
                 </dl>
-                <ActionForm action={updatePhoneAction} reset={false} success="common.saved" className="row">
-                  <TextField label={t('profile.personal.phone')} wrapClassName="grow" wrapStyle={{ minWidth: 180 }} name="phone" type="tel" autoComplete="tel" defaultValue={user.phone ?? ''} maxLength={40} />
-                  <Submit className="btn" >{t('common.save')}</Submit>
-                </ActionForm>
               </div>
             </section>
 
@@ -102,8 +102,24 @@ export default async function ProfilePage() {
             </section>
           </div>
 
+          <section className="card" aria-labelledby="p-people" id="p-people">
+            <div className="card-head"><h2 id="p-people">{t('people.me.title')}</h2><Link className="linkbtn small" href={`/team/people/${user.id}`}>{t('people.me.preview')} →</Link></div>
+            <div className="card-body ppl-me">
+              <AvatarEditor src={avatarUrl(user.avatarFileId)} initials={user.initials} />
+              <ActionForm action={updateContactAction} reset={false} success="common.saved">
+                <div className="form-grid">
+                  <TextField label={t('people.me.workPhone')} hint={t('people.me.workPhoneHint')} name="workPhone" type="tel" autoComplete="tel-extension" defaultValue={user.workPhone ?? ''} maxLength={40} />
+                  <TextField label={t('people.me.phone')} hint={t('people.me.phoneHint')} name="phone" type="tel" autoComplete="tel" defaultValue={user.phone ?? ''} maxLength={40} />
+                </div>
+                <Checkbox name="phoneShared" defaultChecked={user.phoneShared} label={t('people.me.phoneShared')} />
+                <div className="form-actions"><Submit className="btn">{t('common.save')}</Submit></div>
+              </ActionForm>
+            </div>
+          </section>
+
           <InstallApp />
           <PushSection />
+          <NotificationSection />
 
           <h2 className="sec">{t('profile.security')}</h2>
           <div className="grid-2">
@@ -179,7 +195,7 @@ export default async function ProfilePage() {
               <div className="card-head"><h2 id="p-password">{t('profile.password.title')}</h2></div>
               <div className="card-body">
                 <ActionForm action={changePasswordAction} success="profile.password.changed">
-                  {/* Für Passwortmanager: Benutzername als verstecktes Feld */}
+                  {/* Für Passwortmanager: Benutzername als verstecktes Feld – raw-field-ok: unsichtbar */}
                   <input type="text" name="username" autoComplete="username" defaultValue={user.email} hidden readOnly />
                   <TextField label={t('profile.password.current')} type="password" name="current" autoComplete="current-password" required />
                   <TextField label={t('profile.password.new')} hint={t('profile.password.rules')} type="password" name="next" autoComplete="new-password" minLength={10} required />

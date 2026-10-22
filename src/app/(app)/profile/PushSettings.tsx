@@ -6,6 +6,7 @@ import { toast } from '@/components/toast'
 import { swScriptUrl } from '@/components/shell/ServiceWorker'
 import { PUSH_PRIORITIES } from '@/lib/push-shared'
 import { savePushPrioritiesAction } from './push-actions'
+import { Checkbox } from '@/components/ui/fields'
 
 type Support = 'checking' | 'ok' | 'unsupported' | 'ios'
 
@@ -130,10 +131,7 @@ export function PushSettings({ configured, priorities, devices: initialDevices }
         <legend className="lbl" style={{ padding: 0, marginBottom: 4 }}>{t('profile.push.priorities')}</legend>
         <div className="row" style={{ gap: '4px 16px' }}>
           {PUSH_PRIORITIES.map((p) => (
-            <label key={p} className="check" style={{ minHeight: 40 }}>
-              <input type="checkbox" checked={prios.includes(p)} onChange={(e) => toggle(p, e.target.checked)} />
-              {t('profile.push.prio.' + p)}
-            </label>
+            <Checkbox key={p} checked={prios.includes(p)} onChange={(e) => toggle(p, e.target.checked)} label={t('profile.push.prio.' + p)} wrapStyle={{ minHeight: 40 }} />
           ))}
         </div>
       </fieldset>

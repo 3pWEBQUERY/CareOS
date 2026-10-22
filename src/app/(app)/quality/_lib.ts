@@ -3,7 +3,6 @@ import type { IncidentStage, Prisma } from '@prisma/client'
 import type { Ctx } from '@/lib/context'
 import type { TFn } from '@/i18n/core'
 import { INCIDENT_TYPES, type WorkflowStep } from '@/lib/clinical-config'
-import { addDays } from '@/lib/time'
 
 /** Ereignis-Workflow (PRD §22): Ereignis → Sofortmassnahmen → Bewertung → Follow-up → Analyse → Abschluss. */
 export const STAGES: IncidentStage[] = ['reported', 'immediate', 'assessment', 'followup', 'analysis', 'closed']
@@ -46,30 +45,9 @@ export function actionTitle(t: TFn, title: string) {
 }
 
 // ───────── Aggregation (Muster) ─────────
-
-export type TimeBucket = 'night' | 'morning' | 'midday' | 'evening'
-export function timeBucket(d: Date): TimeBucket {
-  const h = d.getHours()
-  if (h >= 22 || h < 6) return 'night'
-  if (h < 11) return 'morning'
-  if (h < 17) return 'midday'
-  return 'evening'
-}
-export const TIME_BUCKETS: TimeBucket[] = ['morning', 'midday', 'evening', 'night']
-
-export type PlaceKind = 'room' | 'bathroom' | 'corridor' | 'common' | 'outdoor' | 'other' | 'unknown'
-/** Grobe Ortskategorie aus Freitext – für anonymisierte Auswertungen ohne Zimmernummern. */
-export function placeKind(place: string | null | undefined): PlaceKind {
-  const p = (place ?? '').toLowerCase()
-  if (!p.trim()) return 'unknown'
-  if (/\b(bad|wc|toilette|dusche|nasszelle|bagno|doccia|salle de bain|bathroom|toilet|shower)/.test(p)) return 'bathroom'
-  if (/(zimmer|bett|chambre|lit\b|camera|letto|room|bed)/.test(p)) return 'room'
-  if (/(flur|gang|korridor|treppe|lift|couloir|escalier|corridoio|scala|corridor|stairs|hall)/.test(p)) return 'corridor'
-  if (/(aufenthalt|speise|ess|stube|cafeteria|salle|séjour|soggiorno|sala|lounge|dining|common)/.test(p)) return 'common'
-  if (/(garten|terrasse|balkon|aussen|draussen|jardin|terrasse|giardino|terrazza|garden|outside|outdoor)/.test(p)) return 'outdoor'
-  return 'other'
-}
-export const PLACE_KINDS: PlaceKind[] = ['room', 'bathroom', 'corridor', 'common', 'outdoor', 'other', 'unknown']
+// Reine Musterlogik (ohne Datenbank, testbar) liegt in src/lib/quality-patterns.ts.
+export { timeBucket, TIME_BUCKETS, placeKind, PLACE_KINDS, patternHints, type TimeBucket, type PlaceKind, type Hint } from '@/lib/quality-patterns'
+import { timeBucket, placeKind } from '@/lib/quality-patterns'
 
 type AggIncident = { occurredAt: Date; place: string | null; severity: string; nearMiss: boolean; residentId: string | null; type: { key: string; name: string } }
 
@@ -92,64 +70,6 @@ export function anonymisedAggregates(rows: AggIncident[], from: Date | null, to:
     personenMitMehrerenEreignissen: repeat,
     personenMitEreignis: Object.keys(perResident).length,
   }
-}
-
-export type Hint = { tone: 'warn' | 'info'; text: string; href?: string }
-
-/** Regelbasierte Musterhinweise. Immer verfügbar, ohne KI. */
-export function patternHints(
-  t: TFn,
-  rows: (AggIncident & { resident: { id: string; firstName: string; lastName: string } | null })[],
-  now = new Date(),
-  showNames = (_id: string) => true,
-  locale = 'de-CH',
-): Hint[] {
-  const hints: Hint[] = []
-  const since30 = addDays(now, -30)
-  // Mehrere Stürze derselben Person in 30 Tagen
-  const falls = new Map<string, { n: number; name: string }>()
-  for (const r of rows) {
-    if (r.type.key !== 'fall' || !r.resident || r.occurredAt < since30) continue
-    const e = falls.get(r.resident.id) ?? { n: 0, name: `${r.resident.lastName} ${r.resident.firstName}` }
-    e.n++
-    falls.set(r.resident.id, e)
-  }
-  for (const [id, e] of falls) {
-    if (e.n >= 2) hints.push({ tone: 'warn', text: t('quality.hints.repeatFalls', { name: showNames(id) ? e.name : t('quality.hints.someone'), n: e.n }), href: showNames(id) ? `/residents/${id}` : undefined })
-  }
-  // Häufung nach Tageszeit
-  if (rows.length >= 3) {
-    const byTime = new Map<TimeBucket, number>()
-    for (const r of rows) byTime.set(timeBucket(r.occurredAt), (byTime.get(timeBucket(r.occurredAt)) ?? 0) + 1)
-    const [top, n] = [...byTime.entries()].sort((a, b) => b[1] - a[1])[0]
-    if (n >= 3 && n / rows.length >= 0.5) hints.push({ tone: 'info', text: t('quality.hints.timeCluster', { n, total: rows.length, time: t('quality.timeOfDay.' + top) }) })
-    // Häufung nach Ort
-    const byPlace = new Map<PlaceKind, number>()
-    for (const r of rows) {
-      const k = placeKind(r.place)
-      if (k !== 'unknown' && k !== 'other') byPlace.set(k, (byPlace.get(k) ?? 0) + 1)
-    }
-    const p = [...byPlace.entries()].sort((a, b) => b[1] - a[1])[0]
-    if (p && p[1] >= 3 && p[1] / rows.length >= 0.4) hints.push({ tone: 'info', text: t('quality.hints.placeCluster', { n: p[1], total: rows.length, place: t('quality.places.' + p[0]) }) })
-    // Häufung nach Wochentag
-    const byWd = new Map<number, number>()
-    for (const r of rows) byWd.set(r.occurredAt.getDay(), (byWd.get(r.occurredAt.getDay()) ?? 0) + 1)
-    const w = [...byWd.entries()].sort((a, b) => b[1] - a[1])[0]
-    if (rows.length >= 5 && w[1] >= 3 && w[1] / rows.length >= 0.4) hints.push({ tone: 'info', text: t('quality.hints.weekdayCluster', { n: w[1], total: rows.length, day: new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(new Date(2026, 0, 4 + w[0])) }) })
-  }
-  // Zunahme eines Typs: letzte 30 Tage gegenüber den 30 Tagen davor
-  const since60 = addDays(now, -60)
-  const cur = new Map<string, { n: number; name: string }>()
-  const prev = new Map<string, number>()
-  for (const r of rows) {
-    if (r.occurredAt >= since30) cur.set(r.type.key, { n: (cur.get(r.type.key)?.n ?? 0) + 1, name: r.type.name })
-    else if (r.occurredAt >= since60) prev.set(r.type.key, (prev.get(r.type.key) ?? 0) + 1)
-  }
-  for (const [k, c] of cur) {
-    const p = prev.get(k) ?? 0
-    if (c.n >= 3 && c.n >= 2 * Math.max(1, p)) hints.push({ tone: 'warn', text: t('quality.hints.increase', { type: c.name, n: c.n, prev: p }) })
-  }
-  return hints
 }
 
 export function median(values: number[]) {

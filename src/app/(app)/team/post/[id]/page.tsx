@@ -6,7 +6,8 @@ import { IconFile } from '@/components/icons'
 import { fileUrl } from '@/lib/files'
 import { fmtDate, fmtRel, hm } from '@/lib/time'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
-import { canModerate, channelAudience, channelVisible } from '../../lib'
+import { canModerate, channelAudience, myRoleKeys, postVisible } from '../../lib'
+import { audienceNames, inAudience } from '@/lib/audience'
 import { ackPostAction, commentAction, deletePostAction, pinPostAction, remindAckAction } from '../../actions'
 import { ActButton } from '../../_ui/ActButton'
 import { Textarea } from '@/components/ui/fields'
@@ -14,8 +15,8 @@ import { Textarea } from '@/components/ui/fields'
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
   const { t } = ctx
-  const post = ctx.can('team.read') ? await db.post.findFirst({ where: { id: (await params).id, channel: { orgId: ctx.org.id } }, select: { title: true, channel: true } }) : null
-  const visible = post && channelVisible(ctx, post.channel) && (!post.channel.archived || canModerate(ctx, post.channel))
+  const post = ctx.can('team.read') ? await db.post.findFirst({ where: { id: (await params).id, channel: { orgId: ctx.org.id } }, select: { title: true, authorId: true, audienceRoles: true, channel: true } }) : null
+  const visible = post && postVisible(ctx, post, await myRoleKeys(ctx.user.id)) && (!post.channel.archived || canModerate(ctx, post.channel))
   return { title: visible ? `${post.title} · ${t('nav.team')}` : t('nav.team') }
 }
 
@@ -34,7 +35,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const moderator = post ? canModerate(ctx, post.channel) : false
   const isAuthor = post?.authorId === user.id
   const expired = !!post?.expiresAt && post.expiresAt <= now
-  if (!post || !channelVisible(ctx, post.channel) || (expired && !moderator && !isAuthor) || (post.channel.archived && !moderator)) {
+  if (!post || !postVisible(ctx, post, await myRoleKeys(user.id)) || (expired && !moderator && !isAuthor) || (post.channel.archived && !moderator)) {
     return (
       <main className="panel main" style={{ flex: 1 }}>
         <div className="view-head"><div><span className="lbl">{t('team.label')}</span><h1>{t('team.title')}</h1></div><Link className="btn" href="/team">{t('team.post.back')}</Link></div>
@@ -51,10 +52,12 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const who = new Map(commenters.map((u) => [u.id, u]))
 
   const showStats = post.requireAck && (isAuthor || moderator)
+  // Lesebestätigung nur für die Zielgruppe (Moderation ausserhalb der Zielgruppe sieht nur den Stand)
+  const addressed = inAudience(post.audienceRoles, await myRoleKeys(user.id))
   let stats: { confirmed: { id: string; name: string; job: string | null; at: Date }[]; missing: { id: string; name: string; job: string | null }[]; total: number } | null = null
   if (showStats) {
     const [all, acks] = await Promise.all([
-      channelAudience(ctx.org.id, post.channel),
+      channelAudience(ctx.org.id, post.channel, post.audienceRoles),
       db.acknowledgement.findMany({ where: { subjectType: 'post', subjectId: post.id }, orderBy: { at: 'desc' } }),
     ])
     const audience = all.filter((u) => u.id !== post.authorId) // Verfassende zählen nicht zur Zielgruppe
@@ -74,6 +77,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           <span className="lbl">{post.channel.name} · {t('team.kinds.' + post.channel.kind)}</span>
           <h1>{post.title}</h1>
           <p className="sub">{post.author.firstName} {post.author.lastName}{post.author.jobTitle ? ` · ${post.author.jobTitle}` : ''} · {rel(post.publishedAt)}</p>
+          {post.audienceRoles.length > 0 && <p className="small muted" style={{ margin: '2px 0 0' }}>{t('team.audience.line', { roles: (await audienceNames(ctx.org.id, post.audienceRoles)).join(', ') })}</p>}
         </div>
         <div className="row">
           <Link className="btn ghost" href="/team">← {t('team.post.back')}</Link>
@@ -94,7 +98,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             {post.requireAck && <span className="tag accent">{t('team.feed.ack')}</span>}
           </div>
 
-          {post.requireAck && !expired && !isAuthor && (
+          {post.requireAck && addressed && !expired && !isAuthor && (
             myAck ? (
               <div className="alert ok"><span className="grow"><strong>✓ {t('team.ack.saved')}</strong>{t('team.ack.done', { date: `${fmtDate(myAck.at, locale)} ${hm(myAck.at)}` })}</span></div>
             ) : (
@@ -138,7 +142,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                 </section>
               )}
 
-              {post.requireAck && !expired && !isAuthor && !myAck && (
+              {post.requireAck && addressed && !expired && !isAuthor && !myAck && (
                 <div className="alert warn team-ack-end" id="ack-end">
                   <span className="grow fg">{t('team.ux.ackEnd')}</span>
                   <ActButton action={ackPostAction.bind(null, post.id)} className="btn primary" optimistic={<>✓ {t('team.ack.confirmed')}</>} optimisticClassName="btn">✓ {t('team.ack.button')}</ActButton>

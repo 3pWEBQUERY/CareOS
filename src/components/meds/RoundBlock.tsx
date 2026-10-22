@@ -6,6 +6,8 @@ import { DoseDialog, earlyConfirm, stateLabel, tooEarly } from './MarTable'
 import { ResidentContext, useDoseCall } from './shared'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { doseText } from './dose'
+import { ResidentPhoto } from '@/components/residents/ResidentPhoto'
+import { AllergyTags } from './Orders'
 import type { ColleagueDto, DoseStateDto, MarRowDto, ResidentCtxDto } from './types'
 
 export type RoundResidentDto = {
@@ -63,6 +65,7 @@ export function RoundBlock({ data, time, slotKey, day, editable, colleagues, nex
   return (
     <section className={'round-res' + (complete ? ' done' : '')} id={'rr-' + r.id} data-round-res="" aria-labelledby={'rrh-' + r.id}>
       <header>
+        <ResidentPhoto residentId={r.id} photoId={r.photoId} name={r.name} size="lg" />
         {r.room && <span className="room"><span className="sr-only">{t('meds.roomShort', { room: '' })}</span>{r.room}</span>}
         <h2 id={'rrh-' + r.id} tabIndex={-1}>{r.name}</h2>
         {r.allergies.map((a) => <span key={a} className="flag crit">{t('residents.banner.allergy', { name: a })}</span>)}
@@ -86,6 +89,7 @@ export function RoundBlock({ data, time, slotKey, day, editable, colleagues, nex
                   <div className="drug">{row.name}</div>
                   <div className="drug-sub">{[row.form, row.indication].filter(Boolean).join(' · ')}</div>
                   {row.notes && <div className="small warn-text rl-note"><span className="lbl warn-text">{t('meds.round.notes')}</span> {row.notes}</div>}
+                  {!!row.allergy?.length && <div className="row" style={{ gap: 4, marginTop: 3 }}><AllergyTags hits={row.allergy} /></div>}
                   {row.requiresDoubleCheck && <span className="tag violet" style={{ marginTop: 3 }}>{t('meds.fourEyes.tag')}</span>}
                 </div>
                 <div className="rl-dose">

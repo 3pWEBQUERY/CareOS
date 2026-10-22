@@ -29,8 +29,8 @@ export function ColorField(props: FieldProps & {
   const v = controlled ?? inner
   const set = (x: string) => { if (controlled === undefined) setInner(x); onChange?.(x) }
   const valid = isHexColor(v)
-  const err = v !== '' && !valid ? t('common.field.errColor') : null
-  const f: FieldProps = { label: props.label, hideLabel: props.hideLabel, hint: props.hint, error: props.error ?? err, optional: props.optional, wrapClassName: props.wrapClassName, wrapStyle: props.wrapStyle }
+  const err = v.length >= 7 && !valid ? t('common.field.errColor') : null
+  const f: FieldProps = { label: props.label, hideLabel: props.hideLabel, hint: props.hint, error: 'error' in props ? props.error : err, optional: props.optional, wrapClassName: props.wrapClassName, wrapStyle: props.wrapStyle }
   const ids = useFieldIds(f, { id: props.id })
   return (
     <Field ids={ids} {...f}>

@@ -9,6 +9,8 @@ import { addActionAction, saveStageAction } from '../actions'
 import { ActionCheck } from '../client'
 import { actionTitle, canManageUnit, qualityUnits, SEVERITIES, STAGES, stageIndex, toLocalInput } from '../_lib'
 import { StageForm } from './StageForm'
+import { ActionAssign, AssigneeField, type StaffOpt } from './ActionAssign'
+import { usersWithPermission } from '@/lib/notify'
 import { Checkbox, DateTimeField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -41,26 +43,18 @@ export default async function IncidentPage({ params, searchParams }: { params: P
   const canSeeResident = inc.resident ? ctx.can('resident.read', scope) : false
   const closed = inc.stage === 'closed'
 
-  // Erledigt-Status mit verknüpften Aufgaben abgleichen (Aufgabe ist führend)
+  // Erledigt-Status: die verknüpfte Aufgabe ist führend. Nur lesen – den gespeicherten Stand gleichen die
+  // Aufgaben-Aktionen (syncIncidentActions) und der Eskalationsjob ab, nicht der Seitenaufruf.
   const taskIds = inc.actions.map((a) => a.taskId).filter((x): x is string => !!x)
   const tasks = taskIds.length ? await db.task.findMany({ where: { id: { in: taskIds } } }) : []
   const taskById = new Map(tasks.map((k) => [k.id, k]))
-  const actions = await Promise.all(
-    inc.actions.map(async (a) => {
-      const task = a.taskId ? taskById.get(a.taskId) : undefined
-      if (!task) return { ...a, done: a.doneAt != null, task }
-      const done = task.status === 'done' || task.status === 'partial'
-      if (done && !a.doneAt) {
-        await db.incidentAction.update({ where: { id: a.id }, data: { doneAt: task.completedAt ?? now, doneById: task.completedById } })
-        return { ...a, done, doneAt: task.completedAt ?? now, doneById: task.completedById, task }
-      }
-      if (!done && a.doneAt) {
-        await db.incidentAction.update({ where: { id: a.id }, data: { doneAt: null, doneById: null } })
-        return { ...a, done, doneAt: null, doneById: null, task }
-      }
-      return { ...a, done, task }
-    }),
-  )
+  const actions = inc.actions.map((a) => {
+    const task = a.taskId ? taskById.get(a.taskId) : undefined
+    if (!task) return { ...a, done: a.doneAt != null, task }
+    const done = task.status === 'done' || task.status === 'partial'
+    return { ...a, done, doneAt: done ? a.doneAt ?? task.completedAt : null, doneById: done ? a.doneById ?? task.completedById : null, task }
+  })
+  const staffIds = !closed && canReport ? [...new Set([...(await usersWithPermission(ctx.org.id, 'task.complete', inc.unitId)), ...(await usersWithPermission(ctx.org.id, 'quality.manage', inc.unitId))])] : []
   const openActions = actions.filter((a) => !a.done).length
 
   const audits = await db.auditLog.findMany({
@@ -74,8 +68,9 @@ export default async function IncidentPage({ params, searchParams }: { params: P
     orderBy: { at: 'desc' },
     take: 100,
   })
-  const userIds = [...new Set([inc.reportedById, inc.closedById, ...actions.map((a) => a.doneById), ...audits.map((a) => a.userId)].filter((x): x is string => !!x))]
-  const users = await db.user.findMany({ where: { id: { in: userIds }, orgId: ctx.org.id }, select: { id: true, firstName: true, lastName: true } })
+  const userIds = [...new Set([inc.reportedById, inc.closedById, ...actions.map((a) => a.doneById), ...actions.map((a) => a.assigneeId), ...audits.map((a) => a.userId), ...staffIds].filter((x): x is string => !!x))]
+  const users = await db.user.findMany({ where: { id: { in: userIds }, orgId: ctx.org.id }, select: { id: true, firstName: true, lastName: true, initials: true, active: true } })
+  const staff: StaffOpt[] = users.filter((u) => staffIds.includes(u.id) && u.active).map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName}`, initials: u.initials })).sort((a, b) => a.name.localeCompare(b.name))
   const uname = (uid: string | null | undefined) => {
     const u = users.find((x) => x.id === uid)
     return u ? `${u.firstName} ${u.lastName}` : '–'
@@ -258,8 +253,10 @@ export default async function IncidentPage({ params, searchParams }: { params: P
                             <div className="small muted">
                               {a.dueAt && <span className={over ? 'crit-text' : ''}>{over ? t('quality.detail.overdue') + ' · ' : ''}{t('quality.detail.due')} <span className="mono">{rel(a.dueAt)}</span></span>}
                               {a.done && a.doneAt && <> · {t('quality.detail.doneBy', { name: uname(a.doneById), at: rel(a.doneAt) })}</>}
+                              {a.assigneeId && <> · {t('tasks.col.assignee')}: {a.assigneeId === ctx.user.id ? t('tasks.me') : uname(a.assigneeId)}</>}
                             </div>
                           </div>
+                          {!closed && canReport && !a.done && <ActionAssign id={a.id} title={actionTitle(t, a.title)} assigneeId={a.assigneeId} staff={staff} context={dlgContext} />}
                           {a.task && <Link className="tag accent" href="/tasks" title={t('quality.detail.linkedTask')} style={{ textDecoration: 'none' }}>{t('quality.detail.task')}</Link>}
                         </li>
                       )
@@ -273,6 +270,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
                     <ActionForm action={addActionAction.bind(null, inc.id)} className="form-grid" success="quality.detail.actionAdded">
                       <TextField label={t('quality.detail.newAction')} wrapClassName="span-all" name="title" maxLength={300} required placeholder={t('quality.detail.newActionHint')} />
                       <DateTimeField label={t('quality.detail.dueAt')} name="dueAt" defaultValue={toLocalInput(new Date(now.getTime() + 3600_000))} />
+                      <AssigneeField staff={staff} />
                       <Checkbox name="asTask" defaultChecked label={t('quality.detail.asTask')} wrapStyle={{ alignSelf: 'end', minHeight: 34 }} />
                       <div className="form-actions" style={{ alignSelf: 'end' }}><Submit className="btn">{t('common.add')}</Submit></div>
                     </ActionForm>

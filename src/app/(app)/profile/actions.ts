@@ -5,7 +5,7 @@ import { refresh } from 'next/cache'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
-import { run, runSetup, fd, type ActionResult } from '@/lib/action'
+import { run, runSetup, fd, fdBool, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { rateLimit } from '@/lib/rate-limit'
 import { encrypt, decrypt } from '@/lib/crypto'
@@ -13,19 +13,77 @@ import { newMfaSecret, verifyTotp } from '@/lib/auth/mfa'
 import { hashPassword, passwordProblem, verifyPassword } from '@/lib/auth/password'
 import { LOCALES } from '@/i18n/core'
 import { normalizeTheme } from '@/lib/theme'
+import { saveUpload, UploadError } from '@/lib/files'
+import { deleteObject } from '@/lib/storage'
 
 const MFA_SETUP = 'mfa_setup'
 
-/** Telefonnummer ist das einzige selbst änderbare Stammdatum. */
-export async function updatePhoneAction(form: FormData): Promise<ActionResult> {
+const PHONE_RE = /^[+\d][\d\s()./-]{3,}$/
+
+/**
+ * Kontaktangaben für das Personenverzeichnis (PRD §55) – die einzigen selbst änderbaren Stammdaten.
+ * Dienstliche Nummer: für alle sichtbar. Private Nummer: nur für Person, Leitung und HR, ausser freigegeben.
+ */
+export async function updateContactAction(form: FormData): Promise<ActionResult> {
   return runSetup(async () => {
     const ctx = await getCtx()
+    const workPhone = fd(form, 'workPhone').slice(0, 40)
     const phone = fd(form, 'phone').slice(0, 40)
-    if (phone && !/^[+\d][\d\s()./-]{3,}$/.test(phone)) return { ok: false, error: 'profile.errors.phone', field: 'phone' }
-    const before = { phone: ctx.user.phone }
-    await db.user.update({ where: { id: ctx.user.id }, data: { phone: phone || null } })
-    await audit(ctx, { action: 'profile.phone', entityType: 'User', entityId: ctx.user.id, before, after: { phone: phone || null } })
+    if (workPhone && !PHONE_RE.test(workPhone)) return { ok: false, error: 'people.me.errors.phone', field: 'workPhone' }
+    if (phone && !PHONE_RE.test(phone)) return { ok: false, error: 'people.me.errors.phone', field: 'phone' }
+    const after = { workPhone: workPhone || null, phone: phone || null, phoneShared: !!phone && fdBool(form, 'phoneShared') }
+    const before = { workPhone: ctx.user.workPhone, phone: ctx.user.phone, phoneShared: ctx.user.phoneShared }
+    await db.user.update({ where: { id: ctx.user.id }, data: after })
+    await audit(ctx, { action: 'profile.contact', entityType: 'User', entityId: ctx.user.id, before, after })
     refresh()
+  })
+}
+
+const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const AVATAR_MAX = 5 * 1024 * 1024
+
+/** Altes Profilbild aus Ablage und Datenbank entfernen (nur eigene Profilbilder). */
+async function dropAvatar(orgId: string, fileId: string | null) {
+  if (!fileId) return
+  const f = await db.fileObject.findFirst({ where: { id: fileId, orgId, purpose: 'avatar' } })
+  if (!f) return
+  await deleteObject(f.key).catch((e) => console.error('[avatar] delete', e))
+  await db.fileObject.delete({ where: { id: f.id } }).catch(() => {})
+}
+
+/** Profilbild hochladen (im Browser auf 320 × 320 verkleinert, dadurch ohne EXIF-Standortdaten). */
+export async function uploadAvatarAction(form: FormData): Promise<ActionResult> {
+  return runSetup(async () => {
+    const ctx = await getCtx()
+    const file = form.get('photo')
+    if (!(file instanceof File) || file.size === 0 || !AVATAR_TYPES.includes(file.type)) return { ok: false, error: 'people.me.errors.photoType', field: 'photo' }
+    if (file.size > AVATAR_MAX) return { ok: false, error: 'people.me.errors.photoSize', field: 'photo' }
+    let id: string
+    try {
+      id = (await saveUpload(ctx, file, 'avatar', false)).id
+    } catch (e) {
+      if (e instanceof UploadError) return { ok: false, error: e.message === 'storage_not_configured' ? 'people.me.errors.storage' : e.message === 'type' ? 'people.me.errors.photoType' : 'people.me.errors.upload', field: 'photo' }
+      throw e
+    }
+    const before = ctx.user.avatarFileId
+    await db.user.update({ where: { id: ctx.user.id }, data: { avatarFileId: id } })
+    await dropAvatar(ctx.org.id, before)
+    await audit(ctx, { action: 'profile.avatar', entityType: 'User', entityId: ctx.user.id, before: { avatarFileId: before }, after: { avatarFileId: id } })
+    refresh()
+    return { ok: true, message: 'people.me.photoSaved' }
+  })
+}
+
+export async function removeAvatarAction(): Promise<ActionResult> {
+  return runSetup(async () => {
+    const ctx = await getCtx()
+    const before = ctx.user.avatarFileId
+    if (!before) return { ok: true }
+    await db.user.update({ where: { id: ctx.user.id }, data: { avatarFileId: null } })
+    await dropAvatar(ctx.org.id, before)
+    await audit(ctx, { action: 'profile.avatar', entityType: 'User', entityId: ctx.user.id, before: { avatarFileId: before }, after: { avatarFileId: null } })
+    refresh()
+    return { ok: true, message: 'people.me.photoRemoved' }
   })
 }
 
@@ -74,7 +132,7 @@ export async function startMfaSetupAction(): Promise<ActionResult<{ qr: string; 
 export async function regenerateMfaAction(form: FormData): Promise<ActionResult<{ qr: string; secret: string }>> {
   return runSetup(async () => {
     const ctx = await getCtx()
-    if (!rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
+    if (!(await rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000)).ok) return { ok: false, error: 'profile.errors.rate' }
     if (!ctx.user.mfaEnabled || !ctx.user.mfaSecret) return { ok: false, error: 'common.genericError' }
     if (!verifyTotp(ctx.user.mfaSecret, fd(form, 'code'), ctx.user.email)) {
       await audit(ctx, { action: 'profile.mfa_code_failed', entityType: 'User', entityId: ctx.user.id })
@@ -88,7 +146,7 @@ export async function regenerateMfaAction(form: FormData): Promise<ActionResult<
 export async function confirmMfaAction(form: FormData): Promise<ActionResult> {
   return runSetup(async () => {
     const ctx = await getCtx()
-    if (!rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
+    if (!(await rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000)).ok) return { ok: false, error: 'profile.errors.rate' }
     const ch = await pendingSetup(ctx.user.id)
     if (!ch) return { ok: false, error: 'profile.mfa.expired' }
     if (!verifyTotp(ch.challenge, fd(form, 'code'), ctx.user.email)) return { ok: false, error: 'profile.mfa.invalidCode', field: 'code' }
@@ -109,7 +167,7 @@ export async function confirmMfaAction(form: FormData): Promise<ActionResult> {
 export async function disableMfaAction(form: FormData): Promise<ActionResult> {
   return runSetup(async () => {
     const ctx = await getCtx()
-    if (!rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
+    if (!(await rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000)).ok) return { ok: false, error: 'profile.errors.rate' }
     if (!ctx.user.mfaEnabled || !ctx.user.mfaSecret) return { ok: true }
     if (!verifyTotp(ctx.user.mfaSecret, fd(form, 'code'), ctx.user.email)) {
       await audit(ctx, { action: 'profile.mfa_code_failed', entityType: 'User', entityId: ctx.user.id })
@@ -182,7 +240,7 @@ export async function revokeOtherSessionsAction(): Promise<ActionResult> {
 export async function changePasswordAction(form: FormData): Promise<ActionResult> {
   return runSetup(async () => {
     const ctx = await getCtx()
-    if (!rateLimit('pw-change:' + ctx.user.id, 6, 15 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
+    if (!(await rateLimit('pw-change:' + ctx.user.id, 6, 15 * 60_000)).ok) return { ok: false, error: 'profile.errors.rate' }
     const current = String(form.get('current') ?? '')
     const next = String(form.get('next') ?? '')
     const repeat = String(form.get('repeat') ?? '')

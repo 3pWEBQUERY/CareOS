@@ -12,6 +12,7 @@ import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode 
 import { onRadioKeys } from '../radio'
 import { cx } from './Field'
 import { OptionalMark } from './marks'
+import { emitChange } from './emit'
 
 export type RadioOption = { value: string; label: ReactNode; hint?: ReactNode; disabled?: boolean; title?: string }
 
@@ -30,7 +31,8 @@ export type RadioGroupProps = {
   disabled?: boolean
   /** nebeneinander (Standard bei «seg») */
   inline?: boolean
-  variant?: 'list' | 'seg'
+  /** list: Kreis + Text; card: Optionen als Karten (.opt, z. B. Quiz, Assessments); seg: Segmente */
+  variant?: 'list' | 'card' | 'seg'
   className?: string
   style?: CSSProperties
   wrapClassName?: string
@@ -63,9 +65,12 @@ export function RadioGroup(props: RadioGroupProps) {
     return () => f.removeEventListener('reset', onReset)
   }, [defaultValue, isControlled])
 
+  const hiddenRef = useRef<HTMLInputElement>(null)
   const select = (v: string) => {
     if (!isControlled) setInner(v)
-    if (v !== value) onChange?.(v)
+    if (v === value) return
+    onChange?.(v)
+    if (hiddenRef.current) { hiddenRef.current.value = v; emitChange(hiddenRef.current) }
   }
   // Tab-Stopp: gewählte Option, sonst die erste aktivierbare
   const tabValue = options.some((o) => o.value === value && !o.disabled) ? value : options.find((o) => !o.disabled)?.value
@@ -76,7 +81,7 @@ export function RadioGroup(props: RadioGroupProps) {
       ref={groupRef}
       id={id}
       role="radiogroup"
-      className={cx(seg ? 'seg rg-seg' : 'rg', !seg && inline && 'rg-inline', className)}
+      className={cx(seg ? 'seg rg-seg' : 'rg', variant === 'card' && 'rg-cards', !seg && inline && 'rg-inline', className)}
       style={style}
       aria-label={props['aria-label']}
       aria-labelledby={props['aria-labelledby'] ?? (label != null ? id + '-l' : undefined)}
@@ -95,7 +100,7 @@ export function RadioGroup(props: RadioGroupProps) {
             type="button"
             role="radio"
             aria-checked={on}
-            className={seg ? undefined : 'rg-opt'}
+            className={seg ? undefined : variant === 'card' ? 'rg-opt opt' : 'rg-opt'}
             tabIndex={o.value === tabValue ? 0 : -1}
             disabled={disabled || o.disabled}
             title={o.title}
@@ -111,7 +116,7 @@ export function RadioGroup(props: RadioGroupProps) {
           </button>
         )
       })}
-      {name && <input type="hidden" name={name} value={value} form={form} disabled={disabled} data-for={id} />}
+      {name && <input ref={hiddenRef} type="hidden" name={name} value={value} form={form} disabled={disabled} data-for={id} />}
     </div>
   )
   if (label == null && hint == null && !hasErr) return group

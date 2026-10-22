@@ -9,6 +9,7 @@ import { setDoseAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { useConfirm, type ConfirmOptions } from '@/components/ui/ConfirmDialog'
 import { FourEyes, ResidentContext, useDoseCall } from './shared'
 import { doseText } from './dose'
+import { AllergyTags } from './Orders'
 import type { CellDto, ColleagueDto, DoseStateDto, MarRowDto, ResidentCtxDto } from './types'
 import { Textarea } from '@/components/ui/fields'
 
@@ -82,6 +83,7 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
                     {[row.form, row.route, row.indication].filter(Boolean).join(' · ')}
                   </div>
                   <div className="row" style={{ gap: 4, marginTop: 3 }}>
+                    <AllergyTags hits={row.allergy ?? []} />
                     {row.kind === 'temporary' && <span className="tag">{t('meds.kind.temporary')}</span>}
                     {row.requiresDoubleCheck && <span className="tag violet">{t('meds.fourEyes.tag')}</span>}
                     {row.stoppedAt && <span className="tag outline">{t('meds.mar.stoppedAt', { time: row.stoppedAt })}</span>}
@@ -166,6 +168,7 @@ export function DoseDialog({ row, slots, initialTime, initialStatus, day, editab
         <div>
           <div className="drug">{row.name}</div>
           <div className="drug-sub">{[row.form, row.indication].filter(Boolean).join(' · ')}</div>
+          {!!row.allergy?.length && <div className="row" style={{ gap: 4, marginTop: 3 }}><AllergyTags hits={row.allergy} /></div>}
           {row.notes && <p className="small warn-text" style={{ margin: '4px 0 0' }}><span className="lbl warn-text">{t('meds.round.notes')}</span> {row.notes}</p>}
         </div>
         {row.cells.filter(Boolean).length > 1 && <div className="seg" role="group" aria-label={t('meds.dialog.slot')} style={{ alignSelf: 'flex-start', flexWrap: 'wrap' }}>
@@ -219,7 +222,7 @@ export function DoseDialog({ row, slots, initialTime, initialStatus, day, editab
               ))}
             </div>
             {status !== 'open' && (
-              <Textarea label={<>{t(needsReason ? 'meds.dialog.reason' : 'meds.dialog.note')}{!needsReason && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</>} name="reason" rows={2} style={{ minHeight: 60 }} required={needsReason} placeholder={t(status === 'held' ? 'meds.dialog.reasonHeldPh' : status === 'omitted' ? 'meds.dialog.reasonOmittedPh' : status === 'refused' ? 'meds.dialog.reasonRefusedPh' : 'meds.dialog.notePh')} />
+              <Textarea label={t(needsReason ? 'meds.dialog.reason' : 'meds.dialog.note')} optional={!needsReason} name="reason" rows={2} style={{ minHeight: 60 }} required={needsReason} placeholder={t(status === 'held' ? 'meds.dialog.reasonHeldPh' : status === 'omitted' ? 'meds.dialog.reasonOmittedPh' : status === 'refused' ? 'meds.dialog.reasonRefusedPh' : 'meds.dialog.notePh')} />
             )}
             {status === 'refused' && <p className="small muted" style={{ margin: 0 }}>{t('meds.dialog.refusedHint')}</p>}
             {status === 'given' && row.requiresDoubleCheck && (

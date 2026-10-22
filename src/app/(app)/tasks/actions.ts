@@ -9,8 +9,9 @@ import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { notify, usersWithPermission } from '@/lib/notify'
 import { taskTitle } from '@/lib/task-title'
-import { isClosed } from '@/lib/tasks'
-import { atTime, parseDateKey } from '@/lib/time'
+import { ensureTasksForDay, invalidateTaskGeneration, isClosed, syncIncidentActions } from '@/lib/tasks'
+import { addDays, atTime, dbDate, fmtDayMonth, fromDbDate, parseDateKey, startOfDay } from '@/lib/time'
+import { nextOccurrence, RecurrenceInput } from '@/lib/recurrence'
 
 const err = (error: string, field?: string): ActionResult => ({ ok: false, error, field })
 
@@ -54,6 +55,34 @@ export async function createTaskAction(form: FormData): Promise<ActionResult> {
     if (assigneeId) {
       const ok = (await usersWithPermission(ctx.org.id, 'task.complete', unitId)).includes(assigneeId)
       if (!ok) return err('tasks.errors.assignee', 'assigneeId')
+    }
+    // «Wiederholen» (PRD §12.1): statt einer Einzelaufgabe entsteht eine Vorlage; die Aufgaben erzeugt ensureTasksForDay.
+    const rhythm = fd(form, 'rhythm')
+    if (rhythm && rhythm !== 'none') {
+      const rec = RecurrenceInput.safeParse({
+        rhythm, every: fd(form, 'every') || '1', weekdays: form.getAll('weekdays').map(String), monthDay: fd(form, 'monthDay'),
+        times: time, startDate: date, endDate: fd(form, 'endDate'),
+      })
+      if (!rec.success) {
+        const f = String(rec.error.issues[0]?.path[0] ?? '')
+        return err(rec.error.issues[0]?.message ?? 'common.genericError', ({ times: 'time', startDate: 'date' } as Record<string, string>)[f] ?? f)
+      }
+      const r = rec.data
+      const tpl = await db.taskTemplate.create({
+        data: {
+          orgId: ctx.org.id, unitId, residentId: residentId || null, title, description: fd(form, 'description') || null, category: fd(form, 'category') || t('tasks.categoryDefault'),
+          rhythm: r.rhythm, every: r.every, weekdays: r.rhythm === 'weekly' ? r.weekdays : [], monthDay: r.rhythm === 'monthly' ? r.monthDay : null, times: r.times,
+          startDate: dbDate(parseDateKey(r.startDate)), endDate: r.endDate ? dbDate(parseDateKey(r.endDate)) : null,
+          durationMin: Math.round(dur), priority, assigneeId, createdById: ctx.user.id,
+        },
+      })
+      await audit(ctx, { action: 'task.template.create', entityType: 'TaskTemplate', entityId: tpl.id, after: tpl, context: { residentId: tpl.residentId, unitId } })
+      const next = nextOccurrence({ ...r, startDate: parseDateKey(r.startDate), endDate: r.endDate ? parseDateKey(r.endDate) : null }, new Date() > parseDateKey(r.startDate) ? new Date() : parseDateKey(r.startDate))
+      invalidateTaskGeneration(unitId)
+      if (next && next < addDays(startOfDay(), 2)) await ensureTasksForDay(unitId, next)
+      await emit({ orgId: ctx.org.id, type: 'task.created', unitId, residentId: tpl.residentId, actorId: ctx.user.id, payload: { templateId: tpl.id } })
+      refresh()
+      return { ok: true, message: next ? t('tasks.recur.created', { next: `${fmtDayMonth(next, ctx.locale)} ${r.times[0]}` }) : t('tasks.toast.created') }
     }
     const task = await db.task.create({
       data: {
@@ -122,6 +151,7 @@ export async function completeTaskAction(form: FormData): Promise<ActionResult> 
     if (!upd.count) return err('tasks.errors.closed')
     const after = await db.task.findUniqueOrThrow({ where: { id: task.id } })
     await audit(ctx, { action: 'task.complete', entityType: 'Task', entityId: task.id, before: snapshot(task), after: snapshot(after), context: { residentId: task.residentId } })
+    if (task.source === 'quality') await syncIncidentActions([task.id])
     await emit({ orgId: ctx.org.id, type: 'task.completed', unitId: task.unitId, residentId: task.residentId, actorId: ctx.user.id, payload: { taskId: task.id, status } })
     refresh()
     return { ok: true, message: ctx.t('tasks.toast.' + status, { title: taskTitle(ctx.t, task) }) }
@@ -137,6 +167,7 @@ export async function reopenTaskAction(form: FormData): Promise<ActionResult> {
     if (!isClosed(task.status) && task.status !== 'escalated') return { ok: true }
     const after = await db.task.update({ where: { id: task.id }, data: { status: 'planned', completedById: null, completedAt: null } })
     await audit(ctx, { action: 'task.reopen', entityType: 'Task', entityId: task.id, before: snapshot(task), after: snapshot(after), context: { residentId: task.residentId } })
+    if (task.source === 'quality') await syncIncidentActions([task.id])
     await emit({ orgId: ctx.org.id, type: 'task.reopened', unitId: task.unitId, residentId: task.residentId, actorId: ctx.user.id, payload: { taskId: task.id } })
     refresh()
     return { ok: true, message: ctx.t('tasks.toast.reopened') }
@@ -186,6 +217,7 @@ export async function completeManyAction(form: FormData): Promise<ActionResult<{
       done.push(task.id)
       units.add(task.unitId)
     }
+    await syncIncidentActions(done)
     for (const unitId of units) await emit({ orgId: ctx.org.id, type: 'task.completed', unitId, actorId: ctx.user.id, payload: { taskIds: done, status: 'done' } })
     refresh()
     return { ok: true, message: ctx.t('tasks.bulk.toast', { n: done.length }), data: { ids: done } }
@@ -208,8 +240,117 @@ export async function reopenManyAction(form: FormData): Promise<ActionResult> {
       units.add(task.unitId)
       n++
     }
+    await syncIncidentActions(ids)
     for (const unitId of units) await emit({ orgId: ctx.org.id, type: 'task.reopened', unitId, actorId: ctx.user.id })
     refresh()
     return { ok: true, message: ctx.t('tasks.bulk.undone', { n }) }
   })
+}
+
+// ───────── Wiederkehrende Aufgaben (Vorlagen) ─────────
+
+/** Vorlagen pflegen: Aufgaben verwalten im Bereich oder Klinische Konfiguration (Admin). */
+function assertTemplates(ctx: Ctx, unitId: string) {
+  if (ctx.can('admin.config')) return
+  const unit = ctx.units.find((u) => u.id === unitId)
+  assertCan(ctx, 'task.manage', { unitId, locationId: unit?.locationId })
+}
+const tplSnapshot = (x: { title: string; rhythm: string; every: number; weekdays: number[]; monthDay: number | null; times: string[]; startDate: Date; endDate: Date | null; active: boolean; residentId: string | null; assigneeId: string | null; priority: string; durationMin: number; category: string; description: string | null }) => ({
+  title: x.title, rhythm: x.rhythm, every: x.every, weekdays: x.weekdays, monthDay: x.monthDay, times: x.times, startDate: x.startDate, endDate: x.endDate,
+  active: x.active, residentId: x.residentId, assigneeId: x.assigneeId, priority: x.priority, durationMin: x.durationMin, category: x.category, description: x.description,
+})
+
+/** Künftige, noch nicht begonnene Aufgaben einer Vorlage entfernen (nach Änderung oder Ende der Serie). */
+async function dropFutureTasks(templateId: string) {
+  return (await db.task.deleteMany({ where: { source: 'recurring', sourceId: templateId, status: { in: ['planned', 'ready'] }, dueAt: { gt: new Date() } } })).count
+}
+
+/** Create/Update einer Vorlage (Admin → Klinische Konfiguration bzw. «Serie bearbeiten» in Aufgaben). */
+export async function saveTaskTemplateAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    const id = fd(form, 'id')
+    const before = id ? await db.taskTemplate.findFirst({ where: { id, orgId: ctx.org.id } }) : null
+    if (id && !before) return err('common.notFound')
+    const unitId = before?.unitId ?? fd(form, 'unitId')
+    if (!ctx.units.some((u) => u.id === unitId)) return err('tasks.errors.noUnit', 'unitId')
+    assertTemplates(ctx, unitId)
+    const title = fd(form, 'title')
+    if (title.length < 2 || title.length > 200) return err('tasks.errors.title', 'title')
+    const residentId = fd(form, 'residentId') || null
+    if (residentId) {
+      const r = await residentInScope(ctx, residentId)
+      if (!r || r.unitId !== unitId) return err('tasks.recur.errors.resident', 'residentId')
+    }
+    const dur = fdNum(form, 'durationMin') ?? 10
+    if (Number.isNaN(dur) || dur < 1 || dur > 480) return err('tasks.errors.duration', 'durationMin')
+    const priority = (['critical', 'important', 'routine'].includes(fd(form, 'priority')) ? fd(form, 'priority') : 'routine') as Priority
+    const assigneeId = fd(form, 'assigneeId') || null
+    if (assigneeId && !(await usersWithPermission(ctx.org.id, 'task.complete', unitId)).includes(assigneeId)) return err('tasks.errors.assignee', 'assigneeId')
+    const rec = RecurrenceInput.safeParse({
+      rhythm: fd(form, 'rhythm'), every: fd(form, 'every') || '1', weekdays: form.getAll('weekdays').map(String), monthDay: fd(form, 'monthDay'),
+      times: fd(form, 'times'), startDate: fd(form, 'startDate'), endDate: fd(form, 'endDate'),
+    })
+    if (!rec.success) return err(rec.error.issues[0]?.message ?? 'common.genericError', String(rec.error.issues[0]?.path[0] ?? ''))
+    const r = rec.data
+    const data = {
+      residentId, title, description: fd(form, 'description').slice(0, 2000) || null, category: (fd(form, 'category') || ctx.t('tasks.categoryDefault')).slice(0, 60),
+      rhythm: r.rhythm, every: r.every, weekdays: r.rhythm === 'weekly' ? r.weekdays : [], monthDay: r.rhythm === 'monthly' ? r.monthDay : null, times: r.times,
+      startDate: dbDate(parseDateKey(r.startDate)), endDate: r.endDate ? dbDate(parseDateKey(r.endDate)) : null,
+      durationMin: Math.round(dur), priority, assigneeId,
+    }
+    let tplId: string
+    if (before) {
+      const after = await db.taskTemplate.update({ where: { id: before.id }, data })
+      const dropped = await dropFutureTasks(before.id)
+      await audit(ctx, { action: 'task.template.update', entityType: 'TaskTemplate', entityId: before.id, before: tplSnapshot(before), after: tplSnapshot(after), context: { unitId, residentId, droppedTasks: dropped } })
+      tplId = before.id
+    } else {
+      const tpl = await db.taskTemplate.create({ data: { ...data, orgId: ctx.org.id, unitId, createdById: ctx.user.id } })
+      await audit(ctx, { action: 'task.template.create', entityType: 'TaskTemplate', entityId: tpl.id, after: tplSnapshot(tpl), context: { unitId, residentId } })
+      tplId = tpl.id
+    }
+    invalidateTaskGeneration(unitId)
+    await ensureTasksForDay(unitId, new Date())
+    await emit({ orgId: ctx.org.id, type: 'task.created', unitId, residentId, actorId: ctx.user.id, payload: { templateId: tplId } })
+    refresh()
+    return { ok: true, message: ctx.t(before ? 'tasks.recur.saved' : 'tasks.recur.createdPlain') }
+  }) as Promise<ActionResult>
+}
+
+/** Serie beenden: Vorlage inaktiv, Ende heute; künftige offene Aufgaben entfallen, heutige vergangene bleiben. */
+export async function endTaskTemplateAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    const tpl = await db.taskTemplate.findFirst({ where: { id: fd(form, 'id'), orgId: ctx.org.id } })
+    if (!tpl) return err('common.notFound')
+    assertTemplates(ctx, tpl.unitId)
+    if (!tpl.active) return { ok: true }
+    const today = startOfDay()
+    const endDate = tpl.endDate && fromDbDate(tpl.endDate) < today ? tpl.endDate : dbDate(today)
+    const after = await db.taskTemplate.update({ where: { id: tpl.id }, data: { active: false, endDate } })
+    const dropped = await dropFutureTasks(tpl.id)
+    await audit(ctx, { action: 'task.template.end', entityType: 'TaskTemplate', entityId: tpl.id, before: tplSnapshot(tpl), after: tplSnapshot(after), context: { unitId: tpl.unitId, residentId: tpl.residentId, droppedTasks: dropped } })
+    invalidateTaskGeneration(tpl.unitId)
+    await emit({ orgId: ctx.org.id, type: 'task.reopened', unitId: tpl.unitId, residentId: tpl.residentId, actorId: ctx.user.id, payload: { templateId: tpl.id, ended: true } })
+    refresh()
+    return { ok: true, message: ctx.t('tasks.recur.ended', { n: dropped }) }
+  }) as Promise<ActionResult>
+}
+
+/** Beendete Serie wieder aufnehmen (Admin): ab heute, ohne rückwirkende Aufgaben. */
+export async function resumeTaskTemplateAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    const tpl = await db.taskTemplate.findFirst({ where: { id: fd(form, 'id'), orgId: ctx.org.id } })
+    if (!tpl) return err('common.notFound')
+    assertTemplates(ctx, tpl.unitId)
+    if (tpl.active) return { ok: true }
+    const today = dbDate(startOfDay())
+    const after = await db.taskTemplate.update({ where: { id: tpl.id }, data: { active: true, endDate: null, startDate: tpl.startDate > today ? tpl.startDate : today } })
+    await audit(ctx, { action: 'task.template.resume', entityType: 'TaskTemplate', entityId: tpl.id, before: tplSnapshot(tpl), after: tplSnapshot(after), context: { unitId: tpl.unitId, residentId: tpl.residentId } })
+    invalidateTaskGeneration(tpl.unitId)
+    refresh()
+    return { ok: true, message: ctx.t('tasks.recur.resumed') }
+  }) as Promise<ActionResult>
 }

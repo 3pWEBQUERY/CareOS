@@ -6,9 +6,10 @@ import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { PORTIONS, QUICK_ML, portionLabel } from '@/lib/care'
-import { addDrinkAction, addMealAction, saveProfileAction, undoIntakeAction } from './actions'
+import { addDrinkAction, addFluidAction, addMealAction, saveProfileAction, undoIntakeAction } from './actions'
+import { FLUID_IN, FLUID_LIMITS, FLUID_OUT } from '@/lib/fluid-balance'
 import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
-import { TextField, Textarea } from '@/components/ui/fields'
+import { Combobox, NumberField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 function useTr() {
   const t = useT()
@@ -41,19 +42,15 @@ export function DrinkQuick({ residentId, defaultItem }: { residentId: string; de
     })
   return (
     <div className="stack-sm">
-      <label className="fld" htmlFor="dq-item">
-        <span className="lbl">{t('care.nutrition.item')}</span>
-        <TextField id="dq-item" list="dq-items" value={item} maxLength={120} autoComplete="off" onChange={(e) => setItem(e.target.value)} />
-        <datalist id="dq-items">{items.map((s) => <option key={s} value={s} />)}</datalist>
-      </label>
+      <Combobox label={t('care.nutrition.item')} id="dq-item" value={item} onChange={(v) => setItem(v)} freeText maxLength={120} placeholder=" " options={items.map((s) => ({ value: s, label: s }))} />
       <div className="quick-ml" role="group" aria-label={t('care.nutrition.quickAdd')}>
         {QUICK_ML.map((v) => (
           <button key={v} type="button" className="btn lg" disabled={pending} onClick={() => add(v)}>+{v} ml</button>
         ))}
       </div>
       <form className="row" onSubmit={(e) => { e.preventDefault(); const n = Number(ml); if (n) add(n) }}>
-        <label className="sr-only" htmlFor="dq-ml">{t('care.nutrition.customMl')}</label>
-        <TextField id="dq-ml" style={{ width: 120 }} inputMode="numeric" placeholder={t('care.nutrition.customMl')} value={ml} onChange={(e) => setMl(e.target.value.replace(/[^\d]/g, ''))} className="mono" />
+        <NumberField label={t('care.nutrition.customMl')} hideLabel id="dq-ml" wrapStyle={{ width: '9.5rem' }} placeholder={t('care.nutrition.customMl')} unit="ml" min={10} max={2000} step={1}
+          value={ml === '' ? '' : Number(ml)} onChange={(v) => setMl(v === '' ? '' : String(v))} />
         <button type="submit" className="btn" disabled={pending || !ml}>{t('care.nutrition.add')}</button>
       </form>
     </div>
@@ -98,16 +95,7 @@ export function ProfileButton({ residentId, values, contextLabel }: { residentId
   const diets = t('care.nutrition.dietList').split(',')
   const textures = t('care.nutrition.textureList').split(',')
   const fld = (name: keyof ProfileValues, opts: { list?: string[]; area?: boolean; num?: boolean; hint?: string; span?: boolean } = {}) => (
-    <label className={'fld' + (opts.span ? ' span-all' : '')} htmlFor={'np-' + name}>
-      <span className="lbl">{t('care.nutrition.fields.' + (name === 'fluidTargetMl' ? 'fluidTarget' : name))}</span>
-      {opts.area ? (
-        <Textarea id={'np-' + name} name={name} rows={2} style={{ minHeight: 56 }} defaultValue={values[name]} />
-      ) : (
-        <input id={'np-' + name} name={name} className={'field' + (opts.num ? ' mono' : '')} defaultValue={values[name]} list={opts.list ? 'np-l-' + name : undefined} inputMode={opts.num ? 'numeric' : undefined} autoComplete="off" />
-      )}
-      {opts.list && <datalist id={'np-l-' + name}>{opts.list.map((s) => <option key={s} value={s} />)}</datalist>}
-      {opts.hint && <span className="hint">{opts.hint}</span>}
-    </label>
+    <NutritionField key={name} name={name} label={t('care.nutrition.fields.' + (name === 'fluidTargetMl' ? 'fluidTarget' : name))} value={values[name]} {...opts} />
   )
   return (
     <>
@@ -131,5 +119,59 @@ export function ProfileButton({ residentId, values, contextLabel }: { residentId
         </ActionForm>
       </Dialog>
     </>
+  )
+}
+
+/** Feld im Ernährungsprofil: Auswahl mit freiem Text, Zahl (ml) oder Text. */
+function NutritionField({ name, label, value, list, area, num, hint, span }: { name: string; label: string; value: string; list?: string[]; area?: boolean; num?: boolean; hint?: string; span?: boolean }) {
+  const common = { id: 'np-' + name, name, label, hint, wrapClassName: span ? 'span-all' : undefined }
+  if (area) return <Textarea {...common} rows={2} style={{ minHeight: 56 }} defaultValue={value} />
+  if (num) return <NumberField {...common} defaultValue={value} min={500} max={4000} step={1} />
+  if (list) return <Combobox {...common} defaultValue={value} freeText maxLength={120} placeholder=" " options={list.map((s) => ({ value: s, label: s }))} />
+  return <TextField {...common} defaultValue={value} autoComplete="off" />
+}
+
+/**
+ * Ausfuhr bzw. Einfuhr über Infusion/Sonde erfassen (Flüssigkeitsbilanz, PRD §14). Häufigste Art (Urin) vorgewählt,
+ * Menge in ml mit Plausibilitätsgrenze, Rückgängig im Toast; ohne Verbindung vorgemerkt.
+ */
+export function FluidEntry({ residentId }: { residentId: string }) {
+  const t = useT()
+  const tr = useTr()
+  const [kind, setKind] = useState<string>('out_urine')
+  const [ml, setMl] = useState<number | ''>('')
+  const [note, setNote] = useState('')
+  const [err, setErr] = useState<string | null>(null)
+  const [pending, start] = useTransition()
+  const save = () => {
+    if (ml === '' || ml < FLUID_LIMITS.min || ml > FLUID_LIMITS.max) return setErr(t('care.fluid.errors.amount'))
+    setErr(null)
+    const amount = Math.round(ml)
+    start(async () => {
+      const r = await orQueue(() => addFluidAction(residentId, kind, amount, note), { kind: 'intake', residentId, data: { type: 'fluid', fluid: kind, ml: amount, item: note.trim().slice(0, 120) || undefined } })
+      if (isQueued(r)) { setMl(''); setNote(''); return toast(t(r.message)) }
+      if (!r.ok) return setErr(tr(r.error))
+      setMl(''); setNote('')
+      const id = r.data?.id
+      toast(t('care.fluid.saved', { kind: t('care.fluid.kinds.' + kind), ml: amount }), {
+        undoLabel: t('common.undo'),
+        undo: id ? async () => { const u = await undoIntakeAction(residentId, id); toast(tr(u.ok ? 'care.nutrition.removed' : u.error), u.ok ? {} : { kind: 'crit' }) } : undefined,
+      })
+    })
+  }
+  return (
+    <form className="fluid-form" noValidate onSubmit={(e) => { e.preventDefault(); save() }}>
+      <Select label={t('care.fluid.kind')} value={kind} onChange={(e) => setKind(e.target.value)}>
+        <optgroup label={t('care.fluid.out')}>
+          {FLUID_OUT.map((k) => <option key={k} value={k}>{t('care.fluid.kinds.' + k)}</option>)}
+        </optgroup>
+        <optgroup label={t('care.fluid.in')}>
+          {FLUID_IN.map((k) => <option key={k} value={k}>{t('care.fluid.kinds.' + k)}</option>)}
+        </optgroup>
+      </Select>
+      <NumberField label={t('care.fluid.amount')} unit="ml" min={FLUID_LIMITS.min} max={FLUID_LIMITS.max} step={1} value={ml} onChange={(v) => { setMl(v === '' ? '' : Number(v)); setErr(null) }} error={err ?? undefined} />
+      <TextField label={t('care.fluid.note')} optional value={note} maxLength={120} onChange={(e) => setNote(e.target.value)} placeholder={t('care.fluid.notePh')} />
+      <button type="submit" className="btn primary" disabled={pending} data-loading={pending || undefined}>{t('care.fluid.save')}</button>
+    </form>
   )
 }

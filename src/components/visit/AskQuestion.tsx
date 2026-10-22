@@ -83,16 +83,12 @@ export function AskQuestionDialog({ open, onClose, residentId, who, options, ini
         </>}
       >
         <form className="stack-sm" onSubmit={(e) => { e.preventDefault(); submit() }}>
-          <label className="fld" htmlFor={id + 'q'}>
-            <span className="lbl">{t('visit.ask.text')}</span>
-            <Textarea id={id + 'q'} rows={3} value={text} autoFocus maxLength={1000} placeholder={t('visit.ask.textPh')}
-              aria-invalid={err?.field === 'text' || undefined} aria-describedby={err?.field === 'text' ? id + 'e' : undefined}
-              onChange={(e) => { setText(e.target.value); if (err) setErr(null) }}
-              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit() } }} />
-            {err?.field === 'text' && <span className="err" id={id + 'e'} role="alert">{err.msg}</span>}
-          </label>
+          <Textarea label={t('visit.ask.text')} id={id + 'q'} rows={3} value={text} autoFocus maxLength={1000} counter placeholder={t('visit.ask.textPh')}
+            error={err?.field === 'text' ? err.msg : undefined}
+            onChange={(e) => { setText(e.target.value); if (err) setErr(null) }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit() } }} />
           {all.length > 0 && (
-            <Select label={<>{t('visit.ask.ref')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} id={id + 'r'} value={ref} onChange={(e) => setRef(e.target.value)} aria-invalid={err?.field === 'ref' || undefined}>
+            <Select label={t('visit.ask.ref')} optional id={id + 'r'} value={ref} onChange={(e) => setRef(e.target.value)} aria-invalid={err?.field === 'ref' || undefined}>
                 <option value="">{t('visit.ask.refNone')}</option>
                 {vitals.length > 0 && <optgroup label={t('visit.ask.refVital')}>{vitals.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>}
                 {notes.length > 0 && <optgroup label={t('visit.ask.refNote')}>{notes.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>}

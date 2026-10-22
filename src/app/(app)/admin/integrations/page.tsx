@@ -10,8 +10,9 @@ import { AdminHead } from '../Head'
 import { maskConfig } from './mask'
 import {
   createTokenAction, createWebhookAction, deleteIntegrationAction, deleteWebhookAction, revokeTokenAction,
-  rotateWebhookSecretAction, saveIntegrationAction, testWebhookAction, updateWebhookAction,
+  rotateWebhookSecretAction, saveIntegrationAction, testWebhookAction, updateWebhookAction, testIntegrationAction, importIntegrationAction,
 } from './actions'
+import { ADAPTERS } from '@/lib/integrations/registry'
 import { Checkbox, Select, TextField, Textarea } from '@/components/ui/fields'
 
 export async function generateMetadata() {
@@ -71,7 +72,7 @@ async function ApiTokens() {
               <legend className="lbl">{t('admin.api.scopes')}</legend>
               <div className="grid-3" style={{ gap: 4 }}>
                 {API_SCOPES.map((s) => (
-                  <label key={s} className="check"><input type="checkbox" name="scopes" value={s} /><span><code className="mono small">{s}</code> <span className="small muted">{t('admin.api.scopeHints.' + s.replace(':', '_'))}</span></span></label>
+                  <Checkbox key={s} name="scopes" value={s} label={<><code className="mono small">{s}</code> <span className="small muted">{t('admin.api.scopeHints.' + s.replace(':', '_'))}</span></>} />
                 ))}
               </div>
             </fieldset>
@@ -112,7 +113,7 @@ async function Webhooks() {
       <legend className="lbl">{t('admin.webhooks.events')}</legend>
       <Checkbox name="events" value="*" defaultChecked={sel.includes('*')} label={t('admin.webhooks.allEvents')} />
       <div className="grid-3" style={{ gap: 0, marginTop: 4 }}>
-        {EVENT_TYPES.map((e) => <label key={e} className="check"><input type="checkbox" name="events" value={e} defaultChecked={sel.includes(e)} /><code className="mono small">{e}</code></label>)}
+        {EVENT_TYPES.map((e) => <Checkbox key={e} name="events" value={e} defaultChecked={sel.includes(e)} label={<code className="mono small">{e}</code>} />)}
       </div>
     </fieldset>
   )
@@ -182,6 +183,9 @@ async function Integrations() {
   const ctx = await getCtx()
   const { t } = ctx
   const items = await db.integration.findMany({ where: { orgId: ctx.org.id }, orderBy: [{ kind: 'asc' }, { name: 'asc' }] })
+  const runs = await db.integrationRun.findMany({ where: { orgId: ctx.org.id }, orderBy: { startedAt: 'desc' }, take: 15 })
+  const itName = new Map(items.map((i) => [i.id, i.name]))
+  const dtm = (d: Date) => fmtDate(d, ctx.locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const fields = (it?: (typeof items)[number]) => (
     <>
       {it && <input type="hidden" name="id" value={it.id} />}
@@ -202,15 +206,23 @@ async function Integrations() {
       {items.length ? (
         <div className="tablewrap">
           <table className="stable">
-            <thead><tr><th>{t('admin.integrations.name')}</th><th>{t('admin.integrations.kind')}</th><th>{t('admin.integrations.config')}</th><th>{t('admin.api.status')}</th><th><span className="sr-only">{t('admin.common.actions')}</span></th></tr></thead>
+            <thead><tr><th>{t('admin.integrations.name')}</th><th>{t('admin.integrations.kind')}</th><th>{t('admin.integrations.config')}</th><th>{t('platform.integrations.adapter')}</th><th>{t('admin.api.status')}</th><th><span className="sr-only">{t('admin.common.actions')}</span></th></tr></thead>
             <tbody>
               {items.map((it) => (
                 <tr key={it.id}>
                   <th scope="row">{it.name}</th>
                   <td><span className="tag outline">{t('admin.integrations.kinds.' + it.kind)}</span></td>
                   <td className="mono small muted" style={{ maxWidth: 360, overflowWrap: 'anywhere' }}>{Object.keys((it.config ?? {}) as object).join(', ') || '–'}</td>
+                  <td>{ADAPTERS[it.kind]?.status === 'ready' ? <span className="tag ok">{t('platform.integrations.ready')}</span> : <span className="tag outline">{t('platform.integrations.prepared')}</span>}</td>
                   <td>{it.active ? <span className="tag ok">{t('admin.config.active')}</span> : <span className="tag">{t('admin.config.inactive')}</span>}</td>
                   <td className="right nowrap">
+                    <ActBtn action={testIntegrationAction.bind(null, it.id)} className="btn sm">{t('platform.integrations.test')}</ActBtn>
+                    {ADAPTERS[it.kind]?.import && it.active && (
+                      <FormDialog label={t('platform.integrations.labImport')} buttonClass="btn sm ghost" title={`${it.name} · ${t('platform.integrations.labImport')}`} action={importIntegrationAction} submit={t('platform.integrations.labImport')} wide>
+                        <input type="hidden" name="id" value={it.id} />
+                        <Textarea label={t('platform.integrations.labPayload')} hint={t('platform.integrations.labImportHint')} name="payload" rows={10} required spellCheck={false} className="mono" defaultValue={'[\n  { "residentId": "…", "externalId": "L-1", "code": "2951-2", "name": "Natrium", "value": "131", "unit": "mmol/l", "refRange": "135-145", "collectedAt": "2026-10-22T07:30:00+02:00" }\n]'} />
+                      </FormDialog>
+                    )}
                     <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={it.name} action={saveIntegrationAction} submit={t('common.save')} success="common.saved" wide>{fields(it)}</FormDialog>
                     <ActBtn action={deleteIntegrationAction.bind(null, it.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<strong>{it.name}</strong>}>{t('common.delete')}</ActBtn>
                   </td>
@@ -220,6 +232,25 @@ async function Integrations() {
           </table>
         </div>
       ) : <Empty title={t('admin.integrations.none')}>{t('admin.integrations.noneHint')}</Empty>}
+      <h2 className="sec">{t('platform.integrations.runs')}</h2>
+      {runs.length ? (
+        <div className="tablewrap">
+          <table className="stable">
+            <thead><tr><th>{t('admin.webhooks.when')}</th><th>{t('admin.integrations.name')}</th><th>{t('platform.integrations.operation')}</th><th>{t('admin.api.status')}</th><th className="right">{t('platform.integrations.recordsCol')}</th></tr></thead>
+            <tbody>
+              {runs.map((r) => (
+                <tr key={r.id}>
+                  <td className="num nowrap">{dtm(r.startedAt)}</td>
+                  <td>{itName.get(r.integrationId) ?? <span className="muted mono small">{r.integrationId.replace(/^kind:/, '')}</span>}</td>
+                  <td>{t('platform.integrations.operations.' + r.operation)}{r.trigger !== 'manual' ? <span className="small muted"> · {r.trigger}</span> : null}</td>
+                  <td>{r.ok ? <span className="tag ok">✓ {t('platform.integrations.ok')}</span> : r.ok === false ? <span className="tag crit">✕ {t('platform.integrations.failed')}</span> : <span className="tag">…</span>}{r.error && <div className="small muted mono" style={{ overflowWrap: 'anywhere' }}>{r.error}</div>}</td>
+                  <td className="num right">{r.records}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="small muted" style={{ margin: 0 }}>{t('platform.integrations.noRuns')}</p>}
       <h2 className="sec">{t('admin.integrations.available')}</h2>
       <ul className="list" style={{ border: '1px solid var(--line)', borderRadius: 'var(--r)', background: 'var(--surface)' }}>
         {INTEGRATION_KINDS.map((k) => (

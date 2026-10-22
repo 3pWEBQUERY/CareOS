@@ -3,6 +3,7 @@
  * gemeldet statt still überschrieben.
  */
 import { z } from 'zod'
+import { FLUID_KINDS, FLUID_LIMITS } from '@/lib/fluid-balance'
 import { VITALS, VITAL_KEYS, type VitalKey, type VitalRow } from '../vitals'
 import { MEALS, PORTIONS } from '../care'
 import { FUTURE_SKEW_MS, NOTE_CATEGORIES, OUTBOX_MAX_AGE_MS, type ConflictReason, type OfflineOp } from './types'
@@ -33,6 +34,8 @@ export const opSchema = z.discriminatedUnion('kind', [
     data: z.discriminatedUnion('type', [
       z.object({ type: z.literal('drink'), ml: z.number().int().min(10).max(2000), item: z.string().max(120).optional() }),
       z.object({ type: z.literal('meal'), meal: z.enum(MEALS), portion: z.number().refine((p) => (PORTIONS as readonly number[]).includes(p)) }),
+      // Flüssigkeitsbilanz: Einfuhr Infusion/Sonde, Ausfuhr (PRD §14)
+      z.object({ type: z.literal('fluid'), fluid: z.enum(FLUID_KINDS), ml: z.number().int().min(FLUID_LIMITS.min).max(FLUID_LIMITS.max), item: z.string().max(120).optional() }),
     ]),
   }),
 ])

@@ -13,7 +13,7 @@ const RANGES = { '24h': 1, '7d': 7, '30d': 30 } as const
 type Range = keyof typeof RANGES
 const DOT: Record<Kind, string> = { observation: 'accent', vitals: '', medication: 'violet', task: 'ok', assessment: 'accent', wound: 'warn', intake: '', incident: 'crit', appointment: 'violet' }
 
-type Ev = { id: string; at: Date; kind: Kind; tone: string; dot: string; tag: string; title: React.ReactNode; text?: string | null; by?: string | null; strike?: boolean }
+type Ev = { id: string; at: Date; kind: Kind; tone: string; dot: string; tag: string; title: React.ReactNode; text?: string | null; by?: string | null; strike?: boolean; strikeLabel?: string }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return residentTitle((await params).id, 'timeline')
@@ -61,6 +61,10 @@ export default async function TimelinePage({ params, searchParams }: { params: P
   const by = (uid: string | null | undefined) => (uid ? names.get(uid)?.short ?? null : null)
   const defName = new Map(defs.map((d) => [d.key, d.name]))
   const f = (k: VitalKey, v: number | null | undefined) => fmtNum(v, VITALS[k].dec, locale)
+  // Stornierte Messungen bleiben in der Historie sichtbar (durchgestrichen), mit «korrigiert» oder «storniert» (PRD §35)
+  const replaced = new Set([...vitals, ...assessments, ...woundEntries].map((x) => x.supersedesId).filter(Boolean))
+  const voidLabel = (x: { id: string; voidedAt: Date | null; voidReason: string | null }) =>
+    x.voidedAt ? (replaced.has(x.id) ? t('chart.timeline.corrected') : t('chart.timeline.voided')) + (x.voidReason ? ' · ' + x.voidReason : '') : undefined
 
   const events: Ev[] = []
   for (const o of obs) {
@@ -72,7 +76,8 @@ export default async function TimelinePage({ params, searchParams }: { params: P
   for (const v of vitals) {
     const parts: React.ReactNode[] = []
     let abn = false
-    const add = (key: string, label: string, value: string, unit: string, fl: string) => {
+    const add = (key: string, label: string, value: string, unit: string, raw: string) => {
+      const fl = v.voidedAt ? '' : raw
       if (fl) abn = true
       parts.push(<span key={key} className={fl ? 'crit-text' : undefined}>{label} <span className="mono">{value}</span> {unit}{fl === 'hi' ? ' ▲' : fl === 'lo' ? ' ▼' : ''}</span>)
     }
@@ -84,6 +89,7 @@ export default async function TimelinePage({ params, searchParams }: { params: P
     events.push({
       id: 'v' + v.id, at: v.at, kind: 'vitals', tone: abn ? 'crit' : '', dot: abn ? 'crit' : '', tag: t('chart.timeline.kinds.vitals'),
       title: <span className="row" style={{ gap: '2px 14px' }}>{parts}</span>, text: v.note, by: by(v.recordedById),
+      strike: !!v.voidedAt, strikeLabel: voidLabel(v),
     })
   }
   for (const a of admins) {
@@ -107,7 +113,7 @@ export default async function TimelinePage({ params, searchParams }: { params: P
     events.push({
       id: 'a' + a.id, at: a.at, kind: 'assessment', tone: 'accent', dot: 'accent', tag: t('chart.timeline.kinds.assessment'),
       title: <>{defName.get(a.key) ?? a.key}{a.score != null ? <> · <span className="mono">{fmtNum(a.score, Number.isInteger(a.score) ? 0 : 1, locale)}</span></> : null}{a.result ? ' · ' + a.result : ''}</>,
-      by: by(a.authorId),
+      by: by(a.authorId), strike: !!a.voidedAt, strikeLabel: voidLabel(a),
     })
   }
   for (const w of woundEntries) {
@@ -116,6 +122,7 @@ export default async function TimelinePage({ params, searchParams }: { params: P
       id: 'w' + w.id, at: w.at, kind: 'wound', tone: 'warn', dot: 'warn', tag: t('chart.timeline.kinds.wound'),
       title: <>{w.wound.bodySite} · {w.wound.kind}{size ? <> · <span className="mono">{size}</span></> : null}</>,
       text: [w.description, w.treatment].filter(Boolean).join(' · ') || null, by: by(w.authorId),
+      strike: !!w.voidedAt, strikeLabel: voidLabel(w),
     })
   }
   for (const i of intake) {
@@ -223,7 +230,7 @@ export default async function TimelinePage({ params, searchParams }: { params: P
                     <span className={'tag ' + e.tone}>{e.tag}</span>
                     {e.title && <span style={{ minWidth: 0, ...(e.strike ? { textDecoration: 'line-through', color: 'var(--fg-3)' } : {}) }}>{e.title}</span>}
                     {e.by && <span className="small muted">{e.by}</span>}
-                    {e.strike && <span className="small muted">{t('chart.timeline.corrected')}</span>}
+                    {e.strike && <span className="small muted">{e.strikeLabel ?? t('chart.timeline.corrected')}</span>}
                   </div>
                   {e.text && <p className={e.strike ? 'muted' : undefined} style={e.strike ? { textDecoration: 'line-through' } : undefined}>{e.text}</p>}
                 </div>

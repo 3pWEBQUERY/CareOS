@@ -7,6 +7,7 @@ import { careData, managementData, workforceData } from './_data'
 import { Filter } from './Filter'
 import { shiftName } from '@/lib/shift-name'
 import { Select } from '@/components/ui/fields'
+import { domainLabel } from '@/lib/care'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -63,7 +64,7 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
             )}
             {tab === 'workforce' && <span className="small muted" style={{ paddingBottom: 8 }}>{t('insights.workforce.window')}</span>}
           </Filter>
-          {tab === 'care' && <Care ctx={ctx} scope={scope} />}
+          {tab === 'care' && <Care ctx={ctx} scope={scope} fluidLimit={Math.max(FLUID_PAGE, Number(str('fl')) || FLUID_PAGE)} moreHref={(n) => q({ fl: String(n) })} />}
           {tab === 'management' && <Management ctx={ctx} scope={scope} />}
           {tab === 'workforce' && <Workforce ctx={ctx} scope={scope} />}
         </div>
@@ -79,7 +80,10 @@ const csvName = (ctx: Ctx, key: string) => `careos-${key}-${new Date().toISOStri
 
 // ───────── Pflege ─────────
 
-async function Care({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
+// Trinkmengen als Balken: die niedrigsten zuerst, je 30 mehr auf Wunsch; die Tabelle darunter bleibt vollständig (CSV)
+const FLUID_PAGE = 30
+
+async function Care({ ctx, scope, fluidLimit, moreHref }: { ctx: Ctx; scope: Scope; fluidLimit: number; moreHref: (n: number) => string }) {
   const { t, locale } = ctx
   const d = await careData(scope)
   const L = labels(ctx)
@@ -96,6 +100,7 @@ async function Care({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
         <div className="metric"><span className="lbl">{t('insights.care.wounds')}</span><span className="val">{d.wounds.total}</span></div>
         <div className="metric"><span className="lbl">{t('insights.care.weightLoss')}</span><span className={'val' + (d.weightLoss.length ? ' warn' : '')}>{d.weightLoss.length} <small>/ {d.weighed}</small></span></div>
         <div className="metric"><span className="lbl">{t('insights.care.fluidBelow')}</span><span className={'val' + (fluidsBelow.length ? ' warn' : '')}>{fluidsBelow.length} <small>/ {d.fluids.length}</small></span></div>
+        <a className="metric" href="#ins-eval"><span className="lbl">{t('insights.care.evalOverdue')}</span><span className={'val' + (d.evaluations.overdue.length ? ' crit' : '')}>{d.evaluations.overdue.length} <small>/ {d.evaluations.areas}</small></span></a>
       </div>
 
       <div className="grid-3" style={{ alignItems: 'stretch' }}>
@@ -168,7 +173,7 @@ async function Care({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           {d.fluids.length ? (
             <div className="card-body stack-sm">
               <ul className="ins-meters" aria-label={t('insights.care.fluidTitle')}>
-                {d.fluids.map((f) => (
+                {d.fluids.slice(0, fluidLimit).map((f) => (
                   <li key={f.resident.id}>
                     <span className="ins-ml ellipsis">{name(f.resident)}{f.resident.room && <span className="muted mono small"> · {f.resident.room.number}</span>}</span>
                     <span className="bar" aria-hidden="true"><i className={f.below ? 'warn' : 'ok'} style={{ width: `${Math.min(100, (f.ml / f.target) * 100)}%` }} /></span>
@@ -176,6 +181,12 @@ async function Care({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
                   </li>
                 ))}
               </ul>
+              {d.fluids.length > fluidLimit && (
+                <div className="row">
+                  <span className="small muted">{t('common.shownOf', { n: fluidLimit, total: d.fluids.length })}</span>
+                  <Link className="btn sm" href={moreHref(fluidLimit + FLUID_PAGE)} scroll={false}>{t('common.loadMore')}</Link>
+                </div>
+              )}
               <p className="small muted" style={{ margin: 0 }}>{t('insights.care.fluidLegend')}</p>
               <DataTable
                 labels={L}
@@ -189,6 +200,31 @@ async function Care({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           ) : <div className="card-body small muted">{t('insights.care.noFluidTargets')}</div>}
         </section>
       </div>
+
+      <section className="card" id="ins-eval" aria-labelledby="ev-h">
+        <div className="card-head">
+          <h2 id="ev-h">{t('insights.care.evalTitle')}</h2>
+          <span className="small muted">{t('insights.care.evalSub', { week: d.evaluations.dueWeek, noDate: d.evaluations.noDate, noPlan: d.evaluations.withoutPlan })}</span>
+        </div>
+        <div className="card-body stack-sm">
+          {d.evaluations.overdue.length ? (
+            <DataTable
+              open
+              labels={L}
+              csvName={csvName(ctx, 'evaluationen')}
+              table={{
+                head: [t('insights.care.resident'), t('insights.care.evalArea'), t('insights.care.evalDue'), t('insights.care.evalDays')],
+                rows: d.evaluations.overdue.map((e) => [
+                  readable(e.resident.unitId) ? `${e.resident.lastName} ${e.resident.firstName}` : t('insights.care.hidden'),
+                  domainLabel(t, e.domain, d.evaluations.domainNames[e.domain]),
+                  fmtDate(e.due, locale),
+                  '▲ ' + t('insights.care.evalDaysN', { n: e.days }),
+                ]),
+              }}
+            />
+          ) : <p className="small muted" style={{ margin: 0 }}>{t('insights.care.evalNone', { n: d.evaluations.areas })}</p>}
+        </div>
+      </section>
     </>
   )
 }

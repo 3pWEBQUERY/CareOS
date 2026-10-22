@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -11,18 +11,26 @@ export function AutoFilter({ children, className = 'row' }: { children: React.Re
   const router = useRouter()
   const path = usePathname()
   const [pending, start] = useTransition()
+  // Nativer Listener: erfasst auch Feld-Komponenten (Combobox), deren verstecktes Feld «change» auslöst
+  const ref = useRef<HTMLFormElement>(null)
+  useEffect(() => {
+    const form = ref.current
+    if (!form) return
+    const onChange = () => {
+      const q = new URLSearchParams()
+      for (const [k, v] of new FormData(form).entries()) if (typeof v === 'string' && v) q.set(k, v)
+      start(() => router.replace(path + (q.size ? '?' + q.toString() : ''), { scroll: false }))
+    }
+    form.addEventListener('change', onChange)
+    return () => form.removeEventListener('change', onChange)
+  }, [router, path])
   return (
     <form
+      ref={ref}
       className={className}
       method="get"
       data-pending={pending || undefined}
       style={pending ? { opacity: 0.7 } : undefined}
-      onChange={(e) => {
-        const fd = new FormData(e.currentTarget)
-        const q = new URLSearchParams()
-        for (const [k, v] of fd.entries()) if (typeof v === 'string' && v) q.set(k, v)
-        start(() => router.replace(path + (q.size ? '?' + q.toString() : ''), { scroll: false }))
-      }}
       onSubmit={(e) => e.preventDefault()}
     >
       {children}
@@ -72,24 +80,31 @@ export function PatternAssistant({ filter }: { filter: PatternFilter }) {
   )
 }
 
-/** Abhaken einer Massnahme; verknüpfte Aufgabe wird synchron gehalten. */
+/**
+ * Complete (PRD §49) für eine Ereignis-Massnahme – gleiche Bedienung wie bei Aufgaben: Häkchen «quittieren»,
+ * Rückgängig im Hinweis; verknüpfte Aufgabe wird synchron gehalten.
+ */
 export function ActionCheck({ id, done, disabled, label }: { id: string; done: boolean; disabled?: boolean; label: string }) {
   const t = useT()
   const [pending, start] = useTransition()
+  const toggle = (undo: boolean) =>
+    start(async () => {
+      const r = await toggleActionAction(id)
+      if (!r.ok) return void toast(t(r.error), { kind: 'crit' })
+      if (undo) return
+      if (!done) toast(t('tasks.toast.done', { title: label }), { undo: () => toggle(true), undoLabel: t('common.undo') })
+      else toast(t('tasks.toast.reopened'))
+    })
   return (
     <button
       type="button"
       className="chk"
       aria-pressed={done}
-      aria-label={label}
+      aria-label={t(done ? 'tasks.actions.reopenFor' : 'tasks.actions.completeFor', { title: label })}
+      title={t(done ? 'tasks.actions.reopen' : 'tasks.actions.complete')}
       disabled={disabled || pending}
       style={pending ? { opacity: 0.6 } : undefined}
-      onClick={() =>
-        start(async () => {
-          const r = await toggleActionAction(id)
-          if (!r.ok) toast(t(r.error), { kind: 'crit' })
-        })
-      }
+      onClick={() => toggle(false)}
     >
       <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.2 5 8.5l4.5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
     </button>

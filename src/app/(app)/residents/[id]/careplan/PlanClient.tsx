@@ -204,9 +204,10 @@ export function IvDeactivate({ residentId, ivId, title, context }: { residentId:
 
 // ── Evaluation ──
 
-export function EvaluateButton({ residentId, areaId, defaultNext, domainLabel }: { residentId: string; areaId: string; defaultNext: string; domainLabel: string }) {
+export function EvaluateButton({ residentId, areaId, defaultNext, domainLabel, autoOpen }: { residentId: string; areaId: string; defaultNext: string; domainLabel: string; autoOpen?: boolean }) {
   const t = useT()
-  const [open, setOpen] = useState(false)
+  // Aus der Aufgabe «Evaluation fällig» direkt in den Dialog (ein Klick weniger, PRD §31)
+  const [open, setOpen] = useState(!!autoOpen)
   const [text, setText] = useState('')
   const [next, setNext] = useState(defaultNext)
   const [err, setErr] = useState<string | null>(null)
@@ -365,17 +366,17 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
         }
       >
         <div className="row-between" style={{ alignItems: 'flex-end' }}>
-          <label className="fld" htmlFor="pf-domain" style={{ minWidth: 240, flex: '1 1 240px', maxWidth: 360 }}>
-            <span className="lbl">{t('care.plan.domain')}</span>
-            {initialDomain ? (
+          {initialDomain ? (
+            <div className="fld" style={{ minWidth: 240, flex: '1 1 240px', maxWidth: 360 }}>
+              <span className="lbl">{t('care.plan.domain')}</span>
               <strong>{domainName}</strong>
-            ) : (
-              <Select id="pf-domain" value={domain} onChange={(e) => { setDomain(e.target.value); load(e.target.value) }}>
-                <option value="">{t('care.plan.chooseDomain')}</option>
-                {domains.map((d) => <option key={d.value} value={d.value}>{d.label}{areas.some((a) => a.domain === d.value) ? ' · ' + t('care.plan.planned') : ''}</option>)}
-              </Select>
-            )}
-          </label>
+            </div>
+          ) : (
+            <Select label={t('care.plan.domain')} wrapStyle={{ minWidth: 240, flex: '1 1 240px', maxWidth: 360 }} id="pf-domain" value={domain} onChange={(e) => { setDomain(e.target.value); load(e.target.value) }}>
+              <option value="">{t('care.plan.chooseDomain')}</option>
+              {domains.map((d) => <option key={d.value} value={d.value}>{d.label}{areas.some((a) => a.domain === d.value) ? ' · ' + t('care.plan.planned') : ''}</option>)}
+            </Select>
+          )}
           {aiEnabled && domain && (
             <button type="button" className="btn sm" disabled={aiPending} data-loading={aiPending || undefined} onClick={askAi}>{aiPending ? t('common.ai.generating') : t('care.plan.aiAssist')}</button>
           )}
@@ -453,11 +454,7 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
             <p className="small muted" style={{ margin: 0 }}>{t('care.plan.draftHint')}</p>
           </div>
         ) : (
-          <label className="fld" htmlFor={'pf-' + cur}>
-            <span className="lbl">{t('care.plan.fields.' + cur)}</span>
-            <span className="fg2">{t('care.plan.prompts.' + cur)}</span>
-            <Textarea id={'pf-' + cur} key={cur} rows={5} autoFocus value={f[cur as TextKey]} onChange={(e) => setF({ ...f, [cur]: e.target.value })} />
-          </label>
+          <Textarea label={t('care.plan.fields.' + cur)} hint={t('care.plan.prompts.' + cur)} id={'pf-' + cur} key={cur} rows={5} autoGrow autoFocus value={f[cur as TextKey]} onChange={(e) => setF({ ...f, [cur]: e.target.value })} />
         )}
         {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
       </Dialog>

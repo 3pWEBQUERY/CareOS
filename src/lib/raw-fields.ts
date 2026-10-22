@@ -21,8 +21,16 @@ export function tagEnd(src: string, start: number): number {
   return src.length
 }
 
-export function findRawFields(src: string): { line: number; tag: string }[] {
+/** Kommentare (/* … *\/ und ganze //-Zeilen) durch Leerzeichen ersetzen – Zeilen und Positionen bleiben erhalten. */
+function blankComments(src: string) {
+  const blank = (s: string) => s.replace(/[^\n]/g, ' ')
+  return src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/^[ \t]*\/\/.*$/gm, blank)
+}
+
+export function findRawFields(original: string): { line: number; tag: string }[] {
   const out: { line: number; tag: string }[] = []
+  const src = blankComments(original)
+  const lines = original.split('\n')
   const re = /<(input|select|textarea)(?=[\s/>])/g
   let m: RegExpExecArray | null
   while ((m = re.exec(src))) {
@@ -30,7 +38,6 @@ export function findRawFields(src: string): { line: number; tag: string }[] {
     const tag = src.slice(m.index, end + 1)
     if (m[1] === 'input' && /\btype=(?:"hidden"|'hidden'|\{\s*['"]hidden['"]\s*\})/.test(tag)) continue
     const line = src.slice(0, m.index).split('\n').length
-    const lines = src.split('\n')
     if (/raw-field-ok:/.test(lines[line - 1] ?? '') || /raw-field-ok:/.test(lines[line - 2] ?? '')) continue
     out.push({ line, tag: tag.replace(/\s+/g, ' ').slice(0, 90) })
   }

@@ -12,18 +12,24 @@ import { AdminHead } from '../Head'
 import { WorkflowEditor } from './WorkflowEditor'
 import { Escalations } from './Escalations'
 import { Acks } from './Acks'
+import { Workflows } from './Workflows'
+import { Recurring } from './Recurring'
+import { AssessmentBuilderButton, type BuilderValue } from './AssessmentBuilder'
+import { ASSESSMENTS } from '@/lib/clinical-config'
 import {
   deleteShiftTypeAction, resetThresholdAction, saveAssessmentAction, saveCoverageAction, saveDomainsAction,
   saveFlagsAction, saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
 } from './actions'
-import { Checkbox, NumberField, TextField, TimeField } from '@/components/ui/fields'
+import { Checkbox, NumberField, Switch, TextField, TimeField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
   return { title: `${t('admin.nav.config')} · ${t('nav.admin')}` }
 }
 
-const TABS = ['domains', 'assessments', 'vitals', 'incidents', 'shifts', 'features', 'escalations', 'acks'] as const
+const TABS = ['domains', 'assessments', 'vitals', 'incidents', 'workflows', 'recurring', 'shifts', 'features', 'escalations', 'acks'] as const
+/** Reiter aus Paket «Aufgaben/Workflows»: Beschriftung im Namespace tasks. */
+const TAB_KEYS: Partial<Record<(typeof TABS)[number], string>> = { workflows: 'tasks.rules.tab', recurring: 'tasks.recur.admin.tab' }
 type Tab = (typeof TABS)[number]
 
 export default async function ConfigPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -36,7 +42,7 @@ export default async function ConfigPage({ searchParams }: { searchParams: Promi
     <main className="panel main">
       <AdminHead section={t('admin.title')} title={t('admin.nav.config')} sub={t('admin.config.sub')} />
       <nav className="tabs" aria-label={t('admin.nav.config')}>
-        {TABS.map((k) => <Link key={k} href={`/admin/config?tab=${k}`} aria-current={tab === k ? 'page' : undefined}>{t('admin.config.tabs.' + k)}</Link>)}
+        {TABS.map((k) => <Link key={k} href={`/admin/config?tab=${k}`} aria-current={tab === k ? 'page' : undefined}>{t(TAB_KEYS[k] ?? 'admin.config.tabs.' + k)}</Link>)}
       </nav>
       <div className="scroll">
         <div className="tabpanel">
@@ -44,6 +50,8 @@ export default async function ConfigPage({ searchParams }: { searchParams: Promi
           {tab === 'assessments' && <Assessments />}
           {tab === 'vitals' && <Vitals />}
           {tab === 'incidents' && <Incidents />}
+          {tab === 'workflows' && <Workflows />}
+          {tab === 'recurring' && <Recurring />}
           {tab === 'shifts' && <Shifts />}
           {tab === 'features' && <Features />}
           {tab === 'escalations' && <Escalations />}
@@ -71,7 +79,7 @@ async function Domains() {
                 <td style={{ width: 90 }}><NumberField min={0} max={999} name={'order:' + r.id} defaultValue={r.order} aria-label={t('admin.config.order')} step={1} /></td>
                 <td><TextField name={'name:' + r.id} defaultValue={r.name} maxLength={80} aria-label={t('admin.config.name')} style={{ minWidth: 200 }} /></td>
                 <td><code className="mono small muted">{r.key}</code></td>
-                <td><Checkbox name={'active:' + r.id} defaultChecked={r.active} label={<><span className="small">{t('admin.config.active')}</span></>} /></td>
+                <td><Checkbox name={'active:' + r.id} defaultChecked={r.active} label={t('admin.config.active')} wrapClassName="small" /></td>
               </tr>
             ))}
           </tbody>
@@ -85,18 +93,33 @@ async function Domains() {
 async function Assessments() {
   const ctx = await getCtx()
   const { t } = ctx
-  const defs = await db.assessmentDefinition.findMany({ where: { orgId: ctx.org.id }, orderBy: { name: 'asc' } })
-  if (!defs.length) return <Empty title={t('admin.config.noAssessments')} />
+  const [defs, usage] = await Promise.all([
+    db.assessmentDefinition.findMany({ where: { orgId: ctx.org.id }, orderBy: { name: 'asc' } }),
+    db.assessment.groupBy({ by: ['key'], where: { resident: { orgId: ctx.org.id } }, _count: true }),
+  ])
+  const std = new Set(ASSESSMENTS.map((a) => a.key))
+  const usedN = (key: string) => usage.find((u) => u.key === key)?._count ?? 0
+  const create = <AssessmentBuilderButton label={t('forms.assessment.add')} />
+  if (!defs.length) return <div className="stack"><div className="row-between"><Empty title={t('admin.config.noAssessments')} />{create}</div></div>
   return (
     <div className="stack">
-      <p className="fg2" style={{ margin: 0 }}>{t('admin.config.assessmentsHint')}</p>
+      <div className="row-between">
+        <p className="fg2" style={{ margin: 0, maxWidth: '72ch' }}>{t('admin.config.assessmentsHint')} {t('forms.assessment.hint')}</p>
+        {create}
+      </div>
       {defs.map((d) => {
         const items = d.items as unknown as AssessmentDef['items']
+        const custom = !std.has(d.key)
+        const n = usedN(d.key)
+        const value: BuilderValue = { id: d.id, name: d.name, description: d.description ?? '', intervalDays: d.intervalDays, questions: (items?.questions ?? []).map((q) => ({ label: q.label, options: q.options.map((o) => ({ label: o.label, v: o.v })) })), ranges: items?.ranges ?? [] }
         return (
           <section key={d.id} className="card">
             <div className="card-head">
               <div><h3>{d.name}</h3>{d.description && <span className="small muted">{d.description}</span>}</div>
-              {d.active ? <span className="tag ok">{t('admin.config.active')}</span> : <span className="tag">{t('admin.config.inactive')}</span>}
+              <div className="row" style={{ gap: 6 }}>
+                <span className="tag outline">{t(custom ? 'forms.assessment.custom' : 'forms.assessment.standard')}</span>
+                {d.active ? <span className="tag ok">{t('admin.config.active')}</span> : <span className="tag">{t('admin.config.inactive')}</span>}
+              </div>
             </div>
             <div className="card-body stack-sm">
               <ActionForm action={saveAssessmentAction} reset={false} success="common.saved" className="row">
@@ -106,6 +129,12 @@ async function Assessments() {
                 <Checkbox name="active" defaultChecked={d.active} label={t('admin.config.active')} wrapStyle={{ alignSelf: 'flex-end', minHeight: 34 }} />
                 <div style={{ alignSelf: 'flex-end' }}><Submit className="btn">{t('common.save')}</Submit></div>
               </ActionForm>
+              {custom && (
+                <div className="row" style={{ gap: 8 }}>
+                  {n === 0 ? <AssessmentBuilderButton initial={value} label={t('forms.assessment.editItems')} buttonClass="btn sm ghost" /> : <span className="small muted">{t('forms.assessment.lockedHint', { n })}</span>}
+                  <AssessmentBuilderButton initial={{ ...value, id: undefined, name: t('forms.assessment.copyName', { name: d.name }) }} label={t('forms.assessment.copy')} buttonClass="btn sm ghost" />
+                </div>
+              )}
               <details>
                 <summary className="linkbtn small" style={{ cursor: 'pointer' }}>{t('admin.config.viewItems', { n: items?.questions?.length ?? 0 })}</summary>
                 <div className="grid-2" style={{ marginTop: 10 }}>
@@ -285,11 +314,10 @@ async function Features() {
       <ul className="list" style={{ border: '1px solid var(--line)', borderRadius: 'var(--r)' }}>
         {FEATURE_FLAGS.map((k) => (
           <li key={k}>
-            <label className="li" style={{ cursor: 'pointer', alignItems: 'center' }}>
-              <input type="checkbox" name={'flag:' + k} defaultChecked={flags.find((f) => f.key === k)?.enabled ?? false} style={{ width: 18, height: 18, accentColor: 'var(--accent)' }} />
-              <div className="grow"><div>{t('admin.config.flags.' + k)}</div><div className="small muted">{t('admin.config.flags.' + k + 'Hint')}</div></div>
+            <div className="li">
+              <Switch name={'flag:' + k} defaultChecked={flags.find((f) => f.key === k)?.enabled ?? false} label={t('admin.config.flags.' + k)} hint={t('admin.config.flags.' + k + 'Hint')} wrapClassName="grow" />
               <code className="mono small muted">{k}</code>
-            </label>
+            </div>
           </li>
         ))}
       </ul>

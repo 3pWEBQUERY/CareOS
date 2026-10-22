@@ -12,7 +12,9 @@ import { assignTaskAction, completeManyAction, completeTaskAction, createTaskAct
 import { isKey, useCall } from '@/components/meds/shared'
 import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
 import { dueView } from '@/lib/task-view'
-import { Checkbox, DateField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
+import { Checkbox, Combobox, DateField, NumberField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
+import { RecurrenceFields, SeriesToggle, TemplateDialog, type SeriesPerson } from '@/components/tasks/Recurrence'
+import type { TemplateDto } from '@/lib/recurrence'
 
 export type TaskRowDto = {
   id: string
@@ -35,19 +37,24 @@ export type TaskRowDto = {
   sourceLabel: string
   /** Medikamenten-Zeitpunkt (über Abgabeliste) oder Wirkungskontrolle: Link statt Quittieren. */
   link: { href: string; label: string } | null
+  /** Wiederkehrende Aufgabe: Vorlage und Rhythmus */
+  series?: { id: string; label: string } | null
 }
+/** Daten für «Serie bearbeiten» (Vorlagen des Bereichs). */
+export type SeriesDto = { templates: TemplateDto[]; residents: SeriesPerson[]; categories: string[]; unitId: string; unitName: string; todayKey: string }
 export type StaffDto = { id: string; name: string; initials: string }
 
-type Mode = 'assign' | 'partial' | 'skipped' | 'escalate' | 'details'
+type Mode = 'assign' | 'partial' | 'skipped' | 'escalate' | 'details' | 'series'
 
 /** Universal Action System (PRD §49): Create · Assign · Complete · Review · Escalate – als einheitliche Zeilenaktionen. */
-export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meId, emptyText }: {
+export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meId, emptyText, series }: {
   rows: TaskRowDto[]
   staff: StaffDto[]
   canManage: boolean
   canComplete: boolean
   meId: string
   emptyText: string
+  series?: SeriesDto
 }) {
   const t = useT()
   const { pending, call } = useCall()
@@ -87,7 +94,8 @@ export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meI
   // Ohne Verbindung vorgemerkt: bis zur Synchronisation als erledigt mit Hinweis «Offline erfasst» (PRD §39)
   const [queued, setQueued] = useState<Record<string, true>>({})
   const inflight = useRef(new Set<string>())
-  const rows = serverRows.map((r) => (queued[r.id] && !done(r) ? { ...r, view: 'done' as const } : optView[r.id] ? { ...r, view: optView[r.id] } : r))
+  // Wiederöffnet: Zeile «quittiert …» sofort ausblenden, bis der Server bestätigt
+  const rows = serverRows.map((r) => (queued[r.id] && !done(r) ? { ...r, view: 'done' as const } : optView[r.id] ? { ...r, view: optView[r.id], completed: optView[r.id] === 'done' ? r.completed : null } : r))
   const tr = (s: string) => (isKey(s) ? t(s) : s)
   const act = (row: TaskRowDto, reopen: boolean) => {
     // Doppelklick: solange die Aktion für diese Zeile läuft, keine zweite Buchung
@@ -200,11 +208,11 @@ export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meI
                           <ul className="menu">
                             {!closed && canComplete && row.view !== 'in_progress' && !row.link && <li><button type="button" onClick={() => { setMenu(null); call(startTaskAction, { id: row.id }) }}>{t('tasks.actions.start')}</button></li>}
                             {!closed && canManage && <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'assign' }) }}>{t('tasks.actions.assign')}</button></li>}
-                            {!closed && canComplete && !row.assignee && !canManage && <li><button type="button" onClick={() => { setMenu(null); call(startTaskAction, { id: row.id }) }}>{t('tasks.actions.takeOver')}</button></li>}
                             {!closed && canComplete && !row.link && <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'partial' }) }}>{t('tasks.actions.partial')}</button></li>}
                             {!closed && canComplete && !row.link && <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'skipped' }) }}>{t('tasks.actions.skip')}</button></li>}
                             {!closed && canComplete && row.view !== 'escalated' && <li><button type="button" style={{ color: 'var(--crit)' }} onClick={() => { setMenu(null); setDlg({ row, mode: 'escalate' }) }}>{t('tasks.actions.escalate')}</button></li>}
                             {closed && canComplete && !row.link && <li><button type="button" onClick={() => { setMenu(null); call(reopenTaskAction, { id: row.id }) }}>{t('tasks.actions.reopen')}</button></li>}
+                            {row.series && canManage && series?.templates.some((x) => x.id === row.series!.id) && <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'series' }) }}>{t('tasks.recur.editSeries')}</button></li>}
                             <li><button type="button" onClick={() => { setMenu(null); setDlg({ row, mode: 'details' }) }}>{t('tasks.actions.details')}</button></li>
                           </ul>
                         </div>
@@ -235,7 +243,17 @@ export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meI
           </tbody>
         </table>
       </div>
-      {dlg && <RowDialog key={dlg.row.id + dlg.mode} row={dlg.row} mode={dlg.mode} staff={staff} onClose={() => setDlg(null)} />}
+      {dlg && dlg.mode === 'series' && series ? (
+        <TemplateDialog
+          template={series.templates.find((x) => x.id === dlg.row.series?.id)}
+          units={[{ id: series.unitId, name: series.unitName }]}
+          residents={series.residents}
+          staff={{ [series.unitId]: staff }}
+          categories={series.categories}
+          todayKey={series.todayKey}
+          onClose={() => setDlg(null)}
+        />
+      ) : dlg && <RowDialog key={dlg.row.id + dlg.mode} row={dlg.row} mode={dlg.mode} staff={staff} canManage={canManage} onClose={() => setDlg(null)} />}
       {bulk && (
         <BulkDialog rows={bulk} onClose={() => setBulk(null)} onDone={(ids, msg) => {
           setBulk(null)
@@ -278,7 +296,7 @@ function BulkDialog({ rows, onClose, onDone }: { rows: TaskRowDto[]; onClose: ()
   )
 }
 
-function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode; staff: StaffDto[]; onClose: () => void }) {
+function RowDialog({ row, mode, staff, canManage, onClose }: { row: TaskRowDto; mode: Mode; staff: StaffDto[]; canManage: boolean; onClose: () => void }) {
   const t = useT()
   const context = row.resident ? <><strong>{row.resident.name}</strong>{row.resident.room && <span className="mono">{t('meds.roomShort', { room: row.resident.room })}</span>}</> : undefined
   const head = (
@@ -301,6 +319,7 @@ function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode;
         <dl className="kv">
           <dt>{t('tasks.details.status')}</dt><dd>{t('tasks.view.' + row.view)}</dd>
           <dt>{t('tasks.details.source')}</dt><dd>{row.sourceLabel}</dd>
+          {row.series && <><dt>{t('tasks.recur.repeat')}</dt><dd>{row.series.label}</dd></>}
           <dt>{t('tasks.details.duration')}</dt><dd>{t('tasks.minutes', { n: row.durationMin })}</dd>
           <dt>{t('tasks.details.priority')}</dt><dd>{t('common.priority.' + row.priority)}</dd>
           <dt>{t('tasks.col.assignee')}</dt><dd>{row.assignee?.name ?? '–'}</dd>
@@ -308,7 +327,11 @@ function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode;
           {row.completed && <><dt>{t('tasks.details.completed')}</dt><dd>{row.completed}</dd></>}
           {row.note && <><dt>{t('tasks.noteLabel')}</dt><dd>{row.note}</dd></>}
         </dl>
-        <div className="form-actions"><span className="spacer" /><button type="button" className="btn" onClick={onClose}>{t('common.close')}</button></div>
+        <div className="form-actions">
+          {row.series && canManage && <SeriesToggle id={row.series.id} active title={row.title} className="btn ghost" onDone={onClose} />}
+          <span className="spacer" />
+          <button type="button" className="btn" onClick={onClose}>{t('common.close')}</button>
+        </div>
       </Dialog>
     )
   }
@@ -318,10 +341,8 @@ function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode;
         <ActionForm action={assignTaskAction} onDone={(r) => r.ok && onClose()}>
           <input type="hidden" name="id" value={row.id} />
           {head}
-          <Select label={t('tasks.col.assignee')} name="assigneeId" defaultValue={row.assignee?.id ?? ''}>
-              <option value="">{t('tasks.unassigned')}</option>
-              {staff.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.initials})</option>)}
-            </Select>
+          <Combobox label={t('tasks.col.assignee')} name="assigneeId" defaultValue={row.assignee?.id ?? ''} placeholder={t('tasks.unassigned')}
+            options={staff.map((s) => ({ value: s.id, label: s.name, hint: s.initials, keywords: s.initials }))} />
           {foot(t('tasks.actions.assignSave'))}
         </ActionForm>
       </Dialog>
@@ -374,6 +395,7 @@ export function CreateTask({ initialOpen, residents, staff, categories, todayKey
   const t = useT()
   const router = useRouter()
   const [open, setOpen] = useState(initialOpen)
+  const [startKey, setStartKey] = useState(todayKey)
   const first = useRef<HTMLInputElement>(null)
   useEffect(() => { if (open) setTimeout(() => first.current?.focus(), 30) }, [open])
   const close = () => {
@@ -388,26 +410,20 @@ export function CreateTask({ initialOpen, residents, staff, categories, todayKey
           <ActionForm action={createTaskAction} success="tasks.toast.created" onDone={(r) => r.ok && close()}>
             <div className="form-grid">
               <TextField label={t('tasks.create.titleField')} wrapClassName="span-all" ref={first} name="title" required maxLength={200} placeholder={t('tasks.create.titlePh')} />
-              <Select label={<>{t('tasks.col.resident')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} name="residentId" defaultValue="">
-                  <option value="">{t('tasks.create.noResident')}</option>
-                  {residents.map((r) => <option key={r.id} value={r.id}>{r.room ? r.room + ' · ' : ''}{r.name}</option>)}
-                </Select>
-              <label className="fld">
-                <span className="lbl">{t('tasks.col.category')}</span>
-                <TextField name="category" list="task-cats" defaultValue="" placeholder={t('tasks.categoryDefault')} />
-                <datalist id="task-cats">{categories.map((c) => <option key={c} value={c} />)}</datalist>
-              </label>
-              <DateField label={t('tasks.create.date')} name="date" defaultValue={todayKey} required />
+              <Combobox label={t('tasks.col.resident')} optional name="residentId" defaultValue="" placeholder={t('tasks.create.noResident')}
+                options={residents.map((r) => ({ value: r.id, label: r.name, hint: r.room ?? undefined, keywords: r.room ?? undefined }))} />
+              <Combobox label={t('tasks.col.category')} name="category" defaultValue="" freeText maxLength={60} placeholder={t('tasks.categoryDefault')}
+                options={categories.map((c) => ({ value: c, label: c }))} />
+              <DateField label={t('tasks.create.date')} name="date" defaultValue={todayKey} onChange={(v: string) => v && setStartKey(v)} required />
               <TimeField label={t('tasks.create.time')} name="time" defaultValue={defaultTime} required />
-              <TextField label={t('tasks.details.duration')} name="durationMin" inputMode="numeric" defaultValue="10" className="mono" />
+              <NumberField label={t('tasks.details.duration')} name="durationMin" defaultValue={10} min={1} max={480} step={1} unit={t('common.minutes')} />
               <Select label={t('tasks.details.priority')} name="priority" defaultValue="routine">
                   {(['routine', 'important', 'critical'] as const).map((p) => <option key={p} value={p}>{t('common.priority.' + p)}</option>)}
                 </Select>
-              <Select label={t('tasks.col.assignee')} name="assigneeId" defaultValue="">
-                  <option value="">{t('tasks.unassigned')}</option>
-                  {staff.map((s) => <option key={s.id} value={s.id}>{s.id === meId ? t('tasks.me') + ' – ' : ''}{s.name} ({s.initials})</option>)}
-                </Select>
-              <Textarea label={<>{t('tasks.create.description')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} wrapClassName="span-all" name="description" rows={3} />
+              <Combobox label={t('tasks.col.assignee')} name="assigneeId" defaultValue="" placeholder={t('tasks.unassigned')}
+                options={staff.map((s) => ({ value: s.id, label: (s.id === meId ? t('tasks.me') + ' – ' : '') + s.name, hint: s.initials, keywords: s.initials }))} />
+              <Textarea label={t('tasks.create.description')} optional wrapClassName="span-all" name="description" rows={3} />
+              <RecurrenceFields withNone startKey={startKey} />
             </div>
             <div className="form-actions">
               <span className="spacer" />

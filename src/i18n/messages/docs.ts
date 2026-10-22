@@ -2,6 +2,8 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
+    audience: { label: 'Zielgruppe', hint: 'Ausgewählte Rollen werden benachrichtigt und bestätigen die Kenntnisnahme. Ohne Auswahl: alle. Lesen können weiterhin alle.', all: 'Alle Mitarbeitenden' },
+    reminders: { soon: 'Gültigkeit von «{title}» endet {days, plural, =0 {heute} one {in # Tag} other {in # Tagen}}', expired: 'Gültigkeit von «{title}» ist abgelaufen', body: 'Bitte prüfen und eine neue Version freigeben oder die Gültigkeit verlängern.' },
     title: 'Dokumente',
     subtitle: '{n, plural, one {# Dokument} other {# Dokumente}}',
     toAckCount: '{n} zu bestätigen',
@@ -162,6 +164,8 @@ export default defineMessages({
     },
   },
   fr: {
+    audience: { label: 'Public cible', hint: 'Les rôles sélectionnés sont informés et confirment la prise de connaissance. Sans sélection : tous. Tout le monde peut toujours lire le document.', all: 'Tous les collaborateurs' },
+    reminders: { soon: 'La validité de « {title} » prend fin {days, plural, =0 {aujourd’hui} one {dans # jour} other {dans # jours}}', expired: 'La validité de « {title} » a expiré', body: 'Veuillez vérifier le document et approuver une nouvelle version ou prolonger la validité.' },
     title: 'Documents',
     subtitle: '{n, plural, one {# document} other {# documents}}',
     toAckCount: '{n} à confirmer',
@@ -322,6 +326,8 @@ export default defineMessages({
     },
   },
   it: {
+    audience: { label: 'Destinatari', hint: 'I ruoli selezionati vengono informati e confermano la presa visione. Senza selezione: tutti. Tutti possono comunque leggere il documento.', all: 'Tutti i collaboratori' },
+    reminders: { soon: 'La validità di «{title}» termina {days, plural, =0 {oggi} one {tra # giorno} other {tra # giorni}}', expired: 'La validità di «{title}» è scaduta', body: 'Verifichi il documento e approvi una nuova versione o prolunghi la validità.' },
     title: 'Documenti',
     subtitle: '{n, plural, one {# documento} other {# documenti}}',
     toAckCount: '{n} da confermare',
@@ -482,6 +488,8 @@ export default defineMessages({
     },
   },
   en: {
+    audience: { label: 'Audience', hint: 'Selected roles are notified and confirm they have read it. If none is selected: everyone. Everyone can still read it.', all: 'All staff' },
+    reminders: { soon: 'Validity of “{title}” ends {days, plural, =0 {today} one {in # day} other {in # days}}', expired: 'Validity of “{title}” has ended', body: 'Please review it and approve a new version or extend the validity.' },
     title: 'Documents',
     subtitle: '{n, plural, one {# document} other {# documents}}',
     toAckCount: '{n} to acknowledge',

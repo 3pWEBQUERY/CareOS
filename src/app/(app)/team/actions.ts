@@ -10,7 +10,8 @@ import { emit } from '@/lib/events'
 import { notify } from '@/lib/notify'
 import { saveUpload, UploadError } from '@/lib/files'
 import { atTime, parseDateKey } from '@/lib/time'
-import { canModerate, canPostTo, channelAudience, channelVisible, myRoleKeys } from './lib'
+import { canModerate, canPostTo, channelAudience, channelVisible, myRoleKeys, postVisible } from './lib'
+import { parseAudience } from '@/lib/audience'
 
 const err = (error: string, field?: string): ActionResult => ({ ok: false, error, field })
 
@@ -31,7 +32,7 @@ async function uploadAll(ctx: Ctx, files: File[], clinical = false) {
 
 async function loadPost(ctx: Ctx, postId: string) {
   const post = await db.post.findFirst({ where: { id: postId, channel: { orgId: ctx.org.id } }, include: { channel: true } })
-  if (!post || !channelVisible(ctx, post.channel)) return null
+  if (!post || !postVisible(ctx, post, await myRoleKeys(ctx.user.id))) return null
   return post
 }
 
@@ -57,6 +58,7 @@ export async function publishPostAction(form: FormData): Promise<ActionResult> {
     if ((eventAt && Number.isNaN(eventAt.getTime())) || (expiresAt && (Number.isNaN(expiresAt.getTime()) || expiresAt < new Date()))) return err('team.errors.date', expiresAt ? 'expiresAt' : 'eventDate')
     const requireAck = fdBool(form, 'requireAck')
     const pinned = fdBool(form, 'pinned') && canModerate(ctx, channel)
+    const audienceRoles = await parseAudience(ctx.org.id, form.getAll('audienceRoles'))
 
     const up = await uploadAll(ctx, form.getAll('files') as File[])
     if ('error' in up) return err(up.error as string, 'files')
@@ -65,12 +67,12 @@ export async function publishPostAction(form: FormData): Promise<ActionResult> {
       data: {
         channelId: channel.id, authorId: ctx.user.id, title: title.slice(0, 200), body,
         important: fdBool(form, 'important') || requireAck, requireAck, pinned,
-        eventAt, eventPlace: fd(form, 'eventPlace') || null, expiresAt, fileIds: up.ids,
+        eventAt, eventPlace: fd(form, 'eventPlace') || null, expiresAt, fileIds: up.ids, audienceRoles,
       },
     })
     postId = post.id
-    await audit(ctx, { action: 'post.publish', entityType: 'Post', entityId: post.id, after: { channelId: channel.id, title: post.title, requireAck, pinned, important: post.important } })
-    const audience = (await channelAudience(ctx.org.id, channel)).map((u) => u.id).filter((id) => id !== ctx.user.id)
+    await audit(ctx, { action: 'post.publish', entityType: 'Post', entityId: post.id, after: { channelId: channel.id, title: post.title, requireAck, pinned, important: post.important, audienceRoles } })
+    const audience = (await channelAudience(ctx.org.id, channel, audienceRoles)).map((u) => u.id).filter((id) => id !== ctx.user.id)
     await notify({
       orgId: ctx.org.id, userIds: audience, priority: requireAck ? 'action' : 'info', kind: 'post',
       title: ctx.t('team.form.notifyTitle', { channel: channel.name, title: post.title }), href: `/team/post/${post.id}`,
@@ -107,7 +109,7 @@ export async function remindAckAction(postId: string): Promise<ActionResult> {
     const post = await loadPost(ctx, postId)
     if (!post || !post.requireAck) return err('team.post.notFound')
     if (post.authorId !== ctx.user.id && !canModerate(ctx, post.channel)) throw new ForbiddenError('team.moderate')
-    const audience = await channelAudience(ctx.org.id, post.channel)
+    const audience = await channelAudience(ctx.org.id, post.channel, post.audienceRoles)
     const acks = await db.acknowledgement.findMany({ where: { subjectType: 'post', subjectId: post.id }, select: { userId: true } })
     const done = new Set(acks.map((a) => a.userId))
     const missing = audience.filter((u) => !done.has(u.id) && u.id !== post.authorId).map((u) => u.id)

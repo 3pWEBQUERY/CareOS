@@ -123,16 +123,13 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
                 <span style={{ paddingTop: 6 }}>{give.route}</span>
               </div>
             </div>
-            <div className="fld">
-              <label className="lbl" htmlFor="prn-reason">{t('meds.prn.reason')}</label>
-              <Textarea ref={reasonRef} id="prn-reason" name="reason" rows={2} style={{ minHeight: 60 }} required placeholder={give.indication ?? ''} />
-              {give.indication && (
-                <div className="row" style={{ gap: 6 }}>
+            <Textarea label={t('meds.prn.reason')} ref={reasonRef} id="prn-reason" name="reason" rows={2} style={{ minHeight: 60 }} required placeholder={give.indication ?? ''}
+              hint={give.indication ? (
+                <span className="row" style={{ gap: 6 }}>
                   <span className="small muted">{t('meds.prn.asIndicated')}</span>
                   <button type="button" className="snip" onClick={() => { const el = reasonRef.current; if (el) { el.value = give.indication ?? ''; el.focus() } }}>{give.indication}</button>
-                </div>
-              )}
-            </div>
+                </span>
+              ) : undefined} />
             {give.nextAllowed && (
               <>
                 <div className="alert warn" role="alert"><span className="grow"><strong>{t('meds.prn.intervalWarn', { h: give.minIntervalH ?? 0 })}</strong>{t('meds.prn.intervalWarnText', { time: give.nextAllowed })}</span></div>
@@ -205,7 +202,7 @@ export function EffectChecks({ items, canRecord, resident }: { items: EffectDto[
                 </button>
               ))}
             </div>
-            <Textarea label={<>{t('meds.effect.note')}{effect === 'effective' && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</>} name="note" rows={2} style={{ minHeight: 60 }} required={effect !== 'effective'} placeholder={t('meds.effect.notePh')} />
+            <Textarea label={t('meds.effect.note')} optional={effect === 'effective'} name="note" rows={2} style={{ minHeight: 60 }} required={effect !== 'effective'} placeholder={t('meds.effect.notePh')} />
             <div className="form-actions">
               <span className="spacer" />
               <button type="button" className="btn" onClick={() => setOpen(null)}>{t('common.cancel')}</button>

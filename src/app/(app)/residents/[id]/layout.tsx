@@ -4,8 +4,11 @@ import { getCtx, residentInScope } from '@/lib/context'
 import { ResidentPager, ResidentTabs } from '@/components/residents/ResidentTabs'
 import { addDays, addMinutes, age, fmtDbDate, startOfDay } from '@/lib/time'
 import { OPEN_STATUSES } from '@/lib/tasks'
-import { abnormalKeys, mergeLimits } from '@/lib/vitals'
+import { abnormalKeys, LIVE, mergeLimits } from '@/lib/vitals'
 import { audit } from '@/lib/audit'
+import { storageConfigured } from '@/lib/env'
+import { PhotoEditor } from '@/components/residents/PhotoEditor'
+import { ResidentPhoto } from '@/components/residents/ResidentPhoto'
 
 /** Bewohnerakte: Kopfbereich mit unmittelbar relevanten Informationen (PRD §8.1) und Registern (§8.2). */
 export default async function ResidentLayout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
@@ -20,19 +23,21 @@ export default async function ResidentLayout({ children, params }: { children: R
     // Reihenfolge wie in der Bewohnerliste (Zimmer, Name) für «vorherige/nächste Person»
     db.resident.findMany({ where: { orgId: ctx.org.id, unitId: { in: listUnitIds }, status: { in: ['active', 'absent'] } }, select: { id: true, lastName: true, firstName: true, room: { select: { number: true } } }, orderBy: [{ room: { number: 'asc' } }, { lastName: 'asc' }] }),
     db.task.count({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addMinutes(now, -15) } } }),
-    db.vitalSign.findFirst({ where: { residentId: r.id, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
+    db.vitalSign.findFirst({ where: { residentId: r.id, ...LIVE, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
     db.wound.count({ where: { residentId: r.id, status: { not: 'closed' } } }),
   ])
   // Lesezugriffe auf Gesundheitsdaten werden protokolliert (höchstens einmal pro Sitzung und Stunde).
-  const recent = await db.auditLog.findFirst({ where: { sessionId: ctx.sessionId, action: 'resident.view', entityId: r.id, at: { gte: addMinutes(now, -60) } }, select: { id: true } })
+  // entityType zuerst: nutzt den Index (entityType, entityId) statt das ganze Protokoll zu durchsuchen (PRD §66)
+  const recent = await db.auditLog.findFirst({ where: { entityType: 'Resident', entityId: r.id, sessionId: ctx.sessionId, action: 'resident.view', at: { gte: addMinutes(now, -60) } }, select: { id: true } })
   if (!recent) await audit(ctx, { action: 'resident.view', entityType: 'Resident', entityId: r.id })
 
   const pi = peers.findIndex((p) => p.id === r.id)
   const peer = (p: (typeof peers)[number] | undefined) => (p ? { id: p.id, label: `${p.room?.number ?? '–'} ${p.lastName} ${p.firstName}` } : null)
   const reaCls = r.rea === 'yes' ? 'rea-yes' : r.rea === 'no' ? 'rea-no' : ''
   const reaText = t(r.rea === 'yes' ? 'residents.banner.reaYes' : r.rea === 'no' ? 'residents.banner.reaNo' : 'residents.banner.reaUnknown')
-  const abnormal = abnormalKeys(lastVital, mergeLimits(limits, r.id)).length
+  // Gesehen / Massnahme eingeleitet (Home, PRD §14): kein Hinweis mehr am Register
+  const abnormal = lastVital?.reviewedAt ? 0 : abnormalKeys(lastVital, mergeLimits(limits, r.id)).length
   const base = `/residents/${r.id}`
   const can = (p: Parameters<typeof ctx.can>[0]) => ctx.can(p, { unitId: r.unitId, locationId: r.unit.locationId })
   const tabs = [
@@ -55,6 +60,11 @@ export default async function ResidentLayout({ children, params }: { children: R
   return (
     <main className="panel main">
       <section className="banner rec-banner" aria-label={t('residents.rec.bannerLabel')}>
+        <PhotoEditor
+          residentId={r.id} photoId={r.photoFileId} name={`${r.lastName} ${r.firstName}`}
+          who={`${r.lastName} ${r.firstName} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`}
+          canEdit={!r.anonymisedAt && (can('resident.edit') || can('resident.careplan.edit'))} storage={storageConfigured()}
+        />
         <div className="who">
           <h1>{r.lastName} <span>{r.firstName}</span></h1>
           <div className="facts">
@@ -80,6 +90,7 @@ export default async function ResidentLayout({ children, params }: { children: R
         label={t('residents.tabs.label')}
         ident={
           <>
+            <ResidentPhoto residentId={r.id} photoId={r.photoFileId} name={`${r.lastName} ${r.firstName}`} size="xs" />
             <strong>{r.lastName} {r.firstName}</strong>
             <span className="mono">{r.room?.number ?? '–'}</span>
             <span className={'flag ' + reaCls}>{reaText}</span>

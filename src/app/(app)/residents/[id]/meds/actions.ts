@@ -13,6 +13,7 @@ import { rateLimit } from '@/lib/rate-limit'
 import { ensureTasksForDay, invalidateTaskGeneration } from '@/lib/tasks'
 import { addDays, addMinutes, atTime, hm, parseDateKey, startOfDay } from '@/lib/time'
 import { doseUnits, EFFECT_CHECK_MIN, hasDose, medAppliesAt, prnStatus, slotKey, syncSlotTask } from '@/lib/medication'
+import { blocking, checkAllergies } from '@/lib/allergy-check'
 
 type Resident = NonNullable<Awaited<ReturnType<typeof residentInScope>>>
 
@@ -34,7 +35,7 @@ async function verifyChecker(ctx: Ctx, r: Resident, form: FormData): Promise<{ o
   if (!checkerId) return { ok: false, res: err('meds.errors.checkerRequired', 'checkerId') }
   if (checkerId === ctx.user.id) return { ok: false, res: err('meds.errors.checkerSelf', 'checkerId') }
   if (!pw) return { ok: false, res: err('meds.errors.checkerPassword', 'checkerPassword') }
-  const limit = rateLimit('doublecheck:' + ctx.user.id, 8, 10 * 60_000)
+  const limit = await rateLimit('doublecheck:' + ctx.user.id, 8, 10 * 60_000)
   if (!limit.ok) return { ok: false, res: err('meds.errors.tooManyAttempts') }
   const u = await db.user.findFirst({ where: { id: checkerId, orgId: ctx.org.id, active: true }, include: { roles: { include: { role: true } } } })
   const grants: Grant[] = (u?.roles ?? []).map((a) => ({ permissions: a.role.permissions, unitId: a.unitId, locationId: a.locationId }))
@@ -283,6 +284,10 @@ export async function saveOrderAction(form: FormData): Promise<ActionResult> {
     if (stock != null && (Number.isNaN(stock) || stock < 0 || !Number.isInteger(stock))) return err('meds.errors.stock', 'stock')
     const reason = fd(form, 'changeReason')
     if (old && reason.length < 3) return err('meds.errors.changeReason', 'changeReason')
+    // Allergie-Abgleich (PRD §13.1, §32): Treffer nur mit Begründung, Begründung wird protokolliert
+    const allergyHits = checkAllergies(r.allergies, [name, fd(form, 'form')].join(' '))
+    const allergyReason = fd(form, 'allergyReason').slice(0, 500)
+    if (blocking(allergyHits) && allergyReason.length < 5) return err('meds.allergy.required', 'allergyReason')
 
     const data = {
       residentId: r.id, name, kind, form: fd(form, 'form') || null, route: fd(form, 'route') || 'p.o.', indication: fd(form, 'indication') || null,
@@ -293,7 +298,7 @@ export async function saveOrderAction(form: FormData): Promise<ActionResult> {
     const created = await db.$transaction(async (tx) => {
       if (old) await tx.medication.update({ where: { id: old.id }, data: { active: false, stoppedAt: now, stoppedById: ctx.user.id } })
       const m = await tx.medication.create({ data })
-      await audit(ctx, { action: old ? 'medication.order.change' : 'medication.order.create', entityType: 'Medication', entityId: m.id, before: old, after: m, context: { residentId: r.id, replaces: old?.id, reason: reason || undefined } }, tx)
+      await audit(ctx, { action: old ? 'medication.order.change' : 'medication.order.create', entityType: 'Medication', entityId: m.id, before: old, after: m, context: { residentId: r.id, replaces: old?.id, reason: reason || undefined, allergy: allergyHits.length ? { hits: allergyHits, reason: allergyReason || undefined } : undefined } }, tx)
       return m
     })
     await afterOrderChange(ctx, r, [...(old?.times ?? []), ...created.times])

@@ -2,6 +2,7 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
+    imported: { notify: '{n, plural, one {# Dienst wurde} other {# Dienste wurden}} in Ihren Dienstplan eingetragen' },
     title: 'Dienstplan',
     label: 'CareOS Schedule',
     noUnit: 'Bitte oben einen Bereich wählen.',
@@ -194,6 +195,7 @@ export default defineMessages({
     },
   },
   fr: {
+    imported: { notify: '{n, plural, one {# service a été ajouté} other {# services ont été ajoutés}} à votre planning' },
     title: 'Planning',
     label: 'CareOS Schedule',
     noUnit: 'Veuillez choisir une unité en haut.',
@@ -386,6 +388,7 @@ export default defineMessages({
     },
   },
   it: {
+    imported: { notify: '{n, plural, one {# turno è stato aggiunto} other {# turni sono stati aggiunti}} al suo piano turni' },
     title: 'Piano dei turni',
     label: 'CareOS Schedule',
     noUnit: 'Scegliere un reparto in alto.',
@@ -578,6 +581,7 @@ export default defineMessages({
     },
   },
   en: {
+    imported: { notify: '{n, plural, one {# shift was added} other {# shifts were added}} to your schedule' },
     title: 'Schedule',
     label: 'CareOS Schedule',
     noUnit: 'Please choose a unit at the top.',

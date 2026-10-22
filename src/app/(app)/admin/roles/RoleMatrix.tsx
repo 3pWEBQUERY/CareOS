@@ -103,7 +103,7 @@ export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }
                     return (
                       <td key={r.id} data-changed={diff || undefined}>
                         <label className="rm-cell">
-                          <input type="checkbox" checked={on} onChange={(e) => set(r.id, [p], e.target.checked)} aria-label={`${label(p)} · ${r.name}${diff ? ' · ' + t('admin.ux.changed') : ''}`} />
+                          <Checkbox checked={on} onChange={(e) => set(r.id, [p], e.target.checked)} aria-label={`${label(p)} · ${r.name}${diff ? ' · ' + t('admin.ux.changed') : ''}`} />
                         </label>
                       </td>
                     )

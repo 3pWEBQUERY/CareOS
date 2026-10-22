@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from 'react'
+import Link from 'next/link'
 import { useLocale, useT } from '@/i18n/client'
 import { INTL_LOCALE } from '@/i18n/core'
 import { toast } from '@/components/toast'
@@ -11,7 +12,8 @@ import { isQueued, orQueue } from '@/lib/offline/client'
 import { NoteAck, StructuredView, type NoteAckInfo } from '@/components/forms/StructuredView'
 import type { StructuredForm } from '@/lib/forms'
 import { AskQuestionDialog } from '@/components/visit/AskQuestion'
-import { Checkbox, TextField, Textarea } from '@/components/ui/fields'
+import { FOCUS_NOTE_EVENT } from '@/components/forms/FocusSuggestions'
+import { Checkbox, Select, TextField, Textarea } from '@/components/ui/fields'
 
 export type NoteRow = {
   id: string; at: string; rel: string; category: string; text: string; author: string; important: boolean; aiAssisted: boolean
@@ -41,10 +43,12 @@ const speechCtor = () => {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }
 
-export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, formSlot }: {
+export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, formSlot, moreHref }: {
   residentId: string; who: string; me: string; notes: NoteRow[]; categories: Cat[]; canWrite: boolean; aiOn: boolean
   /** Knopf "Formular" (Fokusdokumentation), vom Server gerendert */
   formSlot?: React.ReactNode
+  /** Ältere Einträge nachladen (seitenweise, PRD §66) */
+  moreHref?: string | null
 }) {
   const t = useT()
   const locale = useLocale()
@@ -75,6 +79,18 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
 
   useEffect(() => { setSpeechOk(!!speechCtor()) }, [])
   useEffect(() => () => rec.current?.stop(), [])
+  // Vorschlag zur Fokusdokumentation (PRD §10.3): Kategorie und Satzanfang vorbelegen, Fokus ins Textfeld
+  useEffect(() => {
+    const on = (e: Event) => {
+      const d = (e as CustomEvent<{ category: string; text: string }>).detail
+      if (!d) return
+      if (categories.some((c) => c.key === d.category)) setCategory(d.category)
+      setText((cur) => (cur.trim() ? cur.trimEnd() + ' ' : '') + d.text)
+      requestAnimationFrame(() => { const el = ta.current; if (!el) return; el.focus(); el.setSelectionRange(el.value.length, el.value.length); el.scrollIntoView({ block: 'center' }) })
+    }
+    window.addEventListener(FOCUS_NOTE_EVENT, on)
+    return () => window.removeEventListener(FOCUS_NOTE_EVENT, on)
+  }, [categories])
 
   const insertSnip = (s: string) => {
     const el = ta.current
@@ -175,9 +191,9 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
         <form className="entry" noValidate onSubmit={(e) => { e.preventDefault(); save() }} aria-busy={pending}>
           <div className="entry-head">
             <label className="lbl" htmlFor="ncat">{t('chart.notes.category')}</label>
-            <select id="ncat" value={category} onChange={(e) => setCategory(e.target.value)}>
+            <Select plain id="ncat" value={category} onChange={(e) => setCategory(e.target.value)}>
               {categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-            </select>
+            </Select>
             <span className="lbl" style={{ marginLeft: 6 }} id="nsnips">{t('chart.notes.snippets')}</span>
             <span className="snips" role="group" aria-labelledby="nsnips">
               {SNIPS.map((s) => {
@@ -186,8 +202,8 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
               })}
             </span>
           </div>
-          <textarea
-            id="ntext" ref={ta} value={text} aria-label={t('chart.notes.entryLabel')} aria-invalid={err ? true : undefined} aria-describedby={err ? 'ntext-err' : undefined} placeholder={t('chart.notes.placeholder')}
+          <Textarea
+            plain id="ntext" ref={ta} value={text} aria-label={t('chart.notes.entryLabel')} aria-invalid={err ? true : undefined} aria-describedby={err ? 'ntext-err' : undefined} placeholder={t('chart.notes.placeholder')}
             onChange={(e) => { setText(e.target.value); if (err) setErr(null) }}
             onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); save() } }}
           />
@@ -267,6 +283,11 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
         </ol>
       ) : (
         <p className="muted">{t(notes.length ? 'chart.notes.noneInCat' : 'chart.notes.none')}</p>
+      )}
+      {moreHref && (
+        <div className="row" style={{ justifyContent: 'center' }}>
+          <Link className="btn" href={moreHref} scroll={false}>{t('common.loadMore')}</Link>
+        </div>
       )}
 
       <Correct residentId={residentId} who={who} note={correcting} onClose={() => setCorrecting(null)} onDone={(id) => { setFresh(id); setFilter('all') }} />

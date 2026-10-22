@@ -3,11 +3,14 @@
  * Tausendertrennzeichen ’ ' und Leerzeichen), Anzeige mit dem Dezimalzeichen der Sprache, Formularwert immer
  * mit Punkt («38.1»), damit Server Actions unverändert bleiben. Ohne Server-Abhängigkeiten.
  */
-import { INTL_LOCALE, type Locale } from '@/i18n/core'
+import type { Locale } from '@/i18n/core'
 
-/** Dezimalzeichen der Sprache laut Intl (de-CH «.», fr-CH «,», it-CH «.», en-GB «.»). */
+/** Wie fmtNum in time.ts: Messwerte mit Dezimalkomma wie im klinischen Alltag (38,1 °C) – de-CH/it-CH würden einen Punkt setzen. */
+const NUMBER_LOCALE: Record<Locale, string> = { de: 'de-DE', fr: 'fr-CH', it: 'it-IT', en: 'en-GB' }
+
+/** Dezimalzeichen der Sprache (DE/FR/IT «,», EN «.»). */
 export function decimalSeparator(locale: Locale): string {
-  return new Intl.NumberFormat(INTL_LOCALE[locale]).formatToParts(1.5).find((p) => p.type === 'decimal')?.value ?? '.'
+  return new Intl.NumberFormat(NUMBER_LOCALE[locale]).formatToParts(1.5).find((p) => p.type === 'decimal')?.value ?? '.'
 }
 
 /**

@@ -14,6 +14,7 @@ import { aiConfigured } from '@/lib/env'
 import { ackAudience, DOC_CATEGORIES, loadDoc, queryTerms, scoreDoc } from '@/lib/docs'
 import { parseDateKey } from '@/lib/time'
 import { ackSettings } from '@/lib/acks'
+import { parseAudience } from '@/lib/audience'
 
 const tagsOf = (s: string) => [...new Set(s.split(/[,;]/).map((x) => x.trim().toLowerCase()).filter(Boolean))].slice(0, 20)
 const dateOf = (s: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? parseDateKey(s) : null)
@@ -60,6 +61,7 @@ export async function createDocument(form: FormData) {
       data: {
         orgId: ctx.org.id, title: meta.title, category: meta.category, tags: tagsOf(fd(form, 'tags')), status: 'draft',
         ownerId: ctx.user.id, requireAck: fdBool(form, 'requireAck'), validFrom: dateOf(fd(form, 'validFrom')), validUntil: dateOf(fd(form, 'validUntil')),
+        audienceRoles: await parseAudience(ctx.org.id, form.getAll('audienceRoles')),
         versions: { create: { version: ver.version, body: ver.body, fileId, changeNote: fd(form, 'changeNote') || null, authorId: ctx.user.id } },
       },
     })
@@ -80,10 +82,11 @@ export async function updateDocumentMeta(form: FormData) {
     const data = {
       title: meta.title, category: meta.category, tags: tagsOf(fd(form, 'tags')), requireAck: fdBool(form, 'requireAck'),
       validFrom: dateOf(fd(form, 'validFrom')), validUntil: dateOf(fd(form, 'validUntil')), ownerId: owner?.id ?? doc.ownerId,
+      audienceRoles: await parseAudience(ctx.org.id, form.getAll('audienceRoles')),
     }
     if (data.validFrom && data.validUntil && data.validUntil < data.validFrom) return { ok: false, error: 'docs.errors.validRange', field: 'validUntil' }
     await db.document.update({ where: { id: doc.id }, data })
-    await audit(ctx, { action: 'document.update', entityType: 'Document', entityId: doc.id, before: { title: doc.title, category: doc.category, tags: doc.tags, requireAck: doc.requireAck, validFrom: doc.validFrom, validUntil: doc.validUntil, ownerId: doc.ownerId }, after: data })
+    await audit(ctx, { action: 'document.update', entityType: 'Document', entityId: doc.id, before: { title: doc.title, category: doc.category, tags: doc.tags, requireAck: doc.requireAck, validFrom: doc.validFrom, validUntil: doc.validUntil, ownerId: doc.ownerId, audienceRoles: doc.audienceRoles }, after: data })
     refresh()
   })
 }
@@ -193,7 +196,7 @@ export async function approveVersion(versionId: string) {
       }
       await audit(ctx, { action: 'document.approve', entityType: 'Document', entityId: doc.id, before: { currentVersion: prevVersion, status: doc.status }, after: { currentVersion: v.version, status: 'approved', critical: v.critical } }, tx)
     })
-    const audience = (await ackAudience(ctx.org.id)).filter((id) => id !== ctx.user.id)
+    const audience = (await ackAudience(ctx.org.id, doc.audienceRoles)).filter((id) => id !== ctx.user.id)
     const needsAck = doc.requireAck && (!prevVersion || reAck)
     await notifyT({
       orgId: ctx.org.id, userIds: audience, priority: needsAck ? 'action' : 'info', kind: needsAck ? 'ack' : 'document.published',
@@ -242,7 +245,7 @@ export async function remindAck(id: string) {
     const doc = await loadDoc(ctx, id)
     if (!doc || !doc.requireAck || !doc.currentVersion) return { ok: false, error: 'common.notFound' }
     const [audience, acks] = await Promise.all([
-      ackAudience(ctx.org.id),
+      ackAudience(ctx.org.id, doc.audienceRoles),
       db.acknowledgement.findMany({ where: { subjectType: 'document', subjectId: id, version: doc.currentVersion }, select: { userId: true } }),
     ])
     const done = new Set(acks.map((a) => a.userId))

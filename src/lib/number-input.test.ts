@@ -4,9 +4,9 @@ import { checkNumber, decimalSeparator, formatNumberInput, initialNumber, parseN
 import { filterOptions, groupOptions, nextEnabled, normalize } from './combobox'
 
 test('Dezimalzeichen je Sprache (Intl)', () => {
-  assert.equal(decimalSeparator('de'), '.')
+  assert.equal(decimalSeparator('de'), ',')
   assert.equal(decimalSeparator('fr'), ',')
-  assert.equal(decimalSeparator('it'), '.')
+  assert.equal(decimalSeparator('it'), ',')
   assert.equal(decimalSeparator('en'), '.')
 })
 
@@ -44,7 +44,9 @@ test('Zahlen parsen: Tausendertrennzeichen', () => {
 })
 
 test('Anzeige im Feld je Sprache', () => {
-  assert.equal(formatNumberInput(38.1, 'de'), '38.1')
+  assert.equal(formatNumberInput(38.1, 'de'), '38,1')
+  assert.equal(formatNumberInput(38.1, 'it'), '38,1')
+  assert.equal(formatNumberInput(38.1, 'en'), '38.1')
   assert.equal(formatNumberInput(38.1, 'fr'), '38,1')
   assert.equal(formatNumberInput(38, 'fr', 1), '38,0')
   assert.equal(formatNumberInput(-0.5, 'fr'), '−0,5')

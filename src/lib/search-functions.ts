@@ -29,6 +29,7 @@ const FUNCTIONS: Fn[] = [
   { label: 'visit.title', hint: 'common.palette.groupAction', href: '/tasks/visit', perm: 'resident.read', keywords: 'visite arzt arztvisite anordnung fragen visite médicale visita medica round doctor' },
   { label: 'common.quick.incident', hint: 'nav.quality', href: '/quality/new', perm: 'quality.report', keywords: 'sturz ereignis meldung cirs vorfall' },
   { label: 'common.palette.fn.newPost', hint: 'nav.team', href: '/team/new', perm: 'team.post', keywords: 'mitteilung post news' },
+  { label: 'people.title', hint: 'nav.team', href: '/team/people', perm: 'team.read', keywords: 'personen verzeichnis mitarbeitende kontakt telefon dienst heute annuaire personnes elenco persone directory staff people' },
   { label: 'common.palette.fn.handoverSince', hint: 'nav.handover', href: '/handover?since=1', perm: 'handover.read', keywords: 'übergabe rapport seit letztem dienst' },
 ]
 

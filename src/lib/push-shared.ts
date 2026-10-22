@@ -9,7 +9,7 @@ export type PushPriority = (typeof PUSH_PRIORITIES)[number]
  * Benachrichtigungsarten ohne klinischen Bezug: Titel darf mitgeschickt werden (nie der Text).
  * Alles andere – auch unbekannte Arten – gilt als klinisch und erhält nur einen allgemeinen Hinweis.
  */
-const NON_CLINICAL = ['schedule', 'learn', 'document.review', 'docs', 'ack', 'post', 'chat']
+const NON_CLINICAL = ['schedule', 'learn', 'document.review', 'docs', 'ack', 'post', 'chat', 'feedback']
 const CLINICAL_HREF = /^\/(residents|quality|tasks|handover)(\/|$|\?)/
 
 export function isClinicalNotification(kind: string, href?: string | null) {

@@ -7,7 +7,8 @@ import { assessmentLabel, levelFor } from '@/lib/care'
 import { LineChart } from '@/components/ui/LineChart'
 import { Empty } from '@/components/ui/Empty'
 import { loadAssessmentDefs } from './defs'
-import { PerformAssessment } from './AssessClient'
+import { CorrectAssessment, PerformAssessment } from './AssessClient'
+import { VoidedNote } from '@/components/residents/CorrectionDialog'
 import { residentTitle } from '../../_lib/resident'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -29,16 +30,24 @@ export default async function AssessmentsPage({ params, searchParams }: { params
     db.assessment.findMany({ where: { residentId: r.id }, orderBy: { at: 'desc' }, take: 300 }),
   ])
   const authors = new Map(
-    (await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: [...new Set(all.map((a) => a.authorId))] } }, select: { id: true, firstName: true, lastName: true } }))
+    (await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: [...new Set(all.flatMap((a) => [a.authorId, a.voidedById ?? a.authorId]))] } }, select: { id: true, firstName: true, lastName: true } }))
       .map((u) => [u.id, `${u.firstName.charAt(0)}. ${u.lastName}`]),
   )
+  // Massgebend sind nur gültige Beurteilungen; stornierte bleiben in der Historie sichtbar (PRD §35)
   const byKey = new Map<string, typeof all>()
-  for (const a of all) byKey.set(a.key, [...(byKey.get(a.key) ?? []), a])
+  const histByKey = new Map<string, typeof all>()
+  for (const a of all) {
+    histByKey.set(a.key, [...(histByKey.get(a.key) ?? []), a])
+    if (!a.voidedAt) byKey.set(a.key, [...(byKey.get(a.key) ?? []), a])
+  }
+  const canCorrectAll = ctx.can('resident.chart.correct', { unitId: r.unitId, locationId: r.unit.locationId })
+  const dtl = (d: Date) => fmtDate(d, locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const contextLabel = `${r.lastName} ${r.firstName}${r.room ? ' · ' + t('care.roomShort', { room: r.room.number }) : ''}`
   const planHref = `/residents/${r.id}/careplan#suggestions`
   const withHistory = defs.filter((d) => byKey.get(d.key)?.length)
   const sel = defs.find((d) => d.key === sp.k) ?? withHistory[0] ?? null
   const selList = sel ? byKey.get(sel.key) ?? [] : []
+  const selHist = sel ? histByKey.get(sel.key) ?? [] : []
 
   const dueLabel = (d: Date | null) => {
     if (!d) return { text: t('care.assessments.noInterval'), cls: 'muted' }
@@ -122,7 +131,7 @@ export default async function AssessmentsPage({ params, searchParams }: { params
             ))}
           </div>
         </div>
-        {!sel || !selList.length ? (
+        {!sel || !selHist.length ? (
           <Empty title={t('care.assessments.historyEmpty')} />
         ) : (
           <div className="grid-2">
@@ -133,6 +142,7 @@ export default async function AssessmentsPage({ params, searchParams }: { params
               const pts = selList.slice(0, 12).reverse()
               const last = selList[0]
               const name = assessmentLabel(t, sel.key, sel.name)
+              if (!last) return <Empty title={t('care.assessments.historyEmpty')} />
               return (
                 <LineChart
                   title={name}
@@ -154,17 +164,35 @@ export default async function AssessmentsPage({ params, searchParams }: { params
                     <th className="right">{t('care.assessments.colScore')}</th>
                     <th>{t('care.assessments.colResult')}</th>
                     <th>{t('care.assessments.colBy')}</th>
+                    {canWrite && <th><span className="sr-only">{t('chart.void.colActions')}</span></th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {selList.map((a) => {
-                    const level = levelFor(sel, a.score)
+                  {selHist.map((a) => {
+                    const level = a.voidedAt ? null : levelFor(sel, a.score)
+                    const name = assessmentLabel(t, sel.key, sel.name)
+                    const mayFix = canWrite && !a.voidedAt && (a.authorId === ctx.user.id || canCorrectAll)
                     return (
-                      <tr key={a.id}>
-                        <td className="num nowrap">{fmtDate(a.at, locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                      <tr key={a.id} className={a.voidedAt ? 'voided' : undefined}>
+                        <td className="num nowrap">{dtl(a.at)}</td>
                         <td className="num right">{a.score ?? '–'}</td>
-                        <td>{a.result ? <span className={'tag ' + (level ?? '')}>{a.result}</span> : '–'}</td>
+                        <td>
+                          {a.result ? <span className={'tag ' + (level ?? '') + (a.voidedAt ? ' corr-strike' : '')}>{a.result}</span> : '–'}
+                          {a.supersedesId && <> <span className="tag outline">{t('chart.void.correctionTag')}</span></>}
+                          {a.voidedAt && <div><VoidedNote tag={t('chart.void.voidedTag')} detail={t('chart.void.voidedBy', { by: authors.get(a.voidedById ?? '') ?? '–', at: dtl(a.voidedAt) }) + (a.voidReason ? ' · ' + a.voidReason : '')} /></div>}
+                        </td>
                         <td className="nowrap">{authors.get(a.authorId) ?? '–'}</td>
+                        {canWrite && (
+                          <td className="right">
+                            {mayFix && (
+                              <CorrectAssessment
+                                residentId={r.id} assessmentId={a.id} def={sel} name={name} who={contextLabel} when={dtl(a.at)}
+                                answers={(a.answers ?? {}) as Record<string, number>}
+                                summary={`${t('care.assessments.points', { n: a.score ?? '–' })}${a.result ? ' · ' + a.result : ''}`}
+                              />
+                            )}
+                          </td>
+                        )}
                       </tr>
                     )
                   })}

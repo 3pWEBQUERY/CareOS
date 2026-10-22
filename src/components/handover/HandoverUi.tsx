@@ -10,9 +10,9 @@ import { acknowledgeAction, aiDecisionAction, aiSummaryAction, saveEntryAction, 
 import { isKey, useCall } from '@/components/meds/shared'
 import { Checkbox, Textarea } from '@/components/ui/fields'
 
-export type HoItem = { text: string; time?: string; tone?: 'c' | 'w' | ''; muted?: boolean }
+export type HoItem = { text: string; time?: string; tone?: 'c' | 'w' | ''; muted?: boolean; flag?: string }
 export type HoBlockDto = {
-  resident: { id: string; name: string; room: string | null; meta: string; allergies: string[] }
+  resident: { id: string; name: string; room: string | null; meta: string; allergies: string[]; assigned?: { shift: string; list: string[] } }
   cols: { happened: HoItem[]; done: HoItem[]; watch: HoItem[]; open: HoItem[] }
   more: { happened: number; done: number; watch: number; open: number }
   entry: { watch: string | null; open: string | null; important: boolean; author: string | null } | null
@@ -83,6 +83,7 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
         {b.resident.room && <span className="room">{b.resident.room}</span>}
         <Link className="linkbtn" href={`/residents/${b.resident.id}`} id={'ho-' + b.resident.id}><strong>{b.resident.name}</strong></Link>
         {b.resident.meta && <span className="small muted">{b.resident.meta}</span>}
+        {b.resident.assigned && b.resident.assigned.list.length > 0 && <span className="small muted ho-assigned">{t('home.ho.assigned', { shift: b.resident.assigned.shift, list: b.resident.assigned.list.join(', ') })}</span>}
         {b.resident.allergies.map((a) => <span key={a} className="flag crit">{t('residents.banner.allergy', { name: a })}</span>)}
         {important && <span className="tag warn">{t('tasks.handover.important')}</span>}
         <div className="push">
@@ -103,7 +104,7 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
               <ul>
                 {b.cols[c].map((i, k) => (
                   <li key={k} className={(i.tone ?? '') + (i.muted ? ' muted' : '')}>
-                    {i.time && <span className="mono small">{i.time}</span>} {i.text}
+                    {i.time && <span className="mono small">{i.time}</span>} {i.flag && <span className={'tag ' + (i.tone === 'c' ? 'crit' : i.tone === 'w' ? 'warn' : '')}>{i.flag}</span>} {i.text}
                   </li>
                 ))}
                 {b.more[c] > 0 && <li className="muted small">{t('common.notifications.more', { n: b.more[c] })}</li>}
@@ -145,8 +146,10 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
 export type HoImportantDto = { id: string; name: string; room: string | null; watch: string | null; open: string | null }
 
 /** Aktionen der ganzen Übergabe: Alle übernehmen (wichtige Einträge ausdrücklich bestätigen), Abschliessen, KI-Zusammenfassung. */
-export function HandoverActions({ target, since, canAck, canAckAll, important, allAcked, canSubmit, submitted, note, aiAvailable, canWrite }: {
+export function HandoverActions({ target, since, canAck, canAckAll, important, allAcked, canSubmit, submitted, note, aiAvailable, canWrite, scopeIds }: {
   target: Target
+  /** «Meine» (PRD §71): nur diese Personen übernehmen, ohne Gesamtbestätigung */
+  scopeIds?: string[]
   since: boolean
   canAck: boolean
   canAckAll: boolean
@@ -163,6 +166,7 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
   const scope = useContext(AckScope)
   const { pending: allPending, ack } = useAck()
   const allShown = allAcked || !!scope?.all
+  const subset: Record<string, string> = scopeIds?.length ? { residentIds: scopeIds.join(',') } : {}
   const [submit, setSubmit] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [ai, setAi] = useState<{ id: string; text: string } | null>(null)
@@ -191,8 +195,8 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
         {canSubmit && !submitted && <button type="button" className="btn" onClick={() => setSubmit(true)}>{t('tasks.handover.submit.button')}</button>}
         {canAck && canAckAll && (
           <button type="button" className="btn primary" disabled={pending || allPending || allShown} data-loading={(pending && !confirming) || undefined}
-            onClick={() => (important.length ? setConfirming(true) : ack({ ...target, residentId: '' }, () => scope?.markAll()))}>
-            {allShown ? '✓ ' + t('tasks.handover.allAcked') : t('tasks.handover.ackAll')}
+            onClick={() => (important.length ? setConfirming(true) : ack({ ...target, residentId: '', ...subset }, () => scope?.markAll()))}>
+            {allShown ? '✓ ' + t(scopeIds?.length ? 'home.ho.allMineAcked' : 'tasks.handover.allAcked') : t(scopeIds?.length ? 'home.ho.ackMine' : 'tasks.handover.ackAll')}
           </button>
         )}
       </div>
@@ -207,14 +211,14 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
         </div>
       )}
       {confirming && <ImportantConfirm items={important} pending={pending} onClose={() => setConfirming(false)}
-        onConfirm={(ids) => call(acknowledgeAction, { ...target, residentId: '', confirmed: ids.join(',') }, () => setConfirming(false))} />}
+        onConfirm={(ids) => call(acknowledgeAction, { ...target, residentId: '', ...subset, confirmed: ids.join(',') }, () => setConfirming(false))} />}
       {submit && (
         <Dialog open onClose={() => setSubmit(false)} title={t('tasks.handover.submit.title')}>
           <ActionForm action={submitHandoverAction} onDone={(r) => r.ok && setSubmit(false)} confirm="tasks.handover.submit.confirm">
             <input type="hidden" name="shiftCode" value={target.shiftCode} />
             <input type="hidden" name="date" value={target.date} />
             <p className="small fg2" style={{ margin: 0 }}>{t('tasks.handover.submit.hint')}</p>
-            <Textarea label={<>{t('tasks.handover.submit.note')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} name="note" rows={5} defaultValue={note ?? ''} placeholder={t('tasks.handover.submit.notePh')} />
+            <Textarea label={t('tasks.handover.submit.note')} optional name="note" rows={5} defaultValue={note ?? ''} placeholder={t('tasks.handover.submit.notePh')} />
             <div className="form-actions">
               <span className="spacer" />
               <button type="button" className="btn" onClick={() => setSubmit(false)}>{t('common.cancel')}</button>

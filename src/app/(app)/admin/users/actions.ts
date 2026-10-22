@@ -26,8 +26,8 @@ async function userInOrg(ctx: Ctx, id: string) {
 }
 
 /** Sicht auf einen Benutzer ohne Geheimnisse – für before/after im Audit. */
-const safe = (u: { email: string; firstName: string; lastName: string; initials: string; jobTitle: string | null; employeeNo: string | null; phone: string | null; primaryUnitId: string | null; locale: string; active: boolean }) => ({
-  email: u.email, firstName: u.firstName, lastName: u.lastName, initials: u.initials, jobTitle: u.jobTitle, employeeNo: u.employeeNo, phone: u.phone, primaryUnitId: u.primaryUnitId, locale: u.locale, active: u.active,
+const safe = (u: { email: string; firstName: string; lastName: string; initials: string; jobTitle: string | null; employeeNo: string | null; phone: string | null; workPhone: string | null; primaryUnitId: string | null; locale: string; active: boolean }) => ({
+  email: u.email, firstName: u.firstName, lastName: u.lastName, initials: u.initials, jobTitle: u.jobTitle, employeeNo: u.employeeNo, phone: u.phone, workPhone: u.workPhone, primaryUnitId: u.primaryUnitId, locale: u.locale, active: u.active,
 })
 
 const holdsOrgWide = (ctx: Ctx, perm: string) => ctx.grants.some((g) => !g.unitId && !g.locationId && g.permissions.includes(perm))
@@ -72,6 +72,7 @@ function parseUserFields(form: FormData) {
     jobTitle: fd(form, 'jobTitle').slice(0, 80) || null,
     employeeNo: fd(form, 'employeeNo').slice(0, 30) || null,
     phone: fd(form, 'phone').slice(0, 40) || null,
+    workPhone: fd(form, 'workPhone').slice(0, 40) || null,
     primaryUnitId: fd(form, 'primaryUnitId') || null,
     locale: z.enum(LOCALES).catch('de').parse(fd(form, 'locale')),
   }

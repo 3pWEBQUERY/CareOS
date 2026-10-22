@@ -1,6 +1,7 @@
 import 'server-only'
 import { db } from '@/lib/db'
 import { ensureTasksForDay, OPEN_STATUSES } from '@/lib/tasks'
+import { LIVE } from '@/lib/vitals'
 import { addDays, addMinutes, dateKey, dbDate, fromDbDate, shiftBounds, startOfDay } from '@/lib/time'
 
 /**
@@ -59,11 +60,30 @@ export async function careData(s: Scope) {
     }),
     db.incident.findMany({ where: { orgId, unitId: { in: unitIds }, type: { key: 'fall' }, occurredAt: { gte: wk[0].start } }, select: { occurredAt: true, nearMiss: true } }),
     db.wound.findMany({ where: { residentId: { in: rIds }, status: { in: ['open', 'healing'] } }, select: { kind: true, status: true, origin: true, residentId: true } }),
-    db.vitalSign.findMany({ where: { residentId: { in: rIds }, weight: { not: null }, at: { gte: addDays(now, -30) } }, select: { residentId: true, at: true, weight: true }, orderBy: { at: 'asc' } }),
+    db.vitalSign.findMany({ where: { residentId: { in: rIds }, weight: { not: null }, at: { gte: addDays(now, -30) }, ...LIVE }, select: { residentId: true, at: true, weight: true }, orderBy: { at: 'asc' } }),
     db.intakeLog.groupBy({ by: ['residentId'], where: { residentId: { in: rIds }, kind: 'drink', at: { gte: today } }, _sum: { amountMl: true } }),
   ])
 
   const overdueRows = overdue.map((o) => ({ category: o.category, n: o._count })).sort((a, b) => b.n - a.n)
+
+  // Evaluationen der Pflegeplanung (PRD §9.2, §64 «fehlende Evaluationen»): Bereiche aktiver Pläne mit überschrittenem Termin
+  const areas = await db.carePlanArea.findMany({
+    where: { carePlan: { status: 'active', residentId: { in: rIds } } },
+    select: { domain: true, evaluateBy: true, carePlan: { select: { residentId: true } } },
+  })
+  const planned = new Set(areas.map((a) => a.carePlan.residentId))
+  const evalOverdue = areas
+    .filter((a) => a.evaluateBy && a.evaluateBy < today)
+    .map((a) => ({ resident: residents.find((r) => r.id === a.carePlan.residentId)!, domain: a.domain, due: a.evaluateBy!, days: Math.floor((today.getTime() - startOfDay(a.evaluateBy!).getTime()) / 86_400_000) }))
+    .sort((a, b) => a.due.getTime() - b.due.getTime())
+  const evaluations = {
+    areas: areas.length,
+    overdue: evalOverdue,
+    dueWeek: areas.filter((a) => a.evaluateBy && a.evaluateBy >= today && a.evaluateBy < addDays(today, 7)).length,
+    noDate: areas.filter((a) => !a.evaluateBy).length,
+    withoutPlan: residents.filter((r) => !planned.has(r.id)).length,
+    domainNames: Object.fromEntries((await db.careDomain.findMany({ where: { orgId }, select: { key: true, name: true } })).map((d) => [d.key, d.name])) as Record<string, string>,
+  }
   const fallWeeks = wk.map((w) => ({ ...w, n: falls.filter((f) => f.occurredAt >= w.start && f.occurredAt < w.end && !f.nearMiss).length }))
 
   const woundKinds = new Map<string, number>()
@@ -109,6 +129,7 @@ export async function careData(s: Scope) {
     weightLoss: weightLoss.filter((w) => w.pct <= -5).sort((a, b) => a.pct - b.pct),
     weighed,
     fluids: fluids.sort((a, b) => a.ml / a.target - b.ml / b.target),
+    evaluations,
     fluidShare: share,
   }
 }
@@ -134,29 +155,30 @@ export async function managementData(s: Scope & { settings: unknown }) {
   const useWeeks = days > 31
   const buckets = useWeeks ? weeks(Math.ceil(days / 7), now) : daysBack(days, now)
 
-  const [tasks, incidents, types, shiftTypes, shifts, residents, staffIds] = await Promise.all([
-    db.task.findMany({
-      where: { orgId, unitId: { in: unitIds }, dueAt: { gte: buckets[0].start, lt: addDays(today, 1) } },
-      select: { dueAt: true, durationMin: true, status: true, note: true, completedAt: true },
-    }),
+  const shiftTypesP = db.shiftType.findMany({ where: { orgId }, orderBy: { start: 'asc' } })
+  const [taskDays, incidents, types, shiftTypes, shifts, residents, staffIds, seenBy] = await Promise.all([
+    taskMinutesByDay(orgId, unitIds, buckets[0].start, addDays(today, 1), from),
     db.incident.findMany({ where: { orgId, unitId: { in: unitIds }, occurredAt: { gte: addDays(today, -7 * 13) } }, select: { occurredAt: true, typeId: true, nearMiss: true } }),
     db.incidentType.findMany({ where: { orgId }, orderBy: { name: 'asc' } }),
-    db.shiftType.findMany({ where: { orgId }, orderBy: { start: 'asc' } }),
+    shiftTypesP,
     db.shift.findMany({
       where: { unitId: { in: unitIds }, date: { gte: dbDate(today), lt: dbDate(addDays(today, 14)) }, status: { not: 'cancelled' } },
       select: { unitId: true, date: true, shiftTypeId: true, userId: true, status: true },
     }),
     db.resident.findMany({ where: { orgId, unitId: { in: unitIds }, status: 'active' }, select: { id: true } }),
     staffInScope(unitIds, now),
+    // Personen mit Eintrag je Schicht und Tag – parallel zu den übrigen Abfragen
+    shiftTypesP.then((st) => residentsWithNotePerShift(orgId, unitIds, st, addDays(from, -1), now)),
   ])
 
   // Pflegeaufwand: geplante vs. dokumentierte Minuten
+  // (Aggregat je Kalendertag aus der Datenbank statt aller Aufgaben im Speicher – PRD §66)
   const care = buckets.map((b) => {
-    const inB = tasks.filter((k) => k.dueAt >= b.start && k.dueAt < b.end)
+    const inB = taskDays.filter((k) => k.day >= b.start && k.day < b.end)
     return {
       ...b,
-      planned: inB.reduce((x, k) => x + k.durationMin, 0),
-      documented: inB.filter((k) => k.status === 'done' || k.status === 'partial').reduce((x, k) => x + k.durationMin, 0),
+      planned: inB.reduce((x, k) => x + k.planned, 0),
+      documented: inB.reduce((x, k) => x + k.documented, 0),
     }
   })
 
@@ -169,14 +191,11 @@ export async function managementData(s: Scope & { settings: unknown }) {
   const incidentTotal = trend.reduce((s, x) => s + x.total, 0)
 
   // Dokumentationsqualität: Quittierungen mit Notiz
-  const completed = tasks.filter((k) => (k.status === 'done' || k.status === 'partial') && k.dueAt >= from)
-  const withNote = completed.filter((k) => k.note && k.note.trim()).length
+  const completed = taskDays.reduce((x, k) => x + k.completed, 0)
+  const withNote = taskDays.reduce((x, k) => x + k.withNote, 0)
 
   // Dokumentationsqualität: Anteil Bewohnende mit Eintrag je Schicht (abgeschlossene Schichten im Zeitraum)
   const rIds = residents.map((r) => r.id)
-  const obs = rIds.length
-    ? await db.observation.findMany({ where: { residentId: { in: rIds }, at: { gte: addDays(from, -1), lt: now } }, select: { residentId: true, at: true } })
-    : []
   const perShift = shiftTypes.map((st) => {
     let sum = 0
     let n = 0
@@ -184,8 +203,7 @@ export async function managementData(s: Scope & { settings: unknown }) {
       const day = addDays(from, d)
       const b = shiftBounds(st, day)
       if (b.end > now) continue
-      const seen = new Set(obs.filter((o) => o.at >= b.start && o.at < b.end).map((o) => o.residentId))
-      sum += rIds.length ? seen.size / rIds.length : 0
+      sum += rIds.length ? (seenBy.get(st.code + '|' + dateKey(day)) ?? 0) / rIds.length : 0
       n++
     }
     return { code: st.code, name: st.name, pct: n ? (sum / n) * 100 : null, shifts: n }
@@ -215,10 +233,50 @@ export async function managementData(s: Scope & { settings: unknown }) {
   const mandatoryPct = training.length ? (training.reduce((s, c) => s + c.valid, 0) / training.reduce((s, c) => s + c.staff, 0)) * 100 : null
 
   return {
-    care, useWeeks, trend, incidentTotal, completed: completed.length, withNote,
+    care, useWeeks, trend, incidentTotal, completed, withNote,
     perShift, notesPerShiftPct, residents: rIds.length,
     coverage, coveredPct, anyTarget, training, mandatoryPct, staff: staffIds.length,
   }
+}
+
+/**
+ * Geplante und dokumentierte Minuten je Kalendertag (Stationszeit) sowie quittierte Aufgaben mit Notiz ab `from` –
+ * als Aggregat in der Datenbank. Bei 400 Personen und 90 Tagen wären es sonst über 300 000 Zeilen im Speicher.
+ */
+async function taskMinutesByDay(orgId: string, unitIds: string[], start: Date, end: Date, from: Date) {
+  if (!unitIds.length) return []
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const rows = await db.$queryRaw<{ day: Date; planned: bigint; documented: bigint; completed: bigint; withNote: bigint }[]>`
+    SELECT (("dueAt" AT TIME ZONE 'UTC') AT TIME ZONE ${tz})::date AS day,
+      SUM("durationMin")::bigint AS planned,
+      SUM(CASE WHEN status IN ('done', 'partial') THEN "durationMin" ELSE 0 END)::bigint AS documented,
+      COUNT(*) FILTER (WHERE status IN ('done', 'partial') AND "dueAt" >= (${from.toISOString()}::timestamptz AT TIME ZONE 'UTC')) AS completed,
+      COUNT(*) FILTER (WHERE status IN ('done', 'partial') AND "dueAt" >= (${from.toISOString()}::timestamptz AT TIME ZONE 'UTC') AND btrim(COALESCE(note, '')) <> '') AS "withNote"
+    FROM "Task"
+    WHERE "orgId" = ${orgId} AND "unitId" = ANY(${unitIds}) AND "dueAt" >= (${start.toISOString()}::timestamptz AT TIME ZONE 'UTC') AND "dueAt" < (${end.toISOString()}::timestamptz AT TIME ZONE 'UTC')
+    GROUP BY 1`
+  // date → lokale Mitternacht, damit die Zuordnung zu Tages-/Wochenfenstern wie bisher über Date-Vergleiche läuft
+  return rows.map((r) => ({ day: fromDbDate(r.day), planned: Number(r.planned), documented: Number(r.documented), completed: Number(r.completed), withNote: Number(r.withNote) }))
+}
+
+/**
+ * Anzahl Personen mit mindestens einem Verlaufseintrag je Schicht (Code) und Schichtbeginn-Tag (Stationszeit).
+ * Nachtdienste über Mitternacht zählen zum Vortag – wie `shiftBounds`. Schlüssel: `${code}|${YYYY-MM-DD}`.
+ */
+async function residentsWithNotePerShift(orgId: string, unitIds: string[], shiftTypes: { code: string; start: string; end: string }[], from: Date, to: Date) {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+  const rows = await db.$queryRaw<{ code: string; day: Date; n: bigint }[]>`
+    SELECT st.code, CASE WHEN st.e <= st.s AND x.m < st.e THEN x.d - 1 ELSE x.d END AS day, COUNT(DISTINCT x.rid) AS n
+    FROM (
+      SELECT o."residentId" AS rid, l::date AS d, EXTRACT(HOUR FROM l)::int * 60 + EXTRACT(MINUTE FROM l)::int AS m
+      FROM (SELECT "residentId", (("at" AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS l FROM "Observation"
+            WHERE "residentId" IN (SELECT id FROM "Resident" WHERE "orgId" = ${orgId} AND "unitId" = ANY(${unitIds}) AND status = 'active') AND "at" >= (${from.toISOString()}::timestamptz AT TIME ZONE 'UTC') AND "at" < (${to.toISOString()}::timestamptz AT TIME ZONE 'UTC')) o
+    ) x
+    JOIN unnest(${shiftTypes.map((t) => t.code)}::text[], ${shiftTypes.map((t) => mins(t.start))}::int[], ${shiftTypes.map((t) => mins(t.end))}::int[]) AS st(code, s, e)
+      ON CASE WHEN st.e > st.s THEN x.m >= st.s AND x.m < st.e ELSE x.m >= st.s OR x.m < st.e END
+    GROUP BY 1, 2`
+  return new Map(rows.map((r) => [r.code + '|' + dateKey(fromDbDate(r.day)), Number(r.n)]))
 }
 
 /** Mitarbeitende eines Bereichs = Personen mit Diensten dort (letzte und nächste 30 Tage). */

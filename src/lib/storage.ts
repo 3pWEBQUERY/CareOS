@@ -1,6 +1,6 @@
 import 'server-only'
 import { randomUUID } from 'node:crypto'
-import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client, type ServerSideEncryption } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { env, storageConfigured } from '@/lib/env'
 
@@ -27,8 +27,21 @@ export function objectKey(orgId: string, purpose: string, filename: string) {
   return `${orgId}/${purpose}/${new Date().toISOString().slice(0, 7)}/${randomUUID()}.${ext}`
 }
 
+/**
+ * Serverseitige Verschlüsselung (PRD §37): Railway Buckets verschlüsseln immer at rest und unterstützen den
+ * SSE-Header nicht. Für andere S3-Anbieter S3_SSE=AES256 (oder aws:kms) setzen; dann wird jeder Upload mit Angabe gespeichert.
+ */
+const sse = () => (env.s3.sse ? { ServerSideEncryption: env.s3.sse as ServerSideEncryption } : {})
+
 export async function putObject(key: string, body: Uint8Array, contentType: string) {
-  await s3().send(new PutObjectCommand({ Bucket: env.s3.bucket, Key: key, Body: body, ContentType: contentType }))
+  await s3().send(new PutObjectCommand({ Bucket: env.s3.bucket, Key: key, Body: body, ContentType: contentType, ...sse() }))
+}
+
+/** Erreichbarkeit des Buckets für den Health Check (HeadBucket, mit Zeitlimit). */
+export async function headBucket(timeoutMs = 2500) {
+  const started = Date.now()
+  await s3().send(new HeadBucketCommand({ Bucket: env.s3.bucket }), { abortSignal: AbortSignal.timeout(timeoutMs) })
+  return Date.now() - started
 }
 
 export async function signedGetUrl(key: string, filename: string, inline = true, seconds = 120) {
@@ -44,7 +57,7 @@ export async function signedGetUrl(key: string, filename: string, inline = true,
 }
 
 export async function signedPutUrl(key: string, contentType: string, seconds = 300) {
-  return getSignedUrl(s3(), new PutObjectCommand({ Bucket: env.s3.bucket, Key: key, ContentType: contentType }), { expiresIn: seconds })
+  return getSignedUrl(s3(), new PutObjectCommand({ Bucket: env.s3.bucket, Key: key, ContentType: contentType, ...sse() }), { expiresIn: seconds })
 }
 
 export async function deleteObject(key: string) {

@@ -1,9 +1,14 @@
 import { db } from '@/lib/db'
 import { addDays, fmtNum, fmtRel, hm, sameDay, weekdayShort } from '@/lib/time'
-import { abnormalKeys, flag, mergeLimits, VITALS, type VitalKey } from '@/lib/vitals'
+import { abnormalKeys, flag, LIVE, mergeLimits, VITALS, type VitalKey } from '@/lib/vitals'
 import { LineChart, type Point } from '@/components/ui/LineChart'
 import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { VitalForm, Thresholds } from './VitalForm'
+import { VitalCorrect } from './VitalCorrect'
+import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
+import { FormEntry } from '@/components/forms/FormEntry'
+import { focusFor } from '../../_lib/focus'
+import { VoidedNote } from '@/components/residents/CorrectionDialog'
 import { AskQuestion } from '@/components/visit/AskQuestion'
 import { vitalRefLabel } from '@/lib/visit-data'
 
@@ -18,9 +23,9 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
   const now = new Date()
   const [recent, week, limitRows, glucoseCount, asked] = await Promise.all([
     db.vitalSign.findMany({ where: { residentId: r.id }, orderBy: { at: 'desc' }, take: 10 }),
-    db.vitalSign.findMany({ where: { residentId: r.id, at: { gte: addDays(now, -7) } }, orderBy: { at: 'asc' } }),
+    db.vitalSign.findMany({ where: { residentId: r.id, ...LIVE, at: { gte: addDays(now, -7) } }, orderBy: { at: 'asc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
-    db.vitalSign.count({ where: { residentId: r.id, glucose: { not: null } } }),
+    db.vitalSign.count({ where: { residentId: r.id, ...LIVE, glucose: { not: null } } }),
     // Bereits für die Visite vorgemerkte Messungen (offene Fragen mit Bezug auf einen Vitalwert)
     db.visitQuestion.findMany({ where: { orgId: ctx.org.id, residentId: r.id, status: 'open', refType: 'vital' }, select: { refId: true } }),
   ])
@@ -29,10 +34,10 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
   const orgLimits = mergeLimits(limitRows)
   const individual = new Set(limitRows.filter((l) => l.residentId === r.id).map((l) => l.key))
   const showGlucose = glucoseCount > 0 || r.risks.some((x) => /diab/i.test(x))
-  const names = await userNames(ctx, recent.map((v) => v.recordedById))
+  const names = await userNames(ctx, recent.flatMap((v) => [v.recordedById, v.voidedById]))
   const f = (k: VitalKey, v: number | null | undefined) => fmtNum(v, VITALS[k].dec, locale)
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
-  const todayAbn = recent.filter((v) => sameDay(v.at, now)).reduce((a, v) => a + abnormalKeys(v, limits).length, 0)
+  const todayAbn = recent.filter((v) => !v.voidedAt && sameDay(v.at, now)).reduce((a, v) => a + abnormalKeys(v, limits).length, 0)
 
   const formKeys: VitalKey[] = ['sys', 'dia', 'pulse', 'temp', 'spo2', ...(showGlucose ? (['glucose'] as VitalKey[]) : []), 'respRate', 'pain', 'weight']
   const cols: { key: VitalKey | 'bp'; label: string }[] = [
@@ -46,6 +51,18 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
     { key: 'weight', label: `${t('common.vitals.weight')} kg` },
   ]
   const usedCols = cols.filter((c) => c.key === 'bp' ? recent.some((v) => v.sys != null) : recent.some((v) => v[c.key as VitalKey] != null) || ['pulse', 'temp', 'spo2'].includes(c.key))
+  // Storno/Korrektur (PRD §35): eigene Messungen oder mit «Einträge korrigieren»
+  const canCorrectAll = can('resident.chart.correct')
+  const corrFields = formKeys.map((k) => ({ key: k, label: t('common.vitals.' + k), unit: VITALS[k].unit, dec: VITALS[k].dec }))
+  const correctCell = (v: (typeof recent)[number]) => {
+    if (v.voidedAt || !can('resident.vitals.write') || (v.recordedById !== ctx.user.id && !canCorrectAll)) return null
+    return (
+      <VitalCorrect
+        residentId={r.id} vitalId={v.id} who={who} when={rel(v.at)} note={v.note} fields={corrFields}
+        values={Object.fromEntries(formKeys.map((k) => [k, v[k]]))}
+      />
+    )
+  }
 
   const chartFor = (title: string, key: VitalKey, key2?: VitalKey) => {
     const pts = week.filter((v) => v[key] != null)
@@ -97,10 +114,12 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
   const who = `${r.lastName} ${r.firstName} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`
   const visitCell = (v: (typeof recent)[number]) => {
     if (askedIds.has(v.id)) return <span className="tag accent">{t('visit.ask.marked')}</span>
-    if (!canAsk || !abnormalKeys(v, limits).length) return null
+    if (v.voidedAt || !canAsk || !abnormalKeys(v, limits).length) return null
     return <AskQuestion residentId={r.id} who={who} options={[]} refOption={{ value: 'vital:' + v.id, group: 'vital', label: vitalRefLabel(ctx, v, limits) }} className="linkbtn small" label={t('visit.ask.rowAction')} />
   }
-  const visitCol = recent.some((v) => askedIds.has(v.id) || (canAsk && abnormalKeys(v, limits).length > 0))
+  const visitCol = recent.some((v) => askedIds.has(v.id) || (canAsk && !v.voidedAt && abnormalKeys(v, limits).length > 0) || correctCell(v) != null)
+  // Fokusdokumentation nach auffälliger Messung anbieten (PRD §10.3)
+  const focus = can('resident.chart.write') ? await focusFor(ctx, r, { only: ['pain', 'vitalAbnormal'] }) : null
   return (
     <>
       {canWrite && (
@@ -111,6 +130,12 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
             who={`${r.lastName} ${r.firstName}`}
             fields={formKeys.map((k) => ({ key: k, label: t('common.vitals.' + k), unit: VITALS[k].unit, min: VITALS[k].min, max: VITALS[k].max, dec: VITALS[k].dec, lo: limits[k].lo, hi: limits[k].hi }))}
           />
+        </>
+      )}
+      {focus && focus.suggestions.length > 0 && (
+        <>
+          <FocusSuggestions items={focus.suggestions} notesHref={`/residents/${r.id}/notes`} />
+          <FormEntry residentId={r.id} who={who} forms={focus.forms} hideButton />
         </>
       )}
 
@@ -124,19 +149,23 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
             <thead><tr><th>{t('chart.vitals.measurement')}</th>{usedCols.map((c) => <th key={c.key}>{c.label}</th>)}<th>{t('chart.vitals.by')}</th>{visitCol && <th><span className="sr-only">{t('visit.ask.forVisit')}</span></th>}</tr></thead>
             <tbody>
               {recent.map((v) => (
-                <tr key={v.id}>
+                <tr key={v.id} className={v.voidedAt ? 'voided' : undefined}>
                   <td className="num">{rel(v.at)}</td>
                   {usedCols.map((c) => {
                     if (c.key === 'bp') {
-                      const fl = flag('sys', v.sys, limits) || flag('dia', v.dia, limits)
+                      const fl = v.voidedAt ? '' : flag('sys', v.sys, limits) || flag('dia', v.dia, limits)
                       return <td key="bp" className={'num' + (fl ? ' ' + fl : '')}>{v.sys != null ? `${f('sys', v.sys)}/${f('dia', v.dia)}` : '–'}</td>
                     }
                     const k = c.key as VitalKey
-                    const fl = k === 'weight' ? '' : flag(k, v[k], limits)
+                    const fl = k === 'weight' || v.voidedAt ? '' : flag(k, v[k], limits)
                     return <td key={k} className={'num' + (fl ? ' ' + fl : '')}>{f(k, v[k])}</td>
                   })}
-                  <td className="small muted">{names.get(v.recordedById)?.short ?? '–'}{v.note ? ` · ${v.note}` : ''}</td>
-                  {visitCol && <td>{visitCell(v)}</td>}
+                  <td className="small muted vt-by">
+                    {v.supersedesId && <><span className="tag outline">{t('chart.void.correctionTag')}</span> </>}
+                    {names.get(v.recordedById)?.short ?? '–'}{v.note ? ` · ${v.note}` : ''}
+                    {v.voidedAt && <div><VoidedNote tag={t('chart.void.voidedTag')} detail={t('chart.void.voidedBy', { by: names.get(v.voidedById ?? '')?.short ?? '–', at: rel(v.voidedAt) }) + (v.voidReason ? ' · ' + v.voidReason : '')} /></div>}
+                  </td>
+                  {visitCol && <td><span className="row" style={{ gap: 12, flexWrap: 'nowrap', justifyContent: 'flex-end' }}>{visitCell(v)}{correctCell(v)}</span></td>}
                 </tr>
               ))}
             </tbody>

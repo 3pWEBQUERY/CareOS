@@ -8,7 +8,8 @@ import { dateKey, fmtDate, fmtDayMonth, fmtNum, hm, startOfDay } from '@/lib/tim
 import { EDGE, EXUDATE, keyLabel, TISSUE, WOUND_KINDS, WOUND_ORIGINS, woundArea } from '@/lib/care'
 import { LineChart } from '@/components/ui/LineChart'
 import { Empty } from '@/components/ui/Empty'
-import { WoundEntryForm, WoundStatusButtons } from '../WoundClient'
+import { CorrectWoundEntry, WoundEntryForm, WoundStatusButtons } from '../WoundClient'
+import { VoidedNote } from '@/components/residents/CorrectionDialog'
 import { StatusTag } from '../ui'
 import { residentTitle } from '../../../_lib/resident'
 
@@ -28,11 +29,15 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
   const canWrite = ctx.can('resident.wounds.write', { unitId: r.unitId, locationId: r.unit.locationId })
   const now = new Date()
   const authors = new Map(
-    (await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: [...new Set([w.createdById, ...w.entries.map((e) => e.authorId)])] } }, select: { id: true, firstName: true, lastName: true } }))
+    (await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: [...new Set([w.createdById, ...w.entries.flatMap((e) => [e.authorId, e.voidedById ?? e.authorId])])] } }, select: { id: true, firstName: true, lastName: true } }))
       .map((u) => [u.id, `${u.firstName.charAt(0)}. ${u.lastName}`]),
   )
-  const entries = w.entries
+  // Kennzahlen und Verlauf nur aus gültigen Beurteilungen; stornierte bleiben in der Historie sichtbar (PRD §35)
+  const allEntries = w.entries
+  const entries = allEntries.filter((e) => !e.voidedAt)
   const last = entries[entries.length - 1]
+  const canCorrectAll = ctx.can('resident.chart.correct', { unitId: r.unitId, locationId: r.unit.locationId })
+  const who = `${r.lastName} ${r.firstName} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`
   const sized = entries.filter((e) => woundArea(e.lengthMm, e.widthMm) != null)
   const firstArea = sized.length ? woundArea(sized[0].lengthMm, sized[0].widthMm)! : null
   const lastArea = sized.length ? woundArea(sized[sized.length - 1].lengthMm, sized[sized.length - 1].widthMm)! : null
@@ -118,7 +123,7 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
           <h2 className="sec" id="wh-h">{t('care.wounds.history')}</h2>
           <span className="small muted">{t('care.wounds.entries', { n: entries.length })}</span>
         </div>
-        {entries.length ? (
+        {allEntries.length ? (
           <div className="tablewrap">
             <table className="stable">
               <thead>
@@ -131,14 +136,20 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
                   <th>{t('care.wounds.colTreatment')}</th>
                   <th>{t('care.wounds.colNext')}</th>
                   <th>{t('care.wounds.colPhotos')}</th>
+                  {canWrite && <th><span className="sr-only">{t('chart.void.colActions')}</span></th>}
                 </tr>
               </thead>
               <tbody>
-                {[...entries].reverse().map((e) => {
+                {[...allEntries].reverse().map((e) => {
                   const a = woundArea(e.lengthMm, e.widthMm)
+                  const mayFix = canWrite && !e.voidedAt && (e.authorId === ctx.user.id || canCorrectAll)
                   return (
-                    <tr key={e.id}>
-                      <td className="nowrap"><span className="mono">{dt(e.at)}</span><div className="small muted">{authors.get(e.authorId) ?? '–'}</div></td>
+                    <tr key={e.id} className={e.voidedAt ? 'voided' : undefined}>
+                      <td className="nowrap">
+                        <span className="mono">{dt(e.at)}</span><div className="small muted">{authors.get(e.authorId) ?? '–'}</div>
+                        {e.supersedesId && <span className="tag outline">{t('chart.void.correctionTag')}</span>}
+                        {e.voidedAt && <VoidedNote tag={t('chart.void.voidedTag')} detail={t('chart.void.voidedBy', { by: authors.get(e.voidedById ?? '') ?? '–', at: dt(e.voidedAt) }) + (e.voidReason ? ' · ' + e.voidReason : '')} />}
+                      </td>
                       <td className="num nowrap">{e.lengthMm != null ? `${e.lengthMm} × ${e.widthMm ?? '–'} × ${e.depthMm ?? '–'}` : '–'}</td>
                       <td className="num right nowrap">{a != null ? `${a} mm²` : '–'}</td>
                       <td style={{ minWidth: 180 }}>
@@ -154,7 +165,8 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
                       </td>
                       <td className="num nowrap">{e.nextChange ? `${fmtDayMonth(e.nextChange, locale)} ${hm(e.nextChange)}` : '–'}</td>
                       <td>
-                        {e.photoIds.length ? (
+                        {/* Fotos stornierter Einträge (z. B. falsche Person) nicht mehr anzeigen */}
+                        {e.voidedAt && e.photoIds.length ? <span className="small muted">{t('care.wounds.photoHidden', { n: e.photoIds.length })}</span> : e.photoIds.length ? (
                           <div className="thumbs">
                             {e.photoIds.map((pid) => (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -163,6 +175,17 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
                           </div>
                         ) : <span className="muted">–</span>}
                       </td>
+                      {canWrite && (
+                        <td className="right">
+                          {mayFix && (
+                            <CorrectWoundEntry
+                              residentId={r.id} entryId={e.id} who={who} when={dt(e.at)}
+                              summary={`${w.bodySite}${e.lengthMm != null ? ` · ${e.lengthMm} × ${e.widthMm ?? '–'} × ${e.depthMm ?? '–'} mm` : ''}${e.pain != null ? ` · NRS ${e.pain}` : ''}`}
+                              values={{ lengthMm: e.lengthMm, widthMm: e.widthMm, depthMm: e.depthMm, pain: e.pain, exudate: e.exudate, tissue: e.tissue, edge: e.edge, description: e.description, treatment: e.treatment, material: e.material }}
+                            />
+                          )}
+                        </td>
+                      )}
                     </tr>
                   )
                 })}

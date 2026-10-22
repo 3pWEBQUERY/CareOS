@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
+import { LIVE } from '@/lib/vitals'
 import { getCtx, residentInScope } from '@/lib/context'
 import { dateKey, fmtDate, startOfDay } from '@/lib/time'
 import { keyLabel, WOUND_KINDS, woundArea } from '@/lib/care'
@@ -24,7 +25,7 @@ export default async function WoundsPage({ params }: { params: Promise<{ id: str
   const wounds = await db.wound.findMany({
     where: { residentId: r.id },
     orderBy: [{ startedAt: 'desc' }],
-    include: { entries: { orderBy: { at: 'desc' }, take: 1 } },
+    include: { entries: { where: LIVE, orderBy: { at: 'desc' }, take: 1 } },
   })
   const active = wounds.filter((w) => w.status !== 'closed')
   const closed = wounds.filter((w) => w.status === 'closed')

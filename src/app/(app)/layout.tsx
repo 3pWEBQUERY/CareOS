@@ -73,6 +73,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { group: t('common.palette.groupAction'), label: t('common.quick.document'), href: '/residents?pick=notes' },
     { group: t('common.palette.groupAction'), label: t('common.quick.vitals'), href: '/residents?pick=vitals' },
     { group: t('common.palette.groupView'), label: t('nav.profile'), href: '/profile' },
+    { group: t('common.palette.groupAction'), label: t('platform.feedback.palette'), href: '/feedback' },
   ]
 
   const units = ctx.units.map((u) => ({ id: u.id, name: u.name, location: u.location.name }))
@@ -81,9 +82,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <I18nProvider locale={ctx.locale} terminology={ctx.terminology} messages={dictionary(ctx.locale)}>
-      {/* Branding (Admin → Organisation): Akzentfarbe nur für die helle Darstellung, Wert ist validiert (#RRGGBB, Kontrast ≥ 4.5:1). */}
+      {/* Branding (Admin → Organisation): Stylesheet /api/brand statt Inline-<style> (CSP ohne Nonce-Abhängigkeit); Wert ist validiert (#RRGGBB, Kontrast ≥ 4.5:1). */}
       {org.brandColor && /^#[0-9a-fA-F]{6}$/.test(org.brandColor) && (
-        <style>{brandCss(org.brandColor)}</style>
+        <link rel="stylesheet" href={`/api/brand?c=${org.brandColor.slice(1).toUpperCase()}`} precedence="brand" />
       )}
       <a className="skip" href="#main">{t('common.skipToContent')}</a>
       <div className="app">
@@ -119,11 +120,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <ScrollRegions />
     </I18nProvider>
   )
-}
-
-function brandCss(c: string) {
-  const vars = `--accent:${c};--accent-hover:color-mix(in srgb, ${c} 82%, #000);--accent-soft:color-mix(in srgb, ${c} 14%, #fff)`
-  return `:root[data-theme="light"]{${vars}}@media (prefers-color-scheme: light){:root[data-theme="system"]{${vars}}}`
 }
 
 async function unreadConversations(userId: string) {

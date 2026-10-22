@@ -5,11 +5,12 @@ import { getCtx } from '@/lib/context'
 import { aiConfigured } from '@/lib/env'
 import { INTL_LOCALE } from '@/i18n/core'
 import { Forbidden, Empty } from '@/components/ui/Empty'
+import { LIVE } from '@/lib/vitals'
 import { IconWarn } from '@/components/icons'
 import { addDays, fmtDate, fmtNum, hm } from '@/lib/time'
 import { AutoFilter, PatternAssistant } from './client'
 import { median, patternHints, qualityUnits, STAGES } from './_lib'
-import { Checkbox, Select } from '@/components/ui/fields'
+import { Checkbox, Combobox, Select } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -65,7 +66,7 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
     db.incident.findMany({ where: { ...scopeAll, stage: 'closed', closedAt: { gte: addDays(now, -365) } }, select: { occurredAt: true, closedAt: true } }),
     db.incident.findMany({
       where: { ...scopeAll, occurredAt: { gte: addDays(now, -90) } },
-      select: { occurredAt: true, place: true, severity: true, nearMiss: true, residentId: true, unitId: true, type: { select: { key: true, name: true } }, resident: { select: { id: true, firstName: true, lastName: true } } },
+      select: { occurredAt: true, place: true, severity: true, nearMiss: true, residentId: true, unitId: true, type: { select: { id: true, key: true, name: true } }, resident: { select: { id: true, firstName: true, lastName: true } } },
     }),
     db.resident.findMany({
       where: { orgId: ctx.org.id, unitId: { in: unitIds.filter((id) => readable.has(id)) }, incidents: { some: {} } },
@@ -85,7 +86,13 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
     const r = hintRows.find((h) => h.residentId === rid)
     return !!r && readable.has(r.unitId)
   }
-  const hints = patternHints(t, hintRows, now, residentReadable, INTL_LOCALE[locale])
+  // Letzte gültige Sturzrisiko-Einschätzung der Personen mit Stürzen (Hinweis «nicht neu eingeschätzt»)
+  const fallIds = [...new Set(hintRows.filter((h) => h.type.key === 'fall' && h.residentId && residentReadable(h.residentId)).map((h) => h.residentId!))]
+  const fallRisk = fallIds.length
+    ? await db.assessment.groupBy({ by: ['residentId'], where: { residentId: { in: fallIds }, key: 'fallrisk', ...LIVE }, _max: { at: true } })
+    : []
+  const lastFallRisk = new Map(fallRisk.filter((a) => a._max.at).map((a) => [a.residentId, a._max.at!]))
+  const hints = patternHints(t, hintRows, now, residentReadable, INTL_LOCALE[locale], lastFallRisk)
   const canReport = units.some((u) => ctx.can('quality.report', { unitId: u.id, locationId: u.locationId }))
   const sevTone = (s: string) => (s === 'severe' ? 'crit' : s === 'moderate' ? 'warn' : '')
 
@@ -115,11 +122,11 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
             </div>
             {hints.length ? (
               <div className="stack-sm">
-                {hints.map((h, i) => (
-                  <div key={i} className={'alert ' + h.tone}>
+                {hints.map((h) => (
+                  <div key={h.key} className={'alert ' + h.tone}>
                     {h.tone === 'warn' && <IconWarn size={16} />}
                     <span className="grow fg">{h.text}</span>
-                    {h.href && <Link className="linkbtn small" href={h.href}>{t('quality.hints.open')}</Link>}
+                    {h.href && <Link className="linkbtn small nowrap" href={h.href}>{t(h.action ?? 'quality.hints.open')}</Link>}
                   </div>
                 ))}
               </div>
@@ -154,10 +161,8 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
                   {PERIODS.map((p) => <option key={p} value={p}>{t('quality.periods.' + p)}</option>)}
                 </Select>
               {residents.length > 0 && (
-                <Select label={t('quality.filters.resident')} name="resident" defaultValue={f.resident}>
-                    <option value="">{t('common.all')}</option>
-                    {residents.map((r) => <option key={r.id} value={r.id}>{r.lastName} {r.firstName}{r.room ? ' · ' + r.room.number : ''}</option>)}
-                  </Select>
+                <Combobox label={t('quality.filters.resident')} name="resident" defaultValue={f.resident} placeholder={t('common.all')}
+                  options={residents.map((r) => ({ value: r.id, label: `${r.lastName} ${r.firstName}`, hint: r.room?.number ?? undefined, keywords: r.room?.number ?? undefined }))} />
               )}
               <Checkbox name="near" value="1" defaultChecked={f.near} label={t('quality.filters.nearMiss')} wrapStyle={{ alignSelf: 'end', minHeight: 34 }} />
             </AutoFilter>

@@ -6,6 +6,8 @@ import { aiConfigured } from '@/lib/env'
 import { CATEGORY_TONE, DOC_CATEGORIES, queryTerms, scoreDoc, snippet, userNames, validity, versionState } from '@/lib/docs'
 import { fmtDate } from '@/lib/time'
 import { AssistantAi, NewDocButton } from './DocsClient'
+import { inAudience, roleOptions } from '@/lib/audience'
+import { myRoleKeys } from '@/app/(app)/team/lib'
 import { TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
@@ -31,7 +33,11 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
     include: { versions: { select: { id: true, version: true, body: true, approvedAt: true, submittedAt: true, critical: true, createdAt: true, changeNote: true } } },
     orderBy: { title: 'asc' },
   })
-  const acks = await db.acknowledgement.findMany({ where: { userId: ctx.user.id, subjectType: 'document', subjectId: { in: docs.map((d) => d.id) } }, select: { subjectId: true, version: true } })
+  const [acks, myKeys, roles] = await Promise.all([
+    db.acknowledgement.findMany({ where: { userId: ctx.user.id, subjectType: 'document', subjectId: { in: docs.map((d) => d.id) } }, select: { subjectId: true, version: true } }),
+    myRoleKeys(ctx.user.id),
+    manage ? roleOptions(ctx.org.id) : Promise.resolve([]),
+  ])
   const acked = new Set(acks.map((a) => a.subjectId + ':' + a.version))
   const owners = await userNames(ctx.org.id, docs.map((d) => d.ownerId))
   const terms = queryTerms(q)
@@ -40,7 +46,8 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
     const cur = d.versions.find((v) => v.version === d.currentVersion && v.approvedAt)
     const pending = d.versions.find((v) => !v.approvedAt)
     const body = cur?.body ?? pending?.body ?? ''
-    const needsAck = d.status === 'approved' && d.requireAck && !!d.currentVersion && !acked.has(d.id + ':' + d.currentVersion)
+    // Kenntnisnahme nur für die Zielgruppe des Dokuments (Rollen, PRD §45)
+    const needsAck = d.status === 'approved' && d.requireAck && !!d.currentVersion && !acked.has(d.id + ':' + d.currentVersion) && inAudience(d.audienceRoles, myKeys)
     return {
       d, cur, pending, needsAck, body,
       score: q ? scoreDoc({ ...d, body }, terms, t('docs.cat.' + d.category)) : 1,
@@ -81,7 +88,7 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
           <h1>{t('docs.title')}</h1>
           <p className="sub">{t('docs.subtitle', { n: base.length })}{count.ack ? ' · ' + t('docs.toAckCount', { n: count.ack }) : ''}</p>
         </div>
-        {manage && <NewDocButton />}
+        {manage && <NewDocButton roles={roles} />}
       </div>
       <div className="scroll">
         <div className="tabpanel">

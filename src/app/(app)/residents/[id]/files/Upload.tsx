@@ -4,15 +4,16 @@ import { useT } from '@/i18n/client'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { IconUpload } from '@/components/icons'
 import { uploadResidentFile } from './actions'
-import { Select, TextField } from '@/components/ui/fields'
+import { FileField, Select, TextField } from '@/components/ui/fields'
+import { MAX_UPLOAD_BYTES } from '@/lib/upload-limits'
 
 export function Upload({ residentId, categories }: { residentId: string; categories: { value: string; label: string }[] }) {
   const t = useT()
   return (
     <ActionForm action={uploadResidentFile.bind(null, residentId)} success="residents.files.uploaded" className="card card-body form">
       <div className="form-grid">
-        <label className="fld"><span className="lbl">{t('residents.files.fFile')}</span><input className="field" type="file" name="file" required accept="image/*,application/pdf,text/plain,text/csv,.docx,.xlsx,.pptx" /></label>
-        <TextField label={<>{t('residents.files.fTitle')} <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} name="title" maxLength={200} />
+        <FileField label={t('residents.files.fFile')} name="file" required accept="image/*,application/pdf,text/plain,text/csv,.docx,.xlsx,.pptx" maxSize={MAX_UPLOAD_BYTES} typesLabel="PDF, JPG, PNG, DOCX, XLSX, PPTX, TXT, CSV" wrapClassName="span-all" />
+        <TextField label={t('residents.files.fTitle')} optional name="title" maxLength={200} />
         <Select label={t('residents.files.fCategory')} name="category" defaultValue="report">{categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</Select>
       </div>
       <div className="form-actions">

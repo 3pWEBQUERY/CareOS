@@ -2,6 +2,7 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
+    audience: { label: 'Zielgruppe', hint: 'Ohne Auswahl erhalten alle Mitarbeitenden des Kanals die Mitteilung.', tag: 'Für {roles}', line: 'Zielgruppe: {roles}' },
     title: 'Team',
     label: 'CareOS Team',
     sub: 'Mitteilungen, wichtige Hinweise und Termine',
@@ -226,6 +227,7 @@ export default defineMessages({
     },
   },
   fr: {
+    audience: { label: 'Public cible', hint: 'Sans sélection, tous les collaborateurs du canal reçoivent la communication.', tag: 'Pour {roles}', line: 'Public cible : {roles}' },
     title: 'Équipe',
     label: 'CareOS Team',
     sub: 'Communications, avis importants et rendez-vous',
@@ -450,6 +452,7 @@ export default defineMessages({
     },
   },
   it: {
+    audience: { label: 'Destinatari', hint: 'Senza selezione, la comunicazione va a tutti i collaboratori del canale.', tag: 'Per {roles}', line: 'Destinatari: {roles}' },
     title: 'Team',
     label: 'CareOS Team',
     sub: 'Comunicazioni, avvisi importanti e appuntamenti',
@@ -674,6 +677,7 @@ export default defineMessages({
     },
   },
   en: {
+    audience: { label: 'Audience', hint: 'If none is selected, everyone in the channel receives the post.', tag: 'For {roles}', line: 'Audience: {roles}' },
     title: 'Team',
     label: 'CareOS Team',
     sub: 'Announcements, important notices and events',

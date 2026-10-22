@@ -10,7 +10,7 @@ import { IconCheck, IconPlus } from '@/components/icons'
 import { createTask, documentTask, toggleTask } from './actions'
 import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
 import type { TaskData } from '@/lib/offline/types'
-import { Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
+import { NumberField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
 
 export type DayTask = {
   id: string; time: string; due: string; title: string; description: string | null; category: string; tone: string; min: number
@@ -122,12 +122,12 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
           <div className="form-grid">
             <TextField label={t('chart.day.fTitle')} wrapClassName="span-all" name="title" required maxLength={200} />
             <TimeField label={t('chart.day.fTime')} name="time" required defaultValue={defaultTime(nowD)} />
-            <TextField label={t('chart.day.fDuration')} name="durationMin" inputMode="numeric" defaultValue="10" className="mono" />
+            <NumberField label={t('chart.day.fDuration')} name="durationMin" defaultValue={10} min={1} max={480} step={1} unit={t('common.minutes')} />
             <Select label={t('chart.day.fCategory')} name="category" defaultValue={categories[0]?.value}>{categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</Select>
             <Select label={t('chart.day.fPriority')} name="priority" defaultValue="routine">
                 {['routine', 'important', 'critical'].map((p) => <option key={p} value={p}>{t('common.priority.' + p)}</option>)}
               </Select>
-            <Textarea label={<>{t('chart.day.fDescription')} <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} wrapClassName="span-all" name="description" rows={2} />
+            <Textarea label={t('chart.day.fDescription')} optional wrapClassName="span-all" name="description" rows={2} />
           </div>
           <div className="form-actions"><span className="spacer" /><button type="button" className="btn" onClick={() => setAdding(false)}>{t('common.cancel')}</button><button type="submit" className="btn primary">{t('chart.day.add')}</button></div>
         </ActionForm>

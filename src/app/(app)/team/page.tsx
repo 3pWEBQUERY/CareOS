@@ -4,9 +4,10 @@ import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
 import { IconPlus } from '@/components/icons'
 import { addDays, dbDate, fmtDayMonth, fmtRel, fromDbDate, hm, startOfDay, weekdayShort } from '@/lib/time'
-import { canModerate, canPostTo, channelAudience, channelLabel, liveFilter, myRoleKeys, visibleChannels } from './lib'
+import { canModerate, canPostTo, channelAudience, channelLabel, liveFilter, myRoleKeys, postAudienceWhere, visibleChannels } from './lib'
 import { archiveChannelAction } from './actions'
 import { ActButton } from './_ui/ActButton'
+import { inAudience, roleOptions } from '@/lib/audience'
 import { AckCountScope, AckPending, AckQueueButton } from './_ui/AckCount'
 
 export async function generateMetadata() {
@@ -22,24 +23,27 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
   const now = new Date()
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
 
-  const [channels, roleKeys] = await Promise.all([visibleChannels(ctx), myRoleKeys(user.id)])
+  const [channels, roleKeys, roles] = await Promise.all([visibleChannels(ctx), myRoleKeys(user.id), roleOptions(ctx.org.id)])
+  const roleName = (k: string) => roles.find((r) => r.key === k)?.name ?? k
   const active = channels.find((c) => c.id === chParam) ?? null
   const chIds = active ? [active.id] : channels.map((c) => c.id)
   const byId = new Map(channels.map((c) => [c.id, c]))
   const postable = channels.filter((c) => canPostTo(ctx, c, roleKeys))
   const moderator = canModerate(ctx)
+  // Zielgruppe (PRD §45): Mitteilungen mit Rollen-Zielgruppe nur für passende Rollen, Verfassende und Moderation
+  const vis = postAudienceWhere(ctx, roleKeys, channels.filter((c) => canModerate(ctx, c)).map((c) => c.id))
 
   const [posts, events, ackPosts, nextShifts, openShifts, trainings, docs, location, allChannels] = await Promise.all([
     db.post.findMany({
-      where: { channelId: { in: chIds }, ...liveFilter(now) },
+      where: { channelId: { in: chIds }, AND: [liveFilter(now), vis] },
       include: { author: { select: { firstName: true, lastName: true } }, _count: { select: { comments: true } } },
       orderBy: [{ pinned: 'desc' }, { publishedAt: 'desc' }],
       take: 60,
     }),
-    db.post.findMany({ where: { channelId: { in: channels.map((c) => c.id) }, eventAt: { gte: startOfDay(now) }, ...liveFilter(now) }, orderBy: { eventAt: 'asc' }, take: 5 }),
+    db.post.findMany({ where: { channelId: { in: channels.map((c) => c.id) }, eventAt: { gte: startOfDay(now) }, AND: [liveFilter(now), vis] }, orderBy: { eventAt: 'asc' }, take: 5 }),
     db.post.findMany({
-      where: { channelId: { in: channels.map((c) => c.id) }, requireAck: true, ...liveFilter(now) },
-      select: { id: true, title: true, body: true, channelId: true, authorId: true, important: true, publishedAt: true, fileIds: true, author: { select: { firstName: true, lastName: true } } },
+      where: { channelId: { in: channels.map((c) => c.id) }, requireAck: true, AND: [liveFilter(now), vis] },
+      select: { id: true, title: true, body: true, channelId: true, authorId: true, important: true, publishedAt: true, fileIds: true, audienceRoles: true, author: { select: { firstName: true, lastName: true } } },
       orderBy: { publishedAt: 'desc' },
     }),
     ctx.can('schedule.read')
@@ -55,15 +59,16 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
   const postIds = [...new Set([...posts.map((p) => p.id), ...ackPosts.map((p) => p.id)])]
   const acks = await db.acknowledgement.findMany({ where: { subjectType: 'post', subjectId: { in: postIds } }, select: { userId: true, subjectId: true } })
   const mine = new Set(acks.filter((a) => a.userId === user.id).map((a) => a.subjectId))
-  const toAck = ackPosts.filter((p) => !mine.has(p.id) && p.authorId !== user.id)
+  const toAck = ackPosts.filter((p) => !mine.has(p.id) && p.authorId !== user.id && inAudience(p.audienceRoles, roleKeys))
   const toAckIds = new Set(toAck.map((p) => p.id))
 
   // Bestätigungsstand nur für Verfassende und Moderation (PRD §17.3)
   const statsFor = posts.filter((p) => p.requireAck && (p.authorId === user.id || canModerate(ctx, byId.get(p.channelId))))
   const audiences = new Map<string, Set<string>>()
-  for (const chId of new Set(statsFor.map((p) => p.channelId))) audiences.set(chId, new Set((await channelAudience(ctx.org.id, byId.get(chId)!)).map((u) => u.id)))
+  const audKey = (p: { channelId: string; audienceRoles: string[] }) => p.channelId + '|' + p.audienceRoles.join(',')
+  for (const p of statsFor) if (!audiences.has(audKey(p))) audiences.set(audKey(p), new Set((await channelAudience(ctx.org.id, byId.get(p.channelId)!, p.audienceRoles)).map((u) => u.id)))
   const ackStat = (p: (typeof posts)[number]) => {
-    const aud = audiences.get(p.channelId)
+    const aud = audiences.get(audKey(p))
     if (!aud || !statsFor.includes(p)) return null
     const others = [...aud].filter((id) => id !== p.authorId)
     return { n: acks.filter((a) => a.subjectId === p.id && a.userId !== p.authorId && aud.has(a.userId)).length, total: others.length }
@@ -86,6 +91,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
           <div className="row" style={{ gap: 6, width: '100%' }}>
             <span className="lbl">{channelLabel(t, ch, channels)}</span>
             {p.pinned && <span className="tag outline">{t('team.feed.pinned')}</span>}
+            {p.audienceRoles.length > 0 && <span className="tag outline" title={p.audienceRoles.map(roleName).join(', ')}>{t('team.audience.tag', { roles: p.audienceRoles.slice(0, 2).map(roleName).join(', ') + (p.audienceRoles.length > 2 ? ` +${p.audienceRoles.length - 2}` : '') })}</span>}
             {p.important && <span className="tag warn">{t('team.feed.important')}</span>}
             {p.requireAck && p.authorId !== user.id && (mine.has(p.id) ? <span className="tag ok">✓ {t('team.feed.acked')}</span> : <span className="tag crit">{t('team.feed.ackPending')}</span>)}
             {p.eventAt && <span className="tag accent">{t('team.feed.event')} {fmtDayMonth(p.eventAt, locale)} {hm(p.eventAt)}</span>}
@@ -113,9 +119,12 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
           <h1>{active ? active.name : t('team.title')}</h1>
           <p className="sub">{active?.description ?? t('team.sub')}</p>
         </div>
-        {postable.length > 0 && (
-          <Link className="btn primary" href={`/team/new${active && postable.includes(active) ? `?ch=${active.id}` : ''}`}><IconPlus size={16} />{t('team.newPost')}</Link>
-        )}
+        <div className="row">
+          <Link className="btn" href="/team/people">{t('people.toDirectory')}</Link>
+          {postable.length > 0 && (
+            <Link className="btn primary" href={`/team/new${active && postable.includes(active) ? `?ch=${active.id}` : ''}`}><IconPlus size={16} />{t('team.newPost')}</Link>
+          )}
+        </div>
       </div>
       <div className="scroll">
         <div className="tabpanel">
@@ -132,6 +141,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                       <div className="row" style={{ gap: 6 }}>
                         {ch && <span className="lbl">{channelLabel(t, ch, channels)}</span>}
                         {p.important && <span className="tag warn">{t('team.feed.important')}</span>}
+                        {p.audienceRoles.length > 0 && <span className="tag outline" title={p.audienceRoles.map(roleName).join(', ')}>{t('team.audience.tag', { roles: p.audienceRoles.slice(0, 2).map(roleName).join(', ') + (p.audienceRoles.length > 2 ? ` +${p.audienceRoles.length - 2}` : '') })}</span>}
                         <span className="small muted mono" style={{ marginLeft: 'auto' }}>{rel(p.publishedAt)}</span>
                       </div>
                       <h3 className="sub"><Link href={`/team/post/${p.id}`} className="team-ackq-title">{p.title}</Link></h3>

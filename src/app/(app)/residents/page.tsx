@@ -4,7 +4,7 @@ import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
 import { OPEN_STATUSES } from '@/lib/tasks'
 import { addDays, addMinutes, age, fmtNum, fmtRel, startOfDay } from '@/lib/time'
-import { abnormalKeys, flag, mergeLimits, VITALS } from '@/lib/vitals'
+import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { Admit } from './Admit'
 
 export async function generateMetadata() {
@@ -31,7 +31,7 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
   const [open, over, vitals, limitRows, lastNotes, rooms] = await Promise.all([
     db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, _count: true }),
     db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addMinutes(now, -15) } }, _count: true }),
-    db.vitalSign.findMany({ where: { residentId: { in: ids }, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
+    db.vitalSign.findMany({ where: { residentId: { in: ids }, ...LIVE, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id } }),
     db.observation.groupBy({ by: ['residentId'], where: { residentId: { in: ids } }, _max: { at: true } }),
     unit ? db.room.findMany({ where: { unitId: unit.id }, include: { residents: { where: { status: { in: ['active', 'absent'] } }, select: { id: true } } }, orderBy: { number: 'asc' } }) : [],

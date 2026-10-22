@@ -14,6 +14,7 @@ import { useLocale, useT } from '@/i18n/client'
 import { checkNumber, formatNumberInput, initialNumber, parseNumber, plausibility, stepNumber, toFormNumber } from '@/lib/number-input'
 import { useFormBinding } from '../field-popover'
 import { Field, cx, useFieldIds, type FieldProps } from './Field'
+import { emitChange } from './emit'
 
 export type NumberFieldProps = FieldProps & {
   name?: string
@@ -92,6 +93,7 @@ export function NumberField(props: NumberFieldProps) {
     committed.current = v
     if (!isControlled) setInner(v)
     onChange?.(v)
+    emitChange(hiddenRef.current)
   }
 
   const commit = (raw: string, mode: 'blur' | 'submit') => {

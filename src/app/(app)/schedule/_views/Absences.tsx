@@ -69,7 +69,7 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
                   </Select>
                 <DateField label={t('schedule.absence.from')} name="from" min={today} required />
                 <DateField label={t('schedule.absence.to')} name="to" min={today} required />
-                <TextField label={<>{t('schedule.absence.note')} <span className="muted">({t('common.optional')})</span></>} wrapClassName="span-all" name="note" maxLength={500} />
+                <TextField label={t('schedule.absence.note')} optional wrapClassName="span-all" name="note" maxLength={500} />
               </div>
               <div className="form-actions"><Submit>{t('schedule.absence.submit')}</Submit></div>
             </ActionForm>
@@ -84,7 +84,7 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
               <div className="form-grid">
                 <DateField label={t('schedule.absence.from')} name="from" defaultValue={today} required />
                 <DateField label={t('schedule.absence.toExpected')} name="to" defaultValue={today} required />
-                <TextField label={<>{t('schedule.absence.note')} <span className="muted">({t('common.optional')})</span></>} wrapClassName="span-all" name="note" maxLength={500} />
+                <TextField label={t('schedule.absence.note')} optional wrapClassName="span-all" name="note" maxLength={500} />
               </div>
               <div className="form-actions"><Submit className="btn danger">{t('schedule.absence.reportSick')}</Submit></div>
             </ActionForm>

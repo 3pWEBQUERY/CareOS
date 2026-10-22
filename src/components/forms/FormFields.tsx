@@ -2,9 +2,7 @@
 
 import { useT } from '@/i18n/client'
 import type { FieldError, FormField } from '@/lib/forms'
-import { DateField } from '@/components/ui/DateField'
-import { TimeField } from '@/components/ui/TimeField'
-import { Checkbox, Select, Textarea } from '@/components/ui/fields'
+import { Checkbox, DateField, NumberField, RadioGroup, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
 
 export type RawValues = Record<string, string | boolean | string[]>
 
@@ -28,13 +26,15 @@ export function FormFields({ fields, values, errors, onChange, idPrefix = 'ff', 
         const err = errors?.[f.key]
         const errId = err ? id + '-err' : undefined
         const wide = f.type === 'textarea' || f.type === 'multiselect' || f.type === 'scale'
-        const label = (
-          <span className="lbl">
-            {f.label}{f.unit ? ` (${f.unit})` : ''}{f.required ? <span aria-hidden="true"> *</span> : null}
+        const text = (
+          <>
+            {f.label}{f.unit && f.type !== 'number' ? ` (${f.unit})` : ''}{f.required ? <span aria-hidden="true"> *</span> : null}
             {f.required && <span className="sr-only"> ({t('common.required')})</span>}
-          </span>
+          </>
         )
-        const errEl = err ? <span className="err" id={errId}>{t('forms.fieldErrors.' + err, { min: f.min ?? '', max: f.max ?? '' })}</span> : null
+        const label = <span className="lbl">{text}</span>
+        const errText = err ? t('forms.fieldErrors.' + err, { min: f.min ?? '', max: f.max ?? '' }) : undefined
+        const errEl = err ? <span className="err" id={errId}>{errText}</span> : null
         const v = values[f.key]
         const str = typeof v === 'string' ? v : ''
         const common = { id, disabled, 'aria-invalid': err ? true : undefined, 'aria-describedby': errId, 'aria-required': f.required || undefined }
@@ -53,18 +53,19 @@ export function FormFields({ fields, values, errors, onChange, idPrefix = 'ff', 
           return (
             <fieldset key={f.key} className="fld span-all" style={{ border: 0, padding: 0 }} aria-invalid={err ? true : undefined} aria-describedby={errId} disabled={disabled}>
               <legend style={{ padding: 0, marginBottom: 4 }}>{label}</legend>
-              <div className={'care-opts' + (f.type === 'scale' ? ' nrs' : '')}>
-                {opts.map((o) => (
-                  <label key={o} className="opt">
-                    {f.type === 'scale' ? (
-                      <input type="radio" name={id} value={o} checked={str === o} onChange={() => onChange(f.key, o)} />
-                    ) : (
-                      <input type="checkbox" checked={sel.includes(o)} onChange={(e) => onChange(f.key, e.target.checked ? [...sel, o] : sel.filter((x) => x !== o))} />
-                    )}
-                    <span className={f.type === 'scale' ? 'mono' : undefined}>{o}</span>
-                  </label>
-                ))}
-              </div>
+              {f.type === 'scale' ? (
+                <RadioGroup aria-label={f.label} variant="card" className="care-opts nrs" value={str} onChange={(o) => onChange(f.key, o)} disabled={disabled}
+                  aria-invalid={err ? true : undefined} options={opts.map((o) => ({ value: o, label: <span className="mono">{o}</span> }))} />
+              ) : (
+                <div className="care-opts">
+                  {opts.map((o) => (
+                    <label key={o} className="opt">
+                      <Checkbox checked={sel.includes(o)} onChange={(e) => onChange(f.key, e.target.checked ? [...sel, o] : sel.filter((x) => x !== o))} />
+                      <span>{o}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
               {f.type === 'scale' && str !== '' && !f.required && (
                 <button type="button" className="linkbtn small" style={{ alignSelf: 'flex-start' }} onClick={() => onChange(f.key, '')}>{t('forms.clear')}</button>
               )}
@@ -72,39 +73,35 @@ export function FormFields({ fields, values, errors, onChange, idPrefix = 'ff', 
             </fieldset>
           )
         }
-        return (
-          <label key={f.key} className={'fld' + (wide ? ' span-all' : '')} htmlFor={id}>
-            {label}
-            {f.type === 'textarea' ? (
-              <Textarea rows={3} {...common} value={str} maxLength={4000} onChange={(e) => onChange(f.key, e.target.value)} />
-            ) : f.type === 'select' ? (
-              <Select {...common} value={str} onChange={(e) => onChange(f.key, e.target.value)}>
-                <option value="">–</option>
-                {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
-              </Select>
-            ) : f.type === 'date' ? (
-              <DateField id={id} disabled={disabled} aria-invalid={common['aria-invalid']} aria-describedby={errId} value={str} onChange={(x) => onChange(f.key, x)} />
-            ) : f.type === 'time' ? (
-              <TimeField id={id} disabled={disabled} aria-invalid={common['aria-invalid']} aria-describedby={errId} value={str} onChange={(x) => onChange(f.key, x)} />
-            ) : (
-              <input
-                className={'field' + (f.type === 'number' ? ' mono' : '')}
-                {...common}
-                type={f.type === 'number' ? 'text' : f.type}
-                inputMode={f.type === 'number' ? 'decimal' : undefined}
-                value={str}
-                maxLength={f.type === 'text' ? 2000 : undefined}
-                placeholder={f.type === 'number' && f.min != null && f.max != null ? `${f.min}–${f.max}` : undefined}
-                onChange={(e) => onChange(f.key, e.target.value)}
-              />
-            )}
-            {errEl}
-          </label>
-        )
+        // Einfache Felder: gemeinsamer Feld-Rahmen (Label, Einheit, Fehlermeldung am Feld)
+        const fp = { key: f.key, id, label: text, error: errText, disabled, wrapClassName: wide ? 'span-all' : undefined, 'aria-required': f.required || undefined }
+        if (f.type === 'textarea') return <Textarea {...fp} rows={3} value={str} maxLength={4000} onChange={(e) => onChange(f.key, e.target.value)} />
+        if (f.type === 'select') {
+          return (
+            <Select {...fp} value={str} onChange={(e) => onChange(f.key, e.target.value)}>
+              <option value="">–</option>
+              {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+            </Select>
+          )
+        }
+        if (f.type === 'date') return <DateField {...fp} value={str} onChange={(x) => onChange(f.key, x)} />
+        if (f.type === 'time') return <TimeField {...fp} value={str} onChange={(x) => onChange(f.key, x)} />
+        if (f.type === 'number') {
+          const n = parseNum(str)
+          return (
+            <NumberField {...fp} unit={f.unit || undefined} value={n} onChange={(x) => onChange(f.key, x === '' ? '' : String(x))}
+              placeholder={f.min != null && f.max != null ? `${f.min}–${f.max}` : undefined} />
+          )
+        }
+        return <TextField {...fp} value={str} maxLength={f.type === 'text' ? 2000 : undefined} onChange={(e) => onChange(f.key, e.target.value)} />
       })}
     </div>
   )
 }
 
+const parseNum = (s: string): number | '' => {
+  const n = Number(s.replace(',', '.'))
+  return s.trim() === '' || !Number.isFinite(n) ? '' : n
+}
 const range = (a: number, b: number) => Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i)
 

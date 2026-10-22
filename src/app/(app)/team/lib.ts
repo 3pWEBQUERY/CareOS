@@ -2,6 +2,7 @@ import 'server-only'
 import type { Channel, ChannelKind } from '@prisma/client'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
+import { inAudience } from '@/lib/audience'
 
 /** Reihenfolge der Kanalarten in der Navigation (PRD §17.2). */
 export const KIND_ORDER: ChannelKind[] = ['company', 'location', 'unit', 'care', 'admin', 'events', 'offers', 'custom']
@@ -52,12 +53,13 @@ export const canModerate = (ctx: Ctx, ch?: Pick<Channel, 'unitId' | 'locationId'
 /**
  * Zielgruppe eines Kanals (für Lesebestätigungen und Benachrichtigungen):
  * aktive Mitarbeitende mit team.read, deren Rolle den Kanalbereich abdeckt.
+ * Mit audienceRoles (Zielgruppe der Mitteilung, PRD §45) zusätzlich nur Personen mit einer dieser Rollen.
  */
-export async function channelAudience(orgId: string, ch: Pick<Channel, 'unitId' | 'locationId'>) {
+export async function channelAudience(orgId: string, ch: Pick<Channel, 'unitId' | 'locationId'>, audienceRoles: readonly string[] = []) {
   const [rows, units] = await Promise.all([
     db.roleAssignment.findMany({
-      where: { role: { orgId, permissions: { has: 'team.read' } }, user: { orgId, active: true } },
-      select: { unitId: true, locationId: true, user: { select: { id: true, firstName: true, lastName: true, initials: true, jobTitle: true } } },
+      where: { role: { orgId }, user: { orgId, active: true } },
+      select: { unitId: true, locationId: true, role: { select: { key: true, permissions: true } }, user: { select: { id: true, firstName: true, lastName: true, initials: true, jobTitle: true } } },
     }),
     db.unit.findMany({ where: { orgId }, select: { id: true, locationId: true } }),
   ])
@@ -69,9 +71,32 @@ export async function channelAudience(orgId: string, ch: Pick<Channel, 'unitId' 
     if (ch.locationId) return a.locationId === ch.locationId || (!!a.unitId && unitLoc.get(a.unitId) === ch.locationId)
     return true
   }
+  const keys = new Map<string, Set<string>>()
+  for (const r of rows) keys.set(r.user.id, (keys.get(r.user.id) ?? new Set()).add(r.role.key))
   const out = new Map<string, (typeof rows)[number]['user']>()
-  for (const r of rows) if (covers(r)) out.set(r.user.id, r.user)
+  for (const r of rows) if (r.role.permissions.includes('team.read') && covers(r) && inAudience(audienceRoles, keys.get(r.user.id) ?? [])) out.set(r.user.id, r.user)
   return [...out.values()].sort((a, b) => a.lastName.localeCompare(b.lastName))
+}
+
+/**
+ * Sichtbarkeit von Mitteilungen mit Zielgruppe (Prisma-Bedingung): ohne Zielgruppe für alle im Kanal,
+ * sonst für Personen mit passender Rolle, Verfassende und die Moderation der übergebenen Kanäle.
+ */
+export function postAudienceWhere(ctx: Ctx, roleKeys: string[], moderatedChannelIds: string[] = []) {
+  return {
+    OR: [
+      { audienceRoles: { isEmpty: true } },
+      ...(roleKeys.length ? [{ audienceRoles: { hasSome: roleKeys } }] : []),
+      { authorId: ctx.user.id },
+      ...(moderatedChannelIds.length ? [{ channelId: { in: moderatedChannelIds } }] : []),
+    ],
+  }
+}
+
+/** Darf die Person diese Mitteilung sehen (Kanal sichtbar und in der Zielgruppe bzw. verfassend/moderierend)? */
+export function postVisible(ctx: Ctx, post: { authorId: string; audienceRoles: string[]; channel: Pick<Channel, 'unitId' | 'locationId' | 'orgId'> }, roleKeys: string[]) {
+  if (!channelVisible(ctx, post.channel)) return false
+  return post.authorId === ctx.user.id || inAudience(post.audienceRoles, roleKeys) || canModerate(ctx, post.channel)
 }
 
 /** Sichtbare, nicht abgelaufene Mitteilungen. */

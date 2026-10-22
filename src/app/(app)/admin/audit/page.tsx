@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { fmtDate } from '@/lib/time'
+import { INTL_LOCALE } from '@/i18n/core'
 import { parseUserAgent } from '@/lib/admin-shared'
 import { Forbidden, Empty } from '@/components/ui/Empty'
 import { AdminHead } from '../Head'
@@ -15,6 +16,23 @@ export async function generateMetadata() {
 }
 
 const PER_PAGE = 50
+const COUNT_CAP = 10_000
+
+/**
+ * Objekttypen im Protokoll der Organisation. Rekursiver Index-Sprung über (entityType, entityId): je Typ ein
+ * Indexzugriff statt DISTINCT über Hunderttausende Einträge.
+ */
+async function auditEntityTypes(orgId: string) {
+  return db.$queryRaw<{ entityType: string }[]>`
+    WITH RECURSIVE t AS (
+      (SELECT "entityType" AS et FROM "AuditLog" ORDER BY "entityType" LIMIT 1)
+      UNION ALL
+      SELECT (SELECT "entityType" FROM "AuditLog" WHERE "entityType" > t.et ORDER BY "entityType" LIMIT 1) FROM t WHERE t.et IS NOT NULL
+    )
+    SELECT et AS "entityType" FROM t
+    WHERE et IS NOT NULL AND EXISTS (SELECT 1 FROM "AuditLog" a WHERE a."entityType" = t.et AND a."orgId" = ${orgId})
+    ORDER BY et`
+}
 const json = (v: unknown) => JSON.stringify(v, null, 2)
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<AuditFilter> }) {
@@ -24,12 +42,16 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   const f = await searchParams
   const page = Math.max(1, Number(f.page) || 1)
   const where = auditWhere(org.id, f)
-  const [rows, total, users, entities] = await Promise.all([
+  // Grosse Protokolle (PRD §66): Zählung begrenzt (Seitenzahl «…+»), Objekttypen per Index-Sprung statt DISTINCT über alle Einträge
+  const [rows, counted, users, entities] = await Promise.all([
     db.auditLog.findMany({ where, orderBy: { at: 'desc' }, skip: (page - 1) * PER_PAGE, take: PER_PAGE }),
-    db.auditLog.count({ where }),
+    db.auditLog.count({ where, take: COUNT_CAP + 1 }),
     db.user.findMany({ where: { orgId: org.id }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: 'asc' } }),
-    db.auditLog.findMany({ where: { orgId: org.id }, distinct: ['entityType'], select: { entityType: true }, orderBy: { entityType: 'asc' } }),
+    auditEntityTypes(org.id),
   ])
+  const capped = counted > COUNT_CAP
+  // Begrenzt gezählt: weiterblättern bleibt möglich, solange eine volle Seite kommt
+  const total = capped ? Math.max(COUNT_CAP + 1, (page - 1) * PER_PAGE + rows.length + (rows.length === PER_PAGE ? 1 : 0)) : counted
   const name = new Map(users.map((u) => [u.id, `${u.lastName} ${u.firstName}`]))
   const pages = Math.max(1, Math.ceil(total / PER_PAGE))
   const qs = (p: Partial<AuditFilter>) => {
@@ -49,10 +71,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         <div className="tabpanel">
           <div className="alert info"><span className="grow">{t('admin.audit.immutable')}</span></div>
           <form className="form-grid" action="/admin/audit" role="search" aria-label={t('common.filter')}>
-            <Select label={t('admin.audit.user')} name="user" defaultValue={f.user ?? ''}>
-                <option value="">{t('common.all')}</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.lastName} {u.firstName}</option>)}
-              </Select>
+            <Combobox label={t('admin.audit.user')} name="user" defaultValue={f.user ?? ''} placeholder={t('common.all')}
+              options={users.map((u) => ({ value: u.id, label: `${u.lastName} ${u.firstName}` }))} />
             <Combobox label={t('admin.audit.actionPrefix')} name="action" defaultValue={f.action ?? ''} placeholder="admin. / auth. / chart." freeText
               options={['auth.', 'admin.', 'profile.', 'api.', 'file.', 'resident.', 'chart.', 'medication.'].map((p) => ({ value: p, label: p }))} />
             <Select label={t('admin.audit.entity')} name="entity" defaultValue={f.entity ?? ''}>
@@ -67,8 +87,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
             </div>
           </form>
           <div className="row-between">
-            <span className="small muted">{t('admin.audit.count', { n: total })}</span>
-            {pages > 1 && <span className="small muted mono">{page} / {pages}</span>}
+            <span className="small muted">{capped ? t('admin.audit.countCapped', { n: new Intl.NumberFormat(INTL_LOCALE[locale]).format(COUNT_CAP) }) : t('admin.audit.count', { n: total })}</span>
+            {pages > 1 && <span className="small muted mono">{page} / {pages}{capped ? '+' : ''}</span>}
           </div>
           {rows.length ? (
             <div className="tablewrap">
@@ -115,7 +135,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           {pages > 1 && (
             <nav className="row" aria-label={t('admin.audit.pages')} style={{ justifyContent: 'center' }}>
               {page > 1 ? <Link className="btn sm" href={`/admin/audit?${qs({ page: String(page - 1) })}`}>{t('admin.audit.newer')}</Link> : <span className="btn sm" aria-disabled="true">{t('admin.audit.newer')}</span>}
-              <span className="small muted mono">{page} / {pages}</span>
+              <span className="small muted mono">{page} / {pages}{capped ? '+' : ''}</span>
               {page < pages ? <Link className="btn sm" href={`/admin/audit?${qs({ page: String(page + 1) })}`}>{t('admin.audit.older')}</Link> : <span className="btn sm" aria-disabled="true">{t('admin.audit.older')}</span>}
             </nav>
           )}

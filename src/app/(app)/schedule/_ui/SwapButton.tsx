@@ -21,7 +21,7 @@ export function SwapButton({ shiftId, label, colleagues }: { shiftId: string; la
               <option value="">{t('schedule.swap.anyone')}</option>
               {colleagues.map((c) => <option key={c.id} value={c.id} disabled={c.busy}>{c.name}{c.qual ? ` · ${c.qual}` : ''}{c.busy ? ` · ${t('schedule.swap.busy')}` : ''}</option>)}
             </Select>
-          <Textarea label={<>{t('schedule.swap.note')} <span className="muted">({t('common.optional')})</span></>} name="note" rows={2} maxLength={500} style={{ minHeight: 60 }} />
+          <Textarea label={t('schedule.swap.note')} optional name="note" rows={2} maxLength={500} style={{ minHeight: 60 }} />
           <div className="form-actions">
             <Submit>{t('schedule.swap.submit')}</Submit>
             <button type="button" className="btn ghost" onClick={() => setOpen(false)}>{t('common.cancel')}</button>

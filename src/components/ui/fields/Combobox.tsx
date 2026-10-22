@@ -15,6 +15,7 @@ import { useT } from '@/i18n/client'
 import { filterOptions, groupOptions, nextEnabled, normalize, type ComboOption } from '@/lib/combobox'
 import { IconChevron, portalTarget, useFormBinding, useOutsideClose } from '../field-popover'
 import { Field, cx, useFieldIds, type FieldProps } from './Field'
+import { emitChange } from './emit'
 
 export type { ComboOption }
 
@@ -36,6 +37,8 @@ export type ComboboxProps = FieldProps & {
   freeText?: boolean
   required?: boolean
   disabled?: boolean
+  /** Höchstlänge des Texts (vor allem mit freeText) */
+  maxLength?: number
   className?: string
   style?: CSSProperties
   autoFocus?: boolean
@@ -49,7 +52,7 @@ export type ComboboxProps = FieldProps & {
 }
 
 export function Combobox(props: ComboboxProps) {
-  const { name, options, defaultValue, value: controlled, onChange, placeholder, emptyText, freeText, required, disabled, className, style, autoFocus, form, title, ref } = props
+  const { name, options, defaultValue, value: controlled, onChange, placeholder, emptyText, freeText, required, disabled, maxLength, className, style, autoFocus, form, title, ref } = props
   const clearable = props.clearable ?? !required
   const t = useT()
   const isControlled = controlled !== undefined
@@ -94,6 +97,7 @@ export function Combobox(props: ComboboxProps) {
     committed.current = v
     if (!isControlled) setInner(v)
     onChange?.(v, byValue.get(v) ?? null)
+    emitChange(hiddenRef.current)
   }
 
   const choose = (o: ComboOption | null) => {
@@ -178,7 +182,7 @@ export function Combobox(props: ComboboxProps) {
           autoCapitalize="off"
           spellCheck={false}
           aria-autocomplete="list"
-          aria-expanded={open}
+          aria-expanded={open && !(freeText && n === 0)}
           aria-controls={listId}
           aria-activedescendant={open && active >= 0 ? optId(active) : undefined}
           aria-label={props['aria-label']}
@@ -191,14 +195,17 @@ export function Combobox(props: ComboboxProps) {
           placeholder={placeholder ?? t('common.field.searchPh')}
           autoFocus={autoFocus}
           disabled={disabled}
+          maxLength={maxLength}
           form={form}
           value={text}
           onChange={(e) => {
             setText(e.target.value)
             setQuery(e.target.value)
+            if (freeText) setValue(e.target.value) // freier Text gilt sofort (z. B. ohne Blur auf einen Knopf in Safari)
             setOpen(true)
             const list = groupOptions(filterOptions(options, e.target.value)).flatMap((g) => g.items)
-            setActive(nextEnabled(list, -1, 1))
+            // Mit freiem Text übernimmt Enter den getippten Text, sonst den ersten Treffer
+            setActive(freeText ? -1 : nextEnabled(list, -1, 1))
             if (err) setErr(null)
           }}
           onFocus={(e) => e.currentTarget.select()}
@@ -252,9 +259,10 @@ export function Combobox(props: ComboboxProps) {
           <span className="cb-chev"><IconChevron dir="right" /></span>
         </button>
         {name && <input ref={hiddenRef} type="hidden" name={name} form={form} value={value} disabled={disabled} data-for={ids.id} />}
-        <span className="sr-only" aria-live="polite">{open && query !== null ? (n ? t('common.field.results', { n }) : emptyText ?? t('common.field.noResults')) : ''}</span>
+        <span className="sr-only" aria-live="polite">{open && query !== null ? (n ? t('common.field.results', { n }) : freeText ? '' : emptyText ?? t('common.field.noResults')) : ''}</span>
       </div>
-      <ListPopover open={open} anchor={boxRef} popRef={popRef} id={listId} labelledBy={props['aria-labelledby'] ?? (props.label != null ? ids.labelId : undefined)} label={props['aria-label']}>
+      {/* Mit freiem Text ist «keine Treffer» kein Fehler: Liste dann ausblenden */}
+      <ListPopover open={open && !(freeText && n === 0)} anchor={boxRef} popRef={popRef} id={listId} labelledBy={props['aria-labelledby'] ?? (props.label != null ? ids.labelId : undefined)} label={props['aria-label']}>
         {n === 0 ? (
           <div className="cb-empty" role="presentation">{emptyText ?? t('common.field.noResults')}</div>
         ) : groups.map((g, gi) => {

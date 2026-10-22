@@ -28,7 +28,8 @@ export async function run<T>(fn: () => Promise<ActionResult<T> | void>, opts: { 
       return { ok: false, error: issue?.message || 'common.genericError', field: issue?.path.join('.') }
     }
     if (e && typeof e === 'object' && 'digest' in e && String((e as { digest: unknown }).digest).startsWith('NEXT_')) throw e
-    console.error('[action]', e)
+    // Abgefangene Fehler trotzdem erfassen (Log, Zähler, Admin → Sicherheit → Betrieb), PRD §66.
+    await import('@/lib/errors').then((m) => m.captureError(e, { route: 'server-action', routeType: 'action' })).catch(() => console.error('[action]', e))
     return { ok: false, error: 'common.genericError' }
   }
 }

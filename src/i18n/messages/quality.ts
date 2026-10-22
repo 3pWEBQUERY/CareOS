@@ -98,6 +98,10 @@ export default defineMessages({
       placeCluster: '{n} von {total} Ereignissen ereigneten sich im Bereich {place}.',
       weekdayCluster: '{n} von {total} Ereignissen an einem {day}.',
       increase: '{type}: {n} Ereignisse in den letzten 30 Tagen, zuvor {prev}.',
+      repeatAny: '{name}: {n} Ereignisse in {days} Tagen ({list}). Fallbesprechung und Pflegeplanung prüfen.',
+      fallRiskStale: '{name}: Sturzrisiko seit dem ersten dieser Stürze nicht neu eingeschätzt.',
+      showIncidents: 'Ereignisse anzeigen',
+      assess: 'Einschätzen',
     },
     ai: {
       title: 'Quality Assistant',
@@ -146,6 +150,8 @@ export default defineMessages({
       done: 'Ereignis gemeldet, Folgeaufgaben geplant',
     },
     detail: {
+      assignFor: '{title} zuweisen',
+      assignTitle: 'Massnahme zuweisen',
       workflow: 'Ereignis-Workflow',
       summary: 'Meldung',
       openChart: 'Akte öffnen',
@@ -197,9 +203,11 @@ export default defineMessages({
       incident_ai_analyze: 'Musteranalyse',
     },
     notify: {
+      actionAssigned: 'Massnahme für Sie: {title}',
       title: 'Ereignis: {type} · {who}',
     },
     errors: {
+      assignee: 'Diese Person kann in diesem Bereich keine Massnahmen übernehmen.',
       type: 'Bitte einen Ereignistyp wählen.',
       resident: 'Diese Person ist nicht in Ihrem Zugriffsbereich.',
       unit: 'Bitte einen Bereich wählen.',
@@ -315,6 +323,10 @@ export default defineMessages({
       placeCluster: '{n} événements sur {total} ont eu lieu dans le lieu {place}.',
       weekdayCluster: '{n} événements sur {total} un {day}.',
       increase: '{type} : {n} événements au cours des 30 derniers jours, auparavant {prev}.',
+      repeatAny: '{name} : {n} événements en {days} jours ({list}). Vérifier en colloque de cas et dans la planification des soins.',
+      fallRiskStale: '{name} : risque de chute non réévalué depuis la première de ces chutes.',
+      showIncidents: 'Afficher les événements',
+      assess: 'Évaluer',
     },
     ai: {
       title: 'Quality Assistant',
@@ -363,6 +375,8 @@ export default defineMessages({
       done: 'Événement déclaré, tâches de suivi planifiées',
     },
     detail: {
+      assignFor: 'Attribuer {title}',
+      assignTitle: 'Attribuer la mesure',
       workflow: 'Processus de l’événement',
       summary: 'Déclaration',
       openChart: 'Ouvrir le dossier',
@@ -414,9 +428,11 @@ export default defineMessages({
       incident_ai_analyze: 'Analyse des tendances',
     },
     notify: {
+      actionAssigned: 'Mesure pour vous : {title}',
       title: 'Événement : {type} · {who}',
     },
     errors: {
+      assignee: 'Cette personne ne peut pas prendre en charge de mesures dans ce secteur.',
       type: 'Veuillez choisir un type d’événement.',
       resident: 'Cette personne ne fait pas partie de votre périmètre d’accès.',
       unit: 'Veuillez choisir une unité.',
@@ -532,6 +548,10 @@ export default defineMessages({
       placeCluster: '{n} eventi su {total} sono avvenuti nel luogo {place}.',
       weekdayCluster: '{n} eventi su {total} di {day}.',
       increase: '{type}: {n} eventi negli ultimi 30 giorni, prima {prev}.',
+      repeatAny: '{name}: {n} eventi in {days} giorni ({list}). Verificare nella discussione del caso e nella pianificazione.',
+      fallRiskStale: '{name}: rischio di caduta non rivalutato dalla prima di queste cadute.',
+      showIncidents: 'Mostra eventi',
+      assess: 'Valutare',
     },
     ai: {
       title: 'Quality Assistant',
@@ -580,6 +600,8 @@ export default defineMessages({
       done: 'Evento segnalato, attività di follow-up pianificate',
     },
     detail: {
+      assignFor: 'Assegnare {title}',
+      assignTitle: 'Assegnare la misura',
       workflow: 'Processo dell’evento',
       summary: 'Segnalazione',
       openChart: 'Apri cartella',
@@ -631,9 +653,11 @@ export default defineMessages({
       incident_ai_analyze: 'Analisi degli schemi',
     },
     notify: {
+      actionAssigned: 'Misura per lei: {title}',
       title: 'Evento: {type} · {who}',
     },
     errors: {
+      assignee: 'Questa persona non può assumere misure in questo reparto.',
       type: 'Scegliere un tipo di evento.',
       resident: 'Questa persona non rientra nel suo ambito di accesso.',
       unit: 'Scegliere un reparto.',
@@ -749,6 +773,10 @@ export default defineMessages({
       placeCluster: '{n} of {total} incidents occurred in the {place} area.',
       weekdayCluster: '{n} of {total} incidents on a {day}.',
       increase: '{type}: {n} incidents in the last 30 days, previously {prev}.',
+      repeatAny: '{name}: {n} incidents in {days} days ({list}). Review in a case discussion and in the care plan.',
+      fallRiskStale: '{name}: fall risk not reassessed since the first of these falls.',
+      showIncidents: 'Show incidents',
+      assess: 'Assess',
     },
     ai: {
       title: 'Quality Assistant',
@@ -797,6 +825,8 @@ export default defineMessages({
       done: 'Incident reported, follow-up tasks planned',
     },
     detail: {
+      assignFor: 'Assign {title}',
+      assignTitle: 'Assign action',
       workflow: 'Incident workflow',
       summary: 'Report',
       openChart: 'Open chart',
@@ -848,9 +878,11 @@ export default defineMessages({
       incident_ai_analyze: 'Pattern analysis',
     },
     notify: {
+      actionAssigned: 'Action for you: {title}',
       title: 'Incident: {type} · {who}',
     },
     errors: {
+      assignee: 'This person cannot take on actions in this unit.',
       type: 'Please choose an incident type.',
       resident: 'This person is outside your access scope.',
       unit: 'Please choose a unit.',

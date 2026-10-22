@@ -20,7 +20,7 @@ export async function notesExtras(ctx: Ctx, obs: Pick<Observation, 'id' | 'impor
     importantIds.length ? db.acknowledgement.findMany({ where: { subjectType: OBSERVATION_ACK, subjectId: { in: importantIds } }, select: { userId: true, subjectId: true, at: true } }) : [],
   ])
   const forms: FormOption[] = defs
-    .map((d) => ({ id: d.id, name: d.name, description: d.description, version: d.version, fields: readFields(d.fields) }))
+    .map((d) => ({ id: d.id, key: d.key, name: d.name, description: d.description, version: d.version, fields: readFields(d.fields) }))
     .filter((f) => f.fields.length)
   const byId = new Map(obs.map((o) => [o.id, o]))
   const row = (id: string): { structured: StructuredForm | null; ack: NoteAckInfo | null } => {

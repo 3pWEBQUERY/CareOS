@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
 import { splitQuestion } from '@/components/ui/ConfirmDialog'
@@ -8,7 +8,8 @@ import { ActionForm } from '@/components/ui/ActionForm'
 import { saveOrderAction, stopOrderAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { ResidentContext } from './shared'
 import type { ResidentCtxDto } from './types'
-import { Checkbox, DateField, TextField } from '@/components/ui/fields'
+import { blocking, checkAllergies, type AllergyMatch } from '@/lib/allergy-check'
+import { Checkbox, Combobox, DateField, NumberField, SegmentedControl, TextField, TimeField } from '@/components/ui/fields'
 
 export type OrderDto = {
   id: string
@@ -40,13 +41,15 @@ export type OrderDto = {
 
 const ROUTES = ['p.o.', 's.l.', 's.c.', 'i.m.', 'i.v.', 'rektal', 'transdermal', 'inhalativ', 'topisch', 'nasal', 'okulär']
 
-export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescriber, todayKey }: {
+export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescriber, todayKey, interactionNote }: {
   orders: OrderDto[]
   canEdit: boolean
   resident: ResidentCtxDto
   defaultSlots: string[]
   defaultPrescriber: string | null
   todayKey: string
+  /** Stand der Interaktionsprüfung (z. B. «keine Datenquelle angebunden – nicht geprüft») */
+  interactionNote?: string
 }) {
   const t = useT()
   const [edit, setEdit] = useState<OrderDto | 'new' | null>(null)
@@ -87,6 +90,7 @@ export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescri
                     <div className="drug-sub">{[o.form, o.route, o.indication].filter(Boolean).join(' · ')}</div>
                     {o.notes && <div className="small fg2">{o.notes}</div>}
                     <div className="row" style={{ gap: 4, marginTop: 3 }}>
+                      {o.active && <AllergyTags hits={checkAllergies(resident.allergies, [o.name, o.form].filter(Boolean).join(' '))} />}
                       {o.requiresDoubleCheck && <span className="tag violet">{t('meds.fourEyes.tag')}</span>}
                       {!o.active && <span className="tag outline">{t('meds.orders.stoppedOn', { at: o.stopped ?? '' })}</span>}
                     </div>
@@ -137,6 +141,7 @@ export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescri
           defaultSlots={defaultSlots}
           defaultPrescriber={defaultPrescriber}
           todayKey={todayKey}
+          interactionNote={interactionNote}
         />
       )}
       {stop && (
@@ -158,16 +163,20 @@ export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescri
   )
 }
 
-function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber, todayKey }: {
+function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber, todayKey, interactionNote }: {
   order: OrderDto | null
   onClose: () => void
   resident: ResidentCtxDto
   defaultSlots: string[]
   defaultPrescriber: string | null
   todayKey: string
+  interactionNote?: string
 }) {
   const t = useT()
   const [kind, setKind] = useState<OrderDto['kind']>(order?.kind ?? 'regular')
+  // Allergie-Abgleich live beim Erfassen (PRD §13.1); der Server prüft beim Speichern erneut
+  const [drug, setDrug] = useState({ name: order?.name ?? '', form: order?.form ?? '' })
+  const hits = useMemo(() => checkAllergies(resident.allergies, [drug.name, drug.form].join(' ')), [resident.allergies, drug])
   const own = order && order.kind !== 'prn' ? order.times : []
   const base = [...new Set([...defaultSlots, ...own])].sort().map((tm) => {
     const i = own.indexOf(tm)
@@ -181,30 +190,24 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
         <input type="hidden" name="residentId" value={resident.id} />
         {order && <input type="hidden" name="id" value={order.id} />}
         {order && <div className="alert info"><span className="grow">{t('meds.orders.editHint')}</span></div>}
-        <div className="seg" role="group" aria-label={t('meds.orders.kind')} style={{ alignSelf: 'flex-start' }}>
-          {(['regular', 'temporary', 'prn'] as const).map((k) => (
-            <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{t('meds.kind.' + k)}</button>
-          ))}
-        </div>
-        <input type="hidden" name="kind" value={kind} />
+        <SegmentedControl name="kind" aria-label={t('meds.orders.kind')} value={kind} onChange={(v) => setKind(v as typeof kind)}
+          options={(['regular', 'temporary', 'prn'] as const).map((k) => ({ value: k, label: t('meds.kind.' + k) }))} />
         <div className="form-grid">
-          <TextField label={t('meds.orders.name')} wrapClassName="span-all" name="name" required defaultValue={order?.name} placeholder={t('meds.orders.namePh')} />
-          <TextField label={t('meds.orders.form')} name="form" defaultValue={order?.form ?? ''} placeholder={t('meds.orders.formPh')} />
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.route')}</span>
-            <TextField name="route" list="routes" defaultValue={order?.route ?? 'p.o.'} />
-            <datalist id="routes">{ROUTES.map((r) => <option key={r} value={r} />)}</datalist>
-          </label>
+          <TextField label={t('meds.orders.name')} wrapClassName="span-all" name="name" required defaultValue={order?.name} placeholder={t('meds.orders.namePh')}
+            onChange={(e) => setDrug((d) => ({ ...d, name: e.target.value }))} aria-describedby={hits.length ? 'ord-allergy' : undefined} />
+          <TextField label={t('meds.orders.form')} name="form" defaultValue={order?.form ?? ''} placeholder={t('meds.orders.formPh')}
+            onChange={(e) => setDrug((d) => ({ ...d, form: e.target.value }))} />
+          <Combobox label={t('meds.orders.route')} name="route" defaultValue={order?.route ?? 'p.o.'} freeText maxLength={40} options={ROUTES.map((r) => ({ value: r, label: r }))} />
           <TextField label={t('meds.orders.indication')} name="indication" defaultValue={order?.indication ?? ''} />
         </div>
         {kind !== 'prn' ? (
           <fieldset>
             <legend className="lbl">{t('meds.orders.schedule')}</legend>
             <p className="small muted" style={{ margin: '0 0 8px' }}>{t('meds.orders.scheduleHint')}</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 13rem), 1fr))', gap: 10 }}>
               {rows.map(([tm, ds], i) => (
                 <div key={i} className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
-                  <TextField name={'time_' + i} defaultValue={tm} placeholder="HH:MM" inputMode="numeric" aria-label={t('meds.orders.time', { n: i + 1 })} style={{ width: 76 }} className="mono" />
+                  <TimeField name={'time_' + i} defaultValue={tm} aria-label={t('meds.orders.time', { n: i + 1 })} style={{ width: '7.5rem', flex: 'none' }} />
                   <TextField name={'dose_' + i} defaultValue={ds} placeholder="0" aria-label={t('meds.orders.dose', { n: i + 1 })} className="mono" />
                 </div>
               ))}
@@ -213,28 +216,23 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
         ) : (
           <div className="form-grid">
             <TextField label={t('meds.orders.prnDose')} name="prnDose" defaultValue={order?.prnDose ?? ''} required placeholder={t('meds.orders.prnDosePh')} className="mono" />
-            <TextField label={t('meds.orders.prnMax')} name="prnMaxPerDay" inputMode="numeric" defaultValue={order?.prnMaxPerDay ?? ''} required className="mono" />
-            <TextField label={t('meds.orders.prnInterval')} name="prnMinIntervalH" inputMode="numeric" defaultValue={order?.prnMinIntervalH ?? 4} className="mono" />
+            <NumberField label={t('meds.orders.prnMax')} name="prnMaxPerDay" min={1} max={24} step={1} defaultValue={order?.prnMaxPerDay ?? ''} required />
+            <NumberField label={t('meds.orders.prnInterval')} name="prnMinIntervalH" min={0} max={72} step={1} defaultValue={order?.prnMinIntervalH ?? 4} />
           </div>
         )}
         <div className="form-grid">
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.start')}</span>
-            <DateField name="startDate" defaultValue={todayKey} min={order ? todayKey : undefined} />
-            {order && <span className="hint">{t('meds.orders.startEditHint')}</span>}
-          </label>
-          <DateField label={<>{t('meds.orders.end')}{kind !== 'temporary' && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</>} name="endDate" defaultValue={order?.endKey ?? ''} required={kind === 'temporary'} />
+          <DateField label={t('meds.orders.start')} hint={order ? t('meds.orders.startEditHint') : undefined} name="startDate" defaultValue={todayKey} min={order ? todayKey : undefined} />
+          <DateField label={t('meds.orders.end')} optional={kind !== 'temporary'} name="endDate" defaultValue={order?.endKey ?? ''} required={kind === 'temporary'} />
           <TextField label={t('meds.orders.prescriber')} name="prescriber" defaultValue={order?.prescriber ?? defaultPrescriber ?? ''} />
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.stock')}</span>
-            <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
-              <TextField name="stock" inputMode="numeric" defaultValue={order?.stock ?? ''} style={{ width: 90 }} className="mono" />
-              <TextField name="stockUnit" defaultValue={order?.stockUnit ?? t('meds.orders.stockUnitDefault')} aria-label={t('meds.orders.stockUnit')} />
-            </div>
-          </label>
+          <div className="row" style={{ gap: 6, flexWrap: 'nowrap', alignItems: 'flex-end' }}>
+            <NumberField label={t('meds.orders.stock')} optional name="stock" min={0} step={1} defaultValue={order?.stock ?? ''} wrapStyle={{ width: '7rem', flex: 'none' }} />
+            <TextField label={t('meds.orders.stockUnit')} hideLabel name="stockUnit" defaultValue={order?.stockUnit ?? t('meds.orders.stockUnitDefault')} wrapClassName="grow" />
+          </div>
           <TextField label={t('meds.orders.notes')} wrapClassName="span-all" name="notes" defaultValue={order?.notes ?? ''} placeholder={t('meds.orders.notesPh')} />
         </div>
         <Checkbox name="requiresDoubleCheck" defaultChecked={order?.requiresDoubleCheck} label={t('meds.orders.doubleCheck')} />
+        <AllergyPanel hits={hits} />
+        {interactionNote && <p className="small muted" style={{ margin: 0 }}><span className="lbl">{t('meds.interactions.title')}</span> {interactionNote}</p>}
         {order && (
           <TextField label={t('meds.orders.changeReason')} name="changeReason" required placeholder={t('meds.orders.changeReasonPh')} />
         )}
@@ -245,5 +243,46 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
         </div>
       </ActionForm>
     </Dialog>
+  )
+}
+
+/** Allergie-Treffer einer Verordnung als Tag (Liste, Abgabe, Medikamentenrunde). */
+export function AllergyTags({ hits }: { hits: AllergyMatch[] }) {
+  const t = useT()
+  if (!hits.length) return null
+  return (
+    <>
+      {hits.map((h) => (
+        <span key={h.allergy} className={'tag ' + (h.kind === 'cross' ? 'warn' : 'crit')} title={allergyText(t, h)}>
+          {t(h.kind === 'cross' ? 'meds.allergy.tagCross' : 'meds.allergy.tag', { allergy: h.allergy })}
+        </span>
+      ))}
+    </>
+  )
+}
+
+export function allergyText(t: (k: string, v?: Record<string, string>) => string, h: AllergyMatch) {
+  const cls = h.classKey ? t('meds.allergy.classes.' + h.classKey) : ''
+  return t('meds.allergy.' + h.kind, { allergy: h.allergy, term: h.term, class: cls })
+}
+
+/** Warnung im Verordnungsdialog: Treffer mit Begründungspflicht (direkt/Klasse) oder Hinweis (Kreuzreaktion). */
+function AllergyPanel({ hits }: { hits: AllergyMatch[] }) {
+  const t = useT()
+  if (!hits.length) return null
+  const hard = blocking(hits)
+  return (
+    <div className={'alert ' + (hard ? 'crit' : 'warn')} id="ord-allergy" role="alert">
+      <div className="grow stack-sm" style={{ gap: 6 }}>
+        <strong>{t(hard ? 'meds.allergy.title' : 'meds.allergy.titleCross')}</strong>
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          {hits.map((h) => <li key={h.allergy}>{allergyText(t, h)}</li>)}
+        </ul>
+        {hard && (
+          <TextField label={t('meds.allergy.reason')} name="allergyReason" required maxLength={500} placeholder={t('meds.allergy.reasonPh')} hint={t('meds.allergy.reasonHint')} />
+        )}
+        <span className="small">{t('meds.allergy.localNote')}</span>
+      </div>
+    </div>
   )
 }

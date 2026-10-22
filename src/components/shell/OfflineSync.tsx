@@ -196,6 +196,7 @@ function summary(t: (k: string, v?: Record<string, string | number>) => string, 
     }
     case 'intake': {
       const d = e.data as IntakeData
+      if (d.type === 'fluid') return `${t('care.fluid.kinds.' + d.fluid)} ${d.ml} ml${d.item ? ' ' + d.item : ''}`
       return d.type === 'drink' ? `+${d.ml} ml${d.item ? ' ' + d.item : ''}` : `${t('care.nutrition.mealNames.' + d.meal)} ${portionLabel(d.portion)}`
     }
   }

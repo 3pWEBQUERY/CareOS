@@ -6,7 +6,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { IconPlus } from '@/components/icons'
 import { createConversationAction } from './actions'
-import { Checkbox, Select, TextField } from '@/components/ui/fields'
+import { Checkbox, Combobox, SegmentedControl, Select, TextField } from '@/components/ui/fields'
 
 type Person = { id: string; name: string; hint: string; clinical: boolean }
 
@@ -22,12 +22,8 @@ export function NewConversation({ people, teams, canClinical }: { people: Person
       <button type="button" className="btn primary" onClick={() => setOpen(true)}><IconPlus size={16} />{t('team.chat.new')}</button>
       <Dialog open={open} onClose={() => setOpen(false)} title={t('team.chat.newTitle')}>
         <ActionForm action={createConversationAction} reset={false}>
-          <input type="hidden" name="kind" value={kind} />
-          <div className="seg" role="group" aria-label={t('team.chat.form.kind')}>
-            {(['direct', 'group', ...(teams.length ? ['team'] : [])] as const).map((k) => (
-              <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k as typeof kind)}>{t('team.chat.kinds.' + k)}</button>
-            ))}
-          </div>
+          <SegmentedControl name="kind" aria-label={t('team.chat.form.kind')} value={kind} onChange={(v) => setKind(v as typeof kind)}
+            options={(['direct', 'group', ...(teams.length ? ['team'] : [])] as const).map((k) => ({ value: k, label: t('team.chat.kinds.' + k) }))} />
 
           {canClinical && (
             <div className="stack-sm">
@@ -37,10 +33,8 @@ export function NewConversation({ people, teams, canClinical }: { people: Person
           )}
 
           {kind === 'direct' && (
-            <Select label={t('team.chat.form.person')} name="userId" defaultValue="">
-                <option value="" disabled>{t('team.chat.form.pickPerson')}</option>
-                {list.map((p) => <option key={p.id} value={p.id}>{p.name}{p.hint ? ` · ${p.hint}` : ''}</option>)}
-              </Select>
+            <Combobox label={t('team.chat.form.person')} name="userId" required placeholder={t('team.chat.form.pickPerson')}
+              options={people.filter((p) => !clinical || p.clinical).map((p) => ({ value: p.id, label: p.name, hint: p.hint || undefined }))} />
           )}
 
           {kind === 'group' && (
@@ -52,7 +46,7 @@ export function NewConversation({ people, teams, canClinical }: { people: Person
                 <div style={{ maxHeight: 240, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
                   {people.map((p) => (
                     <label key={p.id} className="check" hidden={!list.includes(p)}>
-                      <input type="checkbox" name="members" value={p.id} />
+                      <Checkbox name="members" value={p.id} />
                       <span>{p.name} <span className="small muted">{p.hint}</span></span>
                     </label>
                   ))}

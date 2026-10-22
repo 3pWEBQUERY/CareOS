@@ -14,8 +14,7 @@ import {
   addAssignmentAction, addUserQualificationAction, removeAssignmentAction, removeUserQualificationAction,
   resetMfaAction, resetPasswordAction, revokeUserSessionsAction, setUserActiveAction, updateUserAction,
 } from '../actions'
-import { DateField } from '@/components/ui/DateField'
-import { Select } from '@/components/ui/fields'
+import { DateField, Select } from '@/components/ui/fields'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()

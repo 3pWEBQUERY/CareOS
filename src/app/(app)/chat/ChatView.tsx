@@ -420,6 +420,7 @@ function Composer({ members, onSend }: { members: Member[]; onSend: (body: strin
           ))}
         </div>
       )}
+      {/* raw-field-ok: verborgene Dateiauswahl hinter der Anhang-Schaltfläche (Vorschau im Verfasser) */}
       <input ref={fileRef} type="file" multiple hidden onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
       <button type="button" className="icon-btn composer-attach" onClick={() => fileRef.current?.click()} aria-label={t('team.chat.attach')} title={t('team.chat.attach')}><IconUpload size={18} /></button>
       <Textarea

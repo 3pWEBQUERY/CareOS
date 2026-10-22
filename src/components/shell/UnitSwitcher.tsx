@@ -12,6 +12,7 @@ export function UnitSwitcher({ units, current, label, className, id }: { units: 
   }
   const cur = units.find((u) => u.id === current)
   return (
+    // raw-field-ok: Bereichswahl der Topbar (randlos, Stil der Shell); auf «Mehr» mit .field
     <select id={id} className={className} aria-label={id ? undefined : label} title={cur ? `${cur.location} · ${cur.name}` : undefined} value={current ?? ''} disabled={pending} aria-busy={pending || undefined} onChange={(e) => start(() => setUnitAction(e.target.value))}>
       {units.map((u) => (
         <option key={u.id} value={u.id}>{u.location} · {u.name}</option>

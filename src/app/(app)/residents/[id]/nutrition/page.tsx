@@ -6,9 +6,11 @@ import { addDays, fmtDate, fmtDayMonth, fmtNum, hm, startOfDay, weekdayShort } f
 import { LOCALES, type Tree } from '@/i18n/core'
 import careMessages from '@/i18n/messages/care'
 import { MEALS, portionLabel, type Meal } from '@/lib/care'
+import { LIVE } from '@/lib/vitals'
 import { BarChart } from '@/components/ui/BarChart'
 import { LineChart } from '@/components/ui/LineChart'
-import { DrinkQuick, MealPortion, ProfileButton } from './NutritionClient'
+import { DrinkQuick, FluidEntry, MealPortion, ProfileButton } from './NutritionClient'
+import { fluidBalance, isFluidOut, signedMl, FLUID_IN, FLUID_OUT } from '@/lib/fluid-balance'
 import { residentTitle } from '../../_lib/resident'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -37,8 +39,8 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
   const [profile, intake, weights, mna] = await Promise.all([
     db.nutritionProfile.findUnique({ where: { residentId: r.id } }),
     db.intakeLog.findMany({ where: { residentId: r.id, at: { gte: addDays(today, -6) } }, orderBy: { at: 'desc' } }),
-    db.vitalSign.findMany({ where: { residentId: r.id, weight: { not: null }, at: { gte: addDays(today, -90) } }, orderBy: { at: 'asc' }, select: { at: true, weight: true } }),
-    db.assessment.findFirst({ where: { residentId: r.id, key: 'mna' }, orderBy: { at: 'desc' } }),
+    db.vitalSign.findMany({ where: { residentId: r.id, ...LIVE, weight: { not: null }, at: { gte: addDays(today, -90) } }, orderBy: { at: 'asc' }, select: { at: true, weight: true } }),
+    db.assessment.findFirst({ where: { residentId: r.id, key: 'mna', ...LIVE }, orderBy: { at: 'desc' } }),
   ])
   const authors = new Map(
     (await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: [...new Set(intake.map((i) => i.authorId))] } }, select: { id: true, firstName: true, lastName: true } }))
@@ -57,6 +59,12 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
   const pct = target ? Math.round((todaySum / target) * 100) : null
   const todayDrinks = drinks.filter((i) => i.at >= today)
   const lastItem = todayDrinks[0]?.item ?? ''
+
+  // Flüssigkeitsbilanz (PRD §14): heute und die zwei Vortage; Bilanz nur mit erfasster Ausfuhr
+  const balance = fluidBalance(intake, [days[6], days[5], days[4]])
+  const fluidToday = intake.filter((i) => i.at >= today && (isFluidOut(i.kind) || (FLUID_IN as readonly string[]).includes(i.kind)))
+  const showBalance = canWrite || balance.some((b) => b.outEntries > 0 || b.in.in_infusion || b.in.in_tube)
+  const ml = (v: number) => fmtNum(v, 0, locale)
 
   // Mahlzeiten heute: letzter Eintrag je Mahlzeit gilt
   const meals = intake.filter((i) => i.kind === 'meal' && i.at >= today)
@@ -196,6 +204,60 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
           )}
         </section>
       </div>
+
+      {showBalance && (
+        <section className="card" aria-labelledby="n-bal">
+          <div className="card-head">
+            <h3 id="n-bal">{t('care.fluid.title')}</h3>
+            <span className="small muted">{t('care.fluid.subtitle')}</span>
+          </div>
+          <div className="card-body stack">
+            {canWrite && <FluidEntry residentId={r.id} />}
+            <div className="tablewrap">
+              <table className="stable fluid-table">
+                <caption className="sr-only">{t('care.fluid.title')}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col"><span className="sr-only">{t('care.fluid.kind')}</span></th>
+                    {balance.map((b, i) => <th key={i} scope="col" className="right">{i === 0 ? t('common.today') : i === 1 ? t('common.yesterday') : fmtDayMonth(b.day, locale)}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(['drink', ...FLUID_IN] as const).map((k) => (
+                    <tr key={k}><th scope="row" className="fluid-sub">{t('care.fluid.kinds.' + k)}</th>{balance.map((b, i) => <td key={i} className="num right">{b.in[k] ? ml(b.in[k]) : '–'}</td>)}</tr>
+                  ))}
+                  <tr className="fluid-sum"><th scope="row">{t('care.fluid.inTotal')}</th>{balance.map((b, i) => <td key={i} className="num right">{ml(b.inMl)} ml</td>)}</tr>
+                  {FLUID_OUT.map((k) => (
+                    <tr key={k}><th scope="row" className="fluid-sub">{t('care.fluid.kinds.' + k)}</th>{balance.map((b, i) => <td key={i} className="num right">{b.out[k] ? ml(b.out[k]) : '–'}</td>)}</tr>
+                  ))}
+                  <tr className="fluid-sum"><th scope="row">{t('care.fluid.outTotal')}</th>{balance.map((b, i) => <td key={i} className="num right">{b.outEntries ? ml(b.outMl) + ' ml' : <span className="muted small">{t('care.fluid.notRecorded')}</span>}</td>)}</tr>
+                  <tr className="fluid-bal"><th scope="row">{t('care.fluid.balance')}</th>{balance.map((b, i) => <td key={i} className="num right">{b.balance == null ? '–' : signedMl(b.balance, ml) + ' ml'}</td>)}</tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="small muted" style={{ margin: 0 }}>{t('care.fluid.hint')}</p>
+            {fluidToday.length > 0 && (
+              <div className="stack-sm">
+                <span className="lbl">{t('care.fluid.today')}</span>
+                <div className="tablewrap">
+                  <table className="stable">
+                    <tbody>
+                      {fluidToday.map((i) => (
+                        <tr key={i.id}>
+                          <td className="num" style={{ width: 64 }}>{hm(i.at)}</td>
+                          <td>{t('care.fluid.kinds.' + i.kind)}{i.item ? <span className="muted"> · {i.item}</span> : null}</td>
+                          <td className="num right nowrap">{isFluidOut(i.kind) ? '−' : '+'}{i.amountMl} ml</td>
+                          <td className="small muted nowrap">{authors.get(i.authorId) ?? ''}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <div className="charts">
         <BarChart

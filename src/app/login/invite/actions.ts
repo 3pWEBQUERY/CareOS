@@ -12,7 +12,7 @@ export type InviteState = { error?: string } | undefined
 
 export async function acceptInviteAction(_: InviteState, form: FormData): Promise<InviteState> {
   const meta = await requestMeta()
-  if (!rateLimit('invite:' + meta.ip, 10, 10 * 60_000).ok) return { error: 'rate' }
+  if (!(await rateLimit('invite:' + meta.ip, 10, 10 * 60_000)).ok) return { error: 'rate' }
   const token = String(form.get('token') ?? '')
   const pw = String(form.get('password') ?? '')
   const repeat = String(form.get('repeat') ?? '')

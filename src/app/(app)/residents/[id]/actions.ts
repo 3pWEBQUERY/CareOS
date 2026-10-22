@@ -5,7 +5,7 @@ import { run, type ActionResult } from '@/lib/action'
 import { getCtx } from '@/lib/context'
 import { aiDraft, aiFeedback, AiUnavailable } from '@/lib/ai'
 import { addDays, fmtDayMonth, hm } from '@/lib/time'
-import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
+import { abnormalKeys, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { actionResident } from '../_lib/resident'
 
 const INSTRUCTION = `Aufgabe: Erstelle eine kompakte Übersicht der relevanten Entwicklungen der letzten 7 Tage für eine Pflegefachperson.
@@ -20,7 +20,7 @@ export async function residentSummary(residentId: string): Promise<ActionResult<
     const since = addDays(now, -7)
     const [obs, vitals, limitRows, incidents, plan] = await Promise.all([
       db.observation.findMany({ where: { residentId: r.id, at: { gte: since }, correctedBy: { none: {} } }, orderBy: { at: 'asc' }, take: 60 }),
-      db.vitalSign.findMany({ where: { residentId: r.id, at: { gte: since } }, orderBy: { at: 'asc' } }),
+      db.vitalSign.findMany({ where: { residentId: r.id, ...LIVE, at: { gte: since } }, orderBy: { at: 'asc' } }),
       db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
       db.incident.findMany({ where: { residentId: r.id, occurredAt: { gte: since } }, include: { type: true } }),
       db.carePlan.findFirst({ where: { residentId: r.id, status: 'active' }, include: { areas: true } }),

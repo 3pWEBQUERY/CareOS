@@ -6,6 +6,10 @@ import { env, pushConfigured } from '@/lib/env'
 import { dictionary } from '@/i18n'
 import { makeT, type Locale, type Terminology } from '@/i18n/core'
 import { pushText, PUSH_PRIORITIES } from '@/lib/push-shared'
+import { categoryOf, normalizePrefs, wantsPush } from '@/lib/notify-prefs'
+import { dutyState } from '@/lib/duty'
+import { log } from '@/lib/log'
+import { count } from '@/lib/metrics'
 
 export { PUSH_PRIORITIES }
 
@@ -55,11 +59,13 @@ async function deliver(subs: { id: string; userId: string; endpoint: string; p25
         failed++
         const code = (e as { statusCode?: number }).statusCode
         if (code === 404 || code === 410) gone.push(s.id)
-        else console.error('[push]', code ?? (e as Error).message)
+        else log.warn('push.delivery_failed', { status: code ?? null, error: (e as Error).message })
       }
     }),
   )
   if (gone.length) await db.pushSubscription.deleteMany({ where: { id: { in: gone } } })
+  if (sent) count('careos_push_sent_total', undefined, sent)
+  if (failed) count('careos_push_failed_total', undefined, failed)
   return { sent, failed }
 }
 
@@ -76,21 +82,28 @@ export async function pushForNotification(n: { orgId: string; userIds: string[];
   if (!setup() || !n.userIds.length) return
   const users = await db.user.findMany({
     where: { id: { in: n.userIds }, orgId: n.orgId, active: true, pushPriorities: { has: n.priority }, pushSubscriptions: { some: {} } },
-    select: { id: true, locale: true, pushSubscriptions: true },
+    select: { id: true, locale: true, pushSubscriptions: true, notificationPrefs: true },
   })
   if (!users.length) return
+  // Einstellungen je Art und «keine Push-Nachrichten ausserhalb meiner Dienste» (Profil → Benachrichtigungen).
+  const category = categoryOf(n.kind, n.href)
+  const prefs = new Map(users.map((u) => [u.id, normalizePrefs(u.notificationPrefs)]))
+  const quiet = users.filter((u) => prefs.get(u.id)!.quietOffDuty).map((u) => u.id)
+  const duty = quiet.length ? await dutyState(n.orgId, quiet, null) : null
+  const allowed = users.filter((u) => wantsPush(prefs.get(u.id)!, category, { planned: duty?.planned.has(u.id) ?? false, onDuty: duty?.onDutyUnit.has(u.id) ?? false }))
+  if (!allowed.length) return
   const [org, unit] = await Promise.all([
     db.organization.findUnique({ where: { id: n.orgId }, select: { terminology: true } }),
     unitNameFor(n.orgId, n.href),
   ])
   const byUser = new Map<string, PushMessage>()
-  for (const u of users) {
+  for (const u of allowed) {
     const locale = u.locale as Locale
     const t = makeT(dictionary(locale), locale, (org?.terminology ?? 'resident') as Terminology)
     const text = pushText(t, { priority: n.priority, kind: n.kind, title: n.title, href: n.href, unit })
     byUser.set(u.id, { ...text, href: n.href, tag: n.groupKey ?? n.kind, priority: n.priority })
   }
-  await deliver(users.flatMap((u) => u.pushSubscriptions), (id) => byUser.get(id) ?? null)
+  await deliver(allowed.flatMap((u) => u.pushSubscriptions), (id) => byUser.get(id) ?? null)
 }
 
 /** Bereichsname für den allgemeinen Hinweis («Kritische Meldung in Wohngruppe 2»), abgeleitet aus dem Link. */

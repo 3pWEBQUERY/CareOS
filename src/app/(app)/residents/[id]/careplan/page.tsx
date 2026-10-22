@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return residentTitle((await params).id, 'careplan')
 }
 
-export default async function CarePlanPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ v?: string }> }) {
+export default async function CarePlanPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ v?: string; eval?: string }> }) {
   const { id } = await params
   const sp = await searchParams
   const ctx = await getCtx()
@@ -234,7 +234,7 @@ export default async function CarePlanPage({ params, searchParams }: { params: P
             const list = [...a.interventions].sort((x, y) => (x.times[0] ?? '').localeCompare(y.times[0] ?? ''))
             const label = dLabel(a.domain)
             return (
-              <article key={a.id} className={'card' + (overdue ? ' crit' : '')} aria-labelledby={'area-' + a.id}>
+              <article key={a.id} id={'dom-' + a.domain} className={'card' + (overdue ? ' crit' : '')} aria-labelledby={'area-' + a.id}>
                 <div className="card-head">
                   <h3 id={'area-' + a.id}>{label}</h3>
                   <div className="row" style={{ gap: 6 }}>
@@ -319,7 +319,7 @@ export default async function CarePlanPage({ params, searchParams }: { params: P
                   <div className="sec-head" style={{ marginTop: 4 }}>
                     <span className="lbl">{t('care.plan.fields.evaluation')}</span>
                     {canEdit && view !== 'archived' && (
-                      <EvaluateButton residentId={r.id} areaId={a.id} defaultNext={defaultEval} domainLabel={label} />
+                      <EvaluateButton residentId={r.id} areaId={a.id} defaultNext={defaultEval} domainLabel={label} autoOpen={sp.eval === a.domain} />
                     )}
                   </div>
                   {a.evaluation ? <p className="ws-pre small" style={{ margin: 0, maxWidth: '80ch' }}>{a.evaluation}</p> : <p className="small muted" style={{ margin: 0 }}>{t('care.plan.evaluationNone')}</p>}

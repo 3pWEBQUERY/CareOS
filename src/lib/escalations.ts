@@ -5,6 +5,8 @@ import { emit } from '@/lib/events'
 import { notifyT } from '@/lib/notify-t'
 import { hm } from '@/lib/time'
 import { escalationPolicy, escalationWindow, shouldEscalateTask, overdueThreshold, ESCALATION_LOOKBACK_HOURS } from '@/lib/escalation-policy'
+import { runWorkflowRules } from '@/lib/workflows'
+import { reconcileIncidentActions } from '@/lib/tasks'
 
 /**
  * Eskalationsregeln (PRD §45 Workflow – Eskalationen). Läuft alle 5 Minuten als Hintergrundjob.
@@ -31,7 +33,7 @@ export async function usersWithRoles(orgId: string, roleKeys: string[], unitId?:
 }
 
 const OPEN = ['planned', 'ready', 'in_progress'] as const
-type Summary = { tasks: number; handovers: number; vitals: number; incidents: number; notified: number }
+type Summary = { tasks: number; handovers: number; vitals: number; incidents: number; notified: number; workflowTasks?: number; workflowClosed?: number; incidentActions?: number }
 
 const who = (r: { firstName: string; lastName: string; room: { number: string } | null } | null) => (r ? `${r.lastName} ${r.firstName}${r.room ? ' (' + r.room.number + ')' : ''}` : '')
 
@@ -178,5 +180,10 @@ export async function runEscalations(now = new Date(), cursor?: Date | null) {
   const floor = new Date(now.getTime() - ESCALATION_LOOKBACK_HOURS * 3600_000)
   const from = cursor ? (cursor > floor ? cursor : floor) : new Date(now.getTime() - 10 * 60_000)
   const next = await forwardEvents(orgs, from, now, s)
+  // Smart Workflows (PRD §48) und Abgleich Ereignis-Massnahmen ↔ Aufgaben im selben Lauf (eine Instanz dank Advisory Lock).
+  const wf = await runWorkflowRules(now)
+  s.workflowTasks = wf.created
+  s.workflowClosed = wf.closed
+  s.incidentActions = await reconcileIncidentActions()
   return { ...s, cursor: next.toISOString() }
 }

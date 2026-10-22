@@ -19,8 +19,11 @@ export async function loginAction(_: LoginState, form: FormData): Promise<LoginS
   const email = String(form.get('email') ?? '').trim().toLowerCase()
   const password = String(form.get('password') ?? '')
   const meta = await requestMeta()
-  const rl = rateLimit(`login:${meta.ip}:${email}`, process.env.NODE_ENV === 'production' ? 8 : 200, 10 * 60_000)
+  const rl = await rateLimit(`login:${meta.ip}:${email}`, process.env.NODE_ENV === 'production' ? 8 : 200, 10 * 60_000)
   if (!rl.ok) return { error: 'locked', retry: rl.retryAfter, email }
+  // Zusätzlich je IP über alle Konten (Credential Stuffing), gilt über alle Instanzen (PRD §37).
+  const ipRl = await rateLimit(`login-ip:${meta.ip}`, process.env.NODE_ENV === 'production' ? 40 : 2000, 10 * 60_000)
+  if (!ipRl.ok) return { error: 'locked', retry: ipRl.retryAfter, email }
 
   const user = await db.user.findUnique({ where: { email } })
   const ok = user ? await verifyPassword(user.passwordHash, password) : await verifyPassword(null, password)
@@ -40,7 +43,7 @@ export async function mfaAction(_: LoginState, form: FormData): Promise<LoginSta
   const session = await getSession()
   if (!session) redirect('/login')
   const meta = await requestMeta()
-  const rl = rateLimit(`mfa:${session.id}`, 6, 5 * 60_000)
+  const rl = await rateLimit(`mfa:${session.id}`, 6, 5 * 60_000)
   if (!rl.ok) return { error: 'locked', retry: rl.retryAfter }
   const code = String(form.get('code') ?? '')
   if (!session.user.mfaSecret || !verifyTotp(session.user.mfaSecret, code, session.user.email)) {

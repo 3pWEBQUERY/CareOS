@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { cookies } from 'next/headers'
 import { THEME_COOKIE, TEXT_COOKIE, normalizeTheme, normalizeTextSize } from '@/lib/theme'
 import { getSession } from '@/lib/auth/session'
-import { pickLocale } from '@/i18n/core'
+import { pickLocale, type Tree } from '@/i18n/core'
+import { dictionary } from '@/i18n'
+import { I18nProvider } from '@/i18n/client'
 import { headers } from 'next/headers'
 // Schriften selbst gehostet (npm) – keine Anfragen an Drittanbieter aus dem Browser (Datenschutz).
 import '@fontsource/ibm-plex-sans/latin-400.css'
@@ -44,6 +46,11 @@ export const viewport: Viewport = {
   ],
 }
 
+function fieldMessages(lang: Parameters<typeof dictionary>[0]): Tree {
+  const c = dictionary(lang).common as Tree
+  return { common: { optional: c.optional, required: c.required, close: c.close, field: c.field, dt: c.dt } }
+}
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const jar = await cookies()
   const session = await getSession()
@@ -53,7 +60,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={lang} data-theme={theme} data-text={text} suppressHydrationWarning>
       <body>
-        {children}
+        {/* Texte der Feld-Komponenten (fields, Datum/Zeit) auch ausserhalb der App-Shell (Anmeldung, Einladung);
+            die App-Shell stellt darin das vollständige Wörterbuch bereit. */}
+        <I18nProvider locale={lang} terminology="resident" messages={fieldMessages(lang)}>{children}</I18nProvider>
         <ServiceWorker />
         <InstallCapture />
       </body>

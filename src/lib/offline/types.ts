@@ -17,7 +17,7 @@ export const NOTE_CATEGORIES = ['care', 'observation', 'physician', 'relatives',
 export type NoteData = { category: string; text: string; important: boolean }
 export type VitalsData = { values: Record<string, number>; note?: string | null }
 export type TaskData = { taskId: string; status: 'done' | 'partial' | 'skipped'; reason?: string; note?: string }
-export type IntakeData = { type: 'drink'; ml: number; item?: string } | { type: 'meal'; meal: string; portion: number }
+export type IntakeData = { type: 'drink'; ml: number; item?: string } | { type: 'meal'; meal: string; portion: number } | { type: 'fluid'; fluid: string; ml: number; item?: string }
 
 export type OfflineOpInput =
   | { kind: 'note'; residentId: string; data: NoteData }

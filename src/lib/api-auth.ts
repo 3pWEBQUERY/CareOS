@@ -41,12 +41,12 @@ export async function apiAuth(req: Request, scope: ApiScope, opts: { fhir?: bool
   // Suche über den Hash: das Klartext-Token wird nie verglichen oder gespeichert (keine Timing-Seitenkanäle).
   const token = await db.apiToken.findUnique({ where: { tokenHash: hashToken(match[1]) } })
   if (!token || token.revokedAt) {
-    const rl = rateLimit('api-fail:' + (m.ip ?? 'unknown'), FAIL_LIMIT, 60_000)
+    const rl = await rateLimit('api-fail:' + (m.ip ?? 'unknown'), FAIL_LIMIT, 60_000)
     if (!rl.ok) return apiError(429, 'rate_limited', 'Too many failed attempts', opts.fhir, { 'retry-after': String(rl.retryAfter) })
     if (token) await auditSystem({ action: 'api.auth_failed', entityType: 'ApiToken', entityId: token.id, orgId: token.orgId, context: { reason: 'revoked' }, ...m })
     return apiError(401, 'unauthorized', 'Invalid or revoked token', opts.fhir, { 'www-authenticate': 'Bearer error="invalid_token"' })
   }
-  const rl = rateLimit('api:' + token.id, TOKEN_LIMIT, 60_000)
+  const rl = await rateLimit('api:' + token.id, TOKEN_LIMIT, 60_000)
   if (!rl.ok) return apiError(429, 'rate_limited', 'Rate limit exceeded', opts.fhir, { 'retry-after': String(rl.retryAfter) })
   if (!token.scopes.includes(scope)) return apiError(403, 'insufficient_scope', `Token lacks scope ${scope}`, opts.fhir, { 'www-authenticate': `Bearer error="insufficient_scope", scope="${scope}"` })
   const creator = await db.user.findUnique({ where: { id: token.createdById }, select: { active: true, orgId: true } })

@@ -27,6 +27,8 @@ export type FileFieldProps = FieldProps & {
   preview?: boolean
   /** Kurzer Text der erlaubten Typen (Standard: aus accept abgeleitet) */
   typesLabel?: string
+  /** Beschriftung des Auswahlknopfs (Standard: «Datei wählen»), z. B. «Foto aufnehmen» */
+  chooseLabel?: string
   onFiles?: (files: File[]) => void
   className?: string
   style?: CSSProperties
@@ -61,7 +63,7 @@ function typesFromAccept(accept?: string) {
 }
 
 export function FileField(props: FileFieldProps) {
-  const { name, accept, multiple, maxSize, required, disabled, capture, preview = true, onFiles, className, style, form, ref } = props
+  const { name, accept, multiple, maxSize, required, disabled, capture, preview = true, onFiles, className, style, form, ref, chooseLabel } = props
   const t = useT()
   const locale = useLocale()
   const loc = INTL_LOCALE[locale]
@@ -152,7 +154,7 @@ export function FileField(props: FileFieldProps) {
         <div className="ff-drop" aria-hidden="true">
           <span className="ff-cta">{t(multiple ? 'common.field.filesDrop' : 'common.field.fileDrop')}</span>
           <span className="btn sm ff-btn" onClick={() => inputRef.current?.click()}>
-            {t(files.length && !multiple ? 'common.field.fileReplace' : multiple ? 'common.field.filesChoose' : 'common.field.fileChoose')}
+            {chooseLabel ?? t(files.length && !multiple ? 'common.field.fileReplace' : multiple ? 'common.field.filesChoose' : 'common.field.fileChoose')}
           </span>
         </div>
         {limits && <span className="ff-limits" id={limitsId}>{limits}</span>}

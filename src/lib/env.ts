@@ -12,6 +12,8 @@ export const env = {
     accessKeyId: str('ACCESS_KEY_ID') || str('AWS_ACCESS_KEY_ID'),
     secretAccessKey: str('SECRET_ACCESS_KEY') || str('AWS_SECRET_ACCESS_KEY'),
     forcePathStyle: str('S3_FORCE_PATH_STYLE', 'true') !== 'false',
+    /** Serverseitige Verschlüsselung beim Upload (AES256 | aws:kms); leer = Anbieterstandard (Railway: immer verschlüsselt, Header nicht unterstützt). */
+    sse: ['AES256', 'aws:kms'].includes(str('S3_SSE')) ? str('S3_SSE') : '',
   },
   oidc: {
     issuer: str('OIDC_ISSUER'),
@@ -36,3 +38,6 @@ export const storageConfigured = () => Boolean(env.s3.bucket && env.s3.endpoint 
 export const ssoConfigured = () => Boolean(env.oidc.issuer && env.oidc.clientId)
 export const aiConfigured = () => Boolean(env.ai.apiKey)
 export const pushConfigured = () => Boolean(env.push.publicKey && env.push.privateKey && /^(mailto:|https:)/.test(env.push.subject))
+
+/** Observability (PRD §66): Token für GET /api/metrics (Bearer). Ohne Token ist der Endpunkt abgeschaltet. */
+export const metricsToken = () => str('METRICS_TOKEN')

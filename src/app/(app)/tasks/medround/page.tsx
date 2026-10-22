@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { checkAllergies } from '@/lib/allergy-check'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { usersWithPermission } from '@/lib/notify'
@@ -51,10 +52,11 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
       if (!c) return []
       return [{
         id: m.id, name: m.name, form: m.form, route: m.route, indication: m.indication, notes: m.notes, kind: m.kind, requiresDoubleCheck: m.requiresDoubleCheck, stoppedAt: null,
+        allergy: checkAllergies(r.allergies, [m.name, m.form].filter(Boolean).join(' ')),
         cells: [{ time: slot, dose: c.dose || c.admin?.dose || '', applicable: c.applicable, state: c.state, over: c.over, adminId: c.admin?.id ?? '', at: c.admin ? hm(c.admin.at) : null, by: ini(c.admin?.byId ?? null), checkedBy: ini(c.admin?.checkedById ?? null), note: c.admin?.note ?? null, history: [] }],
       }]
     })
-    if (lines.length) blocks.push({ resident: { id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null, allergies: r.allergies }, risks: r.risks.filter((x) => /schluck|dysphag|aspir|déglut|deglut|swallow/i.test(x)), lines })
+    if (lines.length) blocks.push({ resident: { id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null, allergies: r.allergies, photoId: r.photoFileId }, risks: r.risks.filter((x) => /schluck|dysphag|aspir|déglut|deglut|swallow/i.test(x)), lines })
   }
   const isDone = (b: RoundResidentDto) => b.lines.every((l) => l.cells[0]!.state !== 'open')
   const done = blocks.filter(isDone).length

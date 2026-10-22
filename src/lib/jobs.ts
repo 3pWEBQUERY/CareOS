@@ -14,9 +14,12 @@ import { lastDailySlot, retentionPolicy } from '@/lib/retention-policy'
  * - escalations: alle 5 Minuten (Eskalationsregeln, src/lib/escalations.ts)
  * - retention:   täglich 02:30 Europe/Zurich, geprüft alle 10 Minuten (Löschkonzept, src/lib/retention.ts)
  * - cleanup:     stündlich (abgelaufene Sitzungen und Anmelde-Challenges)
+ * - security:    alle 5 Minuten (Audit-Überwachung src/lib/security-alerts.ts, abgelaufene Rate-Limits, alte Fehlerzähler)
+ * - reminders:   täglich 06:30 Europe/Zurich je Organisation, geprüft alle 10 Minuten (Ablauf von Zertifikaten,
+ *                Qualifikationen, Schulungsfristen, Dokument-Gültigkeit; src/lib/reminders.ts)
  */
 
-export type JobName = 'escalations' | 'retention' | 'cleanup'
+export type JobName = 'escalations' | 'retention' | 'cleanup' | 'security' | 'reminders'
 
 const MIN = 60_000
 const LOCK_TIMEOUT = 60 * MIN
@@ -45,6 +48,7 @@ export async function recordRun<T>(name: string, meta: { orgId?: string | null; 
   } catch (e) {
     const error = (e instanceof Error ? e.message : String(e)).slice(0, 2000)
     console.error(`[jobs] ${name} failed`, e)
+    void import('@/lib/errors').then((m) => m.captureError(e, { route: 'job:' + name, routeType: 'job' })).catch(() => {})
     await db.jobRun.update({ where: { id: run.id }, data: { finishedAt: new Date(), ok: false, error } }).catch(() => {})
     return { ok: false as const, error, runId: run.id }
   }
@@ -83,10 +87,36 @@ async function cleanupJob(now: Date) {
   await recordRun('cleanup', {}, () => runCleanup(now))
 }
 
+async function securityJob(now: Date) {
+  if (await ranSince('security', new Date(now.getTime() - 4 * MIN))) return
+  await recordRun('security', {}, async () => {
+    const { runSecurityMonitor } = await import('@/lib/security-alerts')
+    const { sweepRateLimits } = await import('@/lib/rate-limit')
+    const monitor = await runSecurityMonitor(now)
+    const rateLimits = await sweepRateLimits(now)
+    // Fehlerzähler (ErrorEvent) 90 Tage aufbewahren
+    const errors = (await db.errorEvent.deleteMany({ where: { lastAt: { lt: new Date(now.getTime() - 90 * 24 * 60 * MIN) } } })).count
+    return { ...monitor, rateLimitsRemoved: rateLimits, errorEventsRemoved: errors }
+  })
+}
+
+async function remindersJob(now: Date) {
+  const slot = lastDailySlot(now, '06:30', 'Europe/Zurich')
+  const { runReminders } = await import('@/lib/reminders')
+  const orgs = await db.organization.findMany({ select: { id: true } })
+  for (const org of orgs) {
+    // Ein Lauf pro Organisation und Tag; Erinnerungen sind zusätzlich je Stufe idempotent (Audit-Merker).
+    if ((await db.jobRun.count({ where: { name: 'reminders', orgId: org.id, startedAt: { gte: slot } } })) > 0) continue
+    await recordRun('reminders', { orgId: org.id }, () => runReminders(org.id, now))
+  }
+}
+
 export const JOBS: Record<JobName, { everyMs: number; run: (now: Date) => Promise<void> }> = {
   escalations: { everyMs: 5 * MIN, run: escalationsJob },
   retention: { everyMs: 10 * MIN, run: retentionJob },
   cleanup: { everyMs: 60 * MIN, run: cleanupJob },
+  security: { everyMs: 5 * MIN, run: securityJob },
+  reminders: { everyMs: 10 * MIN, run: remindersJob },
 }
 
 // ───────────── Scheduler ─────────────
