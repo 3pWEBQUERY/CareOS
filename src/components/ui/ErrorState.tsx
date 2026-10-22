@@ -61,3 +61,9 @@ export function NotFoundState({ compact, backHref = '/', backLabel }: { compact?
     </main>
   )
 }
+
+/** Überschrift für «Keine Berechtigung» (Forbidden wird auch aus Server-Komponenten ohne t gerendert). */
+export function ForbiddenTitle() {
+  const t = useT()
+  return <h1>{t('common.forbiddenTitle')}</h1>
+}

@@ -746,6 +746,11 @@ html:has(dialog.dlg[open]) { overflow: hidden }
 .toasts-region:empty { display: none }
 .toast button { min-height: 24px; padding: 2px 4px; margin: -2px -4px; border-radius: var(--r-sm) }
 
+/* Chips: Abstand zwischen Label und Zahl (auf Mobile inline-flex) */
+.chip { gap: 5px }
+/* Dialoge in Tabellenzellen erben sonst Ausrichtung, Schriftgrösse und nowrap der Zelle */
+.stable td dialog.dlg, .stable th dialog.dlg, .vt td dialog.dlg, .mar td dialog.dlg, .mar th dialog.dlg { text-align: left; white-space: normal; font-size: 14px; font-weight: 400 }
+
 /* Popover-Kopf mit Überschrift */
 .popover-head h2 { margin: 0 }
 
@@ -1376,3 +1381,6 @@ dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
   .mar tbody th, .mar thead th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); box-shadow: 1px 0 0 var(--line) }
   .mar thead th:first-child { background: var(--surface-2) }
 }
+/* Assessments: auf Tablet bleibt «Durchführen» sichtbar (Verlauf/Datum weichen, Datum steht im Ergebnis-Verlauf) */
+@media (max-width: 1180px) { .stable .as-trend { display: none } }
+@media (max-width: 1023px) { .stable .as-date { display: none } }

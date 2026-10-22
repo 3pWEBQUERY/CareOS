@@ -12,11 +12,14 @@ type Result = { ok: true; message?: string } | { ok: false; error: string; field
  * Der Absender-Button wird mitgeschickt (FormData mit submitter). Folgenreiche Schritte
  * (weiter trotz offener Massnahmen, Abschliessen) werden in einem Dialog bestätigt.
  */
-export function StageForm({ action, children, advanceLabel, confirmAdvance, canAdvance = true, canSave = true, context }: {
+export function StageForm({ action, children, advanceLabel, confirmAdvance, confirmTitle, consequences, canAdvance = true, canSave = true, context }: {
   action: (form: FormData) => Promise<Result>
   children: React.ReactNode
   advanceLabel?: string
   confirmAdvance?: string
+  /** Titel des Bestätigungsdialogs; ohne Angabe wird die Frage aus `confirmAdvance` genommen. */
+  confirmTitle?: string
+  consequences?: string[]
   canAdvance?: boolean
   canSave?: boolean
   context?: React.ReactNode
@@ -39,7 +42,7 @@ export function StageForm({ action, children, advanceLabel, confirmAdvance, canA
         if (r.field) (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null)?.focus()
       }
     })
-  const q = confirmAdvance ? splitQuestion(confirmAdvance) : null
+  const q = confirmAdvance ? (confirmTitle ? { title: confirmTitle, text: confirmAdvance } : splitQuestion(confirmAdvance)) : null
   return (
     <form
       ref={ref}
@@ -69,6 +72,7 @@ export function StageForm({ action, children, advanceLabel, confirmAdvance, canA
           onConfirm={() => ask && send(ask)}
           title={q.title}
           text={q.text}
+          consequences={consequences}
           context={context}
           confirmLabel={advanceLabel ?? t('common.confirm')}
           pending={pending}

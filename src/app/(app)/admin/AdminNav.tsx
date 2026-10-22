@@ -1,37 +1,38 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-/** Linke Unternavigation von CareOS Admin. Auf dem Handy nur auf der Übersicht sichtbar. */
+/** Arbeitsbereich von CareOS Admin: Unternavigation links, auf Tablet hoch und Handy als Leiste oben. */
 export function AdminWorkspace({ children }: { children: React.ReactNode }) {
-  const path = usePathname()
-  return <div className="workspace" data-detail={path !== '/admin' ? 'true' : undefined}>{children}</div>
+  return <div className="workspace adm-ws">{children}</div>
 }
 
 export function AdminNav({ title, items }: { title: string; items: { href: string; label: string; hint: string }[] }) {
   const path = usePathname()
+  const nav = useRef<HTMLElement>(null)
   const active = (href: string) => (href === '/admin' ? path === '/admin' : path === href || path.startsWith(href + '/'))
+  // Als Leiste: aktiven Bereich sichtbar halten
+  useEffect(() => {
+    const el = nav.current?.querySelector<HTMLElement>('[aria-current="page"]')
+    const box = nav.current
+    if (!el || !box || box.scrollWidth <= box.clientWidth) return
+    box.scrollLeft = el.offsetLeft - box.clientWidth / 2 + el.offsetWidth / 2
+  }, [path])
   return (
-    <aside className="panel" aria-label={title}>
+    <aside className="panel adm-nav" aria-label={title}>
       <div className="list-head"><span className="lbl">{title}</span></div>
-      <nav style={{ overflow: 'auto', minHeight: 0 }}>
+      <nav ref={nav} aria-label={title}>
         <ul className="menu">
-          {items.map((it) => {
-            const on = active(it.href)
-            return (
-              <li key={it.href}>
-                <Link
-                  href={it.href}
-                  aria-current={on ? 'page' : undefined}
-                  style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1, minHeight: 40, ...(on ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : {}) }}
-                >
-                  <span style={{ fontWeight: 500 }}>{it.label}</span>
-                  <span className="small" style={{ color: on ? 'var(--accent)' : 'var(--fg-3)' }}>{it.hint}</span>
-                </Link>
-              </li>
-            )
-          })}
+          {items.map((it) => (
+            <li key={it.href}>
+              <Link href={it.href} aria-current={active(it.href) ? 'page' : undefined}>
+                <span className="adm-nav-l">{it.label}</span>
+                <span className="small adm-nav-h">{it.hint}</span>
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
     </aside>

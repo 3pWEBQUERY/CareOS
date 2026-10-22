@@ -61,9 +61,9 @@ export default async function AssessmentsPage({ params, searchParams }: { params
             <tr>
               <th>{t('care.assessments.colType')}</th>
               <th>{t('care.assessments.colLast')}</th>
-              <th>{t('care.assessments.colDate')}</th>
+              <th className="as-date">{t('care.assessments.colDate')}</th>
               <th>{t('care.assessments.colNext')}</th>
-              <th>{t('care.assessments.colTrend')}</th>
+              <th className="as-trend">{t('care.assessments.colTrend')}</th>
               <th className="care-act-col"><span className="sr-only">{t('care.plan.colActions')}</span></th>
             </tr>
           </thead>
@@ -99,9 +99,9 @@ export default async function AssessmentsPage({ params, searchParams }: { params
                       </div>
                     ) : <span className="muted">{t('care.assessments.never')}</span>}
                   </td>
-                  <td className="num nowrap">{last ? fmtDate(last.at, locale) : '–'}</td>
+                  <td className="num nowrap as-date">{last ? fmtDate(last.at, locale) : '–'}</td>
                   <td className={'nowrap ' + (due?.cls ?? '')}>{due ? due.text : '–'}</td>
-                  <td style={{ width: 110 }}>{trend.length > 1 ? <Spark values={trend} label={t('care.assessments.chartAria', { name })} /> : <span className="muted">–</span>}</td>
+                  <td className="as-trend" style={{ width: 110 }}>{trend.length > 1 ? <Spark values={trend} label={t('care.assessments.chartAria', { name })} /> : <span className="muted">–</span>}</td>
                   <td className="care-act-col">{perform && <div className="row" style={{ justifyContent: 'flex-end' }}>{perform}</div>}</td>
                 </tr>
               )

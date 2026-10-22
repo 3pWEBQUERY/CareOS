@@ -135,7 +135,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
           <>
             <p className="small fg2" style={{ margin: 0 }}>{t('quality.detail.followupHint', { open: openActions, total: actions.length })}</p>
             {!closed && canManage && isCurrent && (
-              <StageForm action={save} canSave={false} advanceLabel={nextLabel('followup')} context={dlgContext} confirmAdvance={openActions ? t('quality.detail.confirmOpenActions', { n: openActions }) : undefined}><span /></StageForm>
+              <StageForm action={save} canSave={false} advanceLabel={nextLabel('followup')} context={dlgContext} confirmTitle={t('quality.ux.analysisTitle')} confirmAdvance={openActions ? t('quality.ux.analysisOpen', { n: openActions }) : undefined}><span /></StageForm>
             )}
           </>
         )
@@ -156,7 +156,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
             <p className="small muted" style={{ margin: 0 }}>{t('quality.detail.closedBy', { name: uname(inc.closedById), at: inc.closedAt ? `${fmtDate(inc.closedAt, locale)} ${hm(inc.closedAt)}` : '–' })}</p>
           </>
         ) : canManage ? (
-          <StageForm action={save} advanceLabel={t('quality.detail.close')} context={dlgContext} confirmAdvance={openActions ? t('quality.detail.confirmCloseOpen', { n: openActions }) : t('quality.detail.confirmClose')}>
+          <StageForm action={save} advanceLabel={t('quality.detail.close')} context={dlgContext} confirmTitle={t('quality.ux.closeTitle')} confirmAdvance={t('quality.ux.closeFinal')} consequences={openActions ? [t('quality.ux.closeOpen', { n: openActions })] : undefined}>
             <label className="fld"><span className="lbl">{t('quality.fields.conclusion')}</span>
               <textarea className="field" name="conclusion" defaultValue={inc.conclusion ?? ''} maxLength={5000} placeholder={t('quality.detail.conclusionHint')} />
             </label>
