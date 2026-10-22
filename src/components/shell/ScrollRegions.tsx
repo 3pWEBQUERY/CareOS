@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useT } from '@/i18n/client'
 
-const SEL = '.tablewrap, [data-scroll]'
+const SEL = '.tablewrap, .scroll, [data-scroll]'
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 /**

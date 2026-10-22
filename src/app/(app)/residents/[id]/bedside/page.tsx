@@ -104,7 +104,8 @@ export default async function BedsidePage({ params }: { params: Promise<{ id: st
         </section>
       )}
 
-      <section className="bedside-col" aria-labelledby="bs-doc">
+      {(can('resident.vitals.write') || can('resident.chart.write')) && (
+      <section className="bedside-col" aria-labelledby={can('resident.vitals.write') ? 'bs-doc' : 'bs-note'}>
         {can('resident.vitals.write') && (
           <>
             <div className="sec-head"><h2 className="sec" id="bs-doc">{t('chart.vitals.new')}</h2></div>
@@ -113,11 +114,12 @@ export default async function BedsidePage({ params }: { params: Promise<{ id: st
         )}
         {can('resident.chart.write') && (
           <>
-            <div className="sec-head"><h2 className="sec">{t('chart.bedside.note')}</h2></div>
+            <div className="sec-head"><h2 className="sec" id="bs-note">{t('chart.bedside.note')}</h2></div>
             <div className="card card-body"><BedsideNote residentId={r.id} who={who} /></div>
           </>
         )}
       </section>
+      )}
     </div>
   )
 }
