@@ -9,7 +9,9 @@ import { Empty } from '@/components/ui/Empty'
 import { loadAssessmentDefs } from './defs'
 import { PerformAssessment } from './AssessClient'
 
-export const metadata = { title: 'CareOS Assess' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('residents.tabs.assessments') }
+}
 
 export default async function AssessmentsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string }> }) {
   const { id } = await params

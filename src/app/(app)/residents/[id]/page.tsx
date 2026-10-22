@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { aiConfigured } from '@/lib/env'
 import { OPEN_STATUSES, taskView } from '@/lib/tasks'
 import { taskTitle } from '@/lib/task-title'
-import { addDays, fmtDayMonth, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
+import { addDays, fmtDayMonth, fmtDbDate, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
 import { Spark } from '../_components/Spark'
 import { pageResident, userNames } from '../_lib/resident'
@@ -108,16 +108,13 @@ export default async function ResidentOverview({ params }: { params: Promise<{ i
         <section className="card" aria-labelledby="ov-state">
           <div className="card-head"><h2 id="ov-state">{t('residents.overview.current')}</h2></div>
           <div className="card-body stack-sm">
+            {/* Risiken, Allergien, Mobilität, Kostform und kurze Hinweise stehen bereits im Kopfbereich (keine Doppelanzeige) */}
             <dl className="kv">
-              <dt>{t('residents.overview.risks')}</dt>
-              <dd>{r.risks.length ? <span className="row" style={{ gap: 6 }}>{r.risks.map((x) => <span key={x} className="tag warn">{x}</span>)}</span> : <span className="muted">{t('common.none')}</span>}</dd>
-              <dt>{t('residents.overview.allergies')}</dt>
-              <dd>{r.allergies.length ? <span className="row" style={{ gap: 6 }}>{r.allergies.map((x) => <span key={x} className="tag crit">{x}</span>)}</span> : <span className="muted">{t('residents.banner.noAllergies')}</span>}</dd>
-              <dt>{t('residents.banner.mobility')}</dt><dd>{r.mobility || <span className="muted">–</span>}</dd>
-              <dt>{t('residents.banner.diet')}</dt><dd>{r.diet || <span className="muted">–</span>}</dd>
+              {r.importantNotes && r.importantNotes.length > 160 && <><dt>{t('residents.overview.notes')}</dt><dd style={{ whiteSpace: 'pre-wrap' }}>{r.importantNotes}</dd></>}
               {r.careLevel != null && <><dt>{t('residents.banner.careLevel')}</dt><dd className="mono">{r.careLevel}</dd></>}
+              <dt>{t('residents.banner.born')}</dt><dd className="mono">{fmtDbDate(r.birthDate, locale)}</dd>
+              <dt>{t('residents.banner.physician')}</dt><dd>{r.physician || <span className="muted">–</span>}</dd>
               <dt>{t('residents.banner.primaryNurse')}</dt><dd>{nurse ? `${nurse.firstName.charAt(0)}. ${nurse.lastName}${nurse.jobTitle ? ', ' + nurse.jobTitle : ''}` : <span className="muted">–</span>}</dd>
-              {r.importantNotes && <><dt>{t('residents.overview.notes')}</dt><dd style={{ whiteSpace: 'pre-wrap' }}>{r.importantNotes}</dd></>}
             </dl>
             {needs.length > 0 && (
               <>
@@ -157,10 +154,10 @@ export default async function ResidentOverview({ params }: { params: Promise<{ i
             <ul className="list">
               {changes.slice(0, 8).map((c) => (
                 <li key={c.key}>
-                  <Link className="li" href={c.href}>
+                  <Link className="li" href={c.href} style={{ flexWrap: 'wrap', rowGap: 4 }}>
                     <time className="small muted mono nowrap" style={{ minWidth: 86 }}>{rel(c.at)}</time>
                     <span className={'tag ' + c.tone} style={{ flex: 'none' }}>{c.tag}</span>
-                    <span className="grow small fg2" style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{c.text}</span>
+                    <span className="grow small fg2" style={{ flexBasis: 180, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{c.text}</span>
                   </Link>
                 </li>
               ))}

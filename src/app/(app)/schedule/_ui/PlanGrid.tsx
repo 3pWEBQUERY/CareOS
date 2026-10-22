@@ -29,6 +29,7 @@ export function PlanGrid({ days, rows, shifts, absences, coverage, types, staff,
   const t = useT()
   const [draft, setDraft] = useState<ShiftDraft | null>(null)
   const typeCode = new Map(types.map((x) => [x.id, x]))
+  const rowName = (userId: string | null) => (userId ? rows.find((r) => r.id === userId)?.name ?? '' : t('schedule.plan.openRow'))
   const at = (userId: string | null, day: string) => shifts.filter((s) => s.userId === userId && s.dateKey === day)
   const chip = (s: GridShift) => {
     const ty = typeCode.get(s.typeId)
@@ -42,20 +43,20 @@ export function PlanGrid({ days, rows, shifts, absences, coverage, types, staff,
     )
     const title = `${ty?.name ?? s.code} ${ty?.start ?? ''}–${ty?.end ?? ''}${s.note ? ' · ' + s.note : ''}${s.status === 'swap_requested' ? ' · ' + t('schedule.status.swap_requested') : ''}`
     return canManage ? (
-      <button key={s.id} type="button" className={cls + ' sh-btn'} title={title} onClick={() => setDraft({ id: s.id, typeId: s.typeId, userId: s.userId, date: s.dateKey, req: s.req, note: s.note })}>{label}</button>
+      <button key={s.id} type="button" className={cls + ' sh-btn'} title={title} aria-label={`${title} · ${rowName(s.userId)} · ${days.find((d) => d.key === s.dateKey)?.label ?? s.dateKey}`} onClick={() => setDraft({ id: s.id, typeId: s.typeId, userId: s.userId, date: s.dateKey, req: s.req, note: s.note })}>{label}</button>
     ) : (
       <span key={s.id} className={cls} title={title}>{label}</span>
     )
   }
   const addBtn = (userId: string | null, day: string) =>
     canManage ? (
-      <button type="button" className="cal-add" aria-label={t('schedule.plan.add')} title={t('schedule.plan.add')} onClick={() => setDraft({ userId, date: day })}>+</button>
+      <button type="button" className="cal-add" aria-label={`${t('schedule.plan.add')} · ${rowName(userId)} · ${days.find((d) => d.key === day)?.label ?? day}`} title={t('schedule.plan.add')} onClick={() => setDraft({ userId, date: day })}>+</button>
     ) : null
 
   return (
     <>
-      <div className="tablewrap">
-        <div className="cal" role="grid" aria-label={t('schedule.plan.title')}>
+      <div className="tablewrap plan-wrap" role="region" aria-label={t('schedule.plan.title')} tabIndex={0}>
+        <div className="cal">
           <div className="ch rh">{t('schedule.plan.staff')}</div>
           {days.map((d) => <div key={d.key} className={'ch' + (d.today ? ' today' : '')}>{d.label}</div>)}
 

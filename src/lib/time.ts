@@ -72,9 +72,12 @@ export function weekdayShort(d: Date, locale: Locale) {
   return new Intl.DateTimeFormat(INTL_LOCALE[locale], { weekday: 'short' }).format(d).replace('.', '')
 }
 
+/** Messwerte mit Dezimalkomma wie im klinischen Alltag (38,1 °C) – de-CH würde einen Punkt setzen. */
+const NUMBER_LOCALE: Record<Locale, string> = { de: 'de-DE', fr: 'fr-CH', it: 'it-IT', en: 'en-GB' }
+
 export function fmtNum(v: number | null | undefined, dec: number, locale: Locale) {
   if (v == null) return '–'
-  return new Intl.NumberFormat(INTL_LOCALE[locale], { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)
+  return new Intl.NumberFormat(NUMBER_LOCALE[locale], { minimumFractionDigits: dec, maximumFractionDigits: dec, useGrouping: false }).format(v)
 }
 
 // ── Schichten ──

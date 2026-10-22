@@ -126,6 +126,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         candidates={personOpts.filter((p) => !memberIds.has(p.id) && (!c.clinical || p.clinical))}
         messages={msgs}
         wasUnread={c.lastMessageAt > sel.lastReadAt}
+        lastReadAt={sel.lastReadAt.toISOString()}
       />
     )
   }

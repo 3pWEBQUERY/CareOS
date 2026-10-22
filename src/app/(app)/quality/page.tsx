@@ -97,7 +97,7 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
       </div>
       <div className="scroll">
         <div className="tabpanel">
-          <div className="metrics" aria-label={t('quality.metrics.label')}>
+          <div className="metrics q-metrics" aria-label={t('quality.metrics.label')}>
             <Link className="metric" href="/quality?stage=open&period=all"><span className="lbl">{t('quality.metrics.open')}</span><span className={'val' + (openCount ? ' warn' : '')}>{openCount}</span></Link>
             <div className="metric"><span className="lbl">{t('quality.metrics.month')}</span><span className="val">{monthCount}</span></div>
             <Link className="metric" href={`/quality?type=${types.find((x) => x.key === 'fall')?.id ?? ''}&period=30`}><span className="lbl">{t('quality.metrics.falls30')}</span><span className="val">{falls30}</span></Link>
@@ -171,7 +171,34 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
             </AutoFilter>
 
             {incidents.length ? (
-              <div className="tablewrap">
+              <>
+              <ul className="list q-cards" aria-label={t('quality.list.title')}>
+                {incidents.map((i) => {
+                  const done = i.actions.filter(actionDone).length
+                  const showName = i.resident && readable.has(i.unitId)
+                  return (
+                    <li key={i.id}>
+                      <Link className="li" href={`/quality/${i.id}`}>
+                        <div className="grow">
+                          <div className="row-between" style={{ gap: 6 }}>
+                            <strong style={{ fontWeight: 500 }}>{i.type.name}</strong>
+                            <span className="mono small muted nowrap">{fmtDate(i.occurredAt, locale)} {hm(i.occurredAt)}</span>
+                          </div>
+                          <div className="small">{showName ? <>{i.resident!.lastName} {i.resident!.firstName}{i.resident!.room && <span className="muted mono"> · {i.resident!.room.number}</span>}</> : i.resident ? <span className="muted">{t('quality.list.residentHidden')}</span> : <span className="muted">{i.unit.name}</span>}</div>
+                          <div className="small muted ellipsis">{i.description}</div>
+                          <div className="row" style={{ gap: 6, marginTop: 4 }}>
+                            <span className={'tag ' + sevTone(i.severity)}>{t('quality.severity.' + i.severity)}</span>
+                            <span className={'tag ' + (i.stage === 'closed' ? 'ok' : i.stage === 'reported' ? 'warn' : 'accent')}>{t('quality.stages.' + i.stage)}</span>
+                            {i.nearMiss && <span className="tag outline">{t('quality.nearMiss')}</span>}
+                            {i.actions.length > 0 && <span className="small muted mono">{t('quality.list.actions')} {done}/{i.actions.length}</span>}
+                          </div>
+                        </div>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="tablewrap q-table">
                 <table className="stable">
                   <thead>
                     <tr>
@@ -208,6 +235,7 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
                   </tbody>
                 </table>
               </div>
+              </>
             ) : (
               <Empty title={t('quality.list.empty')}>{t('quality.list.emptyHint')}</Empty>
             )}

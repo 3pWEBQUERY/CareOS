@@ -9,7 +9,7 @@ import { ackAudience, CATEGORY_TONE, lineDiff, loadDoc, nextVersion, userNames, 
 import { dateKey, fmtDate, hm } from '@/lib/time'
 import { IconFile } from '@/components/icons'
 import { acknowledgeDocument, approveVersion, archiveDocument, deleteDraft, remindAck, returnToDraft, submitVersion } from '../actions'
-import { ActBtn, MetaButton, VersionButton } from '../DocsClient'
+import { ActBtn, MetaButton, PrintButton, VersionButton } from '../DocsClient'
 
 export default async function DocPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ v?: string; diff?: string }> }) {
   const ctx = await getCtx()
@@ -78,8 +78,10 @@ export default async function DocPage({ params, searchParams }: { params: Promis
               : t('docs.headNoCurrent')}
           </p>
         </div>
-        {manage && (
-          <div className="row">
+        <div className="row no-print">
+          <PrintButton label={t('docs.ux.print')} />
+          {manage && (
+            <>
             <MetaButton
               d={{ id: doc.id, title: doc.title, category: doc.category, tags: doc.tags, requireAck: doc.requireAck, validFrom: doc.validFrom ? dateKey(doc.validFrom) : null, validUntil: doc.validUntil ? dateKey(doc.validUntil) : null, ownerId: doc.ownerId }}
               users={allUsers.map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName}` }))}
@@ -89,15 +91,16 @@ export default async function DocPage({ params, searchParams }: { params: Promis
             )}
             {approve && doc.status !== 'archived' && <ActBtn className="btn ghost" label={t('docs.archive')} confirm={t('docs.archiveConfirm')} success="docs.archived" action={archiveDocument.bind(null, doc.id, false)} />}
             {approve && doc.status === 'archived' && <ActBtn label={t('docs.restore')} success="common.saved" action={archiveDocument.bind(null, doc.id, true)} />}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
       <div className="scroll">
         <div className="tabpanel">
           {doc.status === 'archived' && <div className="alert"><span className="grow">{t('docs.archivedHint')}</span></div>}
 
           {pending && (
-            <div className={'alert ' + (pending.submittedAt ? 'info' : '')} style={{ flexWrap: 'wrap' }}>
+            <div className={'alert no-print ' + (pending.submittedAt ? 'info' : '')} style={{ flexWrap: 'wrap' }}>
               <div className="grow" style={{ minWidth: 220 }}>
                 <strong className="fg">{t('docs.pendingHead', { v: pending.version, state: t('docs.vstate.' + vstate(pending)) })}</strong>
                 <span className="fg2">
@@ -128,14 +131,13 @@ export default async function DocPage({ params, searchParams }: { params: Promis
 
           {ackRelevant && shown.id === current!.id && (
             myAck ? (
-              <div className="alert ok"><span className="grow">{t('docs.ack.done', { date: fmtDT(myAck.at), v: doc.currentVersion })}</span></div>
+              <div className="alert ok no-print"><span className="grow">{t('docs.ack.done', { date: fmtDT(myAck.at), v: doc.currentVersion })}</span></div>
             ) : (
-              <div className="alert warn" style={{ flexWrap: 'wrap' }}>
+              <div className="alert warn no-print" style={{ flexWrap: 'wrap' }}>
                 <div className="grow" style={{ minWidth: 220 }}>
                   <strong>{t('docs.ack.required')}</strong>
                   <span className="fg">{current!.critical && current!.changeNote ? t('docs.ack.criticalNote', { v: current!.version, note: current!.changeNote }) : t('docs.ack.hint')}</span>
                 </div>
-                <ActBtn className="btn primary" label={t('docs.ack.button')} success="docs.ack.thanks" action={acknowledgeDocument.bind(null, doc.id)} />
               </div>
             )
           )}
@@ -155,7 +157,7 @@ export default async function DocPage({ params, searchParams }: { params: Promis
                   {shown.critical && <span className="tag crit">{t('docs.critical')}</span>}
                 </div>
                 {previous && (
-                  <div className="seg" role="group" aria-label={t('docs.viewMode')}>
+                  <div className="seg no-print" role="group" aria-label={t('docs.viewMode')}>
                     <Link href={vHref(shown.version)} aria-current={!showDiff ? 'page' : undefined}>{t('docs.modeDoc')}</Link>
                     <Link href={vHref(shown.version, true)} aria-current={showDiff ? 'page' : undefined}>{t('docs.modeDiff', { v: previous.version })}</Link>
                   </div>
@@ -165,23 +167,31 @@ export default async function DocPage({ params, searchParams }: { params: Promis
               {showDiff ? (
                 <DiffView before={previous!.body} after={shown.body} labels={{ add: t('docs.diff.add'), del: t('docs.diff.del'), none: t('docs.diff.none') }} />
               ) : (
-                <article className="card"><div className="card-body" style={{ padding: '16px 18px' }}>
+                <article className="card doc-read" aria-label={doc.title}><div className="card-body">
+                  <p className="print-only small">{[t('docs.version.label') + ' ' + shown.version, shown.approvedAt ? t('docs.approvedOn', { date: fmtDate(shown.approvedAt, locale) }) : null, doc.validUntil ? t('docs.f.validUntil') + ' ' + fmtDate(doc.validUntil, locale) : null, names.get(doc.ownerId)].filter(Boolean).join(' · ')}</p>
                   {shown.body.trim() ? <Markdown source={shown.body} /> : <p className="muted" style={{ margin: 0 }}>{t('docs.noBody')}</p>}
                 </div></article>
               )}
 
+              {ackRelevant && shown.id === current!.id && !myAck && (
+                <div className="alert warn no-print team-ack-end" id="ack-end">
+                  <span className="grow fg">{t('docs.ux.ackEnd')}</span>
+                  <ActBtn className="btn primary" label={t('docs.ack.button')} success="docs.ack.thanks" action={acknowledgeDocument.bind(null, doc.id)} />
+                </div>
+              )}
+
               {shownFile && (
-                <a className="card li" href={fileUrl(shownFile.id)} target="_blank" rel="noopener">
+                <a className="card li no-print" href={fileUrl(shownFile.id)} target="_blank" rel="noopener">
                   <IconFile size={18} />
                   <span className="grow"><span>{shownFile.filename}</span><span className="small muted"> · {Math.max(1, Math.round(shownFile.size / 1024))} kB</span></span>
                   <span className="small">{t('docs.openFile')}</span>
                 </a>
               )}
 
-              <section className="stack-sm" aria-labelledby="hist">
+              <section className="stack-sm no-print" aria-labelledby="hist">
                 <h2 className="sec" id="hist">{t('docs.history')}</h2>
-                <div className="tablewrap">
-                  <table className="stable">
+                <div className="tablewrap rwrap">
+                  <table className="stable rtable">
                     <thead>
                       <tr><th>{t('docs.col.version')}</th><th>{t('docs.col.state')}</th><th>{t('docs.col.author')}</th><th>{t('docs.col.approval')}</th><th>{t('docs.col.change')}</th><th><span className="sr-only">{t('docs.view')}</span></th></tr>
                     </thead>
@@ -195,10 +205,10 @@ export default async function DocPage({ params, searchParams }: { params: Promis
                               <span className={'tag ' + (v.id === current?.id ? 'ok' : vstate(v) === 'review' ? 'violet' : '')}>{v.id === current?.id ? t('docs.vstate.current') : t('docs.vstate.' + vstate(v))}</span>
                               {v.critical && <> <span className="tag crit">{t('docs.critical')}</span></>}
                             </td>
-                            <td className="nowrap">{names.get(v.authorId) ?? '–'}<div className="small muted mono">{fmtDate(v.createdAt, locale)}</div></td>
-                            <td className="nowrap">{v.approvedAt ? <>{names.get(v.approvedById ?? '') ?? '–'}<div className="small muted mono">{fmtDate(v.approvedAt, locale)}</div></> : <span className="muted">–</span>}</td>
+                            <td className="nowrap" data-label={t('docs.col.author')}>{names.get(v.authorId) ?? '–'}<div className="small muted mono">{fmtDate(v.createdAt, locale)}</div></td>
+                            <td className="nowrap" data-label={t('docs.col.approval')}>{v.approvedAt ? <>{names.get(v.approvedById ?? '') ?? '–'}<div className="small muted mono">{fmtDate(v.approvedAt, locale)}</div></> : <span className="muted">–</span>}</td>
                             <td style={{ minWidth: 200 }}>{v.changeNote ?? <span className="muted">{i === versions.length - 1 ? t('docs.firstVersion') : '–'}</span>}</td>
-                            <td className="nowrap">
+                            <td className="nowrap r-act">
                               {v.id !== shown.id && <Link className="linkbtn small" href={vHref(v.version)}>{t('docs.view')}</Link>}
                               {prev && <> {v.id !== shown.id && ' · '}<Link className="linkbtn small" href={vHref(v.version, true)}>{t('docs.compare')}</Link></>}
                             </td>
@@ -211,7 +221,7 @@ export default async function DocPage({ params, searchParams }: { params: Promis
               </section>
             </div>
 
-            <aside className="stack">
+            <aside className="stack no-print">
               <section className="card" aria-labelledby="meta">
                 <div className="card-head"><h2 id="meta">{t('docs.meta')}</h2><span className={'tag ' + ({ approved: 'ok', review: 'violet', draft: '', archived: 'outline' }[doc.status])}>{t('docs.status.' + doc.status)}</span></div>
                 <div className="card-body">

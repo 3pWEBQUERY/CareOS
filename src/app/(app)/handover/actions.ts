@@ -90,22 +90,26 @@ export async function acknowledgeAction(form: FormData): Promise<ActionResult> {
     const mine = await db.acknowledgement.findMany({ where: { userId: ctx.user.id, subjectType: 'handover', subjectId: handover.id } })
     const has = new Set(mine.map((a) => a.version))
     let created: string[] = []
+    let importantConfirmed: string[] = []
     if (residentId) {
       const r = await residentInScope(ctx, residentId)
       if (!r || r.unitId !== unit.id) return err('common.notFound')
       if (!has.has(r.id)) created = [r.id]
     } else {
       if (ackSettings(ctx.org.settings).handoverImportantRequiresAck) {
+        // Wichtige Einträge: einzeln übernommen oder im Bestätigungsdialog ausdrücklich je Eintrag bestätigt (PRD §11.4)
+        const confirmed = new Set(fd(form, 'confirmed').split(',').filter(Boolean))
         const entries = await db.handoverEntry.findMany({ where: { handoverId: handover.id, important: true } })
-        const missing = entries.filter((e) => !has.has(e.residentId))
+        const missing = entries.filter((e) => !has.has(e.residentId) && !confirmed.has(e.residentId))
         if (missing.length) return err('tasks.handover.errors.importantFirst')
+        importantConfirmed = entries.filter((e) => !has.has(e.residentId)).map((e) => e.residentId)
       }
       const residents = await db.resident.findMany({ where: { unitId: unit.id, orgId: ctx.org.id, status: { in: ['active', 'absent'] } }, select: { id: true } })
       created = [...residents.map((r) => r.id).filter((id) => !has.has(id)), ...(has.has('') ? [] : [''])]
     }
     if (!created.length) return { ok: true }
     await db.acknowledgement.createMany({ data: created.map((version) => ({ userId: ctx.user.id, subjectType: 'handover', subjectId: handover.id, version })), skipDuplicates: true })
-    await audit(ctx, { action: 'handover.acknowledge', entityType: 'Handover', entityId: handover.id, after: { versions: created }, context: residentId ? { residentId } : { all: true } })
+    await audit(ctx, { action: 'handover.acknowledge', entityType: 'Handover', entityId: handover.id, after: { versions: created }, context: residentId ? { residentId } : { all: true, importantConfirmed } })
     await emit({ orgId: ctx.org.id, type: 'handover.acknowledged', unitId: unit.id, residentId: residentId || null, actorId: ctx.user.id, payload: { handoverId: handover.id } })
     refresh()
     return { ok: true, message: ctx.t(residentId ? 'tasks.handover.toast.acked' : 'tasks.handover.toast.ackedAll') }

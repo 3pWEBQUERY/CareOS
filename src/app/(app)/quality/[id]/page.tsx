@@ -79,10 +79,14 @@ export default async function IncidentPage({ params, searchParams }: { params: P
   const current = closed ? 5 : stageIndex(inc.stage)
   const view: IncidentStage = (STAGES as string[]).includes(String(sp.s)) ? (sp.s as IncidentStage) : inc.stage
   const vi = stageIndex(view)
+  const MANAGE_NEXT: IncidentStage[] = ['assessment', 'analysis']
   const nextLabel = (s: IncidentStage) => t('quality.detail.advanceTo', { stage: t('quality.stages.' + STAGES[stageIndex(s) + 1]) })
   const isCurrent = view === inc.stage && !closed
   const sevTone = inc.severity === 'severe' ? 'crit' : inc.severity === 'moderate' ? 'warn' : ''
   const who = inc.resident ? (canSeeResident ? `${inc.resident.lastName} ${inc.resident.firstName}` : t('quality.list.residentHidden')) : inc.unit.name
+  const dlgContext = <span>{inc.type.name} · <strong>{who}</strong> · <span className="mono">{fmtDate(inc.occurredAt, locale)} {hm(inc.occurredAt)}</span></span>
+  const justReported = sp.new === '1' && !closed
+  const chartEntry = !!inc.resident
 
   const stageBody = () => {
     const save = saveStageAction.bind(null, inc.id, view)
@@ -131,7 +135,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
           <>
             <p className="small fg2" style={{ margin: 0 }}>{t('quality.detail.followupHint', { open: openActions, total: actions.length })}</p>
             {!closed && canManage && isCurrent && (
-              <StageForm action={save} canSave={false} advanceLabel={nextLabel('followup')} confirmAdvance={openActions ? t('quality.detail.confirmOpenActions', { n: openActions }) : undefined}><span /></StageForm>
+              <StageForm action={save} canSave={false} advanceLabel={nextLabel('followup')} context={dlgContext} confirmAdvance={openActions ? t('quality.detail.confirmOpenActions', { n: openActions }) : undefined}><span /></StageForm>
             )}
           </>
         )
@@ -152,7 +156,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
             <p className="small muted" style={{ margin: 0 }}>{t('quality.detail.closedBy', { name: uname(inc.closedById), at: inc.closedAt ? `${fmtDate(inc.closedAt, locale)} ${hm(inc.closedAt)}` : '–' })}</p>
           </>
         ) : canManage ? (
-          <StageForm action={save} advanceLabel={t('quality.detail.close')} confirmAdvance={openActions ? t('quality.detail.confirmCloseOpen', { n: openActions }) : t('quality.detail.confirmClose')}>
+          <StageForm action={save} advanceLabel={t('quality.detail.close')} context={dlgContext} confirmAdvance={openActions ? t('quality.detail.confirmCloseOpen', { n: openActions }) : t('quality.detail.confirmClose')}>
             <label className="fld"><span className="lbl">{t('quality.fields.conclusion')}</span>
               <textarea className="field" name="conclusion" defaultValue={inc.conclusion ?? ''} maxLength={5000} placeholder={t('quality.detail.conclusionHint')} />
             </label>
@@ -178,19 +182,35 @@ export default async function IncidentPage({ params, searchParams }: { params: P
       </div>
       <div className="scroll">
         <div className="tabpanel">
-          <ol className="steps" aria-label={t('quality.detail.workflow')}>
+          {justReported && (
+            <div className="alert ok q-done" role="status">
+              <span className="grow">
+                <strong>{t('quality.ux.created')}</strong>
+                <span className="fg"> {t('quality.ux.createdTasks', { n: actions.length })}{chartEntry ? ' ' + t('quality.ux.createdChart') : ''} {t('quality.ux.createdLeads')}</span>
+              </span>
+              {actions.some((a) => a.task) && <Link className="btn sm" href="/tasks">{t('quality.ux.toTasks')}</Link>}
+            </div>
+          )}
+          <ol className="steps q-steps" aria-label={t('quality.detail.workflow')}>
             {STAGES.map((s, i) => {
               const state = i < current || closed ? 'done' : i === current ? 'current' : 'todo'
               return (
-                <li key={s} data-state={state} style={view === s ? { boxShadow: 'inset 0 -2px 0 var(--accent)' } : undefined}>
-                  <Link href={`/quality/${inc.id}?s=${s}`} aria-current={view === s ? 'step' : undefined} style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                    <span className="n">{state === 'done' ? '✓ ' : ''}{i + 1}</span>
-                    <span className="ellipsis" title={t('quality.stages.' + s)}>{t('quality.stages.' + s)}</span>
+                <li key={s} data-state={state} data-view={view === s || undefined}>
+                  <Link href={`/quality/${inc.id}?s=${s}`} aria-current={view === s ? 'step' : undefined} scroll={false}>
+                    <span className="n">{state === 'done' ? '✓ ' : state === 'current' ? '● ' : ''}{i + 1}</span>
+                    <span className="q-step-name">{t('quality.stages.' + s)}</span>
+                    <span className="sr-only">, {t(state === 'done' ? 'quality.detail.stageDone' : state === 'current' ? 'quality.detail.stageCurrent' : 'quality.detail.stageTodo')}</span>
                   </Link>
                 </li>
               )
             })}
           </ol>
+          {!closed && (
+            <p className="small fg2 q-nextstep" style={{ margin: 0 }}>
+              <span className="lbl">{t('quality.ux.nextStep')}</span> {t('quality.ux.next.' + inc.stage)}
+              {!canManage && MANAGE_NEXT.includes(inc.stage) && <span className="muted"> · {t('quality.detail.manageOnly')}</span>}
+            </p>
+          )}
 
           {inc.resident && canSeeResident && (
             <div className="dlg-context">
@@ -199,9 +219,9 @@ export default async function IncidentPage({ params, searchParams }: { params: P
             </div>
           )}
 
-          <div className="grid-2">
+          <div className="grid-2 q-detail">
             <div className="stack">
-            <section className="card" aria-labelledby="stage-h">
+            <section className="card q-o1" aria-labelledby="stage-h">
               <div className="card-head">
                 <h2 id="stage-h"><span className="mono muted">{vi + 1}</span> {t('quality.stages.' + view)}</h2>
                 <span className={'tag ' + (vi < current || closed ? 'ok' : vi === current ? 'accent' : '')}>{t(vi < current || closed ? 'quality.detail.stageDone' : vi === current ? 'quality.detail.stageCurrent' : 'quality.detail.stageTodo')}</span>
@@ -211,7 +231,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
               </div>
             </section>
             {view !== 'reported' && (
-              <section className="card" aria-labelledby="sum-h">
+              <section className="card q-o3" aria-labelledby="sum-h">
                 <div className="card-head"><h2 id="sum-h">{t('quality.detail.summary')}</h2><Link className="linkbtn small" href={`/quality/${inc.id}?s=reported`}>{t('quality.stages.reported')}</Link></div>
                 <div className="card-body">
                   <dl className="kv">
@@ -225,7 +245,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
             </div>
 
             <div className="stack">
-              <section className="card" aria-labelledby="act-h">
+              <section className="card q-o2" aria-labelledby="act-h">
                 <div className="card-head">
                   <h2 id="act-h">{t('quality.detail.actions')}</h2>
                   <span className={'pill ' + (openActions ? 'warn' : 'ok')}>{actions.length - openActions}/{actions.length}</span>
@@ -268,7 +288,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
                 )}
               </section>
 
-              <section className="card" aria-labelledby="aud-h">
+              <section className="card q-o4" aria-labelledby="aud-h">
                 <div className="card-head"><h2 id="aud-h">{t('quality.detail.audit')}</h2><span className="small muted">{t('quality.detail.auditHint')}</span></div>
                 {audits.length ? (
                   <ol className="list" style={{ maxHeight: 360, overflow: 'auto' }}>

@@ -7,7 +7,9 @@ import { env, ssoConfigured } from '@/lib/env'
 import { LoginForm } from './LoginForm'
 import { ClearSnapshot } from './ClearSnapshot'
 
-export const metadata: Metadata = { title: 'Anmelden' }
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await publicT()).t('auth.title') }
+}
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const sp = await searchParams

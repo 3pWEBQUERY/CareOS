@@ -16,7 +16,7 @@ export function ErrorState({ error, retry, compact }: { error: unknown; retry: (
   }, [error])
   const body = (
     <div className="stack-sm" role="alert" style={{ maxWidth: 560 }}>
-      <h2 className="sec">{t('common.errorPage.title')}</h2>
+      {compact && <h2 className="sec">{t('common.errorPage.title')}</h2>}
       <p className="fg2" style={{ margin: 0 }}>{t(compact ? 'common.errorPage.textSection' : 'common.errorPage.text')}</p>
       <div className="row" style={{ marginTop: 4 }}>
         <button type="button" className="btn primary" onClick={() => retry()}>{t('common.errorPage.retry')}</button>
@@ -30,8 +30,10 @@ export function ErrorState({ error, retry, compact }: { error: unknown; retry: (
     </div>
   )
   if (compact) return <div className="card"><div className="card-body">{body}</div></div>
+  // Ganze Ansicht: gleicher Aufbau wie jede Seite (view-head mit der einzigen h1)
   return (
     <main className="panel main" style={{ flex: 1 }}>
+      <div className="view-head"><h1>{t('common.errorPage.title')}</h1></div>
       <div className="scroll">
         <div className="tabpanel">{body}</div>
       </div>
@@ -44,7 +46,7 @@ export function NotFoundState({ compact, backHref = '/', backLabel }: { compact?
   const t = useT()
   const body = (
     <div className="empty" style={{ alignItems: 'center' }}>
-      <strong>{t(compact ? 'common.notFoundPage.titleRecord' : 'common.notFoundPage.title')}</strong>
+      {compact && <strong>{t('common.notFoundPage.titleRecord')}</strong>}
       <span className="small">{t(compact ? 'common.notFoundPage.textRecord' : 'common.notFoundPage.text')}</span>
       <Link className="btn" href={backHref}>{backLabel ?? t('common.notFoundPage.back')}</Link>
     </div>
@@ -52,6 +54,7 @@ export function NotFoundState({ compact, backHref = '/', backLabel }: { compact?
   if (compact) return body
   return (
     <main className="panel main" style={{ flex: 1 }}>
+      <div className="view-head"><h1>{t('common.notFoundPage.title')}</h1></div>
       <div className="scroll">
         <div className="tabpanel">{body}</div>
       </div>

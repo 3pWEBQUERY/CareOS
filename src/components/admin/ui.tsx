@@ -1,48 +1,115 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
+import { ConfirmDialog, splitQuestion } from '@/components/ui/ConfirmDialog'
 
 type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 
 const isKey = (s: string) => /^[a-z]+\.[\w.]+$/.test(s)
 
-/** Knopf für eine einzelne Server Action ohne Formularfelder (z. B. Widerrufen, Entfernen). */
-export function ActBtn({ action, children, className = 'btn sm', confirm, success, title }: {
+/**
+ * Knopf für eine einzelne Server Action ohne Formularfelder (z. B. Widerrufen, Entfernen).
+ * Mit `confirm` öffnet sich vorher ein Bestätigungsdialog: Frage als Titel, Folgen als Text,
+ * betroffener Datensatz als `context`, bei nicht umkehrbaren Aktionen zusätzlich `ack` (PRD §32).
+ */
+export function ActBtn({ action, children, className = 'btn sm', confirm, success, title, context, consequences, ack, confirmLabel }: {
   action: () => Promise<Result>
   children: React.ReactNode
   className?: string
   confirm?: string
   success?: string
   title?: string
+  context?: React.ReactNode
+  consequences?: string[]
+  ack?: string
+  confirmLabel?: string
 }) {
   const t = useT()
   const tr = (s: string) => (isKey(s) ? t(s) : s)
   const [pending, start] = useTransition()
+  const [open, setOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const exec = () =>
+    start(async () => {
+      const r = await action()
+      if (r.ok) {
+        setOpen(false)
+        const m = r.message ?? success
+        if (m) toast(tr(m))
+      } else if (open) setError(tr(r.error))
+      else toast(tr(r.error), { kind: 'crit' })
+    })
+  const q = confirm ? splitQuestion(tr(confirm)) : null
+  const label = confirmLabel ?? (typeof children === 'string' ? children : title ?? t('common.confirm'))
   return (
-    <button
-      type="button"
-      className={className}
-      title={title}
-      data-loading={pending || undefined}
-      disabled={pending}
-      onClick={() => {
-        if (confirm && !window.confirm(tr(confirm))) return
-        start(async () => {
-          const r = await action()
-          if (r.ok) {
-            const m = r.message ?? success
-            if (m) toast(tr(m))
-          } else toast(tr(r.error), { kind: 'crit' })
-        })
-      }}
-    >
-      {children}
-    </button>
+    <>
+      <button
+        type="button"
+        className={className}
+        title={title}
+        data-loading={(pending && !open) || undefined}
+        disabled={pending}
+        onClick={() => {
+          if (!confirm) return exec()
+          setError(null)
+          setOpen(true)
+        }}
+      >
+        {children}
+      </button>
+      {q && (
+        <ConfirmDialog
+          open={open}
+          onClose={() => setOpen(false)}
+          onConfirm={exec}
+          title={q.title}
+          text={q.text}
+          consequences={consequences}
+          context={context}
+          ack={ack}
+          confirmLabel={label}
+          danger={/\bdanger\b/.test(className) || !!ack}
+          pending={pending}
+          error={error}
+        />
+      )}
+    </>
   )
+}
+
+/**
+ * Warnt beim Verlassen der Seite mit ungespeicherten Änderungen: Browser-Navigation (beforeunload)
+ * und Klicks auf interne Links (Next.js Link) werden abgefangen.
+ */
+export function useUnsavedGuard(dirty: boolean, message: string) {
+  useEffect(() => {
+    if (!dirty) return
+    const onUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = message
+    }
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+      const a = (e.target as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null
+      if (!a || a.target === '_blank' || a.hasAttribute('download')) return
+      const url = new URL(a.href, location.href)
+      if (url.origin !== location.origin || (url.pathname === location.pathname && url.search === location.search)) return
+      if (!window.confirm(message)) {
+        e.preventDefault()
+        e.stopPropagation()
+      }
+    }
+    window.addEventListener('beforeunload', onUnload)
+    document.addEventListener('click', onClick, true)
+    return () => {
+      window.removeEventListener('beforeunload', onUnload)
+      document.removeEventListener('click', onClick, true)
+    }
+  }, [dirty, message])
 }
 
 /** Knopf, der einen Dialog mit Formular öffnet. Schliesst nach erfolgreichem Speichern. */

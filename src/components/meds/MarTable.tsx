@@ -5,10 +5,18 @@ import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { setDoseAction } from '@/app/(app)/residents/[id]/meds/actions'
-import { FourEyes, ResidentContext, useCall } from './shared'
+import { FourEyes, ResidentContext, useDoseCall } from './shared'
+import { doseText } from './dose'
 import type { CellDto, ColleagueDto, DoseStateDto, MarRowDto, ResidentCtxDto } from './types'
 
 type Slot = { time: string; key: string }
+
+/** Mehr als 60 Minuten vor dem geplanten Zeitpunkt (Rückfrage vor der Abgabe). */
+export function tooEarly(day: string, time: string) {
+  const [h, m] = time.split(':').map(Number)
+  const [y, mo, d] = day.split('-').map(Number)
+  return new Date(y, mo - 1, d, h, m).getTime() - Date.now() > 60 * 60_000
+}
 
 export function stateLabel(t: (k: string) => string, c: CellDto) {
   if (c.state === 'given') return [c.at, c.by && (c.checkedBy ? `${c.by}/${c.checkedBy}` : c.by)].filter(Boolean).join(' ')
@@ -16,7 +24,10 @@ export function stateLabel(t: (k: string) => string, c: CellDto) {
   return t('meds.state.' + c.state)
 }
 
-/** Abgabeliste (MAR) eines Tages wie im Stationsarbeitsplatz: Klick quittiert, zweiter Klick verweigert, dritter öffnet wieder. */
+/**
+ * Abgabeliste (MAR) eines Tages: Tippen auf eine offene Dosis quittiert sie mit Ihrem Kürzel (Rückgängig im Toast).
+ * Bereits dokumentierte Dosen öffnen die Korrektur – ein zweiter Tipp ändert nie stillschweigend den Status (PRD §32).
+ */
 export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
   rows: MarRowDto[]
   slots: Slot[]
@@ -26,24 +37,15 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
   colleagues: ColleagueDto[]
 }) {
   const t = useT()
-  const { pending, call } = useCall()
+  const { pending, record, isBusy } = useDoseCall(day)
   const [dlg, setDlg] = useState<{ row: MarRowDto; time: string; status?: DoseStateDto } | null>(null)
 
   const click = (row: MarRowDto, c: CellDto) => {
     if (!editable || pending) return
-    const next: DoseStateDto = c.state === 'open' ? 'given' : c.state === 'given' ? 'refused' : 'open'
-    if (next === 'given' && !c.applicable) return
-    if (next === 'given' && row.requiresDoubleCheck) return setDlg({ row, time: c.time, status: 'given' })
-    if (next === 'given') {
-      const [h, m] = c.time.split(':').map(Number)
-      const nowAt = Date.now()
-      const slotAt = new Date(nowAt)
-      const [y, mo, d] = day.split('-').map(Number)
-      slotAt.setFullYear(y, mo - 1, d)
-      slotAt.setHours(h, m, 0, 0)
-      if (slotAt.getTime() - nowAt > 60 * 60_000 && !window.confirm(t('meds.confirmEarly', { time: c.time }))) return
-    }
-    call(setDoseAction, { medicationId: row.id, day, time: c.time, status: next, expectedId: c.adminId })
+    if (c.state !== 'open' || !c.applicable) return setDlg({ row, time: c.time })
+    if (row.requiresDoubleCheck) return setDlg({ row, time: c.time, status: 'given' })
+    if (tooEarly(day, c.time) && !window.confirm(t('meds.confirmEarly', { time: c.time }))) return
+    record(row, c.time, 'given', c.adminId)
   }
 
   return (
@@ -78,12 +80,13 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
                         type="button"
                         className={'dose ' + (c.state === 'open' ? (c.over ? 'over' : '') : c.state)}
                         disabled={!editable || pending}
+                        data-loading={isBusy(row.id, c.time) || undefined}
                         onClick={() => click(row, c)}
-                        aria-label={`${row.name} ${t('meds.slots.' + slots[i].key)} ${c.time}: ${t('meds.state.' + (c.state === 'open' && c.over ? 'overdue' : c.state))}`}
+                        aria-label={`${row.name} ${doseText(c.dose, row.form)} ${t('meds.slots.' + slots[i].key)} ${c.time}: ${t('meds.state.' + (c.state === 'open' && c.over ? 'overdue' : c.state))}${c.state === 'given' ? ' ' + stateLabel(t, c) : ''}`}
                         title={c.note ?? undefined}
                       >
-                        <b>{c.dose || '–'}</b>
-                        <span>{stateLabel(t, c)}</span>
+                        <b>{doseText(c.dose, row.form) || '–'}</b>
+                        <span>{c.state === 'given' ? '✓ ' : c.state !== 'open' ? '✕ ' : ''}{stateLabel(t, c)}</span>
                       </button>
                     ) : (
                       <span className="nodose" aria-label={t('meds.mar.noDose')}>–</span>
@@ -120,6 +123,7 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
 }
 
 const ORDER: DoseStateDto[] = ['given', 'refused', 'omitted', 'held', 'open']
+const SIGN: Record<DoseStateDto, string> = { given: '✓', refused: '✕', omitted: '–', held: 'Ⅱ', open: '↺' }
 
 /** Detail einer Dosis: alle Zustände inkl. ausgelassen/pausiert mit Begründung, Vier-Augen, Verlauf. */
 export function DoseDialog({ row, slots, initialTime, initialStatus, day, editable, resident, colleagues, onClose }: {
@@ -146,19 +150,21 @@ export function DoseDialog({ row, slots, initialTime, initialStatus, day, editab
       <div className="stack-sm">
         <div>
           <div className="drug">{row.name}</div>
-          <div className="drug-sub">{[row.form, row.route, row.indication].filter(Boolean).join(' · ')}</div>
-          {row.notes && <p className="small fg2" style={{ margin: '4px 0 0' }}>{row.notes}</p>}
+          <div className="drug-sub">{[row.form, row.indication].filter(Boolean).join(' · ')}</div>
+          {row.notes && <p className="small warn-text" style={{ margin: '4px 0 0' }}><span className="lbl warn-text">{t('meds.round.notes')}</span> {row.notes}</p>}
         </div>
-        <div className="seg" role="group" aria-label={t('meds.dialog.slot')} style={{ alignSelf: 'flex-start', flexWrap: 'wrap' }}>
+        {row.cells.filter(Boolean).length > 1 && <div className="seg" role="group" aria-label={t('meds.dialog.slot')} style={{ alignSelf: 'flex-start', flexWrap: 'wrap' }}>
           {slots.map((s, i) => row.cells[i] && (
             <button key={s.time} type="button" aria-pressed={s.time === time} onClick={() => { setTime(s.time); const c = row.cells[i]; setStatus(c && c.state === 'open' ? 'given' : c?.state ?? 'given') }}>
-              {t('meds.slots.' + s.key)} <span className="mono">{s.time}</span>
+              {t('meds.slots.' + s.key)}{'\u00a0'}<span className="mono">{s.time}</span>
             </button>
           ))}
-        </div>
+        </div>}
         {cell && (
           <dl className="kv">
-            <dt>{t('meds.dialog.dose')}</dt><dd className="mono">{cell.dose || '–'}</dd>
+            <dt>{t('meds.dialog.dose')}</dt><dd className="dose-big">{doseText(cell.dose, row.form) || '–'}</dd>
+            <dt>{t('meds.dialog.route')}</dt><dd>{row.route}</dd>
+            <dt>{t('meds.dialog.slot')}</dt><dd className="mono">{time}</dd>
             <dt>{t('meds.dialog.current')}</dt>
             <dd>
               <span className={'tag ' + (cell.state === 'given' ? 'ok' : cell.state === 'open' ? (cell.over ? 'crit' : '') : 'warn')}>{t('meds.state.' + (cell.state === 'open' && cell.over ? 'overdue' : cell.state))}</span>
@@ -192,8 +198,8 @@ export function DoseDialog({ row, slots, initialTime, initialStatus, day, editab
             <input type="hidden" name="status" value={status} />
             <div className="chips" role="radiogroup" aria-label={t('meds.dialog.newState')}>
               {options.map((s) => (
-                <button key={s} type="button" role="radio" className="chip" aria-checked={status === s} aria-pressed={status === s} onClick={() => setStatus(s)}>
-                  {t('meds.action.' + s)}
+                <button key={s} type="button" role="radio" className="chip dose-opt" data-v={s} aria-checked={status === s} onClick={() => setStatus(s)}>
+                  <span aria-hidden="true">{SIGN[s]}</span> {t('meds.action.' + s)}
                 </button>
               ))}
             </div>
@@ -204,7 +210,9 @@ export function DoseDialog({ row, slots, initialTime, initialStatus, day, editab
               </label>
             )}
             {status === 'refused' && <p className="small muted" style={{ margin: 0 }}>{t('meds.dialog.refusedHint')}</p>}
-            {status === 'given' && row.requiresDoubleCheck && <FourEyes colleagues={colleagues} />}
+            {status === 'given' && row.requiresDoubleCheck && (
+              <FourEyes colleagues={colleagues} summary={<><strong>{resident.name}</strong>{resident.room && <span className="mono">{t('meds.roomShort', { room: resident.room })}</span>} · {row.name} · <span className="mono">{doseText(cell.dose, row.form)}</span> · {row.route} · <span className="mono">{time}</span></>} />
+            )}
             <div className="form-actions">
               <span className="spacer" />
               <button type="button" className="btn" onClick={onClose}>{t('common.cancel')}</button>

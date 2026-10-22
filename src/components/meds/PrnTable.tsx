@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useT } from '@/i18n/client'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
@@ -39,6 +39,7 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
   const t = useT()
   const [give, setGive] = useState<PrnDto | null>(null)
   const [voiding, setVoiding] = useState<PrnAdminDto | null>(null)
+  const reasonRef = useRef<HTMLTextAreaElement>(null)
   if (!items.length) return <p className="muted" style={{ margin: 0 }}>{t('meds.prn.none')}</p>
   return (
     <>
@@ -118,11 +119,21 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
                 <input className="field mono" name="dose" defaultValue={give.prnDose} required />
                 <span className="hint">{t('meds.prn.doseHint')}</span>
               </label>
+              <div className="fld">
+                <span className="lbl">{t('meds.dialog.route')}</span>
+                <span style={{ paddingTop: 6 }}>{give.route}</span>
+              </div>
             </div>
-            <label className="fld">
-              <span className="lbl">{t('meds.prn.reason')}</span>
-              <textarea className="field" name="reason" rows={2} style={{ minHeight: 60 }} required placeholder={give.indication ?? ''} />
-            </label>
+            <div className="fld">
+              <label className="lbl" htmlFor="prn-reason">{t('meds.prn.reason')}</label>
+              <textarea ref={reasonRef} id="prn-reason" className="field" name="reason" rows={2} style={{ minHeight: 60 }} required placeholder={give.indication ?? ''} />
+              {give.indication && (
+                <div className="row" style={{ gap: 6 }}>
+                  <span className="small muted">{t('meds.prn.asIndicated')}</span>
+                  <button type="button" className="snip" onClick={() => { const el = reasonRef.current; if (el) { el.value = give.indication ?? ''; el.focus() } }}>{give.indication}</button>
+                </div>
+              )}
+            </div>
             {give.nextAllowed && (
               <>
                 <div className="alert warn" role="alert"><span className="grow"><strong>{t('meds.prn.intervalWarn', { h: give.minIntervalH ?? 0 })}</strong>{t('meds.prn.intervalWarnText', { time: give.nextAllowed })}</span></div>
@@ -132,7 +143,7 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
                 </label>
               </>
             )}
-            {give.requiresDoubleCheck && <FourEyes colleagues={colleagues} />}
+            {give.requiresDoubleCheck && <FourEyes colleagues={colleagues} summary={<><strong>{resident.name}</strong>{resident.room && <span className="mono">{t('meds.roomShort', { room: resident.room })}</span>} · {give.name} · <span className="mono">{give.prnDose}</span> · {give.route}</>} />}
             <p className="small muted" style={{ margin: 0 }}>{t('meds.prn.effectHint')}</p>
             <div className="form-actions">
               <span className="spacer" />

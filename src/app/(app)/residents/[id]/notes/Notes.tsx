@@ -145,11 +145,13 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
             <select id="ncat" value={category} onChange={(e) => setCategory(e.target.value)}>
               {categories.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
             </select>
-            <span className="lbl" style={{ marginLeft: 6 }}>{t('chart.notes.snippets')}</span>
-            {SNIPS.map((s) => {
-              const txt = t('chart.notes.snip.' + s)
-              return <button key={s} type="button" className="snip" onClick={() => insertSnip(txt)}>{txt.replace(/[.]$/, '')}</button>
-            })}
+            <span className="lbl" style={{ marginLeft: 6 }} id="nsnips">{t('chart.notes.snippets')}</span>
+            <span className="snips" role="group" aria-labelledby="nsnips">
+              {SNIPS.map((s) => {
+                const txt = t('chart.notes.snip.' + s)
+                return <button key={s} type="button" className="snip" onClick={() => insertSnip(txt)}>{txt.replace(/[.]$/, '')}</button>
+              })}
+            </span>
           </div>
           <textarea
             id="ntext" ref={ta} value={text} aria-label={t('chart.notes.entryLabel')} placeholder={t('chart.notes.placeholder')}
@@ -193,7 +195,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
 
       <div className="sec-head">
         <h2 className="sec">{t('chart.notes.title')}</h2>
-        <div className="chips" role="group" aria-label={t('common.filter')}>
+        <div className="chips notes-filter" role="group" aria-label={t('common.filter')}>
           {[{ key: 'all', label: t('common.all') }, ...categories, { key: 'important', label: t('chart.notes.importantFilter') }].map((c) => (
             <button key={c.key} type="button" className="chip" aria-pressed={filter === c.key} onClick={() => setFilter(c.key)}>{c.label}</button>
           ))}

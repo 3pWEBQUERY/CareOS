@@ -105,8 +105,12 @@ export default async function CompliancePage({ searchParams }: { searchParams: P
             </nav>
           </div>
 
+          <div className="mlegend" role="note" aria-label={t('learn.ux.legend')}>
+            {(['valid', 'expiring', 'expired', 'overdue', 'missing'] as const).map((s) => <span key={s}><span className={'cm ' + s}><span aria-hidden="true">{SYMBOL[s]}</span>{t('learn.legend.' + s)}</span></span>)}
+          </div>
+
           {courses.length && rows.length ? (
-            <div className="tablewrap">
+            <div className="tablewrap matrix-wrap" role="region" aria-label={t('learn.compliance.title')} tabIndex={0}>
               <table className="stable matrix">
                 <thead>
                   <tr>
@@ -144,9 +148,6 @@ export default async function CompliancePage({ searchParams }: { searchParams: P
             </div>
           ) : <Empty title={courses.length ? t('learn.compliance.emptyRows') : t('learn.compliance.noMandatory')} />}
 
-          <div className="mlegend">
-            {(['valid', 'expiring', 'expired', 'overdue', 'missing'] as const).map((s) => <span key={s}><span className={'cm ' + s}><span aria-hidden="true">{SYMBOL[s]}</span>{t('learn.legend.' + s)}</span></span>)}
-          </div>
         </div>
       </div>
     </main>

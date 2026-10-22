@@ -1,9 +1,10 @@
 'use client'
 
-import { useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
-import type { ColleagueDto, ResidentCtxDto } from './types'
+import { setDoseAction } from '@/app/(app)/residents/[id]/meds/actions'
+import type { ColleagueDto, DoseStateDto, ResidentCtxDto } from './types'
 
 export type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 export const isKey = (s: string) => /^[a-z]+\.[\w.]+$/.test(s)
@@ -25,6 +26,31 @@ export function useCall() {
   return { pending, call }
 }
 
+/**
+ * Geplante Dosis dokumentieren (Abgabeliste und Medikamentenrunde): sperrt Doppeltipps, solange die Aktion läuft,
+ * und bietet für Abgegeben/Verweigert ein Rückgängig im Toast (Storno, bleibt im Verlauf; PRD §32).
+ */
+export function useDoseCall(day: string) {
+  const t = useT()
+  const { pending, call } = useCall()
+  const [busy, setBusy] = useState<string | null>(null)
+  const inflight = useRef(false)
+  useEffect(() => { if (!pending) { setBusy(null); inflight.current = false } }, [pending])
+  const record = (med: { id: string }, time: string, status: DoseStateDto, expectedId: string) => {
+    if (inflight.current) return
+    inflight.current = true
+    setBusy(med.id + '|' + time)
+    call(setDoseAction, { medicationId: med.id, day, time, status, expectedId }, (r) => {
+      if (!r.ok) return
+      const adminId = (r.data as { adminId?: string } | undefined)?.adminId
+      const msg = r.message ? (isKey(r.message) ? t(r.message) : r.message) : ''
+      const undoable = !!adminId && (status === 'given' || status === 'refused')
+      if (msg) toast(msg, undoable ? { undoLabel: t('common.undo'), undo: () => call(setDoseAction, { medicationId: med.id, day, time, status: 'open', expectedId: adminId! }) } : {})
+    }, true)
+  }
+  return { pending, busy, record, isBusy: (medId: string, time: string) => busy === medId + '|' + time }
+}
+
 /** Patientenzuordnung in kritischen Dialogen (PRD §32): Name, Zimmer, Allergien. */
 export function ResidentContext({ r }: { r: ResidentCtxDto }) {
   const t = useT()
@@ -37,14 +63,18 @@ export function ResidentContext({ r }: { r: ResidentCtxDto }) {
   )
 }
 
-/** Vier-Augen-Kontrolle: zweite Person wählt sich aus und bestätigt mit Passwort. */
-export function FourEyes({ colleagues }: { colleagues: ColleagueDto[] }) {
+/** Vier-Augen-Kontrolle: zweite Person prüft das Angezeigte, wählt sich aus und bestätigt mit Passwort. */
+export function FourEyes({ colleagues, summary }: { colleagues: ColleagueDto[]; summary?: React.ReactNode }) {
   const t = useT()
   return (
-    <fieldset>
+    <fieldset className="four-eyes">
       <legend className="lbl">{t('meds.fourEyes.title')}</legend>
       <div className="stack-sm">
-        <p className="small fg2" style={{ margin: 0 }}>{t('meds.fourEyes.hint')}</p>
+        <ol className="four-eyes-steps small">
+          <li>{t('meds.fourEyes.step1')}</li>
+          <li>{t('meds.fourEyes.step2')}</li>
+        </ol>
+        {summary && <div className="four-eyes-check">{summary}</div>}
         <div className="form-grid">
           <label className="fld">
             <span className="lbl">{t('meds.fourEyes.colleague')}</span>

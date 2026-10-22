@@ -163,3 +163,50 @@ export async function escalateTaskAction(form: FormData): Promise<ActionResult> 
     return { ok: true, message: t('tasks.toast.escalated', { n: leads.length }) }
   }) as Promise<ActionResult>
 }
+
+/**
+ * Sammelquittierung eines Zeitpunkts (z. B. alle «Kontrollgang 21:30»): nach Bestätigung im Dialog,
+ * jede Aufgabe einzeln geprüft und protokolliert. Medikamenten-Zeitpunkte und bereits abgeschlossene werden übersprungen.
+ */
+export async function completeManyAction(form: FormData): Promise<ActionResult<{ ids: string[] }>> {
+  return run<{ ids: string[] }>(async () => {
+    const ctx = await getCtx()
+    const ids = [...new Set(fd(form, 'ids').split(',').filter(Boolean))].slice(0, 100)
+    if (!ids.length) return { ok: false, error: 'common.genericError' }
+    const done: string[] = []
+    const units = new Set<string>()
+    for (const id of ids) {
+      const task = await loadTask(ctx, id, 'task.complete')
+      if (isMedSlot(task) || isClosed(task.status)) continue
+      const after = await db.task.update({ where: { id: task.id }, data: { status: 'done', completedById: ctx.user.id, completedAt: new Date() } })
+      await audit(ctx, { action: 'task.complete', entityType: 'Task', entityId: task.id, before: snapshot(task), after: snapshot(after), context: { residentId: task.residentId, bulk: ids.length } })
+      done.push(task.id)
+      units.add(task.unitId)
+    }
+    for (const unitId of units) await emit({ orgId: ctx.org.id, type: 'task.completed', unitId, actorId: ctx.user.id, payload: { taskIds: done, status: 'done' } })
+    refresh()
+    return { ok: true, message: ctx.t('tasks.bulk.toast', { n: done.length }), data: { ids: done } }
+  })
+}
+
+/** Undo der Sammelquittierung: nur eigene Quittierungen der letzten 10 Minuten. */
+export async function reopenManyAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    const ids = [...new Set(fd(form, 'ids').split(',').filter(Boolean))].slice(0, 100)
+    const since = new Date(Date.now() - 10 * 60_000)
+    let n = 0
+    const units = new Set<string>()
+    for (const id of ids) {
+      const task = await loadTask(ctx, id, 'task.complete')
+      if (task.status !== 'done' || task.completedById !== ctx.user.id || !task.completedAt || task.completedAt < since) continue
+      const after = await db.task.update({ where: { id: task.id }, data: { status: 'planned', completedById: null, completedAt: null } })
+      await audit(ctx, { action: 'task.reopen', entityType: 'Task', entityId: task.id, before: snapshot(task), after: snapshot(after), context: { residentId: task.residentId, bulk: ids.length } })
+      units.add(task.unitId)
+      n++
+    }
+    for (const unitId of units) await emit({ orgId: ctx.org.id, type: 'task.reopened', unitId, actorId: ctx.user.id })
+    refresh()
+    return { ok: true, message: ctx.t('tasks.bulk.undone', { n }) }
+  })
+}

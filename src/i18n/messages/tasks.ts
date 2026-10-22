@@ -2,6 +2,15 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
+    bulk: {
+      undone: '{n, plural, one {# Massnahme wieder offen} other {# Massnahmen wieder offen}}',
+      toast: '{n, plural, one {# Massnahme quittiert} other {# Massnahmen quittiert}}',
+      confirm: '{n, plural, one {# Massnahme quittieren} other {# Massnahmen quittieren}}',
+      hint: 'Quittiert die ausgewählten Massnahmen als erledigt, jeweils mit Ihrem Namen und der aktuellen Zeit. Personen mit Abweichung abwählen und einzeln über ⋯ dokumentieren.',
+      title: 'Sammelquittierung',
+      button: 'Alle {n} quittieren',
+      count: '{n} Personen',
+    },
     medSlot: 'Medikamente',
     assessmentDue: 'Assessment fällig: {name}',
     station: 'Station',
@@ -98,6 +107,17 @@ export default defineMessages({
       alreadyEscalated: 'Diese Aufgabe ist bereits eskaliert.',
     },
     handover: {
+      confirm: {
+        button: 'Bestätigen und alle übernehmen',
+        progress: '{n} von {total} bestätigt',
+        check: 'Gelesen und zur Kenntnis genommen',
+        hint: 'Diese Einträge verlangen eine ausdrückliche Kenntnisnahme. Bitte jeden Eintrag lesen und bestätigen; danach wird die ganze Übergabe übernommen.',
+        title: '{n, plural, one {Wichtigen Eintrag bestätigen} other {# wichtige Einträge bestätigen}}',
+      },
+      scope: {
+        shift: 'Ganze Schicht',
+        label: 'Zeitraum',
+      },
       label: 'Schichtübergabe',
       shift: 'Schicht',
       prevShift: 'Vorherige Schicht',
@@ -110,7 +130,7 @@ export default defineMessages({
       lockedHint: 'Die Übergabe ist abgeschlossen. Ergänzungen sind nicht mehr möglich – Neues bitte im Verlauf dokumentieren.',
       important: 'Wichtig',
       importantTitle: '{n, plural, one {# wichtiger Eintrag verlangt} other {# wichtige Einträge verlangen}} eine Kenntnisnahme. ',
-      importantText: 'Bitte einzeln übernehmen, bevor die ganze Übergabe bestätigt werden kann.',
+      importantText: 'Einzeln übernehmen oder bei «Alle übernehmen» je Eintrag bestätigen.',
       ack: 'Übernehmen',
       ackImportant: 'Zur Kenntnis genommen',
       acked: 'Übernommen {time}',
@@ -196,6 +216,15 @@ export default defineMessages({
     },
   },
   fr: {
+    bulk: {
+      undone: '{n, plural, one {# mesure de nouveau ouverte} other {# mesures de nouveau ouvertes}}',
+      toast: '{n, plural, one {# mesure validée} other {# mesures validées}}',
+      confirm: '{n, plural, one {Valider # mesure} other {Valider # mesures}}',
+      hint: 'Valide les mesures sélectionnées comme effectuées, chacune avec votre nom et l’heure actuelle. Désélectionner les personnes avec un écart et documenter individuellement via ⋯.',
+      title: 'Validation groupée',
+      button: 'Valider les {n}',
+      count: '{n} personnes',
+    },
     medSlot: 'Médicaments',
     assessmentDue: 'Évaluation à faire : {name}',
     station: 'Unité',
@@ -292,6 +321,17 @@ export default defineMessages({
       alreadyEscalated: 'Cette tâche est déjà escaladée.',
     },
     handover: {
+      confirm: {
+        button: 'Confirmer et tout reprendre',
+        progress: '{n} sur {total} confirmées',
+        check: 'Lu et pris connaissance',
+        hint: 'Ces entrées exigent une prise de connaissance explicite. Veuillez lire et confirmer chaque entrée ; la transmission entière est ensuite reprise.',
+        title: '{n, plural, one {Confirmer l’entrée importante} other {Confirmer # entrées importantes}}',
+      },
+      scope: {
+        shift: 'Service entier',
+        label: 'Période',
+      },
       label: 'Transmission de service',
       shift: 'Service',
       prevShift: 'Service précédent',
@@ -304,7 +344,7 @@ export default defineMessages({
       lockedHint: 'La transmission est clôturée. Les compléments ne sont plus possibles – documenter les nouveautés dans le suivi.',
       important: 'Important',
       importantTitle: '{n, plural, one {# entrée importante exige} other {# entrées importantes exigent}} une prise de connaissance. ',
-      importantText: 'Veuillez les reprendre une par une avant de confirmer toute la transmission.',
+      importantText: 'Reprendre individuellement ou confirmer chaque entrée via « Tout reprendre ».',
       ack: 'Reprendre',
       ackImportant: 'Pris connaissance',
       acked: 'Repris {time}',
@@ -390,6 +430,15 @@ export default defineMessages({
     },
   },
   it: {
+    bulk: {
+      undone: '{n, plural, one {# misura di nuovo aperta} other {# misure di nuovo aperte}}',
+      toast: '{n, plural, one {# misura confermata} other {# misure confermate}}',
+      confirm: '{n, plural, one {Confermare # misura} other {Confermare # misure}}',
+      hint: 'Conferma come eseguite le misure selezionate, ognuna con il suo nome e l’ora attuale. Deselezionare le persone con eccezioni e documentarle singolarmente tramite ⋯.',
+      title: 'Conferma collettiva',
+      button: 'Confermare tutte le {n}',
+      count: '{n} persone',
+    },
     medSlot: 'Farmaci',
     assessmentDue: 'Valutazione dovuta: {name}',
     station: 'Reparto',
@@ -486,6 +535,17 @@ export default defineMessages({
       alreadyEscalated: 'Questo compito è già stato escalato.',
     },
     handover: {
+      confirm: {
+        button: 'Confermare e prendere in carico tutto',
+        progress: '{n} di {total} confermate',
+        check: 'Letto e preso atto',
+        hint: 'Queste voci richiedono una presa visione esplicita. Leggere e confermare ogni voce; poi viene presa in carico l’intera consegna.',
+        title: '{n, plural, one {Confermare la voce importante} other {Confermare # voci importanti}}',
+      },
+      scope: {
+        shift: 'Turno intero',
+        label: 'Periodo',
+      },
       label: 'Consegna di turno',
       shift: 'Turno',
       prevShift: 'Turno precedente',
@@ -498,7 +558,7 @@ export default defineMessages({
       lockedHint: 'La consegna è chiusa. Non sono più possibili integrazioni – documentare le novità nel decorso.',
       important: 'Importante',
       importantTitle: '{n, plural, one {# voce importante richiede} other {# voci importanti richiedono}} una presa visione. ',
-      importantText: 'Confermarle singolarmente prima di poter confermare tutta la consegna.',
+      importantText: 'Prendere in carico singolarmente o confermare ogni voce con «Prendere tutto in carico».',
       ack: 'Prendere in carico',
       ackImportant: 'Preso visione',
       acked: 'Preso in carico {time}',
@@ -584,6 +644,15 @@ export default defineMessages({
     },
   },
   en: {
+    bulk: {
+      undone: '{n, plural, one {# task reopened} other {# tasks reopened}}',
+      toast: '{n, plural, one {# task completed} other {# tasks completed}}',
+      confirm: '{n, plural, one {Complete # task} other {Complete # tasks}}',
+      hint: 'Marks the selected tasks as done, each with your name and the current time. Deselect people with exceptions and document them individually via ⋯.',
+      title: 'Complete in bulk',
+      button: 'Complete all {n}',
+      count: '{n} people',
+    },
     medSlot: 'Medication',
     assessmentDue: 'Assessment due: {name}',
     station: 'Unit',
@@ -680,6 +749,17 @@ export default defineMessages({
       alreadyEscalated: 'This task is already escalated.',
     },
     handover: {
+      confirm: {
+        button: 'Confirm and acknowledge all',
+        progress: '{n} of {total} confirmed',
+        check: 'Read and acknowledged',
+        hint: 'These entries require explicit acknowledgement. Please read and confirm each entry; the whole handover is then acknowledged.',
+        title: '{n, plural, one {Confirm important entry} other {Confirm # important entries}}',
+      },
+      scope: {
+        shift: 'Whole shift',
+        label: 'Period',
+      },
       label: 'Shift handover',
       shift: 'Shift',
       prevShift: 'Previous shift',
@@ -692,7 +772,7 @@ export default defineMessages({
       lockedHint: 'The handover is closed. Additions are no longer possible – please document new information in the progress notes.',
       important: 'Important',
       importantTitle: '{n, plural, one {# important entry requires} other {# important entries require}} acknowledgement. ',
-      importantText: 'Please acknowledge them one by one before confirming the whole handover.',
+      importantText: 'Acknowledge individually or confirm each entry via “Acknowledge all”.',
       ack: 'Acknowledge',
       ackImportant: 'Acknowledged as read',
       acked: 'Acknowledged {time}',

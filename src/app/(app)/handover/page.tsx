@@ -9,7 +9,9 @@ import { HandoverActions, HandoverCard, type HoBlockDto } from '@/components/han
 import { collectHandover, runningAndPrevious } from './collect'
 import { ackSettings } from '@/lib/acks'
 
-export const metadata = { title: 'Übergabe' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('nav.handover') }
+}
 
 const LIMIT = 6
 
@@ -67,7 +69,10 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
   const totals = blocks.reduce((s, b) => ({ notes: s.notes + b.counts.notes, open: s.open + b.counts.open, abnormal: s.abnormal + b.counts.abnormal }), { notes: 0, open: 0, abnormal: 0 })
   const ackN = dto.filter((b) => b.acked).length
   // Admin → Bestätigungen: wichtige Einträge vor "Alle übernehmen" einzeln übernehmen (abschaltbar)
-  const importantOpen = ackSettings(ctx.org.settings).handoverImportantRequiresAck ? dto.filter((b) => b.entry?.important && !b.acked).length : 0
+  const important = ackSettings(ctx.org.settings).handoverImportantRequiresAck
+    ? dto.filter((b) => b.entry?.important && !b.acked).map((b) => ({ id: b.resident.id, name: b.resident.name, room: b.resident.room, watch: b.entry!.watch, open: b.entry!.open }))
+    : []
+  const importantOpen = important.length
   const allAcked = myAcks.has('') && ackN === dto.length
   const aiAvailable = aiConfigured() && ctx.can('ai.use')
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
@@ -109,15 +114,16 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
       <div className="scroll">
         <div className="tabpanel">
           <div className="row-between">
-            <Link className="chip" href={href({ since: since ? null : '1' })} aria-pressed={since} scroll={false}>
-              {since ? '✓ ' : ''}{t('tasks.handover.sinceLast')}
-            </Link>
+            <nav className="seg seg-x ho-scope" aria-label={t('tasks.handover.scope.label')}>
+              <Link href={href({ since: null })} aria-current={!since ? 'page' : undefined} scroll={false}>{t('tasks.handover.scope.shift')}</Link>
+              <Link href={href({ since: '1' })} aria-current={since ? 'page' : undefined} scroll={false}>{t('tasks.handover.sinceLast')}</Link>
+            </nav>
             <HandoverActions
               target={target}
               since={since}
               canAck={!future}
               canAckAll={!future}
-              ackAllBlocked={importantOpen}
+              important={important}
               allAcked={allAcked}
               canSubmit={canWrite && !future}
               submitted={!!handover?.submittedAt}
@@ -129,7 +135,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
           {since && last && <p className="small muted" style={{ margin: 0 }}>{t(last.source === 'shift' ? 'tasks.handover.sinceHint' : 'tasks.handover.sinceHintSession', { at: rel(last.at) })}</p>}
           {future && <p className="muted" style={{ margin: 0 }}>{t('tasks.handover.futureHint')}</p>}
 
-          <div className="metrics">
+          <div className="metrics metrics-2">
             <div className="metric"><span className="lbl">{t('tasks.handover.metrics.notes')}</span><span className="val">{totals.notes}</span></div>
             <div className="metric"><span className="lbl">{t('tasks.handover.metrics.open')}</span><span className={'val' + (totals.open ? ' crit' : '')}>{totals.open}</span></div>
             <div className="metric"><span className="lbl">{t('tasks.handover.metrics.abnormal')}</span><span className={'val' + (totals.abnormal ? ' crit' : '')}>{totals.abnormal}</span></div>

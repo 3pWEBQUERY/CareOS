@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import type { Task } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
@@ -9,9 +10,11 @@ import { shiftTypes } from '@/lib/shift'
 import { addDays, currentShiftBounds, dateKey, fmtDayMonth, hm, sameDay, shiftAt, shiftBounds, startOfDay } from '@/lib/time'
 import { openDoses } from '@/lib/medication'
 import { Forbidden, Empty } from '@/components/ui/Empty'
-import { CreateTask, TaskTable, type StaffDto, type TaskRowDto } from '@/components/tasks/TaskTable'
+import { CreateTask, RememberFilter, TaskTable, type StaffDto, type TaskRowDto } from '@/components/tasks/TaskTable'
 
-export const metadata = { title: 'Aufgaben' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('nav.tasks') }
+}
 
 /** Farbton der Kategorie wie im Stationsarbeitsplatz (Text bleibt immer sichtbar). */
 const TONE: Record<string, string> = {
@@ -42,7 +45,10 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   if (!def) win = { start: today, end: addDays(today, 1) }
   else if (running && running.code === def.code) win = currentShiftBounds(def, now)
   else win = shiftBounds(def, today)
-  const filter = (FILTERS as readonly string[]).includes(sp.f ?? '') ? (sp.f as (typeof FILTERS)[number]) : 'open'
+  // Filter bleibt pro Person gespeichert (Cookie je Benutzer), die URL bleibt die Quelle der Wahrheit.
+  const isFilter = (v: string | undefined): v is (typeof FILTERS)[number] => (FILTERS as readonly string[]).includes(v ?? '')
+  const saved = (await cookies()).get('careos_tasks_f_' + user.id)?.value
+  const filter = isFilter(sp.f) ? sp.f : isFilter(saved) ? saved : 'open'
 
   await ensureTasksForDay(unit.id, win.start)
   if (!sameDay(win.start, win.end)) await ensureTasksForDay(unit.id, win.end)
@@ -102,7 +108,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
   const q = (patch: Record<string, string | null>) => {
     const p = new URLSearchParams()
-    const v = { f: filter === 'open' ? null : filter, s: code === (running?.code ?? 'day') ? null : code, ...patch }
+    const v = { f: filter, s: code === (running?.code ?? 'day') ? null : code, ...patch }
     for (const [k, val] of Object.entries(v)) if (val) p.set(k, val)
     const s = p.toString()
     return '/tasks' + (s ? '?' + s : '')
@@ -112,6 +118,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
 
   return (
     <main className="panel main" style={{ flex: 1 }}>
+      <RememberFilter userId={user.id} value={filter} />
       <div className="view-head">
         <div>
           <span className="lbl">{t('tasks.station')} · {unit.name}</span>
@@ -120,7 +127,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="seg seg-x" role="group" aria-label={t('tasks.filter.label')}>
           {FILTERS.map((f) => (
-            <Link key={f} href={q({ f: f === 'open' ? null : f })} aria-current={filter === f ? 'page' : undefined} scroll={false}>{t('tasks.filter.' + f)}</Link>
+            <Link key={f} href={q({ f })} aria-current={filter === f ? 'page' : undefined} scroll={false}>{t('tasks.filter.' + f)}</Link>
           ))}
         </div>
       </div>
@@ -151,8 +158,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             </div>
           </div>
 
-          <div className="metrics">
-            <a className="metric" href={q({ f: null })}><span className="lbl">{t('tasks.metrics.open')}</span><span className="val">{open.length}</span></a>
+          <div className="metrics metrics-2">
+            <a className="metric" href={q({ f: 'open' })}><span className="lbl">{t('tasks.metrics.open')}</span><span className="val">{open.length}</span></a>
             <a className="metric" href={q({ f: 'over' })}><span className="lbl">{t('tasks.metrics.over')}</span><span className={'val' + (over.length ? ' crit' : '')}>{over.length}</span></a>
             <div className="metric"><span className="lbl">{t('tasks.metrics.remaining')}</span><span className="val">{remaining} <small>{t('common.minutes')}</small></span></div>
             {canMeds && <a className="metric" href="#meds-open"><span className="lbl">{t('tasks.metrics.meds')}</span><span className={'val' + (doses.length ? ' crit' : '')}>{doses.length}</span></a>}

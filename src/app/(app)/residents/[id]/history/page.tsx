@@ -167,7 +167,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
                   <tr key={String(l.id)}>
                     <td className="num small nowrap">{fmtDate(l.at, locale)} {hm(l.at)}</td>
                     <td className="small nowrap">{l.userId ? names.get(l.userId)?.short ?? '–' : t('residents.history.system')}</td>
-                    <td className="small"><span className="nowrap">{actionLabel(l.action)}</span><div className="muted mono" style={{ fontSize: 11 }}>{l.entityType}</div></td>
+                    <td className="small"><span className="nowrap">{actionLabel(l.action)}</span></td>
                     <td className="small" style={{ minWidth: 260 }}>
                       {d.length ? (
                         <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>

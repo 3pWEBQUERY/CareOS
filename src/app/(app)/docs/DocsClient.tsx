@@ -46,6 +46,11 @@ export function ActBtn({ action, label, success, confirm, className = 'btn', dis
   )
 }
 
+/** Druckansicht des Dokuments (Lesefassung ohne Navigation, Verlauf und Aktionen). */
+export function PrintButton({ label }: { label: string }) {
+  return <button type="button" className="btn ghost doc-print" onClick={() => window.print()}>{label}</button>
+}
+
 function MetaFields({ d, users }: { d?: Meta; users?: { id: string; name: string }[] }) {
   const t = useT()
   return (

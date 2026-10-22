@@ -1,8 +1,9 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
-import { age } from '@/lib/time'
+import { age, hm } from '@/lib/time'
 import { toLocalInput, workflowSteps } from '../_lib'
 import { ReportForm } from './ReportForm'
 
@@ -14,7 +15,9 @@ export default async function NewIncidentPage({ searchParams }: { searchParams: 
   const units = ctx.units.filter((u) => ctx.can('quality.report', { unitId: u.id, locationId: u.locationId }))
   if (!units.length) return <Forbidden text={t('common.notAllowed')} />
   const sp = await searchParams
-  const wanted = typeof sp.resident === 'string' ? sp.resident : ''
+  // Personenbezug: ?resident=… oder – beim Melden über die Schnellaktion aus einer Akte – die zuletzt geöffnete Akte.
+  const fromReferer = /\/residents\/([^/?#]+)/.exec((await headers()).get('referer') ?? '')?.[1] ?? ''
+  const wanted = typeof sp.resident === 'string' ? sp.resident : fromReferer
   const readableUnits = units.filter((u) => ctx.can('resident.read', { unitId: u.id, locationId: u.locationId }))
 
   const [types, residents] = await Promise.all([
@@ -33,7 +36,7 @@ export default async function NewIncidentPage({ searchParams }: { searchParams: 
 
   const defaultUnit = units.find((u) => u.id === ctx.unit?.id)?.id ?? units[0].id
   return (
-    <main className="panel main" style={{ flex: 1 }}>
+    <main className="panel main q-new" style={{ flex: 1 }}>
       <div className="view-head">
         <div>
           <span className="lbl">CareOS Quality</span>
@@ -46,6 +49,7 @@ export default async function NewIncidentPage({ searchParams }: { searchParams: 
         <div className="tabpanel" style={{ maxWidth: 920 }}>
           <ReportForm
             now={toLocalInput(new Date())}
+            nowLabel={t('quality.ux.now', { time: hm(new Date()) })}
             defaultUnitId={defaultUnit}
             defaultResidentId={residents.some((r) => r.id === wanted) ? wanted : ''}
             units={units.map((u) => ({ id: u.id, name: u.name }))}

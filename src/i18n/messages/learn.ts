@@ -207,6 +207,12 @@ export default defineMessages({
       deleted: 'Modul gelöscht',
       orderHint: 'Module werden in dieser Reihenfolge absolviert. Fortschritt bleibt beim Umsortieren erhalten.',
     },
+    ux: {
+      answered: '{n} von {total} beantwortet',
+      unanswered: 'Bitte beantworten Sie noch Frage {list}.',
+      pick: 'Bitte wählen Sie eine Antwort.',
+      legend: 'Legende',
+    },
   },
   fr: {
     mandatory: 'Obligatoire',
@@ -413,6 +419,12 @@ export default defineMessages({
       deleteConfirm: 'Supprimer le module « {title} » ?',
       deleted: 'Module supprimé',
       orderHint: 'Les modules sont suivis dans cet ordre. La progression est conservée lors du réordonnancement.',
+    },
+    ux: {
+      answered: '{n} sur {total} répondues',
+      unanswered: 'Veuillez encore répondre à la question {list}.',
+      pick: 'Veuillez choisir une réponse.',
+      legend: 'Légende',
     },
   },
   it: {
@@ -621,6 +633,12 @@ export default defineMessages({
       deleted: 'Modulo eliminato',
       orderHint: 'I moduli vengono svolti in questo ordine. Il progresso resta invariato quando si riordina.',
     },
+    ux: {
+      answered: '{n} di {total} risposte',
+      unanswered: 'Risponda ancora alla domanda {list}.',
+      pick: 'Scelga una risposta.',
+      legend: 'Legenda',
+    },
   },
   en: {
     mandatory: 'Mandatory',
@@ -827,6 +845,12 @@ export default defineMessages({
       deleteConfirm: 'Delete module "{title}"?',
       deleted: 'Module deleted',
       orderHint: 'Modules are completed in this order. Progress is kept when reordering.',
+    },
+    ux: {
+      answered: '{n} of {total} answered',
+      unanswered: 'Please still answer question {list}.',
+      pick: 'Please choose an answer.',
+      legend: 'Legend',
     },
   },
 })

@@ -24,7 +24,7 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
 
   const docs = await db.document.findMany({
     where: { orgId: ctx.org.id, status: manage ? undefined : 'approved' },
-    include: { versions: { select: { id: true, version: true, body: true, approvedAt: true, submittedAt: true, critical: true, createdAt: true } } },
+    include: { versions: { select: { id: true, version: true, body: true, approvedAt: true, submittedAt: true, critical: true, createdAt: true, changeNote: true } } },
     orderBy: { title: 'asc' },
   })
   const acks = await db.acknowledgement.findMany({ where: { userId: ctx.user.id, subjectType: 'document', subjectId: { in: docs.map((d) => d.id) } }, select: { subjectId: true, version: true } })
@@ -109,21 +109,40 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
             {q && aiOn && best && <AssistantAi q={q} auto={isQuestion} />}
           </section>
 
-          <nav className="chips" aria-label={t('common.filter')}>
+          {count.ack > 0 && !q && f !== 'ack' && (
+            <section className="card warn" aria-labelledby="toack">
+              <div className="card-head"><h2 id="toack">{t('docs.ux.ackTitle')}</h2><span className="pill warn">{count.ack}</span></div>
+              <ul className="list">
+                {rows.filter((r) => r.needsAck).map(({ d, cur }) => (
+                  <li key={d.id}>
+                    <Link className="li" href={`/docs/${d.id}`} style={{ alignItems: 'center' }}>
+                      <span className="grow">
+                        <span>{d.title} <span className="mono small muted" style={{ fontWeight: 400 }}>v{d.currentVersion}</span></span>
+                        {cur?.critical && cur.changeNote && <span className="small fg2" style={{ display: 'block', fontWeight: 400 }}><span className="tag crit">{t('docs.critical')}</span> {cur.changeNote}</span>}
+                      </span>
+                      <span className="btn sm primary" aria-hidden="true">{t('docs.ux.readAndAck')}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <nav className="chips docs-chips" aria-label={t('common.filter')}>
             <Link className="chip" href={href({ cat: undefined, f: undefined })} aria-current={!cat && !f ? 'page' : undefined}>{t('common.all')} <span className="mono muted">{base.filter((r) => r.score > 0).length}</span></Link>
             {DOC_CATEGORIES.map((c) => (
               <Link key={c} className="chip" href={href({ cat: cat === c ? undefined : c })} aria-current={cat === c ? 'page' : undefined}>{t('docs.cat.' + c)} <span className="mono muted">{catCount(c)}</span></Link>
             ))}
           </nav>
-          <nav className="chips" aria-label={t('docs.statusFilter')}>
+          <nav className="chips docs-chips" aria-label={t('docs.statusFilter')}>
             <Link className="chip" href={href({ f: f === 'ack' ? undefined : 'ack' })} aria-current={f === 'ack' ? 'page' : undefined}>{t('docs.filterAck')} <span className={'mono ' + (count.ack ? 'warn-text' : 'muted')}>{count.ack}</span></Link>
             {manage && <Link className="chip" href={href({ f: f === 'pending' ? undefined : 'pending' })} aria-current={f === 'pending' ? 'page' : undefined}>{t('docs.filterPending')} <span className="mono muted">{count.pending}</span></Link>}
             {manage && <Link className="chip" href={href({ f: f === 'archived' ? undefined : 'archived' })} aria-current={f === 'archived' ? 'page' : undefined}>{t('docs.filterArchived')} <span className="mono muted">{count.archived}</span></Link>}
           </nav>
 
           {list.length ? (
-            <div className="tablewrap">
-              <table className="stable">
+            <div className="tablewrap rwrap">
+              <table className="stable rtable r-inline">
                 <thead>
                   <tr>
                     <th>{t('docs.col.title')}</th>
@@ -137,19 +156,19 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
                 <tbody>
                   {list.map(({ d, pending, needsAck, valid, body }) => (
                     <tr key={d.id} className="clickable">
-                      <td style={{ minWidth: 240 }}>
+                      <td className="r-title" style={{ minWidth: 240 }}>
                         <Link href={`/docs/${d.id}`} style={{ fontWeight: 500 }}>{d.title}</Link>
                         {needsAck && <> <span className="tag warn">{t('docs.toAck')}</span></>}
                         {q ? <div className="small muted" style={{ maxWidth: '60ch' }}>{snippet(body, terms, 140)}</div>
                           : d.tags.length > 0 && <div className="small muted">{d.tags.slice(0, 5).join(' · ')}</div>}
                       </td>
                       <td><span className={'tag ' + (CATEGORY_TONE[d.category] ?? '')}>{t('docs.cat.' + d.category)}</span></td>
-                      <td className="num">{d.currentVersion ?? '–'}{pending && manage && <div className="small muted">→ {pending.version}</div>}</td>
+                      <td className="num" data-label={t('docs.col.version')}>{d.currentVersion ?? '–'}{pending && manage && <div className="small muted">→ {pending.version}</div>}</td>
                       <td>
                         <span className={'tag ' + ({ approved: 'ok', review: 'violet', draft: '', archived: 'outline' }[d.status])}>{t('docs.status.' + d.status)}</span>
                         {pending && manage && d.status === 'approved' && <div className="small muted nowrap">{t('docs.pendingVersion', { v: pending.version, state: t('docs.vstate.' + versionState(pending)) })}</div>}
                       </td>
-                      <td className="nowrap">
+                      <td className="nowrap" data-label={t('docs.col.validUntil')}>
                         {d.validUntil ? (
                           <span className={valid === 'expired' ? 'crit-text' : valid === 'soon' ? 'warn-text' : ''}>
                             <span className="mono">{fmtDate(d.validUntil, locale)}</span>
@@ -157,7 +176,7 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
                           </span>
                         ) : <span className="muted">–</span>}
                       </td>
-                      <td className="nowrap">{owners.get(d.ownerId) ?? '–'}</td>
+                      <td className="nowrap hide-sm" data-label={t('docs.col.owner')}>{owners.get(d.ownerId) ?? '–'}</td>
                     </tr>
                   ))}
                 </tbody>

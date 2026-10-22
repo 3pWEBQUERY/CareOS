@@ -54,13 +54,13 @@ const STATUSES = ['open', 'given', 'refused', 'omitted', 'held'] as const
  * Dokumentiert den Zustand einer geplanten Dosis. Bestehende Abgabe wird storniert (nie geändert),
  * dann ein neuer Eintrag erstellt. `expectedId` erkennt gleichzeitige Änderungen (PRD §32 Konflikterkennung).
  */
-export async function setDoseAction(form: FormData): Promise<ActionResult> {
-  return run(async () => {
+export async function setDoseAction(form: FormData): Promise<ActionResult<{ adminId: string }>> {
+  return run<{ adminId: string }>(async () => {
     const ctx = await getCtx()
     const { t } = ctx
     const { med, r } = await loadMed(ctx, fd(form, 'medicationId'), 'resident.medication.administer')
     const status = fd(form, 'status') as (typeof STATUSES)[number]
-    if (!STATUSES.includes(status)) return err('common.genericError')
+    if (!STATUSES.includes(status)) return { ok: false, error: 'common.genericError' }
     const time = fd(form, 'time')
     const day = parseDateKey(fd(form, 'day'))
     const today = startOfDay()
@@ -119,9 +119,9 @@ export async function setDoseAction(form: FormData): Promise<ActionResult> {
     if (change === 'completed' || change === 'skipped') await emit({ orgId: ctx.org.id, type: 'task.completed', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id })
     if (change === 'reopened') await emit({ orgId: ctx.org.id, type: 'task.reopened', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id })
     refresh()
-    void created
-    return { ok: true, message: t('meds.toast.' + status, { drug: med.name, slot }) }
-  }) as Promise<ActionResult>
+    // adminId erlaubt das Rückgängigmachen direkt aus dem Toast (Storno mit Konflikterkennung).
+    return { ok: true, message: t('meds.toast.' + status, { drug: med.name, slot }), data: { adminId: created?.id ?? '' } }
+  })
 }
 
 /** Reservemedikation abgeben: Abgabe + Verlaufseintrag + Aufgabe Wirkungskontrolle (+45 Min.). */

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -70,6 +70,15 @@ export function NewWoundButton({ residentId, today, contextLabel }: { residentId
 export function WoundEntryForm({ residentId, woundId, now, storage }: { residentId: string; woundId: string; now: string; storage: boolean }) {
   const t = useT()
   const [count, setCount] = useState(0)
+  const [previews, setPreviews] = useState<string[]>([])
+  // Vorschau der aufgenommenen Fotos (nur im Speicher des Browsers, nicht in der Galerie)
+  const pick = (files: FileList | null) => {
+    previews.forEach((u) => URL.revokeObjectURL(u))
+    const list = files ? Array.from(files).filter((f) => f.type.startsWith('image/')) : []
+    setCount(list.length)
+    setPreviews(list.slice(0, 6).map((f) => URL.createObjectURL(f)))
+  }
+  useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews])
   const sel = (name: string, group: string, list: readonly string[]) => (
     <label className="fld" htmlFor={'we-' + name}>
       <span className="lbl">{t('care.wounds.' + group + 'L')}</span>
@@ -80,7 +89,7 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
     </label>
   )
   return (
-    <ActionForm action={(f) => saveWoundEntryAction(residentId, woundId, f)} success="care.wounds.entrySaved" onDone={(r) => r.ok && setCount(0)}>
+    <ActionForm action={(f) => saveWoundEntryAction(residentId, woundId, f)} success="care.wounds.entrySaved" onDone={(r) => { if (r.ok) pick(null) }}>
       <div className="vform" style={{ border: 0, padding: 0 }}>
         <label htmlFor="we-at" style={{ gridColumn: '1 / -1', maxWidth: 260 }}>
           <span className="lbl">{t('care.wounds.entryAt')}</span>
@@ -105,7 +114,7 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
           <span className="lbl">{t('care.wounds.description')}</span>
           <textarea id="we-desc" name="description" className="field" rows={2} style={{ minHeight: 56 }} />
         </label>
-        <label className="fld" htmlFor="we-treat" style={{ gridColumn: 'span 2' }}>
+        <label className="fld span-all" htmlFor="we-treat">
           <span className="lbl">{t('care.wounds.treatment')}</span>
           <input id="we-treat" name="treatment" className="field" maxLength={2000} />
         </label>
@@ -124,11 +133,17 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
             <div className="row">
               <input
                 id="we-photo" name="photos" type="file" accept="image/*" capture="environment" multiple className="sr-only photo-in"
-                onChange={(e) => setCount(e.currentTarget.files?.length ?? 0)}
+                onChange={(e) => pick(e.currentTarget.files)}
               />
               <label className="btn" htmlFor="we-photo">{t('care.wounds.photoTake')}</label>
               {count > 0 && <span className="small">{t('care.wounds.photoSelected', { n: count })}</span>}
-              <span className="small muted">{t('care.wounds.photoHint')}</span>
+              {previews.length > 0 && (
+                <div className="thumbs" aria-hidden="true">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {previews.map((u) => <img key={u} src={u} alt="" />)}
+                </div>
+              )}
+              <span className="small muted" style={{ flexBasis: '100%' }}>{t('care.wounds.photoHint')}</span>
             </div>
           ) : (
             <div className="alert"><span className="grow">{t('care.wounds.photoUnavailable')}</span></div>

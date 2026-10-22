@@ -2,42 +2,89 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useT } from '@/i18n/client'
+import { ResidentWorkspace } from '@/components/shell/ListDrawer'
 
 export type ResRow = { id: string; room: string; name: string; meta: string; over: number; open: number; changed: boolean; search: string }
 
-/** Bewohnerliste (linke Spalte). "/" fokussiert den Filter. Im Auswahlmodus (?pick=notes) springt der Klick direkt in den Bereich. */
+/** Register der Akte, das beim Personenwechsel erhalten bleibt (PRD §31 «schnelle Bewohnerwechsel»). */
+export function residentHref(id: string, path: string, pick?: string | null) {
+  if (pick) return `/residents/${id}/${pick}`
+  const seg = path.split('/')
+  const tab = seg[1] === 'residents' && seg[2] && seg[3] && seg[3] !== 'export' ? seg[3] : ''
+  return `/residents/${id}${tab ? '/' + tab : ''}`
+}
+
+/**
+ * Bewohnerliste (linke Spalte). "/" fokussiert den Filter, ↓ springt vom Filter in die Liste, Enter öffnet den ersten Treffer,
+ * ↑/↓ bewegen den Fokus in der Liste, Alt+↑/↓ wechselt aus der Akte zur vorherigen/nächsten Person (Register bleibt).
+ * Im Auswahlmodus (?pick=notes) springt der Klick direkt in den Bereich.
+ */
 export function ResidentList({ rows }: { rows: ResRow[] }) {
   const t = useT()
   const path = usePathname()
   const sp = useSearchParams()
   const pick = sp.get('pick')
+  const router = useRouter()
   const [q, setQ] = useState('')
   const ref = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
+  const needle = q.trim().toLowerCase()
+  const list = rows.filter((r) => !needle || r.search.includes(needle))
+  const currentId = path.split('/')[2]
+  const href = (id: string) => residentHref(id, path, pick)
+  const idx = rows.findIndex((r) => r.id === currentId)
+  const prev = idx > 0 ? rows[idx - 1] : null
+  const next = idx >= 0 && idx < rows.length - 1 ? rows[idx + 1] : null
+  const prevHref = prev ? href(prev.id) : null
+  const nextHref = next ? href(next.id) : null
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement as HTMLElement)?.tagName ?? '')) {
+      const typing = /INPUT|TEXTAREA|SELECT/.test((document.activeElement as HTMLElement)?.tagName ?? '') || (document.activeElement as HTMLElement)?.isContentEditable
+      if (e.key === '/' && !typing) {
         e.preventDefault()
         ref.current?.focus()
+      } else if (e.altKey && !typing && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+        const to = e.key === 'ArrowDown' ? nextHref : prevHref
+        if (to) { e.preventDefault(); router.push(to, { scroll: false }) }
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
-  const needle = q.trim().toLowerCase()
-  const list = rows.filter((r) => !needle || r.search.includes(needle))
-  const currentId = path.split('/')[2]
+  }, [router, prevHref, nextHref])
+  // Nachbarn vorladen und die aktuelle Person in der Liste sichtbar halten
+  useEffect(() => {
+    if (prevHref) router.prefetch(prevHref)
+    if (nextHref) router.prefetch(nextHref)
+    listRef.current?.querySelector<HTMLElement>('[aria-current="true"]')?.scrollIntoView({ block: 'nearest' })
+  }, [router, prevHref, nextHref])
+  const links = () => [...(listRef.current?.querySelectorAll<HTMLAnchorElement>('a.res') ?? [])]
+  const onListKey = (e: React.KeyboardEvent) => {
+    if (e.altKey || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return
+    const all = links()
+    const i = all.indexOf(document.activeElement as HTMLAnchorElement)
+    if (i < 0) return
+    e.preventDefault()
+    if (e.key === 'ArrowUp' && i === 0) return ref.current?.focus()
+    const j = e.key === 'Home' ? 0 : e.key === 'End' ? all.length - 1 : Math.max(0, Math.min(all.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))
+    all[j]?.focus()
+  }
   return (
     <aside className="panel" aria-label={t('residents.list.title')}>
       <div className="list-head">
         <div className="row"><span className="lbl">{pick ? t(pick === 'vitals' ? 'residents.list.pickVitals' : 'residents.list.pickNotes') : t('residents.list.title')}</span><span className="small muted">{t('residents.list.count', { n: list.length, total: rows.length })}</span></div>
-        <input ref={ref} className="field" type="search" placeholder={t('residents.list.filter')} autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('residents.list.filter')} />
+        <input ref={ref} className="field" type="search" placeholder={t('residents.list.filter')} autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('residents.list.filter')}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); links()[0]?.focus() }
+            else if (e.key === 'Enter' && list.length && needle) { e.preventDefault(); router.push(href(list[0].id), { scroll: false }); setQ('') }
+            else if (e.key === 'Escape' && q) { e.preventDefault(); setQ('') }
+          }} />
       </div>
-      <ul className="reslist">
+      <ul className="reslist" ref={listRef} onKeyDown={onListKey}>
         {list.length ? list.map((r) => (
           <li key={r.id}>
-            <Link className="res" href={`/residents/${r.id}${pick ? '/' + pick : ''}`} aria-current={r.id === currentId ? 'true' : 'false'}>
+            <Link className="res" href={href(r.id)} scroll={false} aria-current={r.id === currentId ? 'true' : 'false'}>
               <span className="room">{r.room}</span>
               <span style={{ minWidth: 0 }}>
                 <div className="nm">{r.name}{r.changed && <i className="chg" title={t('residents.list.changed')} />}</div>
@@ -54,6 +101,7 @@ export function ResidentList({ rows }: { rows: ResRow[] }) {
       <div className="list-foot">
         <span><i style={{ background: 'var(--crit-soft)', border: '1px solid var(--crit)' }} />{t('residents.list.overdue')}</span>
         <span><i style={{ background: 'var(--sunken)', border: '1px solid var(--line-strong)' }} />{t('residents.list.openToday')}</span>
+        <span className="res-keys"><kbd>Alt</kbd> <kbd>↑</kbd><kbd>↓</kbd> {t('residents.list.keysHint')}</span>
       </div>
     </aside>
   )
@@ -61,5 +109,6 @@ export function ResidentList({ rows }: { rows: ResRow[] }) {
 
 export function Workspace({ children }: { children: React.ReactNode }) {
   const path = usePathname()
-  return <div className="workspace" data-detail={path.split('/').length > 2 ? 'true' : undefined}>{children}</div>
+  // Tablet: Liste als Zimmerleiste mit Schublade (Shell, PRD §29)
+  return <ResidentWorkspace detail={path.split('/').length > 2}>{children}</ResidentWorkspace>
 }

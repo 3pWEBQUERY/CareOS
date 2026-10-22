@@ -38,9 +38,9 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
         {b.resident.allergies.map((a) => <span key={a} className="flag crit">{t('residents.banner.allergy', { name: a })}</span>)}
         {important && <span className="tag warn">{t('tasks.handover.important')}</span>}
         <div className="push">
-          {canEdit && <button type="button" className="btn sm ghost" onClick={() => setEdit(true)}>{t(b.entry ? 'tasks.handover.entry.edit' : 'tasks.handover.entry.add')}</button>}
+          {canEdit && <button type="button" className="btn ghost" onClick={() => setEdit(true)}>{t(b.entry ? 'tasks.handover.entry.edit' : 'tasks.handover.entry.add')}</button>}
           {canAck && (
-            <button type="button" className={'btn sm' + (important && !acked ? ' primary' : '')} aria-pressed={acked} disabled={acked || pending}
+            <button type="button" className={'btn' + (important && !acked ? ' primary' : '')} disabled={acked || pending} data-loading={pending || undefined}
               onClick={() => call(acknowledgeAction, { ...target, residentId: b.resident.id })}>
               {acked ? '✓ ' + t('tasks.handover.acked', { time: b.acked ?? '' }) : t(important ? 'tasks.handover.ackImportant' : 'tasks.handover.ack')}
             </button>
@@ -100,13 +100,15 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
   )
 }
 
-/** Aktionen der ganzen Übergabe: Alle übernehmen, Abschliessen, KI-Zusammenfassung. */
-export function HandoverActions({ target, since, canAck, canAckAll, ackAllBlocked, allAcked, canSubmit, submitted, note, aiAvailable, canWrite }: {
+export type HoImportantDto = { id: string; name: string; room: string | null; watch: string | null; open: string | null }
+
+/** Aktionen der ganzen Übergabe: Alle übernehmen (wichtige Einträge ausdrücklich bestätigen), Abschliessen, KI-Zusammenfassung. */
+export function HandoverActions({ target, since, canAck, canAckAll, important, allAcked, canSubmit, submitted, note, aiAvailable, canWrite }: {
   target: Target
   since: boolean
   canAck: boolean
   canAckAll: boolean
-  ackAllBlocked: number
+  important: HoImportantDto[]
   allAcked: boolean
   canSubmit: boolean
   submitted: boolean
@@ -117,6 +119,7 @@ export function HandoverActions({ target, since, canAck, canAckAll, ackAllBlocke
   const t = useT()
   const { pending, call } = useCall()
   const [submit, setSubmit] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const [ai, setAi] = useState<{ id: string; text: string } | null>(null)
   const [aiPending, startAi] = useTransition()
   const runAi = () => startAi(async () => {
@@ -142,8 +145,8 @@ export function HandoverActions({ target, since, canAck, canAckAll, ackAllBlocke
         )}
         {canSubmit && !submitted && <button type="button" className="btn" onClick={() => setSubmit(true)}>{t('tasks.handover.submit.button')}</button>}
         {canAck && canAckAll && (
-          <button type="button" className="btn primary" disabled={pending || allAcked || ackAllBlocked > 0} title={ackAllBlocked ? t('tasks.handover.ackAllBlocked', { n: ackAllBlocked }) : undefined}
-            onClick={() => call(acknowledgeAction, { ...target, residentId: '' })}>
+          <button type="button" className="btn primary" disabled={pending || allAcked} data-loading={(pending && !confirming) || undefined}
+            onClick={() => (important.length ? setConfirming(true) : call(acknowledgeAction, { ...target, residentId: '' }))}>
             {allAcked ? '✓ ' + t('tasks.handover.allAcked') : t('tasks.handover.ackAll')}
           </button>
         )}
@@ -158,6 +161,8 @@ export function HandoverActions({ target, since, canAck, canAckAll, ackAllBlocke
           </div>
         </div>
       )}
+      {confirming && <ImportantConfirm items={important} pending={pending} onClose={() => setConfirming(false)}
+        onConfirm={(ids) => call(acknowledgeAction, { ...target, residentId: '', confirmed: ids.join(',') }, () => setConfirming(false))} />}
       {submit && (
         <Dialog open onClose={() => setSubmit(false)} title={t('tasks.handover.submit.title')}>
           <ActionForm action={submitHandoverAction} onDone={(r) => r.ok && setSubmit(false)} confirm="tasks.handover.submit.confirm">
@@ -177,5 +182,42 @@ export function HandoverActions({ target, since, canAck, canAckAll, ackAllBlocke
         </Dialog>
       )}
     </>
+  )
+}
+
+/** Wichtige Einträge vor «Alle übernehmen»: jeder Eintrag wird angezeigt und einzeln bestätigt (PRD §11.4). */
+function ImportantConfirm({ items, pending, onClose, onConfirm }: { items: HoImportantDto[]; pending: boolean; onClose: () => void; onConfirm: (ids: string[]) => void }) {
+  const t = useT()
+  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const all = items.every((i) => checked.has(i.id))
+  const toggle = (id: string) => setChecked((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  return (
+    <Dialog open onClose={onClose} title={t('tasks.handover.confirm.title', { n: items.length })} wide>
+      <p className="small fg2" style={{ margin: 0 }}>{t('tasks.handover.confirm.hint')}</p>
+      <ul className="list card">
+        {items.map((i) => (
+          <li key={i.id}>
+            <div className="li ho-confirm">
+              <div className="grow stack-sm" style={{ gap: 4 }}>
+                <div className="row" style={{ gap: 8 }}>
+                  {i.room && <span className="roomtag">{i.room}</span>}
+                  <strong>{i.name}</strong>
+                  <span className="tag warn">{t('tasks.handover.important')}</span>
+                </div>
+                {i.watch && <div className="small"><span className="lbl">{t('tasks.handover.cols.watch')}</span><div className="ws-pre">{i.watch}</div></div>}
+                {i.open && <div className="small"><span className="lbl">{t('tasks.handover.cols.open')}</span><div className="ws-pre">{i.open}</div></div>}
+                <label className="check ho-check"><input type="checkbox" checked={checked.has(i.id)} onChange={() => toggle(i.id)} />{t('tasks.handover.confirm.check')}</label>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="form-actions">
+        <span className="small muted" aria-live="polite">{t('tasks.handover.confirm.progress', { n: items.filter((i) => checked.has(i.id)).length, total: items.length })}</span>
+        <span className="spacer" />
+        <button type="button" className="btn" onClick={onClose}>{t('common.cancel')}</button>
+        <button type="button" className="btn primary" disabled={!all || pending} data-loading={pending || undefined} onClick={() => onConfirm(items.map((i) => i.id))}>{t('tasks.handover.confirm.button')}</button>
+      </div>
+    </Dialog>
   )
 }

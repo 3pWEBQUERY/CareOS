@@ -20,6 +20,16 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
   const [err, setErr] = useState<{ msg: string; field?: string } | null>(null)
   const [warn, setWarn] = useState<string[] | null>(null)
   const [pending, start] = useTransition()
+  // Sofortige Rückmeldung direkt am Feld (PRD §32): unplausibel = Fehler, ausserhalb Referenz = Hinweis ▲/▼
+  const [hint, setHint] = useState<Record<string, { kind: 'err' | 'warn'; text: string }>>({})
+  const check = (f: Field) => {
+    const raw = (vals[f.key] ?? '').trim().replace(',', '.')
+    const v = Number(raw)
+    let h: { kind: 'err' | 'warn'; text: string } | null = null
+    if (raw && (!Number.isFinite(v) || v < f.min || v > f.max)) h = { kind: 'err', text: t('chart.vitals.errors.implausible', { label: f.label, value: vals[f.key] ?? '', min: f.min, max: f.max, unit: f.unit }) }
+    else if (raw && f.key !== 'weight' && (v < f.lo || v > f.hi)) h = { kind: 'warn', text: `${v > f.hi ? '▲' : '▼'} ${t('chart.vitals.refShort')} ${nf(f.lo, f.dec)}–${nf(f.hi, f.dec)}` }
+    setHint((cur) => { const n = { ...cur }; if (h) n[f.key] = h; else delete n[f.key]; return n })
+  }
   const nf = (v: number, dec: number) => new Intl.NumberFormat(INTL_LOCALE[locale], { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(v)
 
   const parse = () => {
@@ -58,12 +68,12 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
       // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
       const note = String(form.get('note') ?? '').trim().slice(0, 500) || null
       const r = await orQueue(() => recordVitals(residentId, form), { kind: 'vitals', residentId, data: { values: out, note } }, { who })
-      if (isQueued(r)) { setVals({}); setWarn(null); toast(t(r.message)); return }
+      if (isQueued(r)) { setVals({}); setHint({}); setWarn(null); toast(t(r.message)); return }
       if (!r.ok) {
         setErr({ msg: /^[a-z]+\.[\w.]+$/.test(r.error) ? t(r.error) : r.error, field: r.field })
         return
       }
-      setVals({}); setWarn(null)
+      setVals({}); setHint({}); setWarn(null)
       toast(t('chart.vitals.saved') + (r.data?.abnormal ? ' · ' + t('chart.vitals.savedAbnormal', { n: r.data.abnormal }) : ''))
     })
   }
@@ -75,9 +85,12 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
           <span className="lbl">{f.label} <span style={{ textTransform: 'none', letterSpacing: 0 }}>{f.unit}</span></span>
           <input
             className="field" id={'v_' + f.key} name={f.key} inputMode="decimal" autoComplete="off" placeholder={PH[f.key] != null ? nf(PH[f.key], f.dec) : ''}
-            value={vals[f.key] ?? ''} aria-invalid={err?.field === f.key || undefined}
-            onChange={(e) => { setVals((v) => ({ ...v, [f.key]: e.target.value })); setWarn(null) }}
+            value={vals[f.key] ?? ''} aria-invalid={err?.field === f.key || hint[f.key]?.kind === 'err' || undefined}
+            aria-describedby={hint[f.key] ? 'vh_' + f.key : undefined}
+            onChange={(e) => { setVals((v) => ({ ...v, [f.key]: e.target.value })); setWarn(null); if (hint[f.key]) setHint((cur) => { const n = { ...cur }; delete n[f.key]; return n }) }}
+            onBlur={() => check(f)}
           />
+          {hint[f.key] && <span id={'vh_' + f.key} className={'small mono ' + (hint[f.key].kind === 'err' ? 'crit-text' : 'warn-text')} role={hint[f.key].kind === 'err' ? 'alert' : undefined}>{hint[f.key].text}</span>}
         </label>
       ))}
       <label htmlFor="v_note" style={{ gridColumn: 'span 2' }}>

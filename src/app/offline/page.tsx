@@ -10,7 +10,7 @@ function messages(locale: Locale): Tree {
   const d = dictionary(locale) as { common: Tree; chart: Tree }
   const c = d.common
   return {
-    common: { offlineSync: c.offlineSync, offline: c.offline, offlineQueued: c.offlineQueued, cancel: c.cancel, close: c.close, now: c.now, today: c.today },
+    common: { offlineSync: c.offlineSync, offline: c.offline, offlineQueued: c.offlineQueued, cancel: c.cancel, close: c.close, now: c.now, today: c.today, undo: c.undo, loading: c.loading },
     chart: { cat: (d.chart as { cat: Tree }).cat },
   }
 }

@@ -12,7 +12,9 @@ import { Empty } from '@/components/ui/Empty'
 import { submissionOf } from './data'
 import { EvaluateButton, IvButton, IvDeactivate, PlanAreaButton, PlanToolbar, SuggestionActions, type AreaSnapshot } from './PlanClient'
 
-export const metadata = { title: 'CareOS Plan' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('residents.tabs.careplan') }
+}
 
 export default async function CarePlanPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ v?: string }> }) {
   const { id } = await params

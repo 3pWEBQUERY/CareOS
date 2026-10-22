@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useMemo, useRef, useState, useTransition } from 'react'
+import { Fragment, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useT, useLocale } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -28,18 +28,23 @@ type Conv = { id: string; kind: string; title: string; clinical: boolean; muted:
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-export function ChatView({ conv, me, members, candidates, messages, wasUnread }: {
+type Pending = { tid: string; body: string; mentions: string; files: File[]; state: 'sending' | 'failed' | 'sent'; error?: string; at: number }
+
+export function ChatView({ conv, me, members, candidates, messages, wasUnread, lastReadAt }: {
   conv: Conv
   me: string
   members: Member[]
   candidates: { id: string; name: string; hint: string }[]
   messages: ChatMsg[]
   wasUnread: boolean
+  /** Lesestand beim Öffnen – bestimmt die Trennlinie «Neue Nachrichten». */
+  lastReadAt: string
 }) {
   const t = useT()
   const locale = useLocale()
   const box = useRef<HTMLDivElement>(null)
   const [showMembers, setShowMembers] = useState(false)
+  const self = members.find((m) => m.id === me)
   const [, start] = useTransition()
   const tr = (s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
   const run = (fn: () => Promise<{ ok: boolean; error?: string; message?: string }>) =>
@@ -54,12 +59,72 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread }:
     if (wasUnread) void markReadAction(conv.id)
   }, [conv.id, conv.lastMessageAt, wasUnread])
 
-  // Zum Ende scrollen bei neuen Nachrichten.
-  const lastId = messages[messages.length - 1]?.id
+  // Trennlinie «Neue Nachrichten»: Lesestand beim Öffnen festhalten (markRead ändert ihn danach).
+  const [readMark] = useState(() => (wasUnread ? new Date(lastReadAt).getTime() : Infinity))
+  const firstUnread = messages.find((m) => !m.mine && new Date(m.at).getTime() > readMark)?.id
+
+  // Optimistisches Senden (PRD §31): Nachricht erscheint sofort, Fehler mit «Erneut senden».
+  const [outbox, setOutbox] = useState<Pending[]>([])
+  const [, startSend] = useTransition()
+  // FormData überträgt Zeilenumbrüche als CRLF – für den Abgleich normalisieren.
+  const norm = (s: string) => s.replace(/\r\n?/g, '\n').trim()
+  const delivered = (p: Pending) =>
+    p.state === 'sent' && messages.some((m) => m.mine && norm(m.body) === norm(p.body) && new Date(m.at).getTime() >= p.at - 30000)
+  const shownOutbox = outbox.filter((p) => !delivered(p))
   useEffect(() => {
+    setOutbox((cur) => (cur.some(delivered) ? cur.filter((p) => !delivered(p)) : cur))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages])
+  const deliver = (p: Pending) => {
+    setOutbox((cur) => [...cur.filter((x) => x.tid !== p.tid), { ...p, state: 'sending', error: undefined }])
+    startSend(async () => {
+      const f = new FormData()
+      f.set('body', p.body)
+      f.set('mentions', p.mentions)
+      for (const x of p.files) f.append('files', x)
+      let r: { ok: boolean; error?: string }
+      try {
+        r = await sendMessageAction(conv.id, f)
+      } catch {
+        r = { ok: false, error: 'common.genericError' }
+      }
+      setOutbox((cur) => cur.map((x) => (x.tid === p.tid ? { ...x, state: r.ok ? 'sent' : 'failed', error: r.ok ? undefined : tr(r.error ?? 'common.genericError') } : x)))
+      // Sicherheitsnetz: gesendete Einträge verschwinden spätestens nach 8 s (Server-Nachricht ist dann da).
+      if (r.ok) setTimeout(() => setOutbox((cur) => cur.filter((x) => !(x.tid === p.tid && x.state === 'sent'))), 8000)
+    })
+  }
+  const send = (body: string, mentions: string, files: File[]) => {
+    stick.current = true
+    deliver({ tid: Math.random().toString(36).slice(2), body, mentions, files, state: 'sending', at: Date.now() })
+  }
+
+  // Scrollen: beim Öffnen zur ersten ungelesenen Nachricht, sonst ans Ende; neue Nachrichten nur,
+  // wenn man bereits unten ist (sonst Hinweis «Neueste Nachrichten»).
+  const stick = useRef(true)
+  const [behind, setBehind] = useState(false)
+  const lastId = messages[messages.length - 1]?.id
+  const toEnd = () => {
     const el = box.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [lastId])
+    stick.current = true
+    setBehind(false)
+  }
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const mark = firstUnread ? el.querySelector<HTMLElement>('[data-unread-mark]') : null
+    if (mark) el.scrollTop = Math.max(0, mark.offsetTop - el.offsetTop - 8)
+    else el.scrollTop = el.scrollHeight
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const first = useRef(true)
+  const failedCount = outbox.filter((p) => p.state === 'failed').length
+  useEffect(() => {
+    if (first.current) { first.current = false; return }
+    if (stick.current) toEnd()
+    else setBehind(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastId, outbox.length, failedCount])
 
   const mentionRe = useMemo(() => {
     const names = members.map((m) => esc(m.name)).sort((a, b) => b.length - a.length)
@@ -144,20 +209,58 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread }:
         </div>
       )}
 
-      <div className="msgs" ref={box} aria-live="polite">
-        {!messages.length && <p className="empty" style={{ margin: 'auto 0' }}>{t('team.chat.startHint')}</p>}
-        {messages.map((m, i) => {
-          const newDay = i === 0 || new Date(messages[i - 1].at).toDateString() !== new Date(m.at).toDateString()
-          return (
-            <Fragment key={m.id}>
-              {newDay && <div className="chat-day"><span className="lbl">{dayLabel(m.at)}</span></div>}
-              <Message m={m} renderBody={renderBody} onRun={run} />
-            </Fragment>
-          )
-        })}
+      <div className="chat-stage">
+        <div
+          className="msgs"
+          ref={box}
+          role="log"
+          aria-live="polite"
+          aria-label={conv.title}
+          tabIndex={0}
+          onScroll={(e) => {
+            const el = e.currentTarget
+            const atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+            stick.current = atEnd
+            if (atEnd && behind) setBehind(false)
+          }}
+        >
+          {!messages.length && !shownOutbox.length && <p className="empty" style={{ margin: 'auto 0' }}>{t('team.chat.startHint')}</p>}
+          {messages.map((m, i) => {
+            const newDay = i === 0 || new Date(messages[i - 1].at).toDateString() !== new Date(m.at).toDateString()
+            return (
+              <Fragment key={m.id}>
+                {newDay && <div className="chat-day"><span className="lbl">{dayLabel(m.at)}</span></div>}
+                {m.id === firstUnread && <div className="chat-unread" data-unread-mark><span>{t('team.ux.newMessages')}</span></div>}
+                <Message m={m} renderBody={renderBody} onRun={run} />
+              </Fragment>
+            )
+          })}
+          {shownOutbox.map((p) => (
+            <div key={p.tid} className={'msg mine msg-pending' + (p.state === 'failed' ? ' is-failed' : '')} aria-busy={p.state !== 'failed' || undefined}>
+              <span className="av">{self?.initials ?? '–'}</span>
+              <div style={{ minWidth: 0 }}>
+                <div className="mh">
+                  <strong>{self?.name ?? t('team.chat.you')}</strong>
+                  {p.state === 'failed'
+                    ? <span className="crit-text" role="alert">✕ {t('team.ux.failed')}{p.error ? ' · ' + p.error : ''}</span>
+                    : <span>{t('team.ux.sending')}</span>}
+                </div>
+                {p.body && <p>{renderBody(p.body)}</p>}
+                {p.files.length > 0 && <ul className="chat-files">{p.files.map((f, i) => <li key={i}><span className="chip"><IconFile size={14} /> {f.name}</span></li>)}</ul>}
+                {p.state === 'failed' && (
+                  <div className="row" style={{ gap: 8, marginTop: 4 }}>
+                    <button type="button" className="btn sm" onClick={() => deliver(p)}>{t('team.ux.retry')}</button>
+                    <button type="button" className="btn sm ghost" onClick={() => setOutbox((cur) => cur.filter((x) => x.tid !== p.tid))}>{t('team.ux.discard')}</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+        {behind && <button type="button" className="btn sm chat-jump" onClick={toEnd}>↓ {t('team.ux.jumpLatest')}</button>}
       </div>
 
-      <Composer convId={conv.id} members={members.filter((m) => m.id !== me)} />
+      <Composer members={members.filter((m) => m.id !== me)} onSend={send} />
     </>
   )
 }
@@ -166,15 +269,19 @@ function Message({ m, renderBody, onRun }: { m: ChatMsg; renderBody: (s: string)
   const t = useT()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(m.body)
+  const [actions, setActions] = useState(false)
   const reactions = REACTIONS.map((r) => ({ ...r, ...(m.reactions.find((x) => x.symbol === r.symbol) ?? { n: 0, mine: false }) }))
   return (
-    <div className={'msg' + (m.mine ? ' mine' : '')}>
+    <div className={'msg' + (m.mine ? ' mine' : '')} data-open={actions || undefined}>
       <span className={'av' + (m.mine ? '' : ' muted')}>{m.initials}</span>
       <div style={{ minWidth: 0 }}>
         <div className="mh">
           <strong>{m.author}</strong>
           <time className="mono" dateTime={m.at}>{m.time}</time>
           {m.edited && !m.deleted && <span>· {t('team.chat.edited')}</span>}
+          {!m.deleted && !editing && (
+            <button type="button" className="msg-more" aria-expanded={actions} aria-label={t('team.ux.msgActions')} onClick={() => setActions((v) => !v)}>⋯</button>
+          )}
           {!m.deleted && (
             <span className="mact">
               {reactions.filter((r) => r.n === 0).map((r) => (
@@ -230,20 +337,28 @@ function Message({ m, renderBody, onRun }: { m: ChatMsg; renderBody: (s: string)
   )
 }
 
-/** Eingabe mit @-Erwähnungen (Autovervollständigung der Mitglieder) und Anhängen. */
-function Composer({ convId, members }: { convId: string; members: Member[] }) {
+/** Eingabe mit @-Erwähnungen (Autovervollständigung der Mitglieder) und Anhängen. Enter sendet, Umschalt+Enter neue Zeile. */
+function Composer({ members, onSend }: { members: Member[]; onSend: (body: string, mentions: string, files: File[]) => void }) {
   const t = useT()
   const [text, setText] = useState('')
   const [mentions, setMentions] = useState<string[]>([])
   const [query, setQuery] = useState<string | null>(null)
   const [hi, setHi] = useState(0)
   const [files, setFiles] = useState<File[]>([])
-  const [pending, start] = useTransition()
   const ta = useRef<HTMLTextAreaElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
-  const tr = (s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
+  const listId = useId()
+  const hintId = useId()
 
   const matches = query == null ? [] : members.filter((m) => m.name.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
+
+  // Eingabefeld wächst bis 160 px mit.
+  useLayoutEffect(() => {
+    const el = ta.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight + 2, 160) + 'px'
+  }, [text])
 
   const detect = (value: string, caret: number) => {
     const before = value.slice(0, caret)
@@ -265,34 +380,30 @@ function Composer({ convId, members }: { convId: string; members: Member[] }) {
     })
   }
   const send = () => {
-    if (pending || (!text.trim() && !files.length)) return
-    const f = new FormData()
-    f.set('body', text)
-    f.set('mentions', mentions.filter((id) => text.includes('@' + (members.find((m) => m.id === id)?.name ?? '\u0000'))).join(','))
-    for (const x of files) f.append('files', x)
-    start(async () => {
-      const r = await sendMessageAction(convId, f)
-      if (r.ok) {
-        setText('')
-        setMentions([])
-        setFiles([])
-        if (fileRef.current) fileRef.current.value = ''
-      } else toast(tr(r.error), { kind: 'crit' })
-    })
+    if (!text.trim() && !files.length) {
+      ta.current?.focus()
+      return
+    }
+    const used = mentions.filter((id) => text.includes('@' + (members.find((m) => m.id === id)?.name ?? '\u0000'))).join(',')
+    onSend(text, used, files)
+    setText('')
+    setMentions([])
+    setFiles([])
+    setQuery(null)
+    if (fileRef.current) fileRef.current.value = ''
+    ta.current?.focus()
   }
 
   return (
     <form className="composer" onSubmit={(e) => { e.preventDefault(); send() }} style={{ position: 'relative', flexWrap: 'wrap' }}>
       {matches.length > 0 && (
-        <div className="popover mention-pop" role="listbox" aria-label={t('team.chat.mentionsTitle')}>
-          <ul className="menu">
+        <div className="popover mention-pop">
+          <ul className="menu" role="listbox" id={listId} aria-label={t('team.chat.mentionsTitle')}>
             {matches.map((m, i) => (
-              <li key={m.id}>
-                <button type="button" role="option" aria-selected={i === hi} style={i === hi ? { background: 'var(--accent-soft)', color: 'var(--accent)' } : undefined} onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
-                  <span className="av sm muted">{m.initials}</span>
-                  <span className="grow">{m.name}</span>
-                  <span className="small muted">{m.job}</span>
-                </button>
+              <li key={m.id} id={`${listId}-${i}`} role="option" aria-selected={i === hi} className="mention-opt" onMouseDown={(e) => { e.preventDefault(); pick(m) }}>
+                <span className="av sm muted" aria-hidden="true">{m.initials}</span>
+                <span className="grow">{m.name}</span>
+                <span className="small muted">{m.job}</span>
               </li>
             ))}
           </ul>
@@ -301,12 +412,12 @@ function Composer({ convId, members }: { convId: string; members: Member[] }) {
       {files.length > 0 && (
         <div className="chips" style={{ flexBasis: '100%' }}>
           {files.map((f, i) => (
-            <button key={i} type="button" className="chip" onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))} aria-label={`${f.name} – ${t('common.delete')}`}>{f.name} ×</button>
+            <button key={i} type="button" className="chip" onClick={() => setFiles((cur) => cur.filter((_, j) => j !== i))} aria-label={t('team.ux.removeFile', { name: f.name })}>{f.name} <span aria-hidden="true">×</span></button>
           ))}
         </div>
       )}
       <input ref={fileRef} type="file" multiple hidden onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
-      <button type="button" className="icon-btn" style={{ width: 40, height: 40 }} onClick={() => fileRef.current?.click()} aria-label={t('team.chat.attach')} title={t('team.chat.attach')}><IconUpload size={18} /></button>
+      <button type="button" className="icon-btn composer-attach" onClick={() => fileRef.current?.click()} aria-label={t('team.chat.attach')} title={t('team.chat.attach')}><IconUpload size={18} /></button>
       <textarea
         ref={ta}
         className="field"
@@ -314,19 +425,25 @@ function Composer({ convId, members }: { convId: string; members: Member[] }) {
         value={text}
         placeholder={t('team.chat.placeholder')}
         aria-label={t('team.chat.placeholder')}
-        title={t('team.chat.composerHint')}
+        aria-describedby={hintId}
+        aria-autocomplete="list"
+        aria-controls={matches.length ? listId : undefined}
+        aria-activedescendant={matches.length ? `${listId}-${hi}` : undefined}
+        enterKeyHint="send"
         onChange={(e) => { setText(e.target.value); detect(e.target.value, e.target.selectionStart) }}
         onKeyDown={(e) => {
+          if (e.nativeEvent.isComposing) return
           if (matches.length) {
             if (e.key === 'ArrowDown') { e.preventDefault(); setHi((h) => (h + 1) % matches.length); return }
             if (e.key === 'ArrowUp') { e.preventDefault(); setHi((h) => (h - 1 + matches.length) % matches.length); return }
             if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pick(matches[hi]); return }
-            if (e.key === 'Escape') { setQuery(null); return }
+            if (e.key === 'Escape') { e.preventDefault(); setQuery(null); return }
           }
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
         }}
       />
-      <button type="submit" className="btn primary" data-loading={pending || undefined} disabled={pending}>{t('team.chat.send')}</button>
+      <button type="submit" className="btn primary">{t('team.chat.send')}</button>
+      <p className="composer-hint small muted" id={hintId}>{t('team.chat.composerHint')}</p>
     </form>
   )
 }

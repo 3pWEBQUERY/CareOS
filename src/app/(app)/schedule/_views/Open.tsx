@@ -41,8 +41,8 @@ export async function OpenView({ ctx, now, canManage }: { ctx: Ctx; now: Date; c
       {!shifts.length ? (
         <Empty title={t('schedule.open.none')} />
       ) : (
-        <div className="tablewrap">
-          <table className="stable">
+        <div className="tablewrap rwrap">
+          <table className="stable rtable">
             <thead>
               <tr>
                 <th>{t('schedule.cols.date')}</th><th>{t('schedule.cols.shift')}</th><th>{t('schedule.cols.time')}</th><th>{t('schedule.cols.qual')}</th>
@@ -58,10 +58,10 @@ export async function OpenView({ ctx, now, canManage }: { ctx: Ctx; now: Date; c
                 return (
                   <tr key={s.id}>
                     <th scope="row" className="nowrap mono">{weekdayShort(d, locale)} {fmtDayMonth(d)}</th>
-                    <td><span className="sh open">{s.shiftType.code}</span> {s.shiftType.name}{s.note && <div className="small muted">{s.note}</div>}</td>
-                    <td className="num nowrap">{s.shiftType.start}–{s.shiftType.end}</td>
-                    <td>{s.requiredQualification ? <span className={'tag ' + (lacks ? 'warn' : 'outline')}>{s.requiredQualification}</span> : <span className="muted">–</span>}</td>
-                    <td>
+                    <td><span className="sh open">{s.shiftType.code}</span> {s.shiftType.name} <span className="r-only mono">{s.shiftType.start}–{s.shiftType.end}</span>{s.note && <div className="small muted">{s.note}</div>}</td>
+                    <td className="num nowrap r-desk">{s.shiftType.start}–{s.shiftType.end}</td>
+                    <td data-label={t('schedule.cols.qual')}>{s.requiredQualification ? <span className={'tag ' + (lacks ? 'warn' : 'outline')}>{s.requiredQualification}</span> : <span className="muted">–</span>}</td>
+                    <td data-label={t('schedule.open.applicants')}>
                       {s.swaps.length ? (
                         <ul className="stack-sm" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                           {s.swaps.map((x) => {
@@ -84,7 +84,7 @@ export async function OpenView({ ctx, now, canManage }: { ctx: Ctx; now: Date; c
                         </ul>
                       ) : <span className="muted small">{t('schedule.open.noApplicants')}</span>}
                     </td>
-                    <td className="right">
+                    <td className="right r-act">
                       {mine ? (
                         <div className="stack-sm" style={{ alignItems: 'flex-end' }}>
                           <span className="tag violet">{t('schedule.open.applied')}</span>

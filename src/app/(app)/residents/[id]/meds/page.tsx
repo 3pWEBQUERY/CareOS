@@ -10,7 +10,9 @@ import { EffectChecks, PrnTable, type EffectDto, type PrnAdminDto, type PrnDto }
 import { Orders, type OrderDto } from '@/components/meds/Orders'
 import type { MarRowDto, ResidentCtxDto } from '@/components/meds/types'
 
-export const metadata = { title: 'Medikation' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('residents.tabs.meds') }
+}
 
 /** CareOS Med (PRD §13): Abgabeliste, Reserve mit Wirkungskontrolle, Verordnungen, Bestand. */
 export default async function MedsPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ d?: string }> }) {

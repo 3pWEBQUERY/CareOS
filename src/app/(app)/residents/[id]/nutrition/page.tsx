@@ -10,7 +10,9 @@ import { BarChart } from '@/components/ui/BarChart'
 import { LineChart } from '@/components/ui/LineChart'
 import { DrinkQuick, MealPortion, ProfileButton } from './NutritionClient'
 
-export const metadata = { title: 'CareOS Nutrition' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('residents.tabs.nutrition') }
+}
 
 /** Mahlzeit eines Eintrags erkennen – Einträge tragen den Namen der Mahlzeit in der Sprache der erfassenden Person. */
 const MEAL_NAMES: [Meal, string][] = LOCALES.flatMap((l) => {

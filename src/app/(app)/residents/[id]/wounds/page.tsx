@@ -8,7 +8,9 @@ import { Empty } from '@/components/ui/Empty'
 import { NewWoundButton } from './WoundClient'
 import { StatusTag } from './ui'
 
-export const metadata = { title: 'CareOS Wounds' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('residents.tabs.wounds') }
+}
 
 export default async function WoundsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

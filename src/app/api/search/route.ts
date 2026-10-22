@@ -3,6 +3,7 @@ import { getCtx } from '@/lib/context'
 import { db } from '@/lib/db'
 import { searchFunctions } from '@/lib/search-functions'
 import { snippet } from '@/lib/search-snippet'
+import { fmtDate } from '@/lib/time'
 import { liveFilter, visibleChannels } from '@/app/(app)/team/lib'
 
 /** Globale Suche, berechtigungsabhängig (PRD §24). Jede Quelle ist begrenzt, Suche ohne Gross-/Kleinschreibung. */
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   const items: { group: string; label: string; hint?: string; href: string }[] = []
   const canClinicalChat = ctx.can('chat.clinical')
 
-  const [residents, docs, people, tasks, posts, messages, interventions, forms] = await Promise.all([
+  const [residents, docs, people, tasks, posts, messages, interventions, forms, incidents] = await Promise.all([
     ctx.can('resident.read')
       ? db.resident.findMany({
           where: { orgId: ctx.org.id, unitId: { in: ctx.unitIds }, OR: [{ lastName: like }, { firstName: like }, { room: { number: { startsWith: q } } }] },
@@ -67,8 +68,17 @@ export async function GET(req: NextRequest) {
     ctx.can('admin.config') || ctx.can('resident.chart.write')
       ? db.formDefinition.findMany({ where: { orgId: ctx.org.id, name: like, ...(ctx.can('admin.config') ? {} : { active: true }) }, take: 4, orderBy: { name: 'asc' } })
       : [],
+    // Ereignisse (z. B. «Sturz»): nur Art, Person und Datum im Treffer – keine Beschreibung
+    ctx.can('quality.report')
+      ? db.incident.findMany({
+          where: { orgId: ctx.org.id, unitId: { in: ctx.unitIds }, OR: [{ type: { name: like } }, { description: like }] },
+          include: { type: { select: { name: true } }, resident: { select: { firstName: true, lastName: true } } },
+          orderBy: { occurredAt: 'desc' },
+          take: 5,
+        })
+      : [],
   ])
-  for (const r of residents) items.push({ group: t('common.palette.groupResident'), label: `${r.lastName} ${r.firstName}`, hint: [r.room?.number && `Zi. ${r.room.number}`, r.unit.name].filter(Boolean).join(' · '), href: `/residents/${r.id}` })
+  for (const r of residents) items.push({ group: t('common.palette.groupResident'), label: `${r.lastName} ${r.firstName}`, hint: [r.room?.number && t('common.palette.room', { n: r.room.number }), r.unit.name].filter(Boolean).join(' · '), href: `/residents/${r.id}` })
   for (const d of docs) items.push({ group: t('common.palette.groupDocument'), label: d.title, hint: d.currentVersion ? 'v' + d.currentVersion : undefined, href: `/docs/${d.id}` })
   for (const f of forms) items.push({ group: t('common.palette.groupForm'), label: f.name, hint: f.active ? undefined : t('admin.config.inactive'), href: ctx.can('admin.config') ? `/admin/forms/${f.id}` : '/residents?pick=notes' })
   for (const p of people) items.push({ group: t('common.palette.groupPerson'), label: `${p.firstName} ${p.lastName}`, hint: p.jobTitle ?? undefined, href: `/chat?with=${p.id}` })
@@ -85,6 +95,14 @@ export async function GET(req: NextRequest) {
       label: `${m.author.firstName}: ${snippet(m.body, q, 70)}`,
       hint: c.clinical ? `${title} · ${t('team.chat.clinical')}` : title,
       href: `/chat?c=${c.id}`,
+    })
+  }
+  for (const i of incidents) {
+    items.push({
+      group: t('common.palette.groupIncident'),
+      label: [i.type.name, i.resident && ctx.can('resident.read') ? `${i.resident.lastName} ${i.resident.firstName}` : null].filter(Boolean).join(' · '),
+      hint: fmtDate(i.occurredAt, ctx.locale, { day: '2-digit', month: '2-digit', year: 'numeric' }),
+      href: `/quality/${i.id}`,
     })
   }
   for (const f of searchFunctions(ctx, q)) items.push({ group: t('common.palette.groupFunction'), ...f })

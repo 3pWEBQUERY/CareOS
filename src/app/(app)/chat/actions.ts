@@ -33,7 +33,7 @@ export async function sendMessageAction(conversationId: string, form: FormData):
   return run(async () => {
     const ctx = await getCtx()
     const conv = await memberConversation(ctx, conversationId)
-    const body = fd(form, 'body').slice(0, 8000)
+    const body = fd(form, 'body').replace(/\r\n?/g, '\n').slice(0, 8000)
     const files = (form.getAll('files') as File[]).filter((f) => f && typeof f !== 'string' && f.size > 0)
     if (!body && !files.length) return err('team.chat.errors.empty', 'body')
 

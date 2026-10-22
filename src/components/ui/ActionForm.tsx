@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useEffect, useId, useRef, useState, useTransition } from 'react'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 
@@ -27,6 +27,14 @@ export function ActionForm({
   const ref = useRef<HTMLFormElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [pending, start] = useTransition()
+  const errId = useId()
+  const focusAfter = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!pending && focusAfter.current) {
+      focusAfter.current.focus()
+      focusAfter.current = null
+    }
+  }, [pending, error])
   const tr = (s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
   return (
     <form
@@ -35,9 +43,12 @@ export function ActionForm({
       className={className}
       noValidate
       data-pending={pending || undefined}
+      aria-busy={pending || undefined}
       onSubmit={(e) => {
         e.preventDefault()
         if (confirm && !window.confirm(tr(confirm))) return
+        // Markierungen aus dem letzten Versuch entfernen
+        e.currentTarget.querySelectorAll(`[aria-describedby="${errId}"]`).forEach((x) => { x.removeAttribute('aria-invalid'); x.removeAttribute('aria-describedby') })
         const form = new FormData(e.currentTarget)
         start(async () => {
           const r = await action(form)
@@ -48,7 +59,13 @@ export function ActionForm({
             if (msg) toast(tr(msg))
           } else {
             setError(tr(r.error))
-            if (r.field) (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null)?.focus()
+            // Fehler am Feld: markieren und fokussieren (PRD §32); sonst liest die Live-Region die Meldung vor.
+            const el = r.field ? (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null) : null
+            if (el) {
+              el.setAttribute('aria-invalid', 'true')
+              el.setAttribute('aria-describedby', errId)
+              focusAfter.current = el // erst fokussieren, wenn das Fieldset wieder aktiv ist
+            }
           }
           onDone?.(r)
         })
@@ -57,7 +74,7 @@ export function ActionForm({
       <fieldset disabled={pending} style={{ border: 0, padding: 0, margin: 0, minWidth: 0, display: 'contents' }}>
         {children}
       </fieldset>
-      {error && <p className="err" role="alert" style={{ margin: 0 }}>{error}</p>}
+      {error && <p className="err" id={errId} role="alert" style={{ margin: 0 }}>{error}</p>}
     </form>
   )
 }

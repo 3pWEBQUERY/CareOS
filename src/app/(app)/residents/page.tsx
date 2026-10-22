@@ -7,7 +7,9 @@ import { addDays, addMinutes, age, fmtNum, fmtRel, startOfDay } from '@/lib/time
 import { abnormalKeys, flag, mergeLimits, VITALS } from '@/lib/vitals'
 import { Admit } from './Admit'
 
-export const metadata = { title: 'Residents' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('nav.residents') }
+}
 
 /** Einheitenübersicht, wenn keine Person gewählt ist. */
 export default async function ResidentsPage({ searchParams }: { searchParams: Promise<{ pick?: string }> }) {
@@ -58,7 +60,7 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
             </div>
           )}
           {residents.length ? (
-            <div className="tablewrap">
+            <div className="tablewrap res-unit-table">
               <table className="stable">
                 <thead>
                   <tr>

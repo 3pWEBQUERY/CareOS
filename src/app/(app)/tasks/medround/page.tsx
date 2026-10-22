@@ -5,9 +5,11 @@ import { usersWithPermission } from '@/lib/notify'
 import { addDays, addMinutes, atTime, dateKey, fmtDayMonth, hm, startOfDay } from '@/lib/time'
 import { cellsFor, scheduledMedsWhere, slotKey, slotsOf } from '@/lib/medication'
 import { Empty, Forbidden } from '@/components/ui/Empty'
-import { RoundBlock, type RoundResidentDto } from '@/components/meds/RoundBlock'
+import { RoundBlock, RoundProgress, type RoundNextDto, type RoundResidentDto } from '@/components/meds/RoundBlock'
 
-export const metadata = { title: 'Medikamentenrunde' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('meds.round.label') }
+}
 
 /** Medikamentenrunde (PRD §13.2): ablenkungsarme Ansicht eines Zeitpunkts für alle Personen der Station. */
 export default async function MedRoundPage({ searchParams }: { searchParams: Promise<{ slot?: string }> }) {
@@ -54,8 +56,18 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
     })
     if (lines.length) blocks.push({ resident: { id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null, allergies: r.allergies }, risks: r.risks.filter((x) => /schluck|dysphag|aspir|déglut|deglut|swallow/i.test(x)), lines })
   }
-  const done = blocks.filter((b) => b.lines.every((l) => l.cells[0]!.state !== 'open')).length
-  const pct = blocks.length ? Math.round((done / blocks.length) * 100) : 0
+  const isDone = (b: RoundResidentDto) => b.lines.every((l) => l.cells[0]!.state !== 'open')
+  const done = blocks.filter(isDone).length
+  const label = (b: RoundResidentDto) => [b.resident.room, b.resident.name].filter(Boolean).join(' ')
+  // Nächste offene Person nach Zimmerreihenfolge (ab Block i, danach von vorne)
+  const nextAfter = (i: number): RoundNextDto => {
+    for (let k = 1; k <= blocks.length; k++) {
+      const b = blocks[(i + k) % blocks.length]
+      if (k < blocks.length && !isDone(b)) return { id: b.resident.id, label: label(b) }
+    }
+    return null
+  }
+  const firstOpen = blocks.find((b) => !isDone(b))
 
   return (
     <main className="panel main" style={{ flex: 1 }}>
@@ -64,10 +76,10 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
           <span className="lbl">{t('meds.round.label')} · {unit.name} · {fmtDayMonth(day)}</span>
           <h1>{slot ? `${t('meds.slots.' + slotKey(slot))} ${slot}` : t('meds.round.label')}</h1>
         </div>
-        <div className="row">
+        <div className="row head-actions">
           {slots.length > 0 && (
             <nav className="seg seg-x" aria-label={t('meds.round.slot')}>
-              {slots.map((s) => <Link key={s} href={`/tasks/medround?slot=${s}`} aria-current={s === slot ? 'page' : undefined} scroll={false}>{t('meds.slots.' + slotKey(s))} <span className="mono">{s}</span></Link>)}
+              {slots.map((s) => <Link key={s} href={`/tasks/medround?slot=${s}`} aria-current={s === slot ? 'page' : undefined} scroll={false}>{t('meds.slots.' + slotKey(s))}{'\u00a0'}<span className="mono">{s}</span>{!openAt(s) && atTime(day, s) <= now && <><span aria-hidden="true">{'\u00a0'}✓</span><span className="sr-only"> {t('meds.round.complete')}</span></>}</Link>)}
             </nav>
           )}
           <Link className="btn" href="/tasks">{t('meds.round.exit')}</Link>
@@ -78,13 +90,8 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
           <div className="round">
             {blocks.length > 0 ? (
               <>
-                <div className="stack-sm" aria-live="polite">
-                  <div className="row-between">
-                    <strong>{t('meds.round.progress', { n: done, total: blocks.length })}</strong>
-                    <span className="small muted">{t('meds.round.hint')}</span>
-                  </div>
-                  <div className="bar" role="progressbar" aria-valuemin={0} aria-valuemax={blocks.length} aria-valuenow={done} aria-label={t('meds.round.progress', { n: done, total: blocks.length })}><i className={done === blocks.length ? 'ok' : ''} style={{ width: pct + '%' }} /></div>
-                </div>
+                <RoundProgress done={done} total={blocks.length} next={firstOpen ? { id: firstOpen.resident.id, label: label(firstOpen) } : null} />
+                <p className="small muted" style={{ margin: 0 }}>{t('meds.round.hint')}</p>
                 {earlierOpen.length > 0 && (
                   <div className="alert warn">
                     <span className="grow">
@@ -94,7 +101,7 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
                   </div>
                 )}
                 {!editable && <div className="alert info"><span className="grow">{t('meds.mar.hintReadOnly')}</span></div>}
-                {blocks.map((b) => <RoundBlock key={b.resident.id + slot} data={b} time={slot} slotKey={slotKey(slot)} day={dateKey(day)} editable={editable} colleagues={colleagues} />)}
+                {blocks.map((b, i) => <RoundBlock key={b.resident.id + slot} data={b} time={slot} slotKey={slotKey(slot)} day={dateKey(day)} editable={editable} colleagues={colleagues} next={nextAfter(i)} />)}
               </>
             ) : (
               <Empty title={t('meds.round.empty')} />

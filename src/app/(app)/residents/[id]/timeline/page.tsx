@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { taskTitle } from '@/lib/task-title'
-import { addDays, fmtDate, fmtNum, hm, sameDay, startOfDay } from '@/lib/time'
+import { OPEN_STATUSES, taskView } from '@/lib/tasks'
+import { lastShiftEnd } from '@/lib/shift'
+import { addDays, fmtDate, fmtNum, fmtRel, hm, sameDay, startOfDay } from '@/lib/time'
 import { flag, mergeLimits, VITALS, type VitalKey } from '@/lib/vitals'
 import { OBS_TONE, pageResident, userNames } from '../../_lib/resident'
 
@@ -39,6 +41,13 @@ export default async function TimelinePage({ params, searchParams }: { params: P
     want('incident') ? db.incident.findMany({ where: { residentId: r.id, orgId: ctx.org.id, occurredAt: at }, include: { type: { select: { name: true } } } }) : [],
     want('appointment') ? db.appointment.findMany({ where: { residentId: r.id, at } }) : [],
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
+  ])
+  // PRD §71: Ereignis, Kontrollen, offene Beobachtungen und nächste Aufgaben auf einer Timeline.
+  const [openToday, last] = await Promise.all([
+    can('task.read') && (!kind || kind === 'task')
+      ? db.task.findMany({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, orderBy: { dueAt: 'asc' } })
+      : [],
+    lastShiftEnd(ctx.user.id, ctx.sessionId, now),
   ])
   const limits = mergeLimits(limitRows, r.id)
   const names = await userNames(ctx, [
@@ -148,6 +157,10 @@ export default async function TimelinePage({ params, searchParams }: { params: P
     const s = q.toString()
     return `/residents/${r.id}/timeline${s ? '?' + s : ''}`
   }
+  const isNew = (e: Ev) => e.at >= last.at && e.at <= now
+  const newCount = events.filter(isNew).length
+  const nextOpen = openToday.slice(0, 6)
+  const overdueN = openToday.filter((k) => taskView(k, now) === 'over').length
   const visibleKinds = KINDS.filter((k) => k !== 'medication' || canMeds)
 
   return (
@@ -166,6 +179,32 @@ export default async function TimelinePage({ params, searchParams }: { params: P
           <Link key={k} className="chip" href={href({ k })} aria-current={kind === k ? 'page' : undefined} scroll={false}>{t('chart.timeline.kinds.' + k)}</Link>
         ))}
       </nav>
+      {(!kind || kind === 'task') && can('task.read') && (
+        <section className="card" aria-labelledby="tl-next">
+          <div className="card-head">
+            <h3 id="tl-next">{t('residents.rec.nextTitle')}{overdueN > 0 && <span className="tag crit" style={{ marginLeft: 8 }}>{t('residents.rec.overdueN', { n: overdueN })}</span>}</h3>
+            <Link className="linkbtn small" href={`/residents/${r.id}/day`}>{t('residents.tabs.day')} →</Link>
+          </div>
+          {nextOpen.length ? (
+            <ul className="list">
+              {nextOpen.map((k) => {
+                const v = taskView(k, now)
+                return (
+                  <li key={k.id}>
+                    <Link className="li" href={k.source === 'medication' ? `/residents/${r.id}/meds` : `/residents/${r.id}/day#task-${k.id}`} style={{ alignItems: 'center', paddingBlock: 7 }}>
+                      <time className={'mono small nowrap ' + (v === 'over' ? 'crit-text' : v === 'due' ? 'warn-text' : 'muted')}>{hm(k.dueAt)}</time>
+                      <span className="grow">{taskTitle(t, k)}</span>
+                      {v === 'over' && <span className="small crit-text nowrap">{t('residents.list.overdue')}</span>}
+                      <span className="muted" aria-hidden="true">→</span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : <div className="card-body small muted">{t('residents.rec.nextNone')}</div>}
+        </section>
+      )}
+      {newCount > 0 && <p className="small muted" style={{ margin: 0 }}><span className="tag accent">{t('residents.rec.newTag')}</span> {t('residents.rec.newHint', { n: newCount, at: fmtRel(last.at, { today: t('common.today'), yesterday: t('common.yesterday') }, now) })}</p>}
       {events.length ? (
         <ol className="events" aria-label={t('chart.timeline.title')}>
           {days.flatMap((d) => [
@@ -176,6 +215,7 @@ export default async function TimelinePage({ params, searchParams }: { params: P
                 <span className={'dot ' + e.dot} aria-hidden="true" />
                 <div className="body">
                   <div className="row" style={{ gap: 8 }}>
+                    {isNew(e) && <span className="tag accent">{t('residents.rec.newTag')}</span>}
                     <span className={'tag ' + e.tone}>{e.tag}</span>
                     {e.title && <span style={{ minWidth: 0, ...(e.strike ? { textDecoration: 'line-through', color: 'var(--fg-3)' } : {}) }}>{e.title}</span>}
                     {e.by && <span className="small muted">{e.by}</span>}

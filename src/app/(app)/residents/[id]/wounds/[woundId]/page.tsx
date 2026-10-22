@@ -11,7 +11,9 @@ import { Empty } from '@/components/ui/Empty'
 import { WoundEntryForm, WoundStatusButtons } from '../WoundClient'
 import { StatusTag } from '../ui'
 
-export const metadata = { title: 'CareOS Wounds' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('residents.tabs.wounds') }
+}
 
 export default async function WoundDetailPage({ params }: { params: Promise<{ id: string; woundId: string }> }) {
   const { id, woundId } = await params

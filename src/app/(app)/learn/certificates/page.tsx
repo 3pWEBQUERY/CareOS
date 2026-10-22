@@ -44,8 +44,8 @@ export default async function CertificatesPage() {
             </div>
           )}
           {rows.length ? (
-            <div className="tablewrap">
-              <table className="stable">
+            <div className="tablewrap rwrap">
+              <table className="stable rtable">
                 <thead><tr><th>{t('learn.col.certificate')}</th><th>{t('learn.col.issued')}</th><th>{t('learn.col.validUntil')}</th><th>{t('learn.col.status')}</th></tr></thead>
                 <tbody>
                   {rows.map(({ c, superseded, state }) => (
@@ -54,8 +54,8 @@ export default async function CertificatesPage() {
                         {c.courseId ? <Link href={`/learn/${c.courseId}`}>{c.title}</Link> : c.title}
                         {c.courseId && mandatory.has(c.courseId) && <> <span className="tag outline">{t('learn.mandatory')}</span></>}
                       </td>
-                      <td className="num">{fmtDate(c.issuedAt, locale)}</td>
-                      <td className="num">{c.expiresAt ? fmtDate(c.expiresAt, locale) : <span className="muted">{t('learn.cert.noExpiry')}</span>}</td>
+                      <td className="num" data-label={t('learn.col.issued')}>{fmtDate(c.issuedAt, locale)}</td>
+                      <td className="num" data-label={t('learn.col.validUntil')}>{c.expiresAt ? fmtDate(c.expiresAt, locale) : <span className="muted">{t('learn.cert.noExpiry')}</span>}</td>
                       <td className="nowrap">
                         {superseded ? <span className="tag">{t('learn.cert.superseded')}</span> : (
                           <>

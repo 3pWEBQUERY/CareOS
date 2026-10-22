@@ -5,7 +5,7 @@ import { Forbidden } from '@/components/ui/Empty'
 import { IconPlus } from '@/components/icons'
 import { addDays, dbDate, fmtDayMonth, fmtRel, fromDbDate, hm, startOfDay, weekdayShort } from '@/lib/time'
 import { canModerate, canPostTo, channelAudience, channelLabel, liveFilter, myRoleKeys, visibleChannels } from './lib'
-import { archiveChannelAction } from './actions'
+import { ackPostAction, archiveChannelAction } from './actions'
 import { ActButton } from './_ui/ActButton'
 
 export const metadata = { title: 'Team' }
@@ -33,7 +33,11 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
       take: 60,
     }),
     db.post.findMany({ where: { channelId: { in: channels.map((c) => c.id) }, eventAt: { gte: startOfDay(now) }, ...liveFilter(now) }, orderBy: { eventAt: 'asc' }, take: 5 }),
-    db.post.findMany({ where: { channelId: { in: channels.map((c) => c.id) }, requireAck: true, ...liveFilter(now) }, select: { id: true, title: true, channelId: true, authorId: true } }),
+    db.post.findMany({
+      where: { channelId: { in: channels.map((c) => c.id) }, requireAck: true, ...liveFilter(now) },
+      select: { id: true, title: true, body: true, channelId: true, authorId: true, important: true, publishedAt: true, fileIds: true, author: { select: { firstName: true, lastName: true } } },
+      orderBy: { publishedAt: 'desc' },
+    }),
     ctx.can('schedule.read')
       ? db.shift.findMany({ where: { userId: user.id, date: { gte: dbDate(now), lte: dbDate(addDays(now, 14)) }, status: { not: 'cancelled' } }, include: { shiftType: true }, orderBy: { date: 'asc' }, take: 5 })
       : [],
@@ -47,7 +51,8 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
   const postIds = [...new Set([...posts.map((p) => p.id), ...ackPosts.map((p) => p.id)])]
   const acks = await db.acknowledgement.findMany({ where: { subjectType: 'post', subjectId: { in: postIds } }, select: { userId: true, subjectId: true } })
   const mine = new Set(acks.filter((a) => a.userId === user.id).map((a) => a.subjectId))
-  const toAck = ackPosts.filter((p) => !mine.has(p.id))
+  const toAck = ackPosts.filter((p) => !mine.has(p.id) && p.authorId !== user.id)
+  const toAckIds = new Set(toAck.map((p) => p.id))
 
   // Bestätigungsstand nur für Verfassende und Moderation (PRD §17.3)
   const statsFor = posts.filter((p) => p.requireAck && (p.authorId === user.id || canModerate(ctx, byId.get(p.channelId))))
@@ -61,8 +66,11 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
   }
 
   const recent = addDays(now, -14)
-  const top = posts.filter((p) => p.pinned || (p.important && p.publishedAt >= recent) || (p.requireAck && !mine.has(p.id)))
-  const rest = posts.filter((p) => !top.includes(p))
+  // Offene Lesebestätigungen stehen zuoberst in «Bitte lesen und bestätigen» (PRD §4.3, §17.3) und nicht doppelt im Feed.
+  const top = posts.filter((p) => !toAckIds.has(p.id) && (p.pinned || (p.important && p.publishedAt >= recent)))
+  const rest = posts.filter((p) => !toAckIds.has(p.id) && !top.includes(p))
+  /** Kurze Mitteilungen ohne Anhang werden vollständig gezeigt und lassen sich direkt bestätigen (ein Tipp). */
+  const INLINE_MAX = 700
 
   const PostRow = ({ p }: { p: (typeof posts)[number] }) => {
     const ch = byId.get(p.channelId)!
@@ -75,7 +83,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
             <span className="lbl">{channelLabel(t, ch, channels)}</span>
             {p.pinned && <span className="tag outline">{t('team.feed.pinned')}</span>}
             {p.important && <span className="tag warn">{t('team.feed.important')}</span>}
-            {p.requireAck && (mine.has(p.id) ? <span className="tag ok">✓ {t('team.feed.acked')}</span> : <span className="tag crit">{t('team.feed.ackPending')}</span>)}
+            {p.requireAck && p.authorId !== user.id && (mine.has(p.id) ? <span className="tag ok">✓ {t('team.feed.acked')}</span> : <span className="tag crit">{t('team.feed.ackPending')}</span>)}
             {p.eventAt && <span className="tag accent">{t('team.feed.event')} {fmtDayMonth(p.eventAt)} {hm(p.eventAt)}</span>}
             <span className="small muted mono" style={{ marginLeft: 'auto' }}>{rel(p.publishedAt)}</span>
           </div>
@@ -107,14 +115,48 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
       </div>
       <div className="scroll">
         <div className="tabpanel">
-          <div className="metrics">
-            <a className="metric" href="#feed"><span className="lbl">{t('team.metrics.toAck')}</span><span className={'val' + (toAck.length ? ' warn' : '')}>{toAck.length}</span></a>
+          {toAck.length > 0 && (
+            <section className="card warn team-ackq" aria-labelledby="ack" id="ack">
+              <div className="card-head"><h2 id="ack">{t('team.ux.ackQueue')}</h2><span className="pill warn">{toAck.length}</span></div>
+              <ul className="list">
+                {toAck.map((p) => {
+                  const inline = p.body.length <= INLINE_MAX && !p.fileIds.length
+                  const ch = byId.get(p.channelId)
+                  return (
+                    <li key={p.id} className="team-ackq-item">
+                      <div className="row" style={{ gap: 6 }}>
+                        {ch && <span className="lbl">{channelLabel(t, ch, channels)}</span>}
+                        {p.important && <span className="tag warn">{t('team.feed.important')}</span>}
+                        <span className="small muted mono" style={{ marginLeft: 'auto' }}>{rel(p.publishedAt)}</span>
+                      </div>
+                      <h3 className="sub"><Link href={`/team/post/${p.id}`} className="team-ackq-title">{p.title}</Link></h3>
+                      <p className="team-ackq-body">{inline ? p.body : p.body.slice(0, 238) + ' …'}</p>
+                      <div className="row small muted" style={{ gap: 12 }}>
+                        <span>{p.author.firstName} {p.author.lastName}</span>
+                        {p.fileIds.length > 0 && <span>{t('team.feed.attachments', { n: p.fileIds.length })}</span>}
+                      </div>
+                      <div className="form-actions">
+                        {inline ? (
+                          <ActButton action={ackPostAction.bind(null, p.id)} className="btn primary">✓ {t('team.ack.button')}</ActButton>
+                        ) : (
+                          <Link className="btn primary" href={`/team/post/${p.id}`}>{t('team.ux.readAndAck')}</Link>
+                        )}
+                        {inline && <Link className="btn ghost" href={`/team/post/${p.id}`}>{t('team.ux.openPost')}</Link>}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )}
+          <div className="metrics team-metrics">
+            <a className="metric" href={toAck.length ? '#ack' : '#feed'}><span className="lbl">{t('team.metrics.toAck')}</span><span className={'val' + (toAck.length ? ' warn' : '')}>{toAck.length}</span></a>
             {ctx.can('schedule.read') && <Link className="metric" href="/schedule?view=open"><span className="lbl">{t('team.metrics.openShifts')}</span><span className="val">{openShifts}</span></Link>}
             {ctx.can('learn.read') && <Link className="metric" href="/learn"><span className="lbl">{t('team.metrics.trainings')}</span><span className={'val' + (trainings ? ' warn' : '')}>{trainings}</span></Link>}
             {ctx.can('docs.read') && <Link className="metric" href="/docs"><span className="lbl">{t('team.metrics.newDocs')}</span><span className="val">{docs.length}</span></Link>}
           </div>
 
-          <nav className="chips" aria-label={t('team.channels')}>
+          <nav className="chips team-chips" aria-label={t('team.channels')}>
             <Link className="chip" href="/team" aria-current={!active ? 'page' : undefined}>{t('team.all')}</Link>
             {channels.map((c) => (
               <Link key={c.id} className="chip" href={`/team?ch=${c.id}`} aria-current={active?.id === c.id ? 'page' : undefined} title={c.name}>{channelLabel(t, c, channels)}</Link>
@@ -131,20 +173,11 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
               )}
               <section className="card" aria-labelledby="latest">
                 <div className="card-head"><h2 id="latest">{t('team.feed.title')}</h2></div>
-                {rest.length ? <ul className="list">{rest.map((p) => <PostRow key={p.id} p={p} />)}</ul> : <div className="card-body"><p className="empty" style={{ margin: 0 }}>{t(top.length ? 'team.feed.noMore' : 'team.feed.empty')}</p></div>}
+                {rest.length ? <ul className="list">{rest.map((p) => <PostRow key={p.id} p={p} />)}</ul> : <div className="card-body"><p className="empty" style={{ margin: 0 }}>{t(top.length || toAck.length ? 'team.feed.noMore' : 'team.feed.empty')}</p></div>}
               </section>
             </div>
 
             <aside className="stack">
-              {toAck.length > 0 && (
-                <section className="card warn" aria-labelledby="ack">
-                  <div className="card-head"><h2 id="ack">{t('team.metrics.toAck')}</h2><span className="pill warn">{toAck.length}</span></div>
-                  <ul className="list">
-                    {toAck.map((p) => <li key={p.id}><Link className="li" href={`/team/post/${p.id}`}><span className="grow">{p.title}</span><span className="small muted">{byId.get(p.channelId)?.name}</span></Link></li>)}
-                  </ul>
-                </section>
-              )}
-
               <section className="card" aria-labelledby="ev">
                 <div className="card-head"><h2 id="ev">{t('team.side.events')}</h2></div>
                 {events.length ? (

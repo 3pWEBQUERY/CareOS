@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { addDays, dbDate, fmtDayMonth, fmtRel, fromDbDate, weekdayShort } from '@/lib/time'
@@ -58,17 +59,17 @@ export async function SwapsView({ ctx, now, canManage }: { ctx: Ctx; now: Date; 
         <section className="stack-sm" aria-labelledby="ap">
           <div className="sec-head"><h2 className="sec" id="ap">{t('schedule.swap.approvals')}</h2><span className={'pill' + (approvals.length ? ' warn' : '')}>{approvals.length}</span></div>
           {approvals.length ? (
-            <div className="tablewrap">
-              <table className="stable">
+            <div className="tablewrap rwrap">
+              <table className="stable rtable">
                 <thead><tr><th>{t('schedule.cols.shift')}</th><th>{t('schedule.cols.requester')}</th><th>{t('schedule.cols.taker')}</th><th>{t('schedule.swap.note')}</th><th className="right"><span className="sr-only">{t('schedule.cols.actions')}</span></th></tr></thead>
                 <tbody>
                   {approvals.map((r) => (
                     <tr key={r.id}>
                       <td>{when(r.shift)}</td>
-                      <td>{name(r.requesterId)}</td>
-                      <td>{name(r.takerId)}{qualLoss.get(r.id) && key && <div><span className="tag warn">{t('schedule.swap.qualLoss', { qual: key.name })}</span></div>}</td>
+                      <td data-label={t('schedule.cols.requester')}>{name(r.requesterId)}</td>
+                      <td data-label={t('schedule.cols.taker')}>{name(r.takerId)}{qualLoss.get(r.id) && key && <div><span className="tag warn">{t('schedule.swap.qualLoss', { qual: key.name })}</span></div>}</td>
                       <td className="small fg2">{r.note}</td>
-                      <td className="right nowrap">
+                      <td className="right nowrap r-act">
                         <ActButton action={decideSwapAction.bind(null, r.id, true)} className="btn sm primary">{t('schedule.swap.approve')}</ActButton>{' '}
                         <ActButton action={decideSwapAction.bind(null, r.id, false)} className="btn sm ghost">{t('schedule.swap.reject')}</ActButton>
                       </td>
@@ -105,23 +106,25 @@ export async function SwapsView({ ctx, now, canManage }: { ctx: Ctx; now: Date; 
       <section className="stack-sm" aria-labelledby="my">
         <h2 className="sec" id="my">{t('schedule.swap.mine')}</h2>
         {mine.length ? (
-          <div className="tablewrap">
-            <table className="stable">
+          <div className="tablewrap rwrap">
+            <table className="stable rtable">
               <thead><tr><th>{t('schedule.cols.shift')}</th><th>{t('schedule.cols.taker')}</th><th>{t('schedule.cols.status')}</th><th>{t('schedule.swap.note')}</th><th className="right"><span className="sr-only">{t('schedule.cols.actions')}</span></th></tr></thead>
               <tbody>
                 {mine.map((r) => (
                   <tr key={r.id}>
                     <td>{when(r.shift)}</td>
-                    <td>{r.takerId ? name(r.takerId) : <span className="muted">{t('schedule.swap.anyone')}</span>}</td>
+                    <td data-label={t('schedule.cols.taker')}>{r.takerId ? name(r.takerId) : <span className="muted">{t('schedule.swap.anyone')}</span>}</td>
                     <td>{statusOf(r)}</td>
                     <td className="small fg2">{r.note}</td>
-                    <td className="right">{r.status === 'requested' && <ActButton action={cancelSwapAction.bind(null, r.id)} className="btn sm ghost" confirm="schedule.swap.cancelConfirm">{t('schedule.swap.cancel')}</ActButton>}</td>
+                    <td className="right r-act">{r.status === 'requested' && <ActButton action={cancelSwapAction.bind(null, r.id)} className="btn sm ghost" confirm="schedule.swap.cancelConfirm">{t('schedule.swap.cancel')}</ActButton>}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : <p className="empty" style={{ margin: 0 }}>{t('schedule.swap.mineNone')}</p>}
+        ) : (
+          <div className="empty"><span>{t('schedule.swap.mineNone')}</span><Link className="btn sm" href="/schedule">{t('schedule.ux.swapHow')}</Link></div>
+        )}
         <p className="small muted" style={{ margin: 0 }}>{t('schedule.swap.flow')}</p>
       </section>
     </>

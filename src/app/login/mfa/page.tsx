@@ -1,9 +1,14 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Brand } from '@/components/Brand'
 import { getSession } from '@/lib/auth/session'
 import { publicT } from '@/lib/i18n-server'
 import { logoutAction } from '../actions'
 import { MfaForm } from './MfaForm'
+
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await publicT()).t('auth.mfaTitle') }
+}
 
 export default async function MfaPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const s = await getSession()

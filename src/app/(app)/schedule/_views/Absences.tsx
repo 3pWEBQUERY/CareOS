@@ -30,6 +30,33 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
 
   return (
     <>
+      <section className="stack-sm" aria-labelledby="mine">
+        <h2 className="sec" id="mine">{t('schedule.absence.mine')}</h2>
+        {mine.length ? (
+          <div className="tablewrap rwrap">
+            <table className="stable rtable">
+              <thead><tr><th>{t('schedule.cols.kind')}</th><th>{t('schedule.cols.period')}</th><th className="right">{t('schedule.cols.days')}</th><th>{t('schedule.cols.status')}</th><th>{t('schedule.absence.note')}</th><th className="right"><span className="sr-only">{t('schedule.cols.actions')}</span></th></tr></thead>
+              <tbody>
+                {mine.map((a) => (
+                  <tr key={a.id}>
+                    <td><span className="sh abs">{t('schedule.absence.short.' + a.kind)}</span> {t('schedule.absence.kinds.' + a.kind)}</td>
+                    <td className="num nowrap" data-label={t('schedule.cols.period')}>{fmtDbDate(a.from, locale)} – {fmtDbDate(a.to, locale)}</td>
+                    <td className="num right" data-label={t('schedule.cols.days')}>{dayCount(a)}</td>
+                    <td><span className={'tag ' + tone(a.status)}>{t('schedule.approval.' + a.status)}</span></td>
+                    <td className="small fg2">{a.note}</td>
+                    <td className="right r-act">
+                      {(a.status === 'requested' || a.from >= dbDate(startOfDay(now))) && (
+                        <ActButton action={withdrawAbsenceAction.bind(null, a.id)} className="btn sm ghost" confirm="schedule.absence.withdrawConfirm">{t('schedule.absence.withdraw')}</ActButton>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="empty" style={{ margin: 0 }}>{t('schedule.absence.none')}</p>}
+      </section>
+
       <div className="grid-2">
         <section className="card" aria-labelledby="req">
           <div className="card-head"><h2 id="req">{t('schedule.absence.request')}</h2></div>
@@ -67,40 +94,13 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
         </section>
       </div>
 
-      <section className="stack-sm" aria-labelledby="mine">
-        <h2 className="sec" id="mine">{t('schedule.absence.mine')}</h2>
-        {mine.length ? (
-          <div className="tablewrap">
-            <table className="stable">
-              <thead><tr><th>{t('schedule.cols.kind')}</th><th>{t('schedule.cols.period')}</th><th className="right">{t('schedule.cols.days')}</th><th>{t('schedule.cols.status')}</th><th>{t('schedule.absence.note')}</th><th className="right"><span className="sr-only">{t('schedule.cols.actions')}</span></th></tr></thead>
-              <tbody>
-                {mine.map((a) => (
-                  <tr key={a.id}>
-                    <td><span className="sh abs">{t('schedule.absence.short.' + a.kind)}</span> {t('schedule.absence.kinds.' + a.kind)}</td>
-                    <td className="num nowrap">{fmtDbDate(a.from, locale)} – {fmtDbDate(a.to, locale)}</td>
-                    <td className="num right">{dayCount(a)}</td>
-                    <td><span className={'tag ' + tone(a.status)}>{t('schedule.approval.' + a.status)}</span></td>
-                    <td className="small fg2">{a.note}</td>
-                    <td className="right">
-                      {(a.status === 'requested' || a.from >= dbDate(startOfDay(now))) && (
-                        <ActButton action={withdrawAbsenceAction.bind(null, a.id)} className="btn sm ghost" confirm="schedule.absence.withdrawConfirm">{t('schedule.absence.withdraw')}</ActButton>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : <p className="empty" style={{ margin: 0 }}>{t('schedule.absence.none')}</p>}
-      </section>
-
       {team && (
         <>
           <section className="stack-sm" aria-labelledby="tp">
             <div className="sec-head"><h2 className="sec" id="tp">{t('schedule.absence.team')}</h2><span className={'pill' + (team.pending.length ? ' warn' : '')}>{team.pending.length}</span></div>
             {team.pending.length ? (
-              <div className="tablewrap">
-                <table className="stable">
+              <div className="tablewrap rwrap">
+                <table className="stable rtable">
                   <thead><tr><th>{t('schedule.cols.person')}</th><th>{t('schedule.cols.kind')}</th><th>{t('schedule.cols.period')}</th><th className="right">{t('schedule.cols.days')}</th><th>{t('schedule.absence.conflicts')}</th><th className="right"><span className="sr-only">{t('schedule.cols.actions')}</span></th></tr></thead>
                   <tbody>
                     {team.pending.map((a) => {
@@ -109,10 +109,10 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
                         <tr key={a.id}>
                           <th scope="row">{team!.names.get(a.userId)}{a.note && <div className="small muted" style={{ fontWeight: 400 }}>{a.note}</div>}</th>
                           <td>{t('schedule.absence.kinds.' + a.kind)}</td>
-                          <td className="num nowrap">{fmtDbDate(a.from, locale)} – {fmtDbDate(a.to, locale)}</td>
-                          <td className="num right">{dayCount(a)}</td>
+                          <td className="num nowrap" data-label={t('schedule.cols.period')}>{fmtDbDate(a.from, locale)} – {fmtDbDate(a.to, locale)}</td>
+                          <td className="num right" data-label={t('schedule.cols.days')}>{dayCount(a)}</td>
                           <td>{c ? <span className="tag warn">{t('schedule.absence.conflict', { n: c })}</span> : <span className="muted small">–</span>}</td>
-                          <td className="right nowrap">
+                          <td className="right nowrap r-act">
                             <ActButton action={decideAbsenceAction.bind(null, a.id, true)} className="btn sm primary">{t('schedule.absence.approve')}</ActButton>{' '}
                             <ActButton action={decideAbsenceAction.bind(null, a.id, false)} className="btn sm ghost">{t('schedule.absence.reject')}</ActButton>
                           </td>

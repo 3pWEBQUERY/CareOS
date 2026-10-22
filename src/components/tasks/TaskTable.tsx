@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
@@ -8,7 +8,7 @@ import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { IconCheck } from '@/components/icons'
-import { assignTaskAction, completeTaskAction, createTaskAction, escalateTaskAction, reopenTaskAction, startTaskAction } from '@/app/(app)/tasks/actions'
+import { assignTaskAction, completeManyAction, completeTaskAction, createTaskAction, escalateTaskAction, reopenManyAction, reopenTaskAction, startTaskAction } from '@/app/(app)/tasks/actions'
 import { useCall } from '@/components/meds/shared'
 
 export type TaskRowDto = {
@@ -47,6 +47,7 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
   const t = useT()
   const { pending, call } = useCall()
   const [dlg, setDlg] = useState<{ row: TaskRowDto; mode: Mode } | null>(null)
+  const [bulk, setBulk] = useState<TaskRowDto[] | null>(null)
   const [menu, setMenuState] = useState<{ id: string; top: number; right: number } | null>(null)
   const openMenu = (id: string, el: HTMLElement) => {
     if (menu?.id === id) return setMenuState(null)
@@ -78,9 +79,16 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
 
   if (!rows.length) return <p className="muted" style={{ margin: 0 }}>{emptyText}</p>
 
+  // Sammelquittierung: gleiche Massnahme zur gleichen Zeit bei mindestens 3 Personen (z. B. Kontrollgang 21:30)
+  const groupKey = (r: TaskRowDto) => `${r.day ?? ''}|${r.time}|${r.title}`
+  const groups = new Map<string, TaskRowDto[]>()
+  if (canComplete) for (const r of rows) if (!done(r) && !r.link) groups.set(groupKey(r), [...(groups.get(groupKey(r)) ?? []), r])
+  const groupStart = new Map<string, TaskRowDto[]>()
+  for (const g of groups.values()) if (g.length >= 3) groupStart.set(g[0].id, g)
+
   return (
     <>
-      <div className="tablewrap">
+      <div className="tablewrap task-table">
         <table className="stable">
           <thead>
             <tr>
@@ -95,15 +103,27 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
           <tbody>
             {rows.map((row) => {
               const closed = done(row)
+              const grp = groupStart.get(row.id)
               return (
-                <tr key={row.id} className={row.view === 'over' ? 'over' : ''}>
-                  <td className="mono nowrap">
+                <Fragment key={row.id}>
+                {grp && (
+                  <tr className="grp-row">
+                    <td colSpan={6}>
+                      <div className="row-between">
+                        <span><span className="mono">{row.time}</span> · <strong>{row.title}</strong> · <span className="muted">{t('tasks.bulk.count', { n: grp.length })}</span></span>
+                        <button type="button" className="btn sm" disabled={pending} onClick={() => setBulk(grp)}>{t('tasks.bulk.button', { n: grp.length })}</button>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                <tr className={row.view === 'over' ? 'over' : ''}>
+                  <td className="mono nowrap tt-time">
                     {row.time}
                     {row.day && <div className="small muted">{row.day}</div>}
                     {row.view === 'over' && <div className="small">{t('tasks.view.over')}</div>}
                     {row.view === 'due' && <div className="small warn-text">{t('tasks.view.due')}</div>}
                   </td>
-                  <td>
+                  <td className="tt-res">
                     {row.resident ? (
                       <>
                         <Link className="linkbtn" href={`/residents/${row.resident.id}`}>{row.resident.name}</Link>
@@ -111,7 +131,7 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
                       </>
                     ) : <span className="muted">{t('tasks.noResident')}</span>}
                   </td>
-                  <td style={closed ? { color: 'var(--fg-3)' } : undefined}>
+                  <td className="tt-task" style={closed ? { color: 'var(--fg-3)' } : undefined}>
                     <span style={row.view === 'done' ? { textDecoration: 'line-through', textDecorationColor: 'var(--line-strong)' } : undefined}>{row.title}</span>
                     <div className="row" style={{ gap: 6, marginTop: 2 }}>
                       <span className="small muted">{t('tasks.minutes', { n: row.durationMin })}</span>
@@ -128,9 +148,9 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
                   <td className="nowrap hide-sm">
                     {row.assignee ? <span className="row" style={{ gap: 6 }}><span className="av sm">{row.assignee.initials}</span><span className="small">{row.assignee.id === meId ? t('tasks.me') : row.assignee.name}</span></span> : <span className="small muted">–</span>}
                   </td>
-                  <td className="right nowrap">
+                  <td className="right nowrap tt-act">
                     <div className="row" style={{ justifyContent: 'flex-end', gap: 6, flexWrap: 'nowrap', position: 'relative' }} data-menu>
-                      <button type="button" className="btn ghost sm" aria-haspopup="menu" aria-expanded={menu?.id === row.id} aria-label={t('tasks.actions.menuFor', { title: row.title })} onClick={(e) => openMenu(row.id, e.currentTarget)}>⋯</button>
+                      <button type="button" className="btn ghost sm row-menu" aria-haspopup="menu" aria-expanded={menu?.id === row.id} aria-label={t('tasks.actions.menuFor', { title: row.title })} onClick={(e) => openMenu(row.id, e.currentTarget)}>⋯</button>
                       {menu?.id === row.id && (
                         <div className="popover" role="menu" style={{ position: 'fixed', width: 230, top: menu.top, right: menu.right, textAlign: 'left' }}>
                           <ul className="menu">
@@ -165,13 +185,55 @@ export function TaskTable({ rows, staff, canManage, canComplete, meId, emptyText
                     </div>
                   </td>
                 </tr>
+                </Fragment>
               )
             })}
           </tbody>
         </table>
       </div>
       {dlg && <RowDialog key={dlg.row.id + dlg.mode} row={dlg.row} mode={dlg.mode} staff={staff} onClose={() => setDlg(null)} />}
+      {bulk && (
+        <BulkDialog rows={bulk} onClose={() => setBulk(null)} onDone={(ids, msg) => {
+          setBulk(null)
+          toast(msg, ids.length ? { undoLabel: t('common.undo'), undo: () => call(reopenManyAction, { ids: ids.join(',') }) } : {})
+        }} />
+      )}
     </>
+  )
+}
+
+/** Bestätigung der Sammelquittierung mit Liste aller Personen (eindeutige Zuordnung, PRD §32); Undo im Toast. */
+function BulkDialog({ rows, onClose, onDone }: { rows: TaskRowDto[]; onClose: () => void; onDone: (ids: string[], message: string) => void }) {
+  const t = useT()
+  const { pending, call } = useCall()
+  const first = rows[0]
+  const [sel, setSel] = useState<Set<string>>(() => new Set(rows.map((r) => r.id)))
+  const toggle = (id: string) => setSel((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  const confirm = () => call(completeManyAction, { ids: [...sel].join(',') }, (r) => {
+    if (r.ok) onDone((r.data as { ids?: string[] } | undefined)?.ids ?? [], r.message ?? '')
+  }, true)
+  return (
+    <Dialog open onClose={onClose} title={t('tasks.bulk.title')}>
+      <p style={{ margin: 0 }}><span className="mono">{first.time}</span> · <strong style={{ fontWeight: 500 }}>{first.title}</strong> <span className={'tag ' + first.catTone}>{first.category}</span></p>
+      <ul className="list card bulk-list">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <label className="li check bulk-item">
+              <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggle(r.id)} />
+              {r.resident?.room && <span className="roomtag">{r.resident.room}</span>}
+              <span className="grow">{r.resident?.name ?? t('tasks.noResident')}</span>
+              {r.view === 'over' && <span className="tag crit">{t('tasks.view.over')}</span>}
+            </label>
+          </li>
+        ))}
+      </ul>
+      <p className="small fg2" style={{ margin: 0 }}>{t('tasks.bulk.hint')}</p>
+      <div className="form-actions">
+        <span className="spacer" />
+        <button type="button" className="btn" onClick={onClose}>{t('common.cancel')}</button>
+        <button type="button" className="btn primary" disabled={pending || !sel.size} data-loading={pending || undefined} onClick={confirm}>{t('tasks.bulk.confirm', { n: sel.size })}</button>
+      </div>
+    </Dialog>
   )
 }
 
@@ -257,6 +319,14 @@ function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode;
       </ActionForm>
     </Dialog>
   )
+}
+
+/** Merkt sich den gewählten Filter pro Person (30 Tage), damit /tasks beim nächsten Aufruf gleich aussieht. */
+export function RememberFilter({ userId, value }: { userId: string; value: string }) {
+  useEffect(() => {
+    try { document.cookie = `careos_tasks_f_${userId}=${encodeURIComponent(value)}; path=/; max-age=${30 * 86400}; samesite=lax` } catch { /* Cookies gesperrt: Filter gilt nur für diesen Aufruf */ }
+  }, [userId, value])
+  return null
 }
 
 /** Create: Aufgabe erfassen. `?new=1` öffnet den Dialog direkt (Schnellaktion, Befehlspalette). */

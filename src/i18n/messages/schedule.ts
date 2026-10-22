@@ -189,6 +189,9 @@ export default defineMessages({
       double: 'Die Person hat an diesem Tag bereits einen Dienst.',
       target: 'Bitte ganze Zahlen zwischen 0 und 50 eingeben.',
     },
+    ux: {
+      swapHow: 'Tausch für einen meiner Dienste anfragen',
+    },
   },
   fr: {
     title: 'Planning',
@@ -377,6 +380,9 @@ export default defineMessages({
       person: 'Cette personne n’est pas disponible.',
       double: 'La personne a déjà un service ce jour-là.',
       target: 'Veuillez saisir des nombres entiers entre 0 et 50.',
+    },
+    ux: {
+      swapHow: 'Demander un échange pour un de mes services',
     },
   },
   it: {
@@ -567,6 +573,9 @@ export default defineMessages({
       double: 'La persona ha già un turno in questo giorno.',
       target: 'Inserire numeri interi tra 0 e 50.',
     },
+    ux: {
+      swapHow: 'Richiedere uno scambio per un mio turno',
+    },
   },
   en: {
     title: 'Schedule',
@@ -755,6 +764,9 @@ export default defineMessages({
       person: 'This person is not available.',
       double: 'This person already has a shift on this day.',
       target: 'Please enter whole numbers between 0 and 50.',
+    },
+    ux: {
+      swapHow: 'Request a swap for one of my shifts',
     },
   },
 })

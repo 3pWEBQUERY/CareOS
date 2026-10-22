@@ -2,8 +2,13 @@ import Link from 'next/link'
 import { InstallApp } from '@/components/shell/InstallApp'
 import { getCtx } from '@/lib/context'
 import { SignOutForm } from '@/components/shell/SignOutForm'
+import { UnitSwitcher } from '@/components/shell/UnitSwitcher'
 
-/** Mobile "Mehr": alle Bereiche, die nicht in der Bottom-Navigation liegen. */
+/** Mobile "Mehr": alle Bereiche, die nicht in der Bottom-Navigation liegen, und die Bereichswahl (Topbar zeigt sie dort nicht). */
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('nav.more') }
+}
+
 export default async function MorePage() {
   const ctx = await getCtx()
   const { t } = ctx
@@ -20,15 +25,24 @@ export default async function MorePage() {
     any('admin.') && ['/admin', t('nav.admin')],
     ['/profile', t('nav.profile')],
   ].filter(Boolean) as [string, string][]
+  const units = ctx.units.map((u) => ({ id: u.id, name: u.name, location: u.location.name }))
   return (
     <main className="panel main" style={{ flex: 1 }}>
-      <div className="view-head"><h1>{t('nav.more')}</h1></div>
-      <div className="tabpanel">
-        <nav className="more-grid" aria-label={t('nav.more')}>
-          {items.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
-        </nav>
-        <InstallApp />
-        <SignOutForm className="btn block" label={t('common.signOut')} />
+      <div className="view-head"><div><div className="lbl">{ctx.org.name}</div><h1>{t('nav.more')}</h1></div></div>
+      <div className="scroll">
+        <div className="tabpanel">
+          {units.length > 1 && (
+            <label className="fld" htmlFor="more-unit">
+              <span className="lbl">{t('nav.areas')}</span>
+              <UnitSwitcher id="more-unit" className="field" units={units} current={ctx.unit?.id ?? null} label={t('nav.areas')} />
+            </label>
+          )}
+          <nav className="more-grid" aria-label={t('nav.more')}>
+            {items.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
+          </nav>
+          <InstallApp />
+          <SignOutForm className="btn block" label={t('common.signOut')} />
+        </div>
       </div>
     </main>
   )

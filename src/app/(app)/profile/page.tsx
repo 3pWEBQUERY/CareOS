@@ -14,7 +14,9 @@ import { InstallApp } from '@/components/shell/InstallApp'
 import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, ThemeChooser } from './ProfileClient'
 import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updatePhoneAction } from './actions'
 
-export const metadata = { title: 'Profil' }
+export async function generateMetadata() {
+  return { title: (await getCtx()).t('nav.profile') }
+}
 
 export default async function ProfilePage() {
   const ctx = await getCtx()

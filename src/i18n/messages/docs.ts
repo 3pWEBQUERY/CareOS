@@ -154,6 +154,12 @@ export default defineMessages({
     firstVersion: 'Erstfassung',
     compare: 'Vergleich',
     meta: 'Eigenschaften',
+    ux: {
+      ackTitle: 'Zur Kenntnisnahme',
+      readAndAck: 'Lesen und bestätigen',
+      ackEnd: 'Bis zum Ende gelesen? Bestätigen Sie jetzt die Kenntnisnahme dieser Version.',
+      print: 'Drucken',
+    },
   },
   fr: {
     title: 'Documents',
@@ -308,6 +314,12 @@ export default defineMessages({
     firstVersion: 'Version initiale',
     compare: 'Comparer',
     meta: 'Propriétés',
+    ux: {
+      ackTitle: 'Prise de connaissance requise',
+      readAndAck: 'Lire et confirmer',
+      ackEnd: 'Lu jusqu’au bout ? Confirmez maintenant la prise de connaissance de cette version.',
+      print: 'Imprimer',
+    },
   },
   it: {
     title: 'Documenti',
@@ -462,6 +474,12 @@ export default defineMessages({
     firstVersion: 'Versione iniziale',
     compare: 'Confronta',
     meta: 'Proprietà',
+    ux: {
+      ackTitle: 'Da prendere visione',
+      readAndAck: 'Leggi e conferma',
+      ackEnd: 'Letto fino alla fine? Confermi ora la presa visione di questa versione.',
+      print: 'Stampa',
+    },
   },
   en: {
     title: 'Documents',
@@ -616,5 +634,11 @@ export default defineMessages({
     firstVersion: 'Initial version',
     compare: 'Compare',
     meta: 'Properties',
+    ux: {
+      ackTitle: 'To acknowledge',
+      readAndAck: 'Read and confirm',
+      ackEnd: 'Read to the end? Confirm that you have read this version now.',
+      print: 'Print',
+    },
   },
 })

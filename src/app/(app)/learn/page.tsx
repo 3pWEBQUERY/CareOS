@@ -80,8 +80,8 @@ export default async function LearnPage() {
           <section className="stack-sm" aria-labelledby="done">
             <div className="sec-head"><h2 className="sec" id="done">{t('learn.mine.doneTitle')}</h2></div>
             {done.length ? (
-              <div className="tablewrap">
-                <table className="stable">
+              <div className="tablewrap rwrap">
+                <table className="stable rtable">
                   <thead><tr><th>{t('learn.col.course')}</th><th>{t('learn.col.completed')}</th><th>{t('learn.col.score')}</th><th>{t('learn.col.validUntil')}</th></tr></thead>
                   <tbody>
                     {done.map((e) => {
@@ -90,9 +90,9 @@ export default async function LearnPage() {
                       return (
                         <tr key={e.id}>
                           <td><Link href={`/learn/${e.courseId}`}>{e.course.title}</Link>{e.course.mandatory && <> <span className="tag outline">{t('learn.mandatory')}</span></>}</td>
-                          <td className="num">{e.completedAt ? fmtDate(e.completedAt, locale) : '–'}</td>
-                          <td className="num">{e.score != null ? Math.round(e.score * 100) + ' %' : '–'}</td>
-                          <td className="nowrap">{c?.expiresAt ? <span className={st === 'expiring' ? 'warn-text' : st === 'expired' ? 'crit-text' : ''}><span className="mono">{fmtDate(c.expiresAt, locale)}</span>{st !== 'valid' && ' · ' + t('learn.cert.' + st)}</span> : <span className="muted">{t('learn.cert.noExpiry')}</span>}</td>
+                          <td className="num" data-label={t('learn.col.completed')}>{e.completedAt ? fmtDate(e.completedAt, locale) : '–'}</td>
+                          <td className="num" data-label={t('learn.col.score')}>{e.score != null ? Math.round(e.score * 100) + ' %' : '–'}</td>
+                          <td className="nowrap" data-label={t('learn.col.validUntil')}>{c?.expiresAt ? <span className={st === 'expiring' ? 'warn-text' : st === 'expired' ? 'crit-text' : ''}><span className="mono">{fmtDate(c.expiresAt, locale)}</span>{st !== 'valid' && ' · ' + t('learn.cert.' + st)}</span> : <span className="muted">{t('learn.cert.noExpiry')}</span>}</td>
                         </tr>
                       )
                     })}

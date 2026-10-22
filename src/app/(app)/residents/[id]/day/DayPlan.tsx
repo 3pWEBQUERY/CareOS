@@ -75,7 +75,7 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
 
   return (
     <>
-      <div className="metrics">
+      <div className="metrics res-metrics">
         <div className="metric">
           <span className="lbl">{t('chart.day.mDone')}</span>
           <span className="val">{done.length} <small>/ {opt.length}</small></span>
@@ -155,9 +155,12 @@ function Row({ k, residentId, canComplete, onToggle, onOpen }: { k: DayTask; res
   const state = k.status === 'partial' ? 'partial' : k.status === 'skipped' ? 'skipped' : undefined
   const mark = k.status === 'partial' ? '△' : k.status === 'skipped' ? '✕' : <IconCheck />
   return (
-    <li className={cls}>
+    <li className={cls} id={'task-' + k.id}>
       <span className="t mono">{k.time}</span>
-      {isMed || !canComplete ? (
+      {isMed && !closed ? (
+        // Medikamente werden in der Medikation quittiert (Fünf-R-Prüfung) – Kästchen führt direkt dorthin
+        <Link className="chk" data-state="link" href={`/residents/${residentId}/meds`} aria-label={k.title + ' – ' + t('chart.day.subMed')}><span aria-hidden="true">→</span></Link>
+      ) : isMed || !canComplete ? (
         <span className="chk" aria-hidden="true" data-state={state} {...(k.status === 'done' ? { 'aria-pressed': 'true' } : {})} style={{ cursor: 'default' }}>{mark}</span>
       ) : (
         <button type="button" className="chk" aria-pressed={closed} data-state={state}

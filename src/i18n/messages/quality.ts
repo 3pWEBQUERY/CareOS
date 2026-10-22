@@ -2,6 +2,7 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
+    ux: {"details": "Zeitpunkt, Ort, Bereich", "change": "Ändern", "now": "Jetzt, {time}", "afterSubmit": "Nach dem Melden geplant", "pickType": "Ereignistyp wählen – der Folgeprozess erscheint hier.", "created": "Ereignis gemeldet.", "createdTasks": "{n, plural, =0 {Kein Folgeprozess hinterlegt.} one {# Folgeaufgabe geplant (siehe Massnahmen).} other {# Folgeaufgaben geplant (siehe Massnahmen).}}", "createdChart": "Eintrag im Pflegebericht erstellt.", "createdLeads": "Leitung benachrichtigt.", "toTasks": "Zu den Aufgaben", "nextStep": "Jetzt", "next": {"reported": "Meldung prüfen und Sofortmassnahmen festhalten.", "immediate": "Sofortmassnahmen festhalten, danach Bewertung durch die Leitung.", "assessment": "Bewertung erfassen: Schweregrad, Folgen, Handlungsbedarf.", "followup": "Massnahmen erledigen; erledigte Aufgaben werden automatisch übernommen.", "analysis": "Ursachen analysieren, danach Schlussfolgerung festhalten und abschliessen."}}, // ux-qia
     title: 'Ereignisse',
     subtitle: 'Melden, bewerten, nachverfolgen und abschliessen',
     nearMiss: 'Beinahe-Ereignis',
@@ -218,6 +219,7 @@ export default defineMessages({
     },
   },
   fr: {
+    ux: {"details": "Moment, lieu, unité", "change": "Modifier", "now": "Maintenant, {time}", "afterSubmit": "Planifié après la déclaration", "pickType": "Choisir le type d’événement – le processus de suivi s’affiche ici.", "created": "Événement déclaré.", "createdTasks": "{n, plural, =0 {Aucun processus de suivi défini.} one {# tâche de suivi planifiée (voir mesures).} other {# tâches de suivi planifiées (voir mesures).}}", "createdChart": "Entrée créée dans le rapport de soins.", "createdLeads": "Responsables informés.", "toTasks": "Vers les tâches", "nextStep": "Maintenant", "next": {"reported": "Vérifier la déclaration et consigner les mesures immédiates.", "immediate": "Consigner les mesures immédiates, puis évaluation par la direction.", "assessment": "Saisir l’évaluation : gravité, conséquences, besoin d’agir.", "followup": "Réaliser les mesures ; les tâches terminées sont reprises automatiquement.", "analysis": "Analyser les causes, puis consigner la conclusion et clôturer."}}, // ux-qia
     title: 'Événements',
     subtitle: 'Déclarer, évaluer, suivre et clôturer',
     nearMiss: 'Presque-événement',
@@ -434,6 +436,7 @@ export default defineMessages({
     },
   },
   it: {
+    ux: {"details": "Momento, luogo, reparto", "change": "Modifica", "now": "Adesso, {time}", "afterSubmit": "Pianificato dopo la segnalazione", "pickType": "Scegliere il tipo di evento – il processo di follow-up appare qui.", "created": "Evento segnalato.", "createdTasks": "{n, plural, =0 {Nessun processo di follow-up definito.} one {# compito di follow-up pianificato (vedi misure).} other {# compiti di follow-up pianificati (vedi misure).}}", "createdChart": "Voce creata nel rapporto di cura.", "createdLeads": "Responsabili informati.", "toTasks": "Ai compiti", "nextStep": "Adesso", "next": {"reported": "Verificare la segnalazione e registrare le misure immediate.", "immediate": "Registrare le misure immediate, poi valutazione da parte della direzione.", "assessment": "Registrare la valutazione: gravità, conseguenze, necessità di intervento.", "followup": "Eseguire le misure; i compiti completati vengono ripresi automaticamente.", "analysis": "Analizzare le cause, poi registrare la conclusione e chiudere."}}, // ux-qia
     title: 'Eventi',
     subtitle: 'Segnalare, valutare, seguire e chiudere',
     nearMiss: 'Quasi-evento',
@@ -650,6 +653,7 @@ export default defineMessages({
     },
   },
   en: {
+    ux: {"details": "Time, place, unit", "change": "Change", "now": "Now, {time}", "afterSubmit": "Planned after reporting", "pickType": "Choose an event type – the follow-up process appears here.", "created": "Event reported.", "createdTasks": "{n, plural, =0 {No follow-up process defined.} one {# follow-up task planned (see actions).} other {# follow-up tasks planned (see actions).}}", "createdChart": "Entry added to the care record.", "createdLeads": "Leads notified.", "toTasks": "Go to tasks", "nextStep": "Now", "next": {"reported": "Check the report and record immediate actions.", "immediate": "Record immediate actions, then assessment by the lead.", "assessment": "Record the assessment: severity, consequences, need for action.", "followup": "Complete the actions; completed tasks are taken over automatically.", "analysis": "Analyse causes, then record the conclusion and close."}}, // ux-qia
     title: 'Incidents',
     subtitle: 'Report, assess, follow up and close',
     nearMiss: 'Near miss',

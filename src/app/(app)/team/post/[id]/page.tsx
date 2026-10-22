@@ -87,13 +87,12 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
             {post.requireAck && <span className="tag accent">{t('team.feed.ack')}</span>}
           </div>
 
-          {post.requireAck && !expired && (
+          {post.requireAck && !expired && !isAuthor && (
             myAck ? (
               <div className="alert ok"><span className="grow"><strong>✓ {t('team.ack.saved')}</strong>{t('team.ack.done', { date: `${fmtDate(myAck.at, locale)} ${hm(myAck.at)}` })}</span></div>
             ) : (
-              <div className="alert warn" style={{ alignItems: 'center' }}>
+              <div className="alert warn">
                 <span className="grow"><strong>{t('team.ack.title')}</strong><span className="fg">{t('team.ack.required')}</span></span>
-                <ActButton action={ackPostAction.bind(null, post.id)} className="btn primary">{t('team.ack.button')}</ActButton>
               </div>
             )
           )}
@@ -130,6 +129,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                     ))}
                   </ul>
                 </section>
+              )}
+
+              {post.requireAck && !expired && !isAuthor && !myAck && (
+                <div className="alert warn team-ack-end" id="ack-end">
+                  <span className="grow fg">{t('team.ux.ackEnd')}</span>
+                  <ActButton action={ackPostAction.bind(null, post.id)} className="btn primary">✓ {t('team.ack.button')}</ActButton>
+                </div>
               )}
 
               <section className="card" aria-labelledby="cm">

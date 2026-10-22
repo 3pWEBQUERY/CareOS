@@ -1,10 +1,13 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Brand } from '@/components/Brand'
 import { publicT } from '@/lib/i18n-server'
 import { findLink } from './link'
 import { InviteForm } from './InviteForm'
 
-export const metadata = { title: 'Passwort festlegen' }
+export async function generateMetadata(): Promise<Metadata> {
+  return { title: (await publicT()).t('profile.invite.title') }
+}
 
 /** Landeseite für Einladungs- und Rücksetz-Links aus CareOS Admin. */
 export default async function InvitePage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {

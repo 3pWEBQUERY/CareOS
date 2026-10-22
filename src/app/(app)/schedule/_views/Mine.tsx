@@ -50,8 +50,8 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
         {pendingSwaps > 0 && <Link className="metric" href="/schedule?view=swaps"><span className="lbl">{t('schedule.mine.pendingSwaps')}</span><span className="val warn">{pendingSwaps}</span></Link>}
       </div>
 
-      <div className="tablewrap">
-        <table className="stable">
+      <div className="tablewrap rwrap">
+        <table className="stable rtable">
           <thead>
             <tr><th>{t('schedule.cols.date')}</th><th>{t('schedule.cols.shift')}</th><th>{t('schedule.cols.time')}</th><th>{t('schedule.cols.unit')}</th><th>{t('schedule.cols.status')}</th><th className="right"><span className="sr-only">{t('schedule.cols.actions')}</span></th></tr>
           </thead>
@@ -67,7 +67,7 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
               )
               if (!list.length)
                 return (
-                  <tr key={d.toISOString()}>
+                  <tr key={d.toISOString()} className="r-free">
                     {dayCell}
                     <td colSpan={5}>{abs ? <span className="sh abs">{t('schedule.absence.kinds.' + abs.kind)}{abs.status === 'requested' ? ` · ${t('schedule.approval.requested')}` : ''}</span> : <span className="muted">{t('schedule.mine.free')}</span>}</td>
                   </tr>
@@ -78,15 +78,15 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
                 return (
                   <tr key={s.id}>
                     {i === 0 ? dayCell : <th />}
-                    <td><span className={'sh ' + s.shiftType.code}>{s.shiftType.code}</span> {s.shiftType.name}</td>
-                    <td className="num nowrap">{s.shiftType.start}–{s.shiftType.end}</td>
-                    <td>{s.unit.name}</td>
-                    <td>
+                    <td><span className={'sh ' + s.shiftType.code}>{s.shiftType.code}</span> {s.shiftType.name} <span className="r-only mono">{s.shiftType.start}–{s.shiftType.end}</span></td>
+                    <td className="num nowrap r-desk">{s.shiftType.start}–{s.shiftType.end}</td>
+                    <td data-label={t('schedule.cols.unit')}>{s.unit.name}</td>
+                    <td data-label={t('schedule.cols.status')}>
                       {abs && <span className="tag warn" style={{ marginRight: 6 }}>{t('schedule.absence.kinds.' + abs.kind)}</span>}
                       {swap ? <span className="tag violet">{t(swap.acceptedAt ? 'schedule.swap.waitingLead' : 'schedule.swap.waitingTaker')}</span> : <span className="muted small">{t('schedule.status.' + s.status)}</span>}
                       {s.note && <div className="small muted">{s.note}</div>}
                     </td>
-                    <td className="right">
+                    <td className="right r-act">
                       {!past && s.status === 'planned' && !swap && (
                         <SwapButton
                           shiftId={s.id}
@@ -142,8 +142,8 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
             const cls = [d.getMonth() !== month.getMonth() && 'out', sameDay(d, now) && 'today'].filter(Boolean).join(' ')
             return (
               <div key={k} className={cls || undefined}>
-                <span className="dn">{d.getDate()}</span>
-                {mine.map((s) => <span key={s.id} className={'sh ' + s.shiftType.code} title={`${s.shiftType.name} ${s.shiftType.start}–${s.shiftType.end}`}>{s.shiftType.code} <span className="month-time">{s.shiftType.start}</span></span>)}
+                <span className="dn"><span className="sr-only">{weekdayShort(d, locale)} </span>{d.getDate()}<span className="sr-only">.{d.getMonth() + 1}.</span></span>
+                {mine.map((s) => <span key={s.id} className={'sh ' + s.shiftType.code} title={`${s.shiftType.name} ${s.shiftType.start}–${s.shiftType.end}`}>{s.shiftType.code} <span className="month-time">{s.shiftType.start}</span><span className="sr-only"> {s.shiftType.name} {s.shiftType.start}–{s.shiftType.end}</span></span>)}
                 {abs && <span className="sh abs" title={t('schedule.absence.kinds.' + abs.kind)}>{t('schedule.absence.short.' + abs.kind)}{abs.status === 'requested' ? ' ?' : ''}</span>}
                 {op.length > 0 && <Link className="sh open" href="/schedule?view=open" title={t('schedule.open.title')}>{op.map((s) => s.shiftType.code).join(' ')} {t('schedule.open.short')}</Link>}
               </div>

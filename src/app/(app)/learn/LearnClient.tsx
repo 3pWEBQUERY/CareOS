@@ -18,54 +18,88 @@ export const KINDS = ['text', 'video', 'document', 'quiz', 'practical'] as const
 export function QuizForm({ courseId, moduleId, questions, pass, passed }: { courseId: string; moduleId: string; questions: { q: string; options: string[] }[]; pass: number; passed: boolean }) {
   const t = useT()
   const ref = useRef<HTMLFormElement>(null)
+  const resRef = useRef<HTMLDivElement>(null)
   const [res, setRes] = useState<QuizResult | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [answered, setAnswered] = useState<Set<number>>(new Set())
+  const [missing, setMissing] = useState<Set<number>>(new Set())
   const [pending, start] = useTransition()
   const wrong = new Set(res?.wrong ?? [])
+  const focusQ = (i: number) => ref.current?.querySelector<HTMLInputElement>(`input[name="q${i}"]`)?.focus()
   return (
     <form
       ref={ref}
       className="form"
+      noValidate
+      aria-labelledby="mod-title"
+      onChange={(e) => {
+        const name = (e.target as unknown as HTMLInputElement).name
+        if (!/^q\d+$/.test(name)) return
+        const i = Number(name.slice(1))
+        setAnswered((cur) => new Set(cur).add(i))
+        setMissing((cur) => { if (!cur.has(i)) return cur; const n = new Set(cur); n.delete(i); return n })
+      }}
       onSubmit={(e) => {
         e.preventDefault()
         const form = new FormData(e.currentTarget)
+        const open = questions.map((_, i) => i).filter((i) => !form.has('q' + i))
+        if (open.length) {
+          setMissing(new Set(open))
+          setErr(t('learn.ux.unanswered', { list: open.map((i) => i + 1).join(', ') }))
+          focusQ(open[0])
+          return
+        }
+        setMissing(new Set())
         start(async () => {
           const r = await submitQuiz(courseId, moduleId, form)
-          if (r.ok && r.data) { setRes(r.data); setErr(null); if (r.data.passed) toast(t('learn.quiz.passedToast')) }
-          else if (!r.ok) setErr(tr(t, r.error))
+          if (r.ok && r.data) {
+            setRes(r.data)
+            setErr(null)
+            if (r.data.passed) toast(t('learn.quiz.passedToast'))
+            requestAnimationFrame(() => { resRef.current?.focus(); resRef.current?.scrollIntoView({ block: 'nearest' }) })
+          } else if (!r.ok) setErr(tr(t, r.error))
         })
       }}
     >
       {passed && !res && <div className="alert ok"><span className="grow">{t('learn.quiz.alreadyPassed')}</span></div>}
       <ol className="stack" style={{ margin: 0, padding: 0, listStyle: 'none', maxWidth: 760 }}>
-        {questions.map((q, i) => (
-          <li key={i}>
-            <fieldset style={{ border: 0, padding: 0 }} disabled={pending || !!res?.passed}>
-              <legend style={{ padding: 0, fontWeight: 500, marginBottom: 8 }}><span className="mono muted">{i + 1}.</span> {q.q}</legend>
-              <div className="stack-sm">
-                {q.options.map((o, j) => (
-                  <label key={j} className="opt"><input type="radio" name={'q' + i} value={j} required /> <span>{o}</span></label>
-                ))}
-              </div>
-              {res && !res.passed && wrong.has(i) && <p className="small crit-text" style={{ margin: '6px 0 0' }}>{t('learn.quiz.wrong')}</p>}
-            </fieldset>
-          </li>
-        ))}
+        {questions.map((q, i) => {
+          const isWrong = !!res && !res.passed && wrong.has(i)
+          const isMissing = missing.has(i)
+          return (
+            <li key={i}>
+              <fieldset className="quiz-q" data-state={isWrong ? 'wrong' : isMissing ? 'missing' : undefined} disabled={pending || !!res?.passed} aria-describedby={isWrong || isMissing ? `qh${i}` : undefined}>
+                <legend><span className="mono muted">{i + 1}.</span> {q.q}</legend>
+                <div className="stack-sm">
+                  {q.options.map((o, j) => (
+                    <label key={j} className="opt"><input type="radio" name={'q' + i} value={j} /> <span>{o}</span></label>
+                  ))}
+                </div>
+                {isWrong && <p id={`qh${i}`} className="small crit-text" style={{ margin: '6px 0 0' }}>✕ {t('learn.quiz.wrong')}</p>}
+                {isMissing && !isWrong && <p id={`qh${i}`} className="small crit-text" style={{ margin: '6px 0 0' }}>{t('learn.ux.pick')}</p>}
+              </fieldset>
+            </li>
+          )
+        })}
       </ol>
       {res && (
-        <div className={'alert ' + (res.passed ? 'ok' : 'crit')} role="status">
+        <div ref={resRef} tabIndex={-1} className={'alert ' + (res.passed ? 'ok' : 'crit')} role="status">
           <div className="grow">
-            <strong>{res.passed ? t('learn.quiz.passed') : t('learn.quiz.failed')}</strong>
+            <strong>{res.passed ? '✓ ' + t('learn.quiz.passed') : '✕ ' + t('learn.quiz.failed')}</strong>
             <span>{t('learn.quiz.result', { right: questions.length - res.wrong.length, total: questions.length, pct: Math.round(res.score * 100), pass: Math.round(res.pass * 100) })}</span>
           </div>
         </div>
       )}
       {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
       <div className="form-actions">
-        <span className="small muted">{t('learn.quiz.passMark', { pct: Math.round(pass * 100) })}</span>
+        <span className="small muted">
+          {!res && <span className="mono">{t('learn.ux.answered', { n: answered.size, total: questions.length })}</span>}
+          {!res && ' · '}
+          {t('learn.quiz.passMark', { pct: Math.round(pass * 100) })}
+        </span>
         <span className="spacer" />
         {res && !res.passed ? (
-          <button type="button" className="btn primary" onClick={() => { ref.current?.reset(); setRes(null) }}>{t('learn.quiz.retry')}</button>
+          <button type="button" className="btn primary" onClick={() => { ref.current?.reset(); setRes(null); setAnswered(new Set()); requestAnimationFrame(() => focusQ(0)) }}>{t('learn.quiz.retry')}</button>
         ) : !res?.passed && (
           <button type="submit" className="btn primary" disabled={pending} data-loading={pending || undefined}>{t('learn.quiz.submit')}</button>
         )}
