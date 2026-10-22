@@ -5,7 +5,7 @@ import type { Ctx } from '@/lib/context'
 import { ensureTasksForDay, taskView, OPEN_STATUSES } from '@/lib/tasks'
 import { lastShiftEnd, myShiftNow, runningShift } from '@/lib/shift'
 import { shiftName } from '@/lib/shift-name'
-import { addDays, dbDate, fmtDayMonth, fmtNum, fmtRel, fromDbDate, hm, startOfDay } from '@/lib/time'
+import { addDays, dateKey, dbDate, fmtDayMonth, fmtNum, fmtRel, fromDbDate, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { taskTitle } from '@/lib/task-title'
 import { observationsToAck } from '@/lib/acks-server'
@@ -82,6 +82,8 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
   // Übergabe gilt als übernommen: Gesamtbestätigung oder – mit Zuteilung – alle eigenen {residents}
   const handoverOpen = handover && handover.authorId !== user.id && !hoAcked.has('') && !(myIds.length && myIds.every((id) => hoAcked.has(id))) ? handover : null
   const notesToAck = await observationsToAck(ctx, rIds, now)
+  // Direkt zur zu übernehmenden Übergabe (die Übergabeseite zeigt nach 2 Stunden sonst die laufende Schicht)
+  const hoHref = handover ? `/handover?s=${encodeURIComponent(handover.shiftCode)}&d=${dateKey(fromDbDate(handover.date))}` : '/handover'
 
   // Prioritäten (PRD §7.1): pro Person gebündelt; Verlaufseinträge nur unter «Seit deinem letzten Dienst».
   type PItem = { rid: string | null; text: string; href: string; vitalId?: string }
@@ -106,7 +108,7 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
   }
   for (const i of incidents) (i.severity === 'severe' || i.severity === 'moderate' || i.stage === 'reported' ? critical : important).push({ rid: i.residentId, text: t('home.incidentToday', { type: i.type.name }) + ' · ' + rel(i.occurredAt), href: ctx.can('quality.report') ? `/quality/${i.id}` : i.residentId ? `/residents/${i.residentId}` : '/' })
   for (const a of refused) important.push({ rid: a.residentId, text: t('home.refused', { drug: a.medication.name, time: hm(a.scheduledFor ?? a.at) }), href: `/residents/${a.residentId}/meds` })
-  for (const e of handoverOpen?.entries.filter((e) => e.important) ?? []) important.push({ rid: e.residentId, text: e.watch ?? e.open ?? '', href: '/handover' })
+  for (const e of handoverOpen?.entries.filter((e) => e.important) ?? []) important.push({ rid: e.residentId, text: e.watch ?? e.open ?? '', href: '/handover' + (handover ? `?s=${encodeURIComponent(handover.shiftCode)}&d=${dateKey(fromDbDate(handover.date))}` : '') })
 
   const name = (id: string | null | undefined) => {
     const r = id ? rById.get(id) : null
@@ -201,7 +203,7 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
     // Übergabe zu Dienstbeginn (übernehmen) und am Dienstende (abschliessen)
     const startDone = !!handover && !handoverOpen
     groups.set('ho-in', {
-      time: hm(window.start), due: window.start, title: t('home.tl.handover'), tag: t('home.tl.kinds.handover'), total: 1, open: startDone ? 0 : 1, over: false, med: false, who: [], href: '/handover',
+      time: hm(window.start), due: window.start, title: t('home.tl.handover'), tag: t('home.tl.kinds.handover'), total: 1, open: startDone ? 0 : 1, over: false, med: false, who: [], href: hoHref,
       sub: handover ? (startDone ? t('home.tl.handoverAcked') : t('home.tl.handoverToAck', { at: hm(handover.submittedAt!) })) : t('home.tl.handoverNone'),
     })
     if (ctx.canHere('handover.write')) {
@@ -305,7 +307,7 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
               <div className="metric"><span className="lbl">{t('home.residentsLabel')}</span><span className="val">{residents.length}</span></div>
             )}
             {canHandover ? (
-              <Link className="metric" href="/handover"><span className="lbl">{t('home.openHandover')}</span><span className={'val' + (handoverOpen ? ' warn' : '')}>{handoverOpen ? 1 : 0}{handoverOpen && <small> {t('home.toAckShort')}</small>}</span></Link>
+              <Link className="metric" href={handoverOpen ? hoHref : '/handover'}><span className="lbl">{t('home.openHandover')}</span><span className={'val' + (handoverOpen ? ' warn' : '')}>{handoverOpen ? 1 : 0}{handoverOpen && <small> {t('home.toAckShort')}</small>}</span></Link>
             ) : (
               <a className="metric" href="#changes"><span className="lbl">{t('home.changes')}</span><span className="val">{relevantCount}</span></a>
             )}
@@ -360,7 +362,7 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
                       <li className="tl-done">
                         <details>
                           <summary>
-                            <span className="mono">{timeline[0].time}–{timeline[doneLead - 1].time}</span>
+                            <span className="mono">{timeline[0].time === timeline[doneLead - 1].time ? timeline[0].time : `${timeline[0].time}–${timeline[doneLead - 1].time}`}</span>
                             <span className="grow">{t('home.doneLead', { n: doneLead })}</span>
                             <span className="tag ok">✓ {t('home.allDone')}</span>
                           </summary>
@@ -391,7 +393,7 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
               <ForYou ctx={ctx} now={now} unitId={unit.id}
                 extraCount={notesToAck.length + (handoverOpen ? 1 : 0)}
                 extra={<>
-                  {handoverOpen && <li><Link className="li" href="/handover"><span className="tag warn">{t('nav.handover')}</span><span className="grow">{handoverOpen.shiftCode} · {fmtDayMonth(fromDbDate(handoverOpen.date), locale)}</span></Link></li>}
+                  {handoverOpen && <li><Link className="li" href={hoHref}><span className="tag warn">{t('nav.handover')}</span><span className="grow">{handoverOpen.shiftCode} · {fmtDayMonth(fromDbDate(handoverOpen.date), locale)}</span></Link></li>}
                   {notesToAck.map((o) => <li key={o.id}><Link className="li" href={`/residents/${o.residentId}/notes`}><span className="tag crit">{t('residents.tabs.notes')}</span><span className="grow" style={{ minWidth: 0 }}><span style={{ display: 'block' }}>{name(o.residentId)}</span><span className="small muted ellipsis" style={{ display: 'block' }}>{o.text}</span></span><span className="small muted nowrap">{rel(o.at)}</span></Link></li>)}
                 </>}
               />

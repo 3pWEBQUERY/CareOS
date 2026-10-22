@@ -163,7 +163,10 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
           <Link className="btn ghost sm chat-back" href="/chat" aria-label={t('team.chat.back')}>←</Link>
           <div style={{ minWidth: 0 }}>
             <h2 className="ellipsis">{conv.title}</h2>
-            <span className="small muted">{conv.kind === 'direct' ? t('team.chat.kinds.direct') : t('team.chat.members', { n: members.length })}</span>
+            <span className="small muted">
+              {conv.kind === 'direct' ? t('team.chat.kinds.direct') : t('team.chat.members', { n: members.length })}
+              {conv.kind === 'direct' && members.some((m) => m.id !== me) && <> · <Link href={`/team/people/${members.find((m) => m.id !== me)!.id}`}>{t('nav.profile')}</Link></>}
+            </span>
           </div>
         </div>
         <div className="row" style={{ gap: 6 }}>
@@ -185,7 +188,7 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
             {members.map((m) => (
               <li key={m.id} className="li" style={{ alignItems: 'center', padding: '6px 12px' }}>
                 <span className="av sm muted">{m.initials}</span>
-                <span className="grow">{m.name}{m.id === me && <span className="muted"> ({t('team.chat.you')})</span>}</span>
+                <span className="grow"><Link href={`/team/people/${m.id}`}>{m.name}</Link>{m.id === me && <span className="muted"> ({t('team.chat.you')})</span>}</span>
                 <span className="small muted">{m.job}</span>
               </li>
             ))}

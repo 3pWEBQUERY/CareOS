@@ -59,9 +59,11 @@ export function RecurrenceFields({ withNone, defaults, startKey }: {
 }
 
 /** Vorlage erstellen oder bearbeiten (Admin → Klinische Konfiguration, «Serie bearbeiten» in Aufgaben). */
-export function TemplateDialog({ template, units, residents, staff, categories, onClose, todayKey }: {
+export function TemplateDialog({ template, units, residents, staff, categories, onClose, todayKey, defaultUnitId }: {
   template?: TemplateDto
   units: { id: string; name: string }[]
+  /** Vorauswahl beim Erstellen (gewählter Bereich der Topbar) */
+  defaultUnitId?: string | null
   residents: SeriesPerson[]
   /** Mitarbeitende je Bereich */
   staff: Record<string, SeriesStaff[]>
@@ -70,7 +72,7 @@ export function TemplateDialog({ template, units, residents, staff, categories, 
   todayKey: string
 }) {
   const t = useT()
-  const [unitId, setUnitId] = useState(template?.unitId ?? units[0]?.id ?? '')
+  const [unitId, setUnitId] = useState(template?.unitId ?? (units.some((u) => u.id === defaultUnitId) ? defaultUnitId! : units[0]?.id ?? ''))
   const [startKey, setStartKey] = useState(template?.startDate ?? todayKey)
   const people = residents.filter((r) => r.unitId === unitId)
   return (
@@ -97,9 +99,9 @@ export function TemplateDialog({ template, units, residents, staff, categories, 
           />
           <Combobox label={t('tasks.col.category')} name="category" freeText maxLength={60} defaultValue={template?.category ?? ''} placeholder={t('tasks.categoryDefault')} options={categories.map((c) => ({ value: c, label: c }))} />
           <TextField label={t('tasks.recur.times')} name="times" required defaultValue={template?.times.join(', ') ?? ''} placeholder="07:00, 19:00" hint={t('tasks.recur.timesHint')} className="mono" />
-          <RecurrenceFields defaults={template} startKey={startKey} />
           <DateField label={t('tasks.recur.start')} name="startDate" defaultValue={startKey} onChange={(v: string) => v && setStartKey(v)} required />
-          <NumberField label={t('tasks.details.duration')} name="durationMin" min={1} max={480} step={1} defaultValue={template?.durationMin ?? 10} />
+          <RecurrenceFields defaults={template} startKey={startKey} />
+          <NumberField label={t('tasks.details.duration')} name="durationMin" min={1} max={480} step={1} defaultValue={template?.durationMin ?? 10} unit={t('common.minutes')} />
           <Select label={t('tasks.details.priority')} name="priority" defaultValue={template?.priority ?? 'routine'}>
             {(['routine', 'important', 'critical'] as const).map((p) => <option key={p} value={p}>{t('common.priority.' + p)}</option>)}
           </Select>

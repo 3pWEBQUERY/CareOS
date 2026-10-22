@@ -7,6 +7,8 @@ import { FormEntry } from '@/components/forms/FormEntry'
 import { notesExtras } from './extras'
 import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
 import { focusFor } from '../../_lib/focus'
+import { DICTATION_ACK, DICTATION_NOTICE_VERSION, speechProviderFor } from '@/lib/integrations/speech'
+import type { DictationConfig } from './Dictation'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return residentTitle((await params).id, 'notes')
@@ -63,6 +65,17 @@ export default async function NotesPage({ params, searchParams }: { params: Prom
   for (const row of rows) Object.assign(row, extras.row(row.id))
   // Fokusdokumentation automatisch anbieten (PRD §10.3)
   const focus = canWrite ? await focusFor(ctx, r) : null
+  // Diktat (PRD §10.4): eigene Berechtigung, Organisationsschalter «voice», eigener Dienst vor Browser-Erkennung
+  let dictation: DictationConfig | undefined
+  if (canWrite && can('resident.chart.dictate')) {
+    const [flag, integ, ack] = await Promise.all([
+      db.featureFlag.findUnique({ where: { orgId_key: { orgId: ctx.org.id, key: 'voice' } } }),
+      db.integration.findFirst({ where: { orgId: ctx.org.id, kind: 'speech_to_text', active: true } }),
+      db.acknowledgement.findFirst({ where: { userId: ctx.user.id, subjectType: DICTATION_ACK, subjectId: ctx.org.id, version: DICTATION_NOTICE_VERSION }, select: { id: true } }),
+    ])
+    const provider = speechProviderFor(integ)
+    dictation = { mode: flag && !flag.enabled ? 'none' : provider ? 'server' : 'browser', acked: !!ack, service: provider?.name ?? null, region: provider?.region ?? null }
+  }
   return (
     <>
     {focus && focus.suggestions.length > 0 && <FocusSuggestions items={focus.suggestions} />}
@@ -75,6 +88,7 @@ export default async function NotesPage({ params, searchParams }: { params: Prom
       canWrite={canWrite}
       aiOn={aiOn}
       moreHref={more ? `/residents/${r.id}/notes?n=${limit + PAGE}` : null}
+      dictation={dictation}
       formSlot={extras.forms.length ? <FormEntry residentId={r.id} who={`${residentName(r)} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`} forms={extras.forms} /> : null}
     />
     </>

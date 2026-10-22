@@ -25,7 +25,7 @@ export const API_SCOPES = ['residents:read', 'tasks:read', 'tasks:write', 'obser
 export type ApiScope = (typeof API_SCOPES)[number]
 
 /** Integrationsarten (PRD §40/§41) – informativ, die eigentliche Anbindung erfolgt über die Integration Layer. */
-export const INTEGRATION_KINDS = ['hl7_fhir', 'hl7v2', 'pharmacy', 'lab', 'scheduling', 'identity_provider', 'drug_interactions'] as const
+export const INTEGRATION_KINDS = ['hl7_fhir', 'hl7v2', 'pharmacy', 'lab', 'scheduling', 'identity_provider', 'drug_interactions', 'speech_to_text'] as const
 
 /** Hosting- und Datenstandorte (PRD §36). */
 export const DATA_REGIONS = ['ch-zurich', 'ch-geneva', 'eu-central', 'eu-west', 'on-premise'] as const

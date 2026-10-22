@@ -409,6 +409,18 @@ export async function seedDemo(client: PrismaClient = db) {
   }
   await client.intakeLog.create({ data: { residentId: residentIds['205'], at: minsAgo(540), kind: 'meal', item: 'Frühstück püriert', portion: 0.75, authorId: U.MK } })
 
+  // Flüssigkeitsbilanz Frau Huber (palliativ, Dauerkatheter): s.c.-Infusion und Urin (PRD §14)
+  for (const [m, kind, ml, item] of [[480, 'out_urine', 350, 'Dauerkatheter'], [400, 'in_infusion', 500, 'NaCl 0,9 % s.c.'], [180, 'out_urine', 300, 'Dauerkatheter']] as const) {
+    await client.intakeLog.create({ data: { residentId: residentIds['203'], at: minsAgo(m), kind, amountMl: ml, item, authorId: U.MK } })
+  }
+
+  // Korrektur einer Messung (PRD §35): Tippfehler Temperatur, storniert mit Begründung und korrigiert – nie überschrieben
+  {
+    const t0 = at(addDays(today, -1), '14:10')
+    const wrong = await client.vitalSign.create({ data: { residentId: residentIds['204'], at: t0, recordedById: U.LR, temp: 39.7, pulse: 76, voidedAt: new Date(t0.getTime() + 12 * 60_000), voidedById: U.LR, voidReason: 'Tippfehler, gemessen 36,7 °C' } })
+    await client.vitalSign.create({ data: { residentId: residentIds['204'], at: t0, recordedById: U.LR, temp: 36.7, pulse: 76, supersedesId: wrong.id } })
+  }
+
   // Sturz Frau Schmid als Qualitätsereignis inkl. Folgeprozess
   const fall = await client.incident.create({
     data: {

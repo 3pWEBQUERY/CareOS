@@ -10,7 +10,7 @@ import { emit } from '@/lib/events'
 import { notify, usersWithPermission } from '@/lib/notify'
 import { taskTitle } from '@/lib/task-title'
 import { ensureTasksForDay, invalidateTaskGeneration, isClosed, syncIncidentActions } from '@/lib/tasks'
-import { addDays, atTime, dbDate, fmtDayMonth, fromDbDate, parseDateKey, startOfDay } from '@/lib/time'
+import { addDays, atTime, dbDate, fmtDayMonth, fromDbDate, parseDateKey, sameDay, startOfDay } from '@/lib/time'
 import { nextOccurrence, RecurrenceInput } from '@/lib/recurrence'
 
 const err = (error: string, field?: string): ActionResult => ({ ok: false, error, field })
@@ -82,7 +82,7 @@ export async function createTaskAction(form: FormData): Promise<ActionResult> {
       if (next && next < addDays(startOfDay(), 2)) await ensureTasksForDay(unitId, next)
       await emit({ orgId: ctx.org.id, type: 'task.created', unitId, residentId: tpl.residentId, actorId: ctx.user.id, payload: { templateId: tpl.id } })
       refresh()
-      return { ok: true, message: next ? t('tasks.recur.created', { next: `${fmtDayMonth(next, ctx.locale)} ${r.times[0]}` }) : t('tasks.toast.created') }
+      return { ok: true, message: next ? t('tasks.recur.created', { next: `${sameDay(next, new Date()) ? t('common.today') : fmtDayMonth(next, ctx.locale)} ${r.times[0]}` }) : t('tasks.toast.created') }
     }
     const task = await db.task.create({
       data: {

@@ -42,3 +42,6 @@ export function parseMaster(form: FormData) {
     mobility: p.mobility || null,
   } }
 }
+
+/** Bearbeitbare Stammdatenfelder (Audit-Vergleich, Konflikterkennung). */
+export const MASTER_FIELDS = ['firstName', 'lastName', 'birthDate', 'sex', 'roomId', 'careLevel', 'physician', 'rea', 'allergies', 'risks', 'diet', 'mobility', 'status', 'importantNotes', 'insuranceNo', 'primaryNurseId'] as const

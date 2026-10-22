@@ -77,7 +77,7 @@ export default defineMessages({
     timelineHintMine: 'Meine {residents} und Aufgaben ohne Person in {unit}',
     view: { label: 'Ansicht', care: 'Station', lead: 'Bereiche', quality: 'Qualität', office: 'Übersicht' },
     scope: { label: 'Welche {residents}', mine: 'Meine', mineN: 'Meine ({n})', all: 'Alle' },
-    mine: { title: 'Meine {Residents}', count: '{n, plural, one {# {Resident} zugeteilt} other {# {Residents} zugeteilt}}', allergy: 'Allergie' },
+    mine: { title: 'Meine Zuteilung', count: '{n, plural, one {# {Resident} zugeteilt} other {# {Residents} zugeteilt}}', allergy: 'Allergie' },
     tl: {
       visit: 'Arztvisite',
       appointment: 'Termin: {title}',
@@ -138,6 +138,8 @@ export default defineMessages({
       assigned: 'Zuständig {shift}: {list}',
       ackMine: 'Meine übernehmen',
       allMineAcked: 'Meine übernommen',
+      confirmHintMine: 'Diese Einträge verlangen eine ausdrückliche Kenntnisnahme. Bitte jeden Eintrag lesen und bestätigen; danach werden die zugeteilten {residents} übernommen.',
+      confirmButtonMine: 'Bestätigen und meine übernehmen',
       toastMine: '{n, plural, one {# {Resident} übernommen} other {# {Residents} übernommen}}',
     },
     chg: {
@@ -273,7 +275,7 @@ export default defineMessages({
     timelineHintMine: 'Mes {residents} et tâches sans personne dans {unit}',
     view: { label: 'Vue', care: 'Unité', lead: 'Secteurs', quality: 'Qualité', office: 'Aperçu' },
     scope: { label: 'Quels {residents}', mine: 'Les miens', mineN: 'Les miens ({n})', all: 'Tous' },
-    mine: { title: 'Mes {Residents}', count: '{n, plural, one {# {Resident} attribué} other {# {Residents} attribués}}', allergy: 'Allergie' },
+    mine: { title: 'Mes {residents}', count: '{n, plural, one {# {resident} attribué·e} other {# {residents} attribué·e·s}}', allergy: 'Allergie' },
     tl: {
       visit: 'Visite médicale',
       appointment: 'Rendez-vous : {title}',
@@ -334,7 +336,9 @@ export default defineMessages({
       assigned: 'Responsable {shift} : {list}',
       ackMine: 'Reprendre les miens',
       allMineAcked: 'Les miens repris',
-      toastMine: '{n, plural, one {# {Resident} repris} other {# {Residents} repris}}',
+      confirmHintMine: 'Ces entrées exigent une prise de connaissance explicite. Veuillez lire et confirmer chaque entrée ; ensuite, les {residents} attribué·e·s sont repris·e·s.',
+      confirmButtonMine: 'Confirmer et reprendre les miens',
+      toastMine: '{n, plural, one {# {resident} repris·e} other {# {residents} repris·e·s}}',
     },
     chg: {
       prn: 'Réserve',
@@ -469,7 +473,7 @@ export default defineMessages({
     timelineHintMine: 'I miei {residents} e compiti senza persona in {unit}',
     view: { label: 'Vista', care: 'Reparto', lead: 'Settori', quality: 'Qualità', office: 'Panoramica' },
     scope: { label: 'Quali {residents}', mine: 'I miei', mineN: 'I miei ({n})', all: 'Tutti' },
-    mine: { title: 'I miei {Residents}', count: '{n, plural, one {# {Resident} assegnato} other {# {Residents} assegnati}}', allergy: 'Allergia' },
+    mine: { title: 'I miei {residents}', count: '{n, plural, one {# {resident} assegnato} other {# {residents} assegnati}}', allergy: 'Allergia' },
     tl: {
       visit: 'Visita medica',
       appointment: 'Appuntamento: {title}',
@@ -530,7 +534,9 @@ export default defineMessages({
       assigned: 'Responsabile {shift}: {list}',
       ackMine: 'Riprendere i miei',
       allMineAcked: 'I miei ripresi',
-      toastMine: '{n, plural, one {# {Resident} ripreso} other {# {Residents} ripresi}}',
+      confirmHintMine: 'Queste voci richiedono una presa visione esplicita. Leggere e confermare ogni voce; poi i {residents} assegnati vengono ripresi.',
+      confirmButtonMine: 'Confermare e riprendere i miei',
+      toastMine: '{n, plural, one {# {resident} ripreso} other {# {residents} ripresi}}',
     },
     chg: {
       prn: 'Riserva',
@@ -665,7 +671,7 @@ export default defineMessages({
     timelineHintMine: 'My {residents} and tasks without a person in {unit}',
     view: { label: 'View', care: 'Ward', lead: 'Areas', quality: 'Quality', office: 'Overview' },
     scope: { label: 'Which {residents}', mine: 'Mine', mineN: 'Mine ({n})', all: 'All' },
-    mine: { title: 'My {Residents}', count: '{n, plural, one {# {Resident} assigned} other {# {Residents} assigned}}', allergy: 'Allergy' },
+    mine: { title: 'My {residents}', count: '{n, plural, one {# {resident} assigned} other {# {residents} assigned}}', allergy: 'Allergy' },
     tl: {
       visit: 'Physician round',
       appointment: 'Appointment: {title}',
@@ -726,7 +732,9 @@ export default defineMessages({
       assigned: 'Responsible {shift}: {list}',
       ackMine: 'Take over mine',
       allMineAcked: 'Mine taken over',
-      toastMine: '{n, plural, one {# {Resident} taken over} other {# {Residents} taken over}}',
+      confirmHintMine: 'These entries require explicit acknowledgement. Read and confirm each one; the assigned {residents} are then taken over.',
+      confirmButtonMine: 'Confirm and take over mine',
+      toastMine: '{n, plural, one {# {resident} taken over} other {# {residents} taken over}}',
     },
     chg: {
       prn: 'PRN',

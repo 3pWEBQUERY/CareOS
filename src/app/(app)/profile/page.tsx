@@ -102,8 +102,8 @@ export default async function ProfilePage() {
             </section>
           </div>
 
-          <section className="card" aria-labelledby="p-people" id="p-people">
-            <div className="card-head"><h2 id="p-people">{t('people.me.title')}</h2><Link className="linkbtn small" href={`/team/people/${user.id}`}>{t('people.me.preview')} →</Link></div>
+          <section className="card" aria-labelledby="p-people-h" id="p-people">
+            <div className="card-head"><h2 id="p-people-h">{t('people.me.title')}</h2><Link className="linkbtn small" href={`/team/people/${user.id}`}>{t('people.me.preview')} →</Link></div>
             <div className="card-body ppl-me">
               <AvatarEditor src={avatarUrl(user.avatarFileId)} initials={user.initials} />
               <ActionForm action={updateContactAction} reset={false} success="common.saved">

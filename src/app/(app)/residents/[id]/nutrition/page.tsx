@@ -223,14 +223,14 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
                   </tr>
                 </thead>
                 <tbody>
-                  {(['drink', ...FLUID_IN] as const).map((k) => (
+                  {(['drink', ...FLUID_IN] as const).filter((k) => balance.some((b) => b.in[k] > 0)).map((k) => (
                     <tr key={k}><th scope="row" className="fluid-sub">{t('care.fluid.kinds.' + k)}</th>{balance.map((b, i) => <td key={i} className="num right">{b.in[k] ? ml(b.in[k]) : '–'}</td>)}</tr>
                   ))}
                   <tr className="fluid-sum"><th scope="row">{t('care.fluid.inTotal')}</th>{balance.map((b, i) => <td key={i} className="num right">{ml(b.inMl)} ml</td>)}</tr>
-                  {FLUID_OUT.map((k) => (
+                  {FLUID_OUT.filter((k) => balance.some((b) => b.out[k] > 0)).map((k) => (
                     <tr key={k}><th scope="row" className="fluid-sub">{t('care.fluid.kinds.' + k)}</th>{balance.map((b, i) => <td key={i} className="num right">{b.out[k] ? ml(b.out[k]) : '–'}</td>)}</tr>
                   ))}
-                  <tr className="fluid-sum"><th scope="row">{t('care.fluid.outTotal')}</th>{balance.map((b, i) => <td key={i} className="num right">{b.outEntries ? ml(b.outMl) + ' ml' : <span className="muted small">{t('care.fluid.notRecorded')}</span>}</td>)}</tr>
+                  <tr className="fluid-sum"><th scope="row">{t('care.fluid.outTotal')}</th>{balance.map((b, i) => <td key={i} className="num right">{b.outEntries ? ml(b.outMl) + ' ml' : <span className="muted small fluid-none">{t('care.fluid.notRecorded')}</span>}</td>)}</tr>
                   <tr className="fluid-bal"><th scope="row">{t('care.fluid.balance')}</th>{balance.map((b, i) => <td key={i} className="num right">{b.balance == null ? '–' : signedMl(b.balance, ml) + ' ml'}</td>)}</tr>
                 </tbody>
               </table>

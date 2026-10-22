@@ -57,6 +57,13 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 ### Visite
 - `/tasks/visit` (`src/lib/visit.ts`, `src/lib/visit-data.ts`): Pflege merkt Fragen vor (`VisitQuestion`, Akte → Übersicht), die Visite (`Visit`) beantwortet sie und erfasst Anordnungen (`VisitOrder`). Jede Anordnung wird eine Aufgabe (`source: 'order'`), die Zusammenfassung ein Verlaufseintrag (Kategorie `physician`). Medikamente werden in der Visite nie verordnet, nur als Aufgabe «Verordnung anpassen» mit Link in die Medikation. Berechtigung `resident.visit.conduct`.
 
+### Schicht, Zuteilung, Startseite
+- Bewohnerzuordnung pro Dienst (`ShiftAssignment`, Schicht = Code + Startdatum wie bei `Handover`): Daten `src/lib/assignment.ts`, reine Logik (Vorschlag, Unterschied) `src/lib/assignment-plan.ts`, Speichern `saveAssignmentsAction` in `app/(app)/_home/actions.ts` (Berechtigung `task.manage`), Dialog `components/handover/Assignment.tsx` (Home und Übergabe).
+- Filter «Meine» in anderen Modulen: `const mine = await myResidentIds(ctx)` → `string[] | null`. `null` = der Person ist in der massgeblichen Schicht (eigener Dienst im Bereich, sonst laufende Stationsschicht) niemand zugeteilt → alle zeigen, nicht leer filtern. Beispiel Aufgaben: `OR: [{ assigneeId: ctx.user.id }, { residentId: { in: mine } }]`.
+- Startseite nach Rolle (`src/lib/home-view.ts`): `care` (Station), `lead` (Bereiche, ab 2 Bereichen mit Akte + Aufgaben und `schedule.manage`/`insights.view`), `quality`, `office` (HR/Admin). Im Dienst immer `care`; Umschaltung `/?view=…`.
+- Auffällige Vitalwerte «gesehen / Massnahme eingeleitet» (`VitalSign.reviewedAt/ById/Kind/Note`, `reviewVitalAction`): nicht mehr «Kritisch» auf Home und kein «!» am Register der Akte; die Massnahme wird zusätzlich ein Verlaufseintrag (`structured.kind = 'vital-review'`).
+- Änderungen an Verordnungen und Pflegeplanung für Übergabe und Home: `app/(app)/handover/changes.ts` (Logik `src/lib/shift-changes.ts`).
+
 ### Zeit
 - Server läuft mit `TZ=Europe/Zurich`. Hilfen in `src/lib/time.ts`. `@db.Date`-Felder mit `dbDate()` schreiben und `fromDbDate()` lesen.
 

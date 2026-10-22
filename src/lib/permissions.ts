@@ -8,6 +8,7 @@ export const PERMISSIONS = {
   'resident.edit': 'Stammdaten bearbeiten',
   'resident.chart.write': 'Pflegebericht schreiben',
   'resident.chart.correct': 'Einträge korrigieren',
+  'resident.chart.dictate': 'Diktat (Spracherkennung) im Verlauf verwenden',
   'resident.vitals.write': 'Vitalwerte erfassen',
   'resident.careplan.edit': 'Pflegeplanung bearbeiten',
   'resident.careplan.approve': 'Pflegeplanung freigeben',
@@ -68,7 +69,7 @@ const CARE_ASSIST: Permission[] = [
 const CARE_NURSE: Permission[] = [
   ...CARE_ASSIST,
   'resident.careplan.edit', 'resident.assessment.write', 'resident.wounds.write',
-  'resident.medication.read', 'resident.medication.administer', 'resident.medication.doublecheck', 'resident.visit.conduct',
+  'resident.medication.read', 'resident.medication.administer', 'resident.medication.doublecheck', 'resident.visit.conduct', 'resident.chart.dictate',
   'task.manage', 'handover.write', 'chat.clinical', 'ai.use',
 ]
 const LEAD: Permission[] = [

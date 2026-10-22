@@ -2,7 +2,7 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
-    audience: { label: 'Zielgruppe', hint: 'Ohne Auswahl erhalten alle Mitarbeitenden des Kanals die Mitteilung.', tag: 'Für {roles}', line: 'Zielgruppe: {roles}' },
+    audience: { label: 'Zielgruppe', hint: 'Ohne Auswahl erhalten alle Mitarbeitenden des Kanals die Mitteilung.', tag: 'Für {roles}', line: 'Zielgruppe: {roles}', statsHint: 'Zielgruppe: aktive Mitarbeitende mit Zugriff auf diesen Kanal und einer der gewählten Rollen.' },
     title: 'Team',
     label: 'CareOS Team',
     sub: 'Mitteilungen, wichtige Hinweise und Termine',
@@ -227,7 +227,7 @@ export default defineMessages({
     },
   },
   fr: {
-    audience: { label: 'Public cible', hint: 'Sans sélection, tous les collaborateurs du canal reçoivent la communication.', tag: 'Pour {roles}', line: 'Public cible : {roles}' },
+    audience: { label: 'Public cible', hint: 'Sans sélection, tous les collaborateurs du canal reçoivent la communication.', tag: 'Pour {roles}', line: 'Public cible : {roles}', statsHint: 'Public cible : collaborateurs actifs ayant accès à ce canal et l’un des rôles choisis.' },
     title: 'Équipe',
     label: 'CareOS Team',
     sub: 'Communications, avis importants et rendez-vous',
@@ -452,7 +452,7 @@ export default defineMessages({
     },
   },
   it: {
-    audience: { label: 'Destinatari', hint: 'Senza selezione, la comunicazione va a tutti i collaboratori del canale.', tag: 'Per {roles}', line: 'Destinatari: {roles}' },
+    audience: { label: 'Destinatari', hint: 'Senza selezione, la comunicazione va a tutti i collaboratori del canale.', tag: 'Per {roles}', line: 'Destinatari: {roles}', statsHint: 'Destinatari: collaboratori attivi con accesso a questo canale e uno dei ruoli scelti.' },
     title: 'Team',
     label: 'CareOS Team',
     sub: 'Comunicazioni, avvisi importanti e appuntamenti',
@@ -677,7 +677,7 @@ export default defineMessages({
     },
   },
   en: {
-    audience: { label: 'Audience', hint: 'If none is selected, everyone in the channel receives the post.', tag: 'For {roles}', line: 'Audience: {roles}' },
+    audience: { label: 'Audience', hint: 'If none is selected, everyone in the channel receives the post.', tag: 'For {roles}', line: 'Audience: {roles}', statsHint: 'Audience: active staff with access to this channel and one of the selected roles.' },
     title: 'Team',
     label: 'CareOS Team',
     sub: 'Announcements, important notices and events',

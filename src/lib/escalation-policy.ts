@@ -59,9 +59,15 @@ export const overdueThreshold = (priority: string, p: EscalationPolicy) => (prio
 
 const ESCALATABLE = new Set(['planned', 'ready', 'in_progress'])
 
+/**
+ * Planungsarbeit ohne Zeitdruck wird nicht automatisch eskaliert: fällige Evaluationen der Pflegeplanung
+ * (sourceId «eval:…») erscheinen als überfällig und in Insights («Evaluationen überfällig»).
+ */
+export const isPlanningTask = (task: { source?: string; sourceId?: string | null }) => task.source === 'careplan' && !!task.sourceId?.startsWith('eval:')
+
 /** Muss diese Aufgabe jetzt eskaliert werden? (offen, überfällig über der Schwelle, nicht älter als der Rückblick) */
-export function shouldEscalateTask(task: { status: string; priority: string; dueAt: Date }, p: EscalationPolicy, now = new Date()) {
-  if (!p.enabled || !ESCALATABLE.has(task.status)) return false
+export function shouldEscalateTask(task: { status: string; priority: string; dueAt: Date; source?: string; sourceId?: string | null }, p: EscalationPolicy, now = new Date()) {
+  if (!p.enabled || !ESCALATABLE.has(task.status) || isPlanningTask(task)) return false
   const overdueMin = (now.getTime() - task.dueAt.getTime()) / 60_000
   return overdueMin >= overdueThreshold(task.priority, p) && overdueMin <= ESCALATION_LOOKBACK_HOURS * 60
 }

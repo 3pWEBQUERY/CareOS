@@ -5,7 +5,7 @@ import { useT } from '@/i18n/client'
 import { SeriesToggle, TemplateDialog, type SeriesPerson, type SeriesStaff } from '@/components/tasks/Recurrence'
 import type { TemplateDto } from '@/lib/recurrence'
 
-type Common = { units: { id: string; name: string }[]; residents: SeriesPerson[]; staff: Record<string, SeriesStaff[]>; categories: string[]; todayKey: string }
+type Common = { units: { id: string; name: string }[]; residents: SeriesPerson[]; staff: Record<string, SeriesStaff[]>; categories: string[]; todayKey: string; defaultUnitId: string | null }
 
 export function RecurringAdd(p: Common) {
   const t = useT()

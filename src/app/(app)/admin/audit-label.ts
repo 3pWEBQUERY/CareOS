@@ -8,6 +8,7 @@ export const LABELLED_ACTIONS = [
   'admin.role.create', 'admin.role.update', 'admin.role.delete',
   'admin.api_token.create', 'admin.api_token.revoke', 'admin.webhook.create', 'admin.webhook.delete', 'admin.webhook.rotate_secret',
   'admin.org.update', 'admin.org.branding', 'admin.privacy.retention', 'retention.run', 'admin.audit.export', 'admin.export.org', 'resident.view',
+  'import.residents', 'import.staff', 'import.shifts',
 ] as const
 
 const SET = new Set<string>(LABELLED_ACTIONS)

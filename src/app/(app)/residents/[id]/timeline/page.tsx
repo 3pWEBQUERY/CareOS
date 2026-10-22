@@ -5,6 +5,7 @@ import { OPEN_STATUSES, taskView } from '@/lib/tasks'
 import { lastShiftEnd } from '@/lib/shift'
 import { addDays, fmtDate, fmtNum, fmtRel, hm, sameDay, startOfDay } from '@/lib/time'
 import { flag, mergeLimits, VITALS, type VitalKey } from '@/lib/vitals'
+import { isFluidOut } from '@/lib/fluid-balance'
 import { OBS_TONE, pageResident, userNames, residentTitle } from '../../_lib/resident'
 
 const KINDS = ['observation', 'vitals', 'medication', 'task', 'assessment', 'wound', 'intake', 'incident', 'appointment'] as const
@@ -128,7 +129,7 @@ export default async function TimelinePage({ params, searchParams }: { params: P
   for (const i of intake) {
     events.push({
       id: 'i' + i.id, at: i.at, kind: 'intake', tone: '', dot: '', tag: t('chart.timeline.kinds.intake'),
-      title: <>{t(i.kind === 'drink' ? 'chart.timeline.drink' : 'chart.timeline.meal')}{i.item ? ': ' + i.item : ''}{i.amountMl != null ? <> · <span className="mono">{i.amountMl} ml</span></> : null}{i.portion != null ? <> · <span className="mono">{Math.round(i.portion * 100)} %</span></> : null}</>,
+      title: <>{t(i.kind === 'drink' ? 'chart.timeline.drink' : i.kind === 'meal' ? 'chart.timeline.meal' : 'care.fluid.kinds.' + i.kind)}{i.item ? ': ' + i.item : ''}{i.amountMl != null ? <> · <span className="mono">{isFluidOut(i.kind) ? '−' : ''}{i.amountMl} ml</span></> : null}{i.portion != null ? <> · <span className="mono">{Math.round(i.portion * 100)} %</span></> : null}</>,
       by: by(i.authorId),
     })
   }

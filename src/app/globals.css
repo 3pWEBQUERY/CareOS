@@ -1964,3 +1964,26 @@ img.pav { background: var(--sunken) }
 .imp-colcard:not([open]) > summary { border-bottom: 0 }
 #imp-res:focus { outline: none }
 #imp-res:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+/* ── Paket C: Flüssigkeitsbilanz (PRD §14) ─────────────────────────────────────────────── */
+.fluid-form { display: grid; grid-template-columns: minmax(10rem, 1.2fr) minmax(8rem, 0.8fr) minmax(10rem, 1.4fr) auto; gap: 10px; align-items: end }
+@media (max-width: 720px) { .fluid-form { grid-template-columns: 1fr 1fr } .fluid-form > .btn { grid-column: 1 / -1 } .fluid-form > .fld:nth-child(3) { grid-column: 1 / -1 } }
+.fluid-table th[scope="row"] { font-weight: 400; text-align: left; white-space: nowrap }
+.fluid-table .fluid-sub { padding-left: 20px; color: var(--fg-2) }
+.fluid-table tr.fluid-sum th, .fluid-table tr.fluid-sum td { font-weight: 600; border-top: 1px solid var(--line-strong) }
+.fluid-table tr.fluid-bal th, .fluid-table tr.fluid-bal td { font-weight: 600; background: var(--surface-2) }
+.imp-metrics { grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.5rem), 1fr)) }
+
+/* ── Paket C: Diktat (PRD §10.4) ──────────────────────────────────────────────────────── */
+.btn.is-recording { border-color: var(--crit); color: var(--crit) }
+.fluid-table .fluid-none { font-family: var(--font-ui) }
+
+/* ── Paket A: Ereignis-Massnahmen, Assessment-Editor ─────────────────────────────────────── */
+.q-act-side { display: inline-flex; align-items: center; gap: 6px; flex: none }
+@media (max-width: 600px) {
+  .q-act { flex-wrap: wrap }
+  .q-act > .grow { flex-basis: calc(100% - 44px) }
+  .q-act-side { width: 100%; padding-left: 38px; justify-content: space-between }
+}
+.ab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: abq }
+.ab-q .stable td { vertical-align: middle }

@@ -98,6 +98,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   scheduling: prepared(['endpoint']),
   identity_provider: prepared(['endpoint']),
   drug_interactions: prepared(['provider']),
+  speech_to_text: prepared(['provider']),
 }
 
 export const adapterFor = (kind: string): Adapter | null => ADAPTERS[kind] ?? null

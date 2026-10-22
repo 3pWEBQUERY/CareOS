@@ -74,26 +74,26 @@ export function FormFields({ fields, values, errors, onChange, idPrefix = 'ff', 
           )
         }
         // Einfache Felder: gemeinsamer Feld-Rahmen (Label, Einheit, Fehlermeldung am Feld)
-        const fp = { key: f.key, id, label: text, error: errText, disabled, wrapClassName: wide ? 'span-all' : undefined, 'aria-required': f.required || undefined }
-        if (f.type === 'textarea') return <Textarea {...fp} rows={3} value={str} maxLength={4000} onChange={(e) => onChange(f.key, e.target.value)} />
+        const fp = { id, label: text, error: errText, disabled, wrapClassName: wide ? 'span-all' : undefined, 'aria-required': f.required || undefined }
+        if (f.type === 'textarea') return <Textarea key={f.key} {...fp} rows={3} value={str} maxLength={4000} onChange={(e) => onChange(f.key, e.target.value)} />
         if (f.type === 'select') {
           return (
-            <Select {...fp} value={str} onChange={(e) => onChange(f.key, e.target.value)}>
+            <Select key={f.key} {...fp} value={str} onChange={(e) => onChange(f.key, e.target.value)}>
               <option value="">–</option>
               {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
             </Select>
           )
         }
-        if (f.type === 'date') return <DateField {...fp} value={str} onChange={(x) => onChange(f.key, x)} />
-        if (f.type === 'time') return <TimeField {...fp} value={str} onChange={(x) => onChange(f.key, x)} />
+        if (f.type === 'date') return <DateField key={f.key} {...fp} value={str} onChange={(x) => onChange(f.key, x)} />
+        if (f.type === 'time') return <TimeField key={f.key} {...fp} value={str} onChange={(x) => onChange(f.key, x)} />
         if (f.type === 'number') {
           const n = parseNum(str)
           return (
-            <NumberField {...fp} unit={f.unit || undefined} value={n} onChange={(x) => onChange(f.key, x === '' ? '' : String(x))}
+            <NumberField key={f.key} {...fp} unit={f.unit || undefined} value={n} onChange={(x) => onChange(f.key, x === '' ? '' : String(x))}
               placeholder={f.min != null && f.max != null ? `${f.min}–${f.max}` : undefined} />
           )
         }
-        return <TextField {...fp} value={str} maxLength={f.type === 'text' ? 2000 : undefined} onChange={(e) => onChange(f.key, e.target.value)} />
+        return <TextField key={f.key} {...fp} value={str} maxLength={f.type === 'text' ? 2000 : undefined} onChange={(e) => onChange(f.key, e.target.value)} />
       })}
     </div>
   )

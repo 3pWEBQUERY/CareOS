@@ -4,6 +4,8 @@ import { usersWithPermission } from '@/lib/notify'
 import { dateKey, fmtDate, fromDbDate, hm } from '@/lib/time'
 import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { EditMaster } from './EditMaster'
+import { snapshot } from '@/lib/merge-check'
+import { MASTER_FIELDS } from '../../_lib/master'
 import { FormDialog } from '@/components/admin/ui'
 import { anonymiseResidentAction } from './actions'
 import { Checkbox } from '@/components/ui/fields'
@@ -95,6 +97,8 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
     ])
     const nurses = await db.user.findMany({ where: { id: { in: nurseIds }, orgId: ctx.org.id, active: true }, orderBy: { lastName: 'asc' }, select: { id: true, firstName: true, lastName: true, jobTitle: true } })
     editProps = {
+      // Stand beim Öffnen für die Konflikterkennung (PRD §32)
+      base: JSON.stringify(snapshot(r as unknown as Record<string, unknown>, MASTER_FIELDS)),
       rooms: rooms.filter((x) => x.id === r.roomId || x.residents.length < x.beds).map((x) => ({ id: x.id, label: x.number + (x.beds > 1 ? ` (${x.residents.filter((y) => y.id !== r.id).length}/${x.beds})` : '') })),
       nurses: nurses.map((n) => ({ id: n.id, label: `${n.lastName} ${n.firstName}${n.jobTitle ? ', ' + n.jobTitle : ''}` })),
       d: {

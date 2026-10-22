@@ -210,7 +210,7 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
           </div>
         </div>
       )}
-      {confirming && <ImportantConfirm items={important} pending={pending} onClose={() => setConfirming(false)}
+      {confirming && <ImportantConfirm items={important} pending={pending} mine={!!scopeIds?.length} onClose={() => setConfirming(false)}
         onConfirm={(ids) => call(acknowledgeAction, { ...target, residentId: '', ...subset, confirmed: ids.join(',') }, () => setConfirming(false))} />}
       {submit && (
         <Dialog open onClose={() => setSubmit(false)} title={t('tasks.handover.submit.title')}>
@@ -232,14 +232,14 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
 }
 
 /** Wichtige Einträge vor «Alle übernehmen»: jeder Eintrag wird angezeigt und einzeln bestätigt (PRD §11.4). */
-function ImportantConfirm({ items, pending, onClose, onConfirm }: { items: HoImportantDto[]; pending: boolean; onClose: () => void; onConfirm: (ids: string[]) => void }) {
+function ImportantConfirm({ items, pending, mine, onClose, onConfirm }: { items: HoImportantDto[]; pending: boolean; mine?: boolean; onClose: () => void; onConfirm: (ids: string[]) => void }) {
   const t = useT()
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const all = items.every((i) => checked.has(i.id))
   const toggle = (id: string) => setChecked((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })
   return (
     <Dialog open onClose={onClose} title={t('tasks.handover.confirm.title', { n: items.length })} wide>
-      <p className="small fg2" style={{ margin: 0 }}>{t('tasks.handover.confirm.hint')}</p>
+      <p className="small fg2" style={{ margin: 0 }}>{t(mine ? 'home.ho.confirmHintMine' : 'tasks.handover.confirm.hint')}</p>
       <ul className="list card">
         {items.map((i) => (
           <li key={i.id}>
@@ -262,7 +262,7 @@ function ImportantConfirm({ items, pending, onClose, onConfirm }: { items: HoImp
         <span className="small muted" aria-live="polite">{t('tasks.handover.confirm.progress', { n: items.filter((i) => checked.has(i.id)).length, total: items.length })}</span>
         <span className="spacer" />
         <button type="button" className="btn" onClick={onClose}>{t('common.cancel')}</button>
-        <button type="button" className="btn primary" disabled={!all || pending} data-loading={pending || undefined} onClick={() => onConfirm(items.map((i) => i.id))}>{t('tasks.handover.confirm.button')}</button>
+        <button type="button" className="btn primary" disabled={!all || pending} data-loading={pending || undefined} onClick={() => onConfirm(items.map((i) => i.id))}>{t(mine ? 'home.ho.confirmButtonMine' : 'tasks.handover.confirm.button')}</button>
       </div>
     </Dialog>
   )

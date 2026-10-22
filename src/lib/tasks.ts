@@ -127,6 +127,8 @@ export async function ensureTasksForDay(unitId: string, day = new Date()) {
     const rec = { rhythm: tpl.rhythm, every: tpl.every, weekdays: tpl.weekdays, monthDay: tpl.monthDay, startDate: fromDbDate(tpl.startDate), endDate: tpl.endDate ? fromDbDate(tpl.endDate) : null }
     if (!occursOn(rec, day)) continue
     for (const time of tpl.times) {
+      // Zeiten, die beim Anlegen oder Ändern der Vorlage schon vorbei waren, nicht nachträglich als überfällig erzeugen.
+      if (atTime(day, time) < tpl.updatedAt) continue
       rows.push({
         orgId: unit.orgId, unitId, residentId: tpl.residentId, title: tpl.title, description: tpl.description, category: tpl.category,
         dueAt: atTime(day, time), durationMin: tpl.durationMin, priority: tpl.priority, assigneeId: tpl.assigneeId, createdById: tpl.createdById,

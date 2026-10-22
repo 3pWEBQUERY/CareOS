@@ -246,7 +246,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
                     {actions.map((a) => {
                       const over = !a.done && a.dueAt && a.dueAt < now
                       return (
-                        <li key={a.id} className="li" style={{ alignItems: 'center' }}>
+                        <li key={a.id} className="li q-act" style={{ alignItems: 'center' }}>
                           <ActionCheck id={a.id} done={a.done} disabled={closed || !canReport} label={actionTitle(t, a.title)} />
                           <div className="grow">
                             <div style={a.done ? { color: 'var(--fg-3)', textDecoration: 'line-through', textDecorationColor: 'var(--line-strong)' } : undefined}>{actionTitle(t, a.title)}</div>
@@ -256,8 +256,10 @@ export default async function IncidentPage({ params, searchParams }: { params: P
                               {a.assigneeId && <> · {t('tasks.col.assignee')}: {a.assigneeId === ctx.user.id ? t('tasks.me') : uname(a.assigneeId)}</>}
                             </div>
                           </div>
-                          {!closed && canReport && !a.done && <ActionAssign id={a.id} title={actionTitle(t, a.title)} assigneeId={a.assigneeId} staff={staff} context={dlgContext} />}
-                          {a.task && <Link className="tag accent" href="/tasks" title={t('quality.detail.linkedTask')} style={{ textDecoration: 'none' }}>{t('quality.detail.task')}</Link>}
+                          <span className="q-act-side">
+                            {!closed && canReport && !a.done && <ActionAssign id={a.id} title={actionTitle(t, a.title)} assigneeId={a.assigneeId} staff={staff} context={dlgContext} />}
+                            {a.task && <Link className="tag accent" href="/tasks" title={t('quality.detail.linkedTask')} style={{ textDecoration: 'none' }}>{t('quality.detail.task')}</Link>}
+                          </span>
                         </li>
                       )
                     })}

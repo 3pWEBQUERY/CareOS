@@ -189,7 +189,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                     <div className="bar" role="img" aria-label={t('team.ack.summary', { n: stats.confirmed.length, total: stats.total })}>
                       <i className={stats.missing.length ? 'warn' : 'ok'} style={{ width: `${stats.total ? Math.round((stats.confirmed.length / stats.total) * 100) : 0}%` }} />
                     </div>
-                    <span className="small muted">{t('team.ack.audienceHint')}</span>
+                    <span className="small muted">{t(post.audienceRoles.length ? 'team.audience.statsHint' : 'team.ack.audienceHint')}</span>
                   </div>
                   <div className="card-head" style={{ borderTop: '1px solid var(--line)' }}>
                     <h3>{t('team.ack.missing')} <span className="pill warn" style={{ marginLeft: 4 }}>{stats.missing.length}</span></h3>

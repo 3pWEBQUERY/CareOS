@@ -24,7 +24,7 @@ export async function Recurring() {
   const cats = [...new Set([...CATEGORIES, ...templates.map((x) => x.category)])]
   const units = ctx.units.map((u) => ({ id: u.id, name: u.name }))
   const today = startOfDay()
-  const common = { units, residents: people, staff, categories: cats, todayKey: dateKey(today) }
+  const common = { units, residents: people, staff, categories: cats, todayKey: dateKey(today), defaultUnitId: ctx.unit?.id ?? null }
 
   const rows = templates.map((x) => {
     const rule = { rhythm: x.rhythm, every: x.every, weekdays: x.weekdays, monthDay: x.monthDay, startDate: fromDbDate(x.startDate), endDate: x.endDate ? fromDbDate(x.endDate) : null }

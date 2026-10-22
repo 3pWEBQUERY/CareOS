@@ -54,3 +54,11 @@ test('Wunde löst höchstens einmal je Zeitraum aus', () => {
   assert.equal(periodIndex(at(1), at(14, 7), 14), 0)
   assert.equal(periodIndex(at(1), at(16), 14), 1)
 })
+
+test('Evaluationen der Pflegeplanung werden nicht automatisch eskaliert', async () => {
+  const { DEFAULT_ESCALATION, shouldEscalateTask } = await import('./escalation-policy')
+  const now = new Date(2026, 9, 22, 16, 0)
+  const due = new Date(2026, 9, 22, 14, 0)
+  assert.equal(shouldEscalateTask({ status: 'planned', priority: 'routine', dueAt: due, source: 'careplan', sourceId: 'eval:r1:mobility' }, DEFAULT_ESCALATION, now), false)
+  assert.equal(shouldEscalateTask({ status: 'planned', priority: 'routine', dueAt: due, source: 'careplan', sourceId: 'iv1' }, DEFAULT_ESCALATION, now), true)
+})

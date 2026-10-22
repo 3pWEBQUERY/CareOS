@@ -2,11 +2,11 @@
 
 import { useEffect, useOptimistic, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
-import { useLocale, useT } from '@/i18n/client'
-import { INTL_LOCALE } from '@/i18n/core'
+import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
-import { IconMic, IconSpark } from '@/components/icons'
+import { IconSpark } from '@/components/icons'
+import { Dictation, type DictationConfig, type DictationHandle } from './Dictation'
 import { correctNote, createNote, discardDraft, draftNote, type NoteInput } from './actions'
 import { isQueued, orQueue } from '@/lib/offline/client'
 import { NoteAck, StructuredView, type NoteAckInfo } from '@/components/forms/StructuredView'
@@ -31,27 +31,16 @@ type Cat = { key: string; label: string; tone: string }
 
 const SNIPS = ['s1', 's2', 's3', 's4', 's5', 's6']
 
-type SpeechRec = {
-  lang: string; continuous: boolean; interimResults: boolean
-  onresult: ((e: { resultIndex: number; results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }> }) => void) | null
-  onend: (() => void) | null; onerror: (() => void) | null
-  start(): void; stop(): void
-}
-const speechCtor = () => {
-  if (typeof window === 'undefined') return null
-  const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec }
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
-}
-
-export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, formSlot, moreHref }: {
+export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, formSlot, moreHref, dictation }: {
   residentId: string; who: string; me: string; notes: NoteRow[]; categories: Cat[]; canWrite: boolean; aiOn: boolean
+  /** Diktat: Berechtigung, Weg (eigener Dienst / Browser) und Datenschutzhinweis (PRD §10.4) */
+  dictation?: DictationConfig
   /** Knopf "Formular" (Fokusdokumentation), vom Server gerendert */
   formSlot?: React.ReactNode
   /** Ältere Einträge nachladen (seitenweise, PRD §66) */
   moreHref?: string | null
 }) {
   const t = useT()
-  const locale = useLocale()
   const [filter, setFilter] = useState('all')
   const [fresh, setFresh] = useState<string | null>(null)
   const [category, setCategory] = useState(categories[0]?.key ?? 'care')
@@ -66,19 +55,15 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
   // Offline vorgemerkt: bis zur Synchronisation mit Hinweis «Offline erfasst» im Verlauf (PRD §39)
   const [queuedNotes, setQueuedNotes] = useState<NoteRow[]>([])
   const [aiPending, startAi] = useTransition()
-  const [listening, setListening] = useState(false)
-  const [speechOk, setSpeechOk] = useState(false)
   const [correcting, setCorrecting] = useState<NoteRow | null>(null)
   // «Für Visite vormerken» an der Zeile (PRD §29): ein Dialog für alle Zeilen, Markierung sofort nach dem Speichern
   const [asking, setAsking] = useState<NoteRow | null>(null)
   const [askedNow, setAskedNow] = useState<string[]>([])
   const ta = useRef<HTMLTextAreaElement>(null)
-  const rec = useRef<SpeechRec | null>(null)
+  const dict = useRef<DictationHandle>(null)
   const tone = (k: string) => categories.find((c) => c.key === k)?.tone ?? ''
   const label = (k: string) => categories.find((c) => c.key === k)?.label ?? k
 
-  useEffect(() => { setSpeechOk(!!speechCtor()) }, [])
-  useEffect(() => () => rec.current?.stop(), [])
   // Vorschlag zur Fokusdokumentation (PRD §10.3): Kategorie und Satzanfang vorbelegen, Fokus ins Textfeld
   useEffect(() => {
     const on = (e: Event) => {
@@ -104,33 +89,16 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
     requestAnimationFrame(() => { el.focus(); el.setSelectionRange(c, c) })
   }
 
-  const toggleMic = () => {
-    if (listening) { rec.current?.stop(); return }
-    const Ctor = speechCtor()
-    if (!Ctor) return
-    const r = new Ctor()
-    r.lang = INTL_LOCALE[locale]
-    r.continuous = true
-    r.interimResults = false
-    r.onresult = (e) => {
-      let add = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) add += e.results[i][0].transcript
-      if (add.trim()) {
-        setText((cur) => (cur && !/\s$/.test(cur) ? cur + ' ' : cur) + add.trim())
-        setSource((s) => (s === 'ai' ? s : 'voice'))
-      }
-    }
-    r.onend = () => setListening(false)
-    r.onerror = () => { setListening(false); toast(t('chart.notes.voiceError'), { kind: 'crit' }) }
-    rec.current = r
-    r.start()
-    setListening(true)
+  // Diktierter Text wird angehängt und erst nach Prüfung gespeichert (PRD §10.4)
+  const addDictated = (add: string) => {
+    setText((cur) => (cur && !/\s$/.test(cur) ? cur + ' ' : cur) + add)
+    setSource((s) => (s === 'ai' ? s : 'voice'))
   }
 
   const save = () => {
     const v = text.trim()
     if (v.length < 3) { setErr(t('chart.notes.errors.empty')); ta.current?.focus(); return }
-    rec.current?.stop()
+    dict.current?.stop()
     const snap = { important, source, aiId }
     // Feld sofort leeren (dringendes Update ausserhalb der Transition), damit sofort weiter dokumentiert werden kann
     setErr(null); setText(''); setImportant(false); setSource('manual'); setAiId(null); setFilter('all')
@@ -225,12 +193,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
             {err && <span className="err" id="ntext-err" role="alert">{err}</span>}
             <span className="push">
               {formSlot}
-              {speechOk && (
-                <button type="button" className="btn" onClick={toggleMic} aria-pressed={listening} title={t('chart.notes.voiceHint')}
-                  style={listening ? { borderColor: 'var(--crit)', color: 'var(--crit)' } : undefined}>
-                  <IconMic size={16} />{listening ? t('chart.notes.voiceStop') : t('chart.notes.voice')}
-                </button>
-              )}
+              {dictation && <Dictation ref={dict} residentId={residentId} config={dictation} onText={addDictated} />}
               {aiOn && (
                 <button type="button" className="btn" onClick={askAi} data-loading={aiPending || undefined} disabled={aiPending}>
                   <IconSpark size={16} />{aiPending ? t('common.ai.generating') : t('chart.notes.aiDraft')}
@@ -322,7 +285,7 @@ function Correct({ residentId, who, note, onClose, onDone }: { residentId: strin
     if (!note) return
     start(async () => {
       const r = await correctNote(residentId, note.id, { text, reason })
-      if (!r.ok) return setErr(t(r.error))
+      if (!r.ok) return setErr(/^[a-z]+\.[\w.]+$/.test(r.error) ? t(r.error) : r.error)
       toast(t('chart.notes.corrected'))
       if (r.data) onDone(r.data.id)
       onClose()

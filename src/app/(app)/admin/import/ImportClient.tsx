@@ -181,7 +181,7 @@ export function ImportClient({ kinds }: { kinds: ImportKind[] }) {
 
           {!report.fileIssues.length && (
             <>
-              <div className="metrics">
+              <div className="metrics imp-metrics">
                 <div className="metric"><span className="lbl">{t('imports.metrics.rows')}</span><span className="val">{report.total}</span></div>
                 <div className="metric"><span className="lbl">{t('imports.metrics.create')}</span><span className="val ok">{report.counts.create}</span></div>
                 <div className="metric"><span className="lbl">{t('imports.metrics.update')}</span><span className="val">{report.counts.update}</span></div>
