@@ -228,7 +228,7 @@ h3.sub { margin: 0; font-size: 0.875rem; font-weight: 600 }
 .btn.lg { padding: 10px 16px; min-height: 44px; font-size: 0.9375rem }
 .btn.block { width: 100% }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed }
-.btn[data-loading="true"] { opacity: .7; cursor: progress }
+.btn[data-loading="true"] { cursor: progress } /* kein Ausgrauen: Text bleibt lesbar (Kontrast), Spinner zeigt den Zustand */
 .btn[data-loading="true"]::after { content: ""; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite }
 @keyframes spin { to { transform: rotate(360deg) } }
 .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--r); overflow: hidden; flex-wrap: nowrap }
@@ -731,7 +731,7 @@ dialog.dlg::backdrop { background: var(--scrim) }
 .chk:disabled:hover { border-color: var(--line-ui) }
 
 /* Laufende Server Action (ActionForm data-pending): Spinner am Absenden-Button statt nur ausgegraut */
-form[data-pending] button[type="submit"].btn { opacity: .75; cursor: progress }
+form[data-pending] button[type="submit"].btn { cursor: progress }
 form[data-pending] button[type="submit"].btn::after { content: ""; width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite }
 
 /* Dialoge: Kopf und Fuss bleiben sichtbar, Inhalt scrollt; Seite dahinter scrollt nicht */
@@ -1135,7 +1135,7 @@ dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
 /* Abgabeliste: Dosis mit Einheit, grössere Ziele auf Touch-Geräten */
 .mar .dose { min-width: 84px }
 .mar .dose b { white-space: nowrap }
-.mar .dose[data-loading="true"] { opacity: .6; cursor: progress }
+.mar .dose[data-loading="true"] { cursor: progress }
 @media (pointer: coarse) {
   .mar .dose { min-height: 44px }
   .task-table .chk { width: 34px; height: 34px }

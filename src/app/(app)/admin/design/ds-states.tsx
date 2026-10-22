@@ -126,7 +126,7 @@ export function ButtonStates() {
   ]
   const btn = (cls: string, label: string, s: DsState) =>
     s === 'error' || s === 'success' || (s === 'loading' && cls === 'linkbtn') ? null : (
-      <button type="button" className={cls} disabled={s === 'disabled'} data-loading={s === 'loading' || undefined} aria-busy={s === 'loading' || undefined}>{label}</button>
+      <button type="button" className={cls} disabled={s === 'disabled' || s === 'loading'} data-loading={s === 'loading' || undefined} aria-busy={s === 'loading' || undefined}>{label}</button>
     )
   return (
     <>

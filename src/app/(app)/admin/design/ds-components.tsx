@@ -349,7 +349,7 @@ export function Loading() {
   return (
     <div className="stack">
       <div className="row">
-        <button type="button" className="btn primary" data-loading="true" aria-busy="true">{t('common.save')}</button>
+        <button type="button" className="btn primary" data-loading="true" aria-busy="true" disabled>{t('common.save')}</button>
         <span className="small muted">{t('design.ld.button')}</span>
       </div>
       <SkelMetrics n={4} />
