@@ -11,7 +11,7 @@ const securityHeaders = [
 const config: NextConfig = {
   poweredByHeader: false,
   agentRules: false,
-  serverExternalPackages: ['@node-rs/argon2', 'pg'],
+  serverExternalPackages: ['@node-rs/argon2', 'pg', 'web-push'],
   experimental: { serverActions: { bodySizeLimit: '12mb' } },
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]

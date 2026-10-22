@@ -19,7 +19,7 @@ export async function loginAction(_: LoginState, form: FormData): Promise<LoginS
   const email = String(form.get('email') ?? '').trim().toLowerCase()
   const password = String(form.get('password') ?? '')
   const meta = await requestMeta()
-  const rl = rateLimit(`login:${meta.ip}:${email}`, 8, 10 * 60_000)
+  const rl = rateLimit(`login:${meta.ip}:${email}`, process.env.NODE_ENV === 'production' ? 8 : 200, 10 * 60_000)
   if (!rl.ok) return { error: 'locked', retry: rl.retryAfter, email }
 
   const user = await db.user.findUnique({ where: { email } })
