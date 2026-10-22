@@ -44,11 +44,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const nav: NavItem[] = [
     { href: '/', label: t('nav.home'), icon: 'home', group: 0 },
     ...(ctx.can('resident.read') ? [{ href: '/residents', label: t('nav.residents'), icon: 'residents', group: 0 } as NavItem] : []),
-    ...(ctx.can('task.read') ? [{ href: '/tasks', label: t('nav.tasks'), icon: 'tasks', group: 0, badge: overdue } as NavItem] : []),
+    ...(ctx.can('task.read') ? [{ href: '/tasks', label: t('nav.tasks'), icon: 'tasks', group: 0, badge: overdue, badgeLabel: t('tasks.view.over') } as NavItem] : []),
     ...(ctx.can('handover.read') ? [{ href: '/handover', label: t('nav.handover'), icon: 'handover', group: 0 } as NavItem] : []),
     ...(ctx.can('schedule.read') ? [{ href: '/schedule', label: t('nav.schedule'), icon: 'schedule', group: 0 } as NavItem] : []),
     ...(ctx.can('team.read') ? [{ href: '/team', label: t('nav.team'), icon: 'team', group: 1 } as NavItem] : []),
-    ...(ctx.can('chat.use') ? [{ href: '/chat', label: t('nav.chat'), icon: 'chat', group: 1, badge: unreadChats } as NavItem] : []),
+    ...(ctx.can('chat.use') ? [{ href: '/chat', label: t('nav.chat'), icon: 'chat', group: 1, badge: unreadChats, badgeLabel: t('common.notifications.unread').toLowerCase() } as NavItem] : []),
     ...(ctx.can('learn.read') ? [{ href: '/learn', label: t('nav.learn'), icon: 'learn', group: 1 } as NavItem] : []),
     ...(ctx.can('docs.read') ? [{ href: '/docs', label: t('nav.docs'), icon: 'docs', group: 1 } as NavItem] : []),
     ...(ctx.can('insights.view') ? [{ href: '/insights', label: t('nav.insights'), icon: 'insights', group: 2 } as NavItem] : []),

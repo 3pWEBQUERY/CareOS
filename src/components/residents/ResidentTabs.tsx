@@ -53,7 +53,8 @@ export function ResidentTabs({ base, tabs, label, ident }: { base: string; tabs:
     return () => io.disconnect()
   }, [ident])
 
-  const page = (dir: 1 | -1) => nav.current?.scrollBy({ left: dir * nav.current.clientWidth * 0.7, behavior: 'smooth' })
+  // Weiches Blättern nur ohne «Bewegung reduzieren» (WCAG 2.3.3; JS-Angabe übersteuert die CSS-Regel)
+  const page = (dir: 1 | -1) => nav.current?.scrollBy({ left: dir * nav.current.clientWidth * 0.7, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
 
   return (
     <>

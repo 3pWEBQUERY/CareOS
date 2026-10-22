@@ -1686,15 +1686,18 @@ td dialog.dlg, th dialog.dlg { text-align: left; white-space: normal; font-size:
   .chk::before { content: ""; position: absolute; inset: min(0px, calc((100% - 40px) / 2)) }
   .me { min-width: 40px }
   .rec-tabs-btn { width: 40px }
-  .snip, .entry-head .snips .snip, .team-chips .chip { min-height: 40px }
+  .snip, .entry-head .snips .snip, .team-chips .chip, .notes-filter .chip, .q-types .chip, .quickdoc button, .dose-opt, .day-chip,
+  .mention-opt, .steps .step-btn, .msg .reacts button, .msg .mact .react-add, .msg .mact .linkbtn { min-height: 40px }
   .check { min-height: 40px }
   .entry-head select { min-height: 40px }
   .btn.sm { min-width: 40px }
   /* Aufgaben als Karten: Zeitspalte wächst mit der Schriftgrösse; «überfällig»/«jetzt fällig» umbrechen statt über
      Name und Titel zu laufen; lange Wörter im Titel brechen statt unter den Aktionsknopf zu laufen (1.4.4/1.4.10) */
+  /* 2.4.11 Fokus nicht verdeckt: per Tab angesteuerte Elemente nicht unter Bottom-Nav/FAB bzw. dem klebenden Registerkopf */
+  html { scroll-padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 32px); scroll-padding-top: 64px }
   .task-table tbody tr { grid-template-columns: 4rem minmax(0, 1fr) auto }
   .task-table td.tt-time .small { white-space: normal; font-family: var(--font-ui) }
-  .task-table td.tt-task { overflow-wrap: anywhere }
+  .task-table td.tt-task { overflow-wrap: break-word; hyphens: auto }
 }
 
 /* Timeline: mehrzeilige Einträge (z. B. Visite-Zusammenfassung) behalten ihre Zeilen */

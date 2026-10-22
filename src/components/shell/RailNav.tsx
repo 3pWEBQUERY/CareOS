@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import * as I from '@/components/icons'
 
-export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; badge?: number; group: number }
+/** badgeLabel: Bedeutung der Zahl für Screenreader («überfällig», «ungelesen») – sonst wird nur «Aufgaben 3» vorgelesen. */
+export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; badge?: number; badgeLabel?: string; group: number }
 const ICONS = {
   home: I.IconHome, residents: I.IconResidents, tasks: I.IconTasks, handover: I.IconHandover, schedule: I.IconSchedule,
   team: I.IconTeam, chat: I.IconChat, learn: I.IconLearn, docs: I.IconDocs, insights: I.IconInsights, quality: I.IconQuality, admin: I.IconAdmin,
@@ -22,12 +23,13 @@ export function RailNav({ items, label }: { items: NavItem[]; label: string }) {
         return (
           <span key={it.href} style={{ display: 'contents' }}>
             {sep && <hr />}
-            {/* Standard-Vorladen (bis zum Skeleton der Zielansicht): sofortiger Wechsel ohne alle Ansichten
-                bei jedem Seitenaufruf und jedem Live-Update vollständig auf dem Server zu rendern (Last, Aktualität). */}
-            <Link href={it.href} aria-current={isActive(path, it.href) ? 'page' : undefined}>
+            {/* Pflegearbeit (Gruppe 0: Home, Bewohnende, Aufgaben, Übergabe, Dienstplan) vollständig vorladen – sofortiger
+                Wechsel. Übrige Ansichten nur bis zum Skeleton: nicht alle Ansichten bei jedem Seitenaufruf und jedem
+                Live-Update komplett auf dem Server rendern (Last). */}
+            <Link href={it.href} aria-current={isActive(path, it.href) ? 'page' : undefined} prefetch={it.group === 0 ? true : null}>
               <Icon />
               {it.label}
-              {!!it.badge && <span className="badge">{it.badge}</span>}
+              {!!it.badge && <span className="badge"><span className="sr-only">, </span>{it.badge}{it.badgeLabel && <span className="sr-only"> {it.badgeLabel}</span>}</span>}
             </Link>
           </span>
         )
@@ -47,7 +49,7 @@ export function BottomNav({ items, more, moreLabel, label, quick }: { items: Nav
       <Link key={it.href} href={it.href} aria-current={isActive(path, it.href) ? 'page' : undefined}>
         <Icon size={22} />
         {it.label}
-        {!!it.badge && <span className="badge" style={{ position: 'absolute', top: 4, right: '22%' }}>{it.badge}</span>}
+        {!!it.badge && <span className="badge" style={{ position: 'absolute', top: 4, right: '22%' }}><span className="sr-only">, </span>{it.badge}{it.badgeLabel && <span className="sr-only"> {it.badgeLabel}</span>}</span>}
       </Link>
     )
   }

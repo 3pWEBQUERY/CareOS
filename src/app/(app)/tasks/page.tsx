@@ -185,7 +185,10 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
                 {canRound && <Link className="linkbtn small" href="/tasks/medround">{t('tasks.medround')} →</Link>}
               </div>
               <div className="tablewrap">
-                <table className="stable">
+                <table className="stable" aria-labelledby="meds-open-h">
+                  <thead>
+                    <tr><th>{t('tasks.col.time')}</th><th>{t('tasks.col.resident')}</th><th>{t('tasks.col.task')}</th><th className="right">{t('admin.users.status')}</th></tr>
+                  </thead>
                   <tbody>
                     {doses.map((d) => {
                       const r = rById.get(d.residentId)

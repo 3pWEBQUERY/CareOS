@@ -47,7 +47,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Prom
                 return (
                   <article key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <div className="card-head">
-                      <h3>{c.title}</h3>
+                      <h2>{c.title}</h2>
                       {c.mandatory && <span className="tag outline">{t('learn.mandatory')}</span>}
                     </div>
                     <div className="card-body stack-sm" style={{ flex: 1 }}>

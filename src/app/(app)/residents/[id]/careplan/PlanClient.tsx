@@ -238,7 +238,7 @@ export function EvaluateButton({ residentId, areaId, defaultNext, domainLabel }:
           <>
             <button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button>
             <button type="button" className="btn primary" disabled={pending} data-loading={pending || undefined}
-              onClick={() => go(() => evaluateAction(residentId, areaId, text, next), { onOk: () => setOpen(false), onErr: setErr })}>{t('common.save')}</button>
+              onClick={() => { const ev = document.querySelector<HTMLInputElement>('#ev-next'); if (ev?.matches(':invalid')) return ev.focus(); go(() => evaluateAction(residentId, areaId, text, next), { onOk: () => setOpen(false), onErr: setErr }) }}>{t('common.save')}</button>
           </>
         }
       >
@@ -336,6 +336,8 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
 
   const save = () => {
     if (!domain) return setErr(t('care.plan.errors.domainRequired'))
+    const ev = document.querySelector<HTMLInputElement>('#pf-eval')
+    if (ev?.matches(':invalid')) return ev.focus() // ungültiges Datum: Meldung steht am Feld
     const list = iv.title.trim() ? [...pendingIvs, iv] : pendingIvs
     go(() => saveAreaAction(residentId, { domain, ...f, interventions: list, aiInteractionId: aiUsed }), {
       success: 'care.plan.areaSaved', toDraft: true, onOk: () => setOpen(false), onErr: setErr,

@@ -176,7 +176,10 @@ export function DateField(props: DateFieldProps) {
           value={text}
           onChange={(e) => {
             setText(e.target.value)
-            if (err && !evaluate(e.target.value).msg) setErr(null)
+            // Vollständige, gültige Eingabe sofort übernehmen (kontrollierte Verwendung, Strg+Enter ohne Blur)
+            const r = evaluate(e.target.value)
+            if (r.v && !r.msg) setValue(r.v)
+            if (err && !r.msg) setErr(null)
           }}
           onBlur={(e) => {
             if (popRef.current?.contains(e.relatedTarget as Node)) return
