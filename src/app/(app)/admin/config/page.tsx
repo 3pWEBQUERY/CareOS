@@ -248,7 +248,7 @@ async function Shifts() {
                   <td className="num right">{st._count.shifts}</td>
                   <td className="right nowrap">
                     <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={st.name} action={saveShiftTypeAction} submit={t('common.save')} success="common.saved">{fields(st)}</FormDialog>
-                    {st._count.shifts === 0 && <ActBtn action={deleteShiftTypeAction.bind(null, st.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{t('common.delete')}</ActBtn>}
+                    {st._count.shifts === 0 && <ActBtn action={deleteShiftTypeAction.bind(null, st.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<strong>{st.name}</strong>}>{t('common.delete')}</ActBtn>}
                   </td>
                 </tr>
               ))}

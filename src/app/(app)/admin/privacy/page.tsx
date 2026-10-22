@@ -109,7 +109,14 @@ export default async function PrivacyPage() {
             </div>
             <div className="card-body row-between">
               <p className="fg2" style={{ margin: 0, maxWidth: '70ch' }}>{t('admin.privacy.runHint')}</p>
-              <ActBtn action={runRetentionNowAction} className="btn danger" confirm="admin.privacy.runConfirm">{t('admin.privacy.run')}</ActBtn>
+              <ActBtn
+                action={runRetentionNowAction}
+                className="btn danger"
+                confirm="admin.privacy.runConfirm"
+                context={<span>{t('admin.ux.runAffected', { n: RETENTION_CATEGORIES.reduce((n, c) => n + counts[c], 0) })}</span>}
+                consequences={RETENTION_CATEGORIES.filter((c) => counts[c] > 0).map((c) => `${t('admin.privacy.cat.' + c)}: ${t(RETENTION_ACTION[c] === 'anonymise' ? 'admin.privacy.wouldAnonymise' : 'admin.privacy.wouldDelete', { n: counts[c] })}`)}
+                ack={t('admin.ux.runAck')}
+              >{t('admin.privacy.run')}</ActBtn>
             </div>
           </section>
 

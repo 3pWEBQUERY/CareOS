@@ -86,7 +86,7 @@ async function ApiTokens() {
                   <td className="small">{who.get(k.createdById) ?? '–'}<div className="muted mono">{fmtDate(k.createdAt, locale)}</div></td>
                   <td className="num nowrap">{k.lastUsedAt ? rel(k.lastUsedAt) : <span className="muted">{t('admin.users.never')}</span>}</td>
                   <td>{k.revokedAt ? <span className="tag crit">{t('admin.api.revoked')}</span> : <span className="tag ok">{t('admin.config.active')}</span>}</td>
-                  <td className="right">{!k.revokedAt && <ActBtn action={revokeTokenAction.bind(null, k.id)} className="btn sm danger" confirm="admin.api.revokeConfirm">{t('admin.api.revoke')}</ActBtn>}</td>
+                  <td className="right">{!k.revokedAt && <ActBtn action={revokeTokenAction.bind(null, k.id)} className="btn sm danger" confirm="admin.api.revokeConfirm" context={<span><strong>{k.name}</strong> · {k.scopes.join(', ')} · {t('admin.api.lastUsed')}: {k.lastUsedAt ? rel(k.lastUsedAt) : t('admin.users.never')}</span>} consequences={[t('admin.ux.revokeFinal')]}>{t('admin.api.revoke')}</ActBtn>}</td>
                 </tr>
               ))}
             </tbody>
@@ -144,7 +144,7 @@ async function Webhooks() {
                 <input type="hidden" name="id" value={h.id} />
                 <p className="fg2" style={{ margin: 0 }}>{t('admin.webhooks.rotateHint')}</p>
               </SecretDialog>
-              <ActBtn action={deleteWebhookAction.bind(null, h.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{t('common.delete')}</ActBtn>
+              <ActBtn action={deleteWebhookAction.bind(null, h.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<span className="mono">{h.url}</span>}>{t('common.delete')}</ActBtn>
             </div>
           </div>
           {h.deliveries.length ? (
@@ -215,7 +215,7 @@ async function Integrations() {
                   <td>{it.active ? <span className="tag ok">{t('admin.config.active')}</span> : <span className="tag">{t('admin.config.inactive')}</span>}</td>
                   <td className="right nowrap">
                     <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={it.name} action={saveIntegrationAction} submit={t('common.save')} success="common.saved" wide>{fields(it)}</FormDialog>
-                    <ActBtn action={deleteIntegrationAction.bind(null, it.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{t('common.delete')}</ActBtn>
+                    <ActBtn action={deleteIntegrationAction.bind(null, it.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<strong>{it.name}</strong>}>{t('common.delete')}</ActBtn>
                   </td>
                 </tr>
               ))}

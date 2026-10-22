@@ -13,6 +13,13 @@ export function LiveUpdates({ userId }: { userId: string }) {
   const router = useRouter()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [offline, setOffline] = useState(false)
+  // Erst nach abgeschlossener Hydration neu laden («Router action dispatched before initialization»)
+  const ready = useRef(false)
+  useEffect(() => {
+    const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 200))
+    const id = window.setTimeout(() => ric(() => { ready.current = true }), 0)
+    return () => window.clearTimeout(id)
+  }, [])
 
   useEffect(() => {
     let es: EventSource | null = null
@@ -22,7 +29,7 @@ export function LiveUpdates({ userId }: { userId: string }) {
       timer.current = setTimeout(() => {
         const a = document.activeElement
         // Während jemand tippt, nicht neu rendern – sonst springt der Cursor. Später nachholen.
-        if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && (a as HTMLInputElement).value) return schedule()
+        if (!ready.current || (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && (a as HTMLInputElement).value)) return schedule()
         router.refresh()
       }, 700)
     }
@@ -41,7 +48,7 @@ export function LiveUpdates({ userId }: { userId: string }) {
       }
     }
     connect()
-    const on = () => { setOffline(false); router.refresh() }
+    const on = () => { setOffline(false); if (ready.current) router.refresh(); else schedule() }
     const off = () => setOffline(true)
     window.addEventListener('online', on)
     window.addEventListener('offline', off)

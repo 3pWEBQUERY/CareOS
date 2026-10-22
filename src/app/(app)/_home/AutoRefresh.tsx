@@ -11,15 +11,18 @@ import { useRouter } from 'next/navigation'
 export function AutoRefresh({ minutes = 3 }: { minutes?: number }) {
   const router = useRouter()
   useEffect(() => {
+    // Erst nach der Hydration neu laden (sonst «Router action dispatched before initialization»)
+    let ready = false
+    const t0 = window.setTimeout(() => { ready = true }, 1000)
     const tick = () => {
       const a = document.activeElement
-      if (document.visibilityState !== 'visible' || (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName))) return
+      if (!ready || document.visibilityState !== 'visible' || (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName))) return
       router.refresh()
     }
     const id = setInterval(tick, minutes * 60_000)
     const onVis = () => document.visibilityState === 'visible' && tick()
     document.addEventListener('visibilitychange', onVis)
-    return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVis) }
+    return () => { clearInterval(id); clearTimeout(t0); document.removeEventListener('visibilitychange', onVis) }
   }, [router, minutes])
   return null
 }

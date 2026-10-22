@@ -24,7 +24,7 @@ export default async function FormEditPage({ params }: { params: Promise<{ id: s
     <main className="panel main">
       <AdminHead section={t('admin.nav.forms')} href="/admin/forms" title={def ? def.name : t('forms.admin.new')} sub={def ? `${def.key} · v${def.version} · ${t('forms.admin.usedN', { n: used })}` : t('forms.admin.newSub')}>
         <Link className="btn ghost" href="/admin/forms">{t('common.back')}</Link>
-        {def && !used && <ActBtn action={deleteFormAction.bind(null, def.id)} className="btn danger" confirm="admin.common.deleteConfirm">{t('common.delete')}</ActBtn>}
+        {def && !used && <ActBtn action={deleteFormAction.bind(null, def.id)} className="btn danger" confirm="admin.common.deleteConfirm" context={<span><strong>{def.name}</strong> · v{def.version}</span>}>{t('common.delete')}</ActBtn>}
       </AdminHead>
       <div className="scroll">
         <div className="tabpanel">

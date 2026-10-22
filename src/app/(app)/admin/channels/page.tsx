@@ -71,7 +71,7 @@ export default async function ChannelsPage() {
                       <td>{c.archived ? <span className="tag">{t('admin.channels.archived')}</span> : <span className="tag ok">{t('admin.config.active')}</span>}</td>
                       <td className="right nowrap">
                         <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={c.name} action={saveChannelAction} submit={t('common.save')} success="common.saved" wide>{fields(c)}</FormDialog>
-                        {c._count.posts === 0 && <ActBtn action={deleteChannelAction.bind(null, c.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{t('common.delete')}</ActBtn>}
+                        {c._count.posts === 0 && <ActBtn action={deleteChannelAction.bind(null, c.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<strong>{c.name}</strong>}>{t('common.delete')}</ActBtn>}
                       </td>
                     </tr>
                   ))}

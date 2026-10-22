@@ -95,7 +95,7 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                       <td className="num right">{l._count.units}</td>
                       <td className="right nowrap">
                         <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={l.name} action={saveLocationAction} submit={save} success="common.saved">{locationFields(l)}</FormDialog>
-                        {l._count.units === 0 && <ActBtn action={deleteLocationAction.bind(null, l.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{del}</ActBtn>}
+                        {l._count.units === 0 && <ActBtn action={deleteLocationAction.bind(null, l.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<strong>{l.name}</strong>}>{del}</ActBtn>}
                       </td>
                     </tr>
                   ))}
@@ -124,7 +124,7 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                       <td className="num right">{u._count.residents}</td>
                       <td className="right nowrap">
                         <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={u.name} action={saveUnitAction} submit={save} success="common.saved">{unitFields(u)}</FormDialog>
-                        {u._count.residents === 0 && <ActBtn action={deleteUnitAction.bind(null, u.id)} className="btn sm ghost" confirm="admin.structure.deleteUnitConfirm">{del}</ActBtn>}
+                        {u._count.residents === 0 && <ActBtn action={deleteUnitAction.bind(null, u.id)} className="btn sm ghost" confirm="admin.structure.deleteUnitConfirm" context={<strong>{u.name}</strong>} ack={t('admin.ux.deleteUnitAck')}>{del}</ActBtn>}
                       </td>
                     </tr>
                   ))}
@@ -173,7 +173,7 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                                   </label>
                                 </div>
                               </FormDialog>
-                              {r.residents.length === 0 && <ActBtn action={deleteRoomAction.bind(null, r.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{del}</ActBtn>}
+                              {r.residents.length === 0 && <ActBtn action={deleteRoomAction.bind(null, r.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<span>{t('admin.structure.roomNo')} <strong className="mono">{r.number}</strong></span>}>{del}</ActBtn>}
                             </td>
                           </tr>
                         ))}
@@ -201,7 +201,7 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                         <div><h3>{tm.name}</h3><span className="small muted">{tm.unit?.name ?? t('admin.structure.noUnit')} · {t('admin.structure.memberCount', { n: tm.members.length })}</span></div>
                         <div className="row" style={{ gap: 4 }}>
                           <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={tm.name} action={saveTeamAction} submit={save} success="common.saved">{teamFields(tm)}</FormDialog>
-                          <ActBtn action={deleteTeamAction.bind(null, tm.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{del}</ActBtn>
+                          <ActBtn action={deleteTeamAction.bind(null, tm.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<strong>{tm.name}</strong>}>{del}</ActBtn>
                         </div>
                       </div>
                       <div className="card-body stack-sm">

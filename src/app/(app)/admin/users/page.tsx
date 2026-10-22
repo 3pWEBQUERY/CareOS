@@ -99,7 +99,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             <div className="tablewrap">
               <table className="stable">
                 <thead>
-                  <tr><th>{t('admin.users.name')}</th><th className="hide-sm">{t('admin.users.jobTitle')}</th><th className="hide-sm">{t('admin.users.primaryUnit')}</th><th>{t('admin.users.roles')}</th><th>{t('admin.users.mfa')}</th><th className="hide-sm">{t('admin.users.lastLogin')}</th></tr>
+                  <tr><th>{t('admin.users.name')}</th><th className="hide-sm">{t('admin.users.jobTitle')}</th><th className="adm-hide-md">{t('admin.users.primaryUnit')}</th><th>{t('admin.users.roles')}</th><th>{t('admin.users.mfa')}</th><th className="adm-hide-md">{t('admin.users.lastLogin')}</th></tr>
                 </thead>
                 <tbody>
                   {users.map((u) => (
@@ -111,10 +111,10 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                         </Link>
                       </th>
                       <td className="hide-sm">{u.jobTitle ?? '–'}</td>
-                      <td className="nowrap hide-sm">{u.primaryUnitId ? unitName.get(u.primaryUnitId) ?? '–' : '–'}</td>
+                      <td className="nowrap adm-hide-md">{u.primaryUnitId ? unitName.get(u.primaryUnitId) ?? '–' : '–'}</td>
                       <td><div className="chips">{u.roles.map((a) => <span key={a.id} className="tag outline" title={a.unit?.name ?? a.location?.name ?? t('admin.users.scopeOrg')}>{a.role.name}{a.unit ? ` · ${a.unit.shortName ?? a.unit.name}` : a.location ? ` · ${a.location.name}` : ''}</span>)}</div></td>
                       <td>{u.mfaEnabled ? <span className="tag ok">{t('admin.users.mfaOn')}</span> : <span className="tag">{t('admin.users.mfaOff')}</span>}</td>
-                      <td className="num nowrap hide-sm">{u.lastLoginAt ? rel(u.lastLoginAt) : <span className="muted">{t('admin.users.never')}</span>}</td>
+                      <td className="num nowrap adm-hide-md">{u.lastLoginAt ? rel(u.lastLoginAt) : <span className="muted">{t('admin.users.never')}</span>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -129,7 +129,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 <li key={ql.id}>
                   <div className="li" style={{ alignItems: 'center' }}>
                     <div className="grow"><div>{ql.name}</div><div className="small muted">{t('profile.qualifications.level', { n: ql.level })} · {t('admin.users.holders', { n: ql._count.users })}</div></div>
-                    {ql._count.users === 0 && <ActBtn action={deleteQualificationAction.bind(null, ql.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm">{t('common.delete')}</ActBtn>}
+                    {ql._count.users === 0 && <ActBtn action={deleteQualificationAction.bind(null, ql.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<strong>{ql.name}</strong>}>{t('common.delete')}</ActBtn>}
                   </div>
                 </li>
               ))}

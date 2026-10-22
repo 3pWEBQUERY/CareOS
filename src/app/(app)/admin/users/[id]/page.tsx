@@ -117,7 +117,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
                             <div className="small muted">{a.unit ? `${t('profile.roles.unit')}: ${a.unit.name}` : a.location ? `${t('profile.roles.location')}: ${a.location.name}` : t('profile.roles.org')}</div>
                           </div>
                           <span className="pill" title={t('admin.roles.permissionCount')}>{a.role.permissions.length}</span>
-                          <ActBtn action={removeAssignmentAction.bind(null, a.id)} className="btn sm ghost" confirm="admin.users.removeRoleConfirm" context={<span><strong>{user.firstName} {user.lastName}</strong> · {a.role.name} · {a.unit ? a.unit.name : a.location ? a.location.name : t('profile.roles.org')}</span>} consequences={[t('admin.ux.removeRoleEffect', { n: a.role.permissions.length })]} confirmLabel={t('admin.ux.removeRole')}>{t('admin.common.remove')}</ActBtn>
+                          <ActBtn action={removeAssignmentAction.bind(null, a.id)} className="btn sm ghost" confirm="admin.users.removeRoleConfirm" context={<span><strong>{user.firstName} {user.lastName}</strong> · {a.role.name} · {a.unit ? a.unit.name : a.location ? a.location.name : t('profile.roles.org')}</span>} consequences={[t('admin.ux.removeRoleEffect', { n: a.role.permissions.length })]} confirmLabel={t('admin.ux.removeRole')} success="admin.ux.roleRemoved">{t('admin.common.remove')}</ActBtn>
                         </div>
                       </li>
                     ))}

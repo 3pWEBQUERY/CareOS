@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
+import { useUnsavedGuard } from '@/components/admin/ui'
 import { FormFields, type RawValues } from '@/components/forms/FormFields'
 import { FORM_FIELD_TYPES, FORM_LIMITS, fieldKey, normalizeFields, validateFormValues, type FieldError, type FormField, type FormFieldType } from '@/lib/forms'
 import { saveFormAction } from '../actions'
@@ -36,16 +37,48 @@ export function FormBuilder({ initial }: { initial: Initial }) {
   const [preview, setPreview] = useState<RawValues>({})
   const [previewErrors, setPreviewErrors] = useState<Record<string, FieldError>>({})
 
-  const set = (i: number, patch: Partial<Draft>) => setFields((cur) => cur.map((f, n) => (n === i ? { ...f, ...patch } : f)))
-  const move = (i: number, d: -1 | 1) => setFields((cur) => {
-    const j = i + d
-    if (j < 0 || j >= cur.length) return cur
-    const next = [...cur]
-    ;[next[i], next[j]] = [next[j], next[i]]
-    return next
+  const [live, setLive] = useState('')
+  const [drag, setDrag] = useState<number | null>(null)
+  const [over, setOver] = useState<number | null>(null)
+  const focusNext = useRef<string | null>(null)
+  useEffect(() => {
+    if (!focusNext.current) return
+    const el = document.getElementById(focusNext.current) as HTMLButtonElement | HTMLInputElement | null
+    focusNext.current = null
+    if (el && !(el as HTMLButtonElement).disabled) el.focus()
+    else el?.parentElement?.querySelector<HTMLElement>('button:not(:disabled)')?.focus()
   })
-  const remove = (i: number) => setFields((cur) => cur.filter((_, n) => n !== i))
-  const add = () => setFields((cur) => [...cur, { uid: uid(), key: '', label: '', type: 'text', options: '', unit: '', min: '', max: '', required: false }])
+  // Ungespeicherte Änderungen erkennen (Vergleich mit dem zuletzt gespeicherten Stand)
+  const snapshot = () => JSON.stringify({ name, category, description, active, fields: fields.map(toPayload) })
+  const saved = useRef<string | null>(null)
+  if (saved.current === null) saved.current = snapshot()
+  const dirty = snapshot() !== saved.current
+  useUnsavedGuard(dirty, t('admin.ux.unsaved'))
+
+  const fieldName = (f: Draft, i: number) => f.label.trim() || t('forms.admin.fieldN', { n: i + 1 })
+  const set = (i: number, patch: Partial<Draft>) => setFields((cur) => cur.map((f, n) => (n === i ? { ...f, ...patch } : f)))
+  const moveTo = (from: number, to: number, focusId?: string) => {
+    if (from === to || to < 0 || to >= fields.length) return
+    const next = [...fields]
+    const [it] = next.splice(from, 1)
+    next.splice(to, 0, it)
+    setFields(next)
+    setLive(t('admin.ux.fieldMoved', { name: fieldName(it, from), pos: to + 1, total: next.length }))
+    if (focusId) focusNext.current = focusId
+  }
+  const move = (i: number, d: -1 | 1) => moveTo(i, i + d, `fb-${d < 0 ? 'up' : 'dn'}-${fields[i].uid}`)
+  const remove = (i: number) => {
+    const gone = fields[i]
+    const prev = fields
+    setFields((cur) => cur.filter((_, n) => n !== i))
+    focusNext.current = 'fl-' + (fields[i + 1] ?? fields[i - 1])?.uid
+    toast(t('admin.ux.fieldRemoved', { name: fieldName(gone, i) }), { undo: () => setFields(prev), undoLabel: t('admin.ux.undo') })
+  }
+  const add = () => {
+    const f: Draft = { uid: uid(), key: '', label: '', type: 'text', options: '', unit: '', min: '', max: '', required: false }
+    setFields((cur) => [...cur, f])
+    focusNext.current = 'fl-' + f.uid
+  }
 
   // Vorschau: jedes gültige Feld einzeln, damit ein unfertiges Feld die übrigen nicht ausblendet.
   const previewFields = useMemo(() => {
@@ -75,6 +108,7 @@ export function FormBuilder({ initial }: { initial: Initial }) {
     start(async () => {
       const r = await saveFormAction(payload)
       if (!r.ok) { setErr(/^[a-z]+\.[\w.]+$/.test(r.error) ? t(r.error) : r.error); return }
+      saved.current = snapshot()
       const msg = r.message ?? 'common.saved'
       toast(/^[a-z]+\.[\w.]+$/.test(msg) ? t(msg) : msg)
       if (!initial && r.data) router.replace(`/admin/forms/${r.data.id}`)
@@ -120,9 +154,27 @@ export function FormBuilder({ initial }: { initial: Initial }) {
             const hasRange = f.type === 'number' || f.type === 'scale'
             const hasUnit = f.type === 'number' || f.type === 'text'
             return (
-              <fieldset key={f.uid} className="card" style={{ padding: 0 }} aria-label={t('forms.admin.fieldN', { n: i + 1 })}>
+              <fieldset
+                key={f.uid}
+                className="card fb-field"
+                data-drag={drag === i || undefined}
+                data-over={over === i && drag !== null && drag !== i ? (drag < i ? 'after' : 'before') : undefined}
+                style={{ padding: 0 }}
+                aria-label={t('forms.admin.fieldN', { n: i + 1 })}
+                onDragOver={(e) => { if (drag === null) return; e.preventDefault(); setOver(i) }}
+                onDrop={(e) => { e.preventDefault(); if (drag !== null) moveTo(drag, i); setDrag(null); setOver(null) }}
+              >
                 <div className="card-head" style={{ flexWrap: 'nowrap' }}>
-                  <span className="mono small muted" aria-hidden="true" style={{ width: 18 }}>{i + 1}</span>
+                  <span
+                    className="fb-grip mono small"
+                    draggable
+                    title={t('admin.ux.dragHint')}
+                    aria-hidden="true"
+                    onDragStart={(e) => { setDrag(i); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(i)) }}
+                    onDragEnd={() => { setDrag(null); setOver(null) }}
+                  >
+                    {i + 1}
+                  </span>
                   <input
                     id={'fl-' + f.uid}
                     className="field"
@@ -132,6 +184,13 @@ export function FormBuilder({ initial }: { initial: Initial }) {
                     placeholder={t('forms.admin.labelPh')}
                     aria-label={t('forms.admin.label')}
                     onChange={(e) => set(i, { label: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' || e.nativeEvent.isComposing) return
+                      e.preventDefault()
+                      if (i === fields.length - 1) { if (f.label.trim() && fields.length < FORM_LIMITS.fields) add() }
+                      else document.getElementById('fl-' + fields[i + 1].uid)?.focus()
+                    }}
+                    aria-describedby="fb-enter-hint"
                   />
                   <select className="field" style={{ width: 'auto', flex: 'none' }} value={f.type} aria-label={t('forms.admin.type')} onChange={(e) => set(i, { type: e.target.value as FormFieldType })}>
                     {FORM_FIELD_TYPES.map((ty) => <option key={ty} value={ty}>{t('forms.types.' + ty)}</option>)}
@@ -162,9 +221,9 @@ export function FormBuilder({ initial }: { initial: Initial }) {
                     <label className="check small"><input type="checkbox" checked={f.required} onChange={(e) => set(i, { required: e.target.checked })} />{t('forms.admin.required')}</label>
                     <span className="row" style={{ gap: 4 }}>
                       <code className="mono small muted" title={t('forms.admin.keyHint')}>{f.key || fieldKey(f.label) || '–'}</code>
-                      <button type="button" className="btn sm ghost" disabled={i === 0} onClick={() => move(i, -1)} aria-label={t('forms.admin.up')} title={t('forms.admin.up')}>↑</button>
-                      <button type="button" className="btn sm ghost" disabled={i === fields.length - 1} onClick={() => move(i, 1)} aria-label={t('forms.admin.down')} title={t('forms.admin.down')}>↓</button>
-                      <button type="button" className="btn sm ghost" disabled={fields.length <= 1} onClick={() => remove(i)}>{t('forms.admin.remove')}</button>
+                      <button type="button" id={'fb-up-' + f.uid} className="btn sm ghost" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`${t('forms.admin.up')}: ${fieldName(f, i)}`} title={t('forms.admin.up')}>↑</button>
+                      <button type="button" id={'fb-dn-' + f.uid} className="btn sm ghost" disabled={i === fields.length - 1} onClick={() => move(i, 1)} aria-label={`${t('forms.admin.down')}: ${fieldName(f, i)}`} title={t('forms.admin.down')}>↓</button>
+                      <button type="button" className="btn sm ghost" disabled={fields.length <= 1} onClick={() => remove(i)} aria-label={`${t('forms.admin.remove')}: ${fieldName(f, i)}`}>{t('forms.admin.remove')}</button>
                     </span>
                   </div>
                 </div>
@@ -173,12 +232,16 @@ export function FormBuilder({ initial }: { initial: Initial }) {
           })}
           <div className="row">
             <button type="button" className="btn" onClick={add} disabled={fields.length >= FORM_LIMITS.fields}>+ {t('forms.admin.addField')}</button>
+            <span className="small muted" id="fb-enter-hint">{t('admin.ux.enterHint')}</span>
           </div>
+          <p className="sr-only" aria-live="polite">{live}</p>
         </section>
 
-        <div className="form-actions">
-          <button type="button" className="btn primary" onClick={save} data-loading={pending || undefined} disabled={pending}>{t('common.save')}</button>
+        <div className="form-actions pm-bar">
+          <span className="small" aria-live="polite">{dirty ? t('admin.ux.unsavedShort') : <span className="muted">{t('admin.roles.noChanges')}</span>}</span>
+          <span className="spacer" />
           {err && <span className="err" role="alert">{err}</span>}
+          <button type="button" className="btn primary" onClick={save} data-loading={pending || undefined} disabled={pending}>{t('common.save')}</button>
         </div>
       </div>
 

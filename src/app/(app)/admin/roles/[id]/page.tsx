@@ -25,7 +25,7 @@ export default async function RoleDetail({ params }: { params: Promise<{ id: str
   return (
     <main className="panel main">
       <AdminHead section={'← ' + t('admin.nav.roles')} href="/admin/roles" title={role.name} sub={role.system ? t('admin.roles.systemHint') : t('admin.roles.customHint')}>
-        {role.system ? <span className="tag outline">{t('admin.roles.system')}</span> : <ActBtn action={deleteRoleAction.bind(null, role.id)} className="btn danger" confirm="admin.roles.deleteConfirm">{t('common.delete')}</ActBtn>}
+        {role.system ? <span className="tag outline">{t('admin.roles.system')}</span> : <ActBtn action={deleteRoleAction.bind(null, role.id)} className="btn danger" confirm="admin.roles.deleteConfirm" context={<span><strong>{role.name}</strong> · {t('admin.ux.holdersN', { n: role.assignments.length })}</span>} consequences={role.assignments.length ? [t('admin.ux.deleteRoleHolders', { names: role.assignments.slice(0, 5).map((a) => `${a.user.firstName} ${a.user.lastName}`).join(', ') + (role.assignments.length > 5 ? ' …' : '') })] : undefined} ack={role.assignments.length ? t('admin.ux.deleteRoleAck') : undefined}>{t('common.delete')}</ActBtn>}
       </AdminHead>
       <div className="scroll">
         <div className="tabpanel">
