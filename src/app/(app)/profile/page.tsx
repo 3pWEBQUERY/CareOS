@@ -8,6 +8,7 @@ import { logoutAction } from '@/app/login/actions'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn } from '@/components/admin/ui'
 import { Empty } from '@/components/ui/Empty'
+import { MfaSetupBanner } from './MfaSetupBanner'
 import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, ThemeChooser } from './ProfileClient'
 import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updatePhoneAction } from './actions'
 
@@ -51,6 +52,7 @@ export default async function ProfilePage() {
       </div>
       <div className="scroll">
         <div className="tabpanel">
+          <MfaSetupBanner />
           <div className="grid-2">
             <section className="card" aria-labelledby="p-personal">
               <div className="card-head"><h2 id="p-personal">{t('profile.personal.title')}</h2><span className="small muted">{t('profile.personal.managed')}</span></div>

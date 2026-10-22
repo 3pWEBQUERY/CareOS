@@ -63,6 +63,11 @@ export default async function OrgPage() {
                     <input type="checkbox" name="requireMfaForAdmins" defaultChecked={!!settings.requireMfaForAdmins} />
                     <span>{t('admin.org.requireMfa')}</span>
                   </label>
+                  <label className="check span-all">
+                    <input type="checkbox" name="requireMfaForAll" defaultChecked={!!settings.requireMfaForAll} />
+                    <span>{t('admin.org.requireMfaAll')}</span>
+                  </label>
+                  <p className="small muted span-all" style={{ margin: 0 }}>{t('admin.org.requireMfaHint')}</p>
                 </div>
                 <div className="form-actions"><Submit>{t('common.save')}</Submit></div>
               </ActionForm>

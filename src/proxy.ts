@@ -10,7 +10,10 @@ export function proxy(req: NextRequest) {
     if (req.nextUrl.pathname !== '/') url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search)
     return NextResponse.redirect(url)
   }
-  return NextResponse.next()
+  // Aktueller Pfad für das App-Layout (MFA-Pflicht, PRD §33). Immer überschreiben, nie vom Client übernehmen.
+  const fwd = new Headers(req.headers)
+  fwd.set('x-careos-path', req.nextUrl.pathname)
+  return NextResponse.next({ request: { headers: fwd } })
 }
 
 export const config = {

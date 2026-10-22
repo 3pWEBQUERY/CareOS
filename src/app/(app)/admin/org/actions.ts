@@ -26,11 +26,11 @@ export async function updateOrgAction(form: FormData): Promise<ActionResult> {
     if (!Intl.supportedValuesOf('timeZone').includes(timezone) && timezone !== 'UTC') return { ok: false, error: 'admin.org.badTimezone', field: 'timezone' }
     const dataRegion = z.enum(DATA_REGIONS).parse(fd(form, 'dataRegion'))
     const settings = orgSettings(ctx.org.settings)
-    const nextSettings = { ...settings, requireMfaForAdmins: fdBool(form, 'requireMfaForAdmins') }
-    const before = { ...pick(ctx.org, ['name', 'terminology', 'defaultLocale', 'timezone', 'dataRegion']), requireMfaForAdmins: !!settings.requireMfaForAdmins }
+    const nextSettings = { ...settings, requireMfaForAdmins: fdBool(form, 'requireMfaForAdmins'), requireMfaForAll: fdBool(form, 'requireMfaForAll') }
+    const before = { ...pick(ctx.org, ['name', 'terminology', 'defaultLocale', 'timezone', 'dataRegion']), requireMfaForAdmins: !!settings.requireMfaForAdmins, requireMfaForAll: !!settings.requireMfaForAll }
     const after = { name: name.slice(0, 120), terminology, defaultLocale, timezone, dataRegion }
     await db.organization.update({ where: { id: ctx.org.id }, data: { ...after, settings: nextSettings as Prisma.InputJsonValue } })
-    await audit(ctx, { action: 'admin.org.update', entityType: 'Organization', entityId: ctx.org.id, before, after: { ...after, requireMfaForAdmins: nextSettings.requireMfaForAdmins } })
+    await audit(ctx, { action: 'admin.org.update', entityType: 'Organization', entityId: ctx.org.id, before, after: { ...after, requireMfaForAdmins: nextSettings.requireMfaForAdmins, requireMfaForAll: nextSettings.requireMfaForAll } })
     refresh()
   })
 }

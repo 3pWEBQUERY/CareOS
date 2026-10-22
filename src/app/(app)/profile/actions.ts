@@ -115,8 +115,8 @@ export async function disableMfaAction(form: FormData): Promise<ActionResult> {
       await audit(ctx, { action: 'profile.mfa_code_failed', entityType: 'User', entityId: ctx.user.id })
       return { ok: false, error: 'profile.mfa.invalidCode', field: 'code' }
     }
-    const settings = (ctx.org.settings ?? {}) as { requireMfaForAdmins?: boolean }
-    if (settings.requireMfaForAdmins && ctx.grants.some((g) => g.permissions.some((p) => p.startsWith('admin.')))) return { ok: false, error: 'profile.mfa.requiredByOrg' }
+    const settings = (ctx.org.settings ?? {}) as { requireMfaForAdmins?: boolean; requireMfaForAll?: boolean }
+    if (settings.requireMfaForAll || (settings.requireMfaForAdmins && ctx.grants.some((g) => g.permissions.some((p) => p.startsWith('admin.'))))) return { ok: false, error: 'profile.mfa.requiredByOrg' }
     await db.user.update({ where: { id: ctx.user.id }, data: { mfaEnabled: false, mfaSecret: null } })
     await audit(ctx, { action: 'profile.mfa_disabled', entityType: 'User', entityId: ctx.user.id, before: { mfaEnabled: true }, after: { mfaEnabled: false } })
     refresh()

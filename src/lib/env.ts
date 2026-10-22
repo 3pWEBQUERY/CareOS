@@ -24,8 +24,15 @@ export const env = {
     apiKey: str('ANTHROPIC_API_KEY'),
     model: str('AI_MODEL', 'claude-opus-5-5'),
   },
+  /** Web Push (PRD §25): VAPID-Schlüsselpaar, erzeugen mit `npx web-push generate-vapid-keys`. */
+  push: {
+    publicKey: str('VAPID_PUBLIC_KEY'),
+    privateKey: str('VAPID_PRIVATE_KEY'),
+    subject: str('VAPID_SUBJECT'),
+  },
 }
 
 export const storageConfigured = () => Boolean(env.s3.bucket && env.s3.endpoint && env.s3.accessKeyId && env.s3.secretAccessKey)
 export const ssoConfigured = () => Boolean(env.oidc.issuer && env.oidc.clientId)
 export const aiConfigured = () => Boolean(env.ai.apiKey)
+export const pushConfigured = () => Boolean(env.push.publicKey && env.push.privateKey && /^(mailto:|https:)/.test(env.push.subject))

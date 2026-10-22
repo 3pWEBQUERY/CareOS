@@ -16,12 +16,13 @@ export async function requestMeta() {
   return { ip, userAgent: h.get('user-agent')?.slice(0, 400) ?? null }
 }
 
-export async function createSession(userId: string, mfaPassed: boolean) {
+/** method: Anmeldeverfahren (password | passkey | sso), massgeblich für die MFA-Pflicht (SSO ist ausgenommen). */
+export async function createSession(userId: string, mfaPassed: boolean, method: 'password' | 'passkey' | 'sso' = 'password') {
   const token = randomBytes(32).toString('base64url')
   const meta = await requestMeta()
   const expiresAt = new Date(Date.now() + env.sessionHours * 3600_000)
   const session = await db.session.create({
-    data: { userId, tokenHash: sha256(token), mfaPassed, ip: meta.ip, userAgent: meta.userAgent, expiresAt },
+    data: { userId, tokenHash: sha256(token), mfaPassed, method, ip: meta.ip, userAgent: meta.userAgent, expiresAt },
   })
   const jar = await cookies()
   jar.set(SESSION_COOKIE, token, { httpOnly: true, secure: env.isProd, sameSite: 'lax', path: '/', expires: expiresAt })

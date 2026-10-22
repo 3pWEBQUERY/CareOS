@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     if (!user || !user.active) return fail
     if (!user.ssoSubject) await db.user.update({ where: { id: user.id }, data: { ssoSubject: sub } })
     // Der Identity Provider ist für MFA zuständig.
-    await createSession(user.id, true)
+    await createSession(user.id, true, 'sso')
     await auditSystem({ action: 'auth.login', entityType: 'User', entityId: user.id, orgId: user.orgId, userId: user.id, context: { method: 'oidc' }, ...(await requestMeta()) })
     const next = st.next?.startsWith('/') && !st.next.startsWith('//') ? st.next : '/'
     const res = NextResponse.redirect(new URL(next, env.appUrl))

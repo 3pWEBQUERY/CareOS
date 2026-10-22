@@ -15,9 +15,11 @@ import { LiveUpdates } from '@/components/shell/LiveUpdates'
 import { QuickActions } from '@/components/shell/QuickActions'
 import { currentShiftLabel } from '@/lib/shift'
 import { overdueCount } from '@/lib/tasks'
+import { enforceMfaSetup } from '@/lib/auth/mfa-gate'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getCtx()
+  await enforceMfaSetup(ctx) // MFA-Pflicht der Organisation: bis zur Einrichtung nur Profil (PRD §33)
   const { t, user, org } = ctx
   const any = (prefix: string) => ctx.grants.some((g) => g.permissions.some((p) => p.startsWith(prefix)))
 

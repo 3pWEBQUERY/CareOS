@@ -30,7 +30,7 @@ export async function loginAction(_: LoginState, form: FormData): Promise<LoginS
   }
   if (!user.active) return { error: 'inactive', email }
 
-  await createSession(user.id, !user.mfaEnabled)
+  await createSession(user.id, !user.mfaEnabled, 'password')
   await auditSystem({ action: 'auth.login', entityType: 'User', entityId: user.id, orgId: user.orgId, userId: user.id, context: { method: 'password' }, ...meta })
   if (user.mfaEnabled) redirect('/login/mfa?next=' + encodeURIComponent(safeNext(form.get('next'))))
   redirect(safeNext(form.get('next')))

@@ -36,6 +36,7 @@ export async function guardLastAdmin<T>(orgId: string, fn: (tx: Tx) => Promise<T
 export type OrgSettings = {
   demo?: boolean
   requireMfaForAdmins?: boolean
+  requireMfaForAll?: boolean
   coverage?: Record<string, number>
   [k: string]: unknown
 }

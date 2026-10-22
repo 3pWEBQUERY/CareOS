@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'verify' }, { status: 401 })
   }
   // Passkey mit Benutzerverifikation gilt als starker zweiter Faktor.
-  await createSession(pk.userId, true)
+  await createSession(pk.userId, true, 'passkey')
   await auditSystem({ action: 'auth.login', entityType: 'User', entityId: pk.userId, orgId: pk.user.orgId, userId: pk.userId, context: { method: 'passkey' }, ...meta })
   const res = NextResponse.json({ ok: true })
   res.cookies.delete(CHALLENGE_COOKIE)
