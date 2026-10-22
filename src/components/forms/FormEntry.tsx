@@ -63,7 +63,7 @@ export function FormEntry({ residentId, who, forms }: { residentId: string; who:
             </>
           )}>
           <div
-            className="stack"
+            className="stack form-entry"
             onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); save() } }}
           >
             {forms.length > 1 && (

@@ -851,3 +851,7 @@ dialog.dlg::backdrop { background: var(--scrim) }
 .offline-bar .linkbtn { color: inherit; text-decoration: underline; min-height: 24px }
 .offline-view { max-width: 760px; width: 100%; margin: 0 auto; min-height: 100dvh; border-radius: 0 }
 @media (min-width: 800px) { .offline-view { min-height: 0; margin: 16px auto; border-radius: var(--r) } }
+
+/* ───────── Formulare (Fokusdokumentation, PRD §10.3): Kopf und Fuss des Dialogs bleiben sichtbar, Inhalt scrollt ───────── */
+dialog.dlg[open]:has(.form-entry) { display: flex; flex-direction: column }
+dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
