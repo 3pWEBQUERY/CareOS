@@ -260,6 +260,8 @@ export async function seedDemo(client: PrismaClient = db) {
       },
     })
     residentIds[r.room] = res.id
+    // Aufenthalt (Pflegeepisode, PRD §43)
+    await client.careEpisode.create({ data: { residentId: res.id, start: res.admittedAt, reason: 'Eintritt' } })
     await client.contact.create({ data: { residentId: res.id, name: `${r.sex === 'f' ? 'Sohn' : 'Tochter'} ${r.last}`, relation: r.sex === 'f' ? 'Sohn' : 'Tochter', phone: '079 000 00 ' + r.room.slice(1), isEmergency: true, isLegalRep: i % 3 === 0 } })
     await client.contact.create({ data: { residentId: res.id, name: r.gp, relation: 'Hausarzt', phone: '044 111 22 ' + (30 + i), email: 'praxis@example.ch' } })
 

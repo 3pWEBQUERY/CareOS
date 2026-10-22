@@ -2,7 +2,7 @@ import 'server-only'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { addDays, fmtDayMonth, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
-import { abnormalKeys, flag, mergeLimits, VITALS, type Limits } from '@/lib/vitals'
+import { abnormalKeys, flag, LIVE, mergeLimits, VITALS, type Limits } from '@/lib/vitals'
 import { vitalChanges, visitSince } from '@/lib/visit'
 import type { VisitQuestionDto, VisitRefOptionDto, VisitRosterDto } from '@/components/visit/types'
 
@@ -33,7 +33,7 @@ export function noteRefLabel(ctx: Ctx, o: { at: Date; category: string; text: st
 export async function askRefOptions(ctx: Ctx, residentId: string, now = new Date()): Promise<VisitRefOptionDto[]> {
   const from = addDays(now, -7)
   const [vitals, obs, limits] = await Promise.all([
-    db.vitalSign.findMany({ where: { residentId, at: { gte: from } }, orderBy: { at: 'desc' }, take: 40 }),
+    db.vitalSign.findMany({ where: { residentId, at: { gte: from }, ...LIVE }, orderBy: { at: 'desc' }, take: 40 }),
     db.observation.findMany({ where: { residentId, at: { gte: from }, correctedBy: { none: {} }, category: { not: 'handover' } }, orderBy: { at: 'desc' }, take: 10 }),
     limitsFor(ctx, residentId),
   ])
@@ -96,7 +96,7 @@ export async function visitChanges(ctx: Ctx, residentId: string, canMeds: boolea
   ])
   const { since, fromVisit } = visitSince([lastVisit?.at, lastAppt?.at], now)
   const [vitals, limits, notes, started, stopped, missed] = await Promise.all([
-    db.vitalSign.findMany({ where: { residentId, at: { gte: since } }, orderBy: { at: 'asc' } }),
+    db.vitalSign.findMany({ where: { residentId, at: { gte: since }, ...LIVE }, orderBy: { at: 'asc' } }),
     limitsFor(ctx, residentId),
     db.observation.findMany({
       where: { residentId, at: { gte: since }, correctedBy: { none: {} }, OR: [{ important: true }, { category: { in: ['observation', 'incident', 'physician'] } }] },

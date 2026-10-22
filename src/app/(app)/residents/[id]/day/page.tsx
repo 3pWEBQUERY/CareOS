@@ -49,6 +49,7 @@ export default async function DayPage({ params }: { params: Promise<{ id: string
       canComplete={can('task.complete')}
       canManage={can('task.manage')}
       now={now.toISOString()}
+      nowHm={hm(now)}
       me={`${ctx.user.firstName.charAt(0)}. ${ctx.user.lastName}`}
       categories={TASK_CATEGORIES.filter((c) => c.key !== 'assessment' && c.key !== 'quality' && c.key !== 'medication').map((c) => ({ value: c.value, label: t('chart.taskCat.' + c.key) }))}
     />

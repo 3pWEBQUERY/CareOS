@@ -361,7 +361,7 @@ export default defineMessages({
     },
     bedside: {
       identity: 'Vérifier l’identité',
-      born: 'née/né le {date} ({age} ans)',
+      born: 'naissance : {date} ({age} ans)',
       now: 'Maintenant',
       nowHint: 'Mesures ouvertes dans les 2 prochaines heures',
       nothingNow: 'Aucune mesure dans les 2 prochaines heures.',
@@ -690,7 +690,7 @@ export default defineMessages({
     },
     bedside: {
       identity: 'Verificare l’identità',
-      born: 'nata/o il {date} ({age} anni)',
+      born: 'nascita: {date} ({age} anni)',
       now: 'Adesso',
       nowHint: 'Misure aperte entro 2 ore',
       nothingNow: 'Nessuna misura nelle prossime 2 ore.',

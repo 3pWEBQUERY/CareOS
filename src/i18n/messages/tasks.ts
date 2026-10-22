@@ -79,6 +79,7 @@ export default defineMessages({
     },
     rules: {
       autoDone: 'automatisch: Nachkontrolle erfasst {time}',
+      triggerVoided: 'entfällt: auslösender Wert wurde storniert',
       tab: 'Smart Workflows',
       hint: 'Regeln, die aus Messwerten und Assessments Folgeaufgaben erzeugen. Die Aufgaben erscheinen im Bereich der Person, mit Auslöser in der Beschreibung, und schliessen sich, sobald die Dokumentation erfolgt ist.',
       enabled: 'Aktiv',
@@ -397,6 +398,7 @@ export default defineMessages({
     },
     rules: {
       autoDone: 'automatique : contrôle saisi à {time}',
+      triggerVoided: 'annulé : la valeur déclenchante a été annulée',
       tab: 'Workflows intelligents',
       hint: 'Règles qui créent des tâches de suivi à partir des mesures et des évaluations. Les tâches apparaissent dans le secteur de la personne, avec le déclencheur dans la description, et se ferment dès que la documentation est faite.',
       enabled: 'Active',
@@ -715,6 +717,7 @@ export default defineMessages({
     },
     rules: {
       autoDone: 'automatico: controllo registrato alle {time}',
+      triggerVoided: 'non necessario: il valore che l’ha generato è stato annullato',
       tab: 'Workflow intelligenti',
       hint: 'Regole che generano compiti successivi da misurazioni e valutazioni. I compiti compaiono nel reparto della persona, con il fattore scatenante nella descrizione, e si chiudono appena la documentazione è fatta.',
       enabled: 'Attiva',
@@ -1033,6 +1036,7 @@ export default defineMessages({
     },
     rules: {
       autoDone: 'automatic: follow-up recorded {time}',
+      triggerVoided: 'not needed: the triggering value was voided',
       tab: 'Smart workflows',
       hint: 'Rules that create follow-up tasks from measurements and assessments. The tasks appear in the person’s unit with the trigger in the description and close as soon as the documentation is done.',
       enabled: 'Active',

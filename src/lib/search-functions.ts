@@ -27,6 +27,7 @@ const FUNCTIONS: Fn[] = [
   { label: 'docs.new', hint: 'nav.docs', href: '/docs', perm: 'docs.manage', keywords: 'weisung standard richtlinie' },
   { label: 'nav.medround', hint: 'common.palette.groupAction', href: '/tasks/medround', perm: 'resident.medication.administer', keywords: 'medikamente abgabe runde' },
   { label: 'visit.title', hint: 'common.palette.groupAction', href: '/tasks/visit', perm: 'resident.read', keywords: 'visite arzt arztvisite anordnung fragen visite médicale visita medica round doctor' },
+  { label: 'care.approvals.title', hint: 'nav.tasks', href: '/tasks/approvals', perm: 'resident.careplan.approve', keywords: 'freigabe freigeben pflegeplanung entwurf eingereicht validation valider planification approvazione approvare pianificazione approve approval care plan' },
   { label: 'common.quick.incident', hint: 'nav.quality', href: '/quality/new', perm: 'quality.report', keywords: 'sturz ereignis meldung cirs vorfall' },
   { label: 'common.palette.fn.newPost', hint: 'nav.team', href: '/team/new', perm: 'team.post', keywords: 'mitteilung post news' },
   { label: 'people.title', hint: 'nav.team', href: '/team/people', perm: 'team.read', keywords: 'personen verzeichnis mitarbeitende kontakt telefon dienst heute annuaire personnes elenco persone directory staff people' },

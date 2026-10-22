@@ -50,7 +50,7 @@ export function focusRules(settings: unknown): FocusRule[] {
 /** Sturz im Freitext (DE/FR/IT/EN) – bewusst ohne «Fall»/«gefallen» (mehrdeutig). */
 export const FALL_RE = /(^|[^\p{L}])(sturz|stürz|gestürzt|gestuerzt|sturzereignis|am boden (aufgefunden|liegend)|chute|chuté|tombée? (au sol|par terre)|caduta|caduto|caduta a terra|fell|fall event|found on the floor)/iu
 
-export type FocusVital = { id: string; at: Date; pain: number | null; abnormal: string[] }
+export type FocusVital = { id: string; at: Date; pain: number | null; abnormal: string[]; /** auffälliger Wert bereits als gesehen/bearbeitet markiert */ reviewed?: boolean }
 export type FocusNote = { id: string; at: Date; text: string; formKey: string | null; source: string; taskId: string | null }
 export type FocusTask = { id: string; title: string; status: string; completedAt: Date | null }
 
@@ -88,7 +88,7 @@ export function pendingFocus(input: { rules: FocusRule[]; vitals: FocusVital[]; 
       out.push({ id: 'pain:' + v.id, rule: 'pain', at: v.at, formKey: fk, prefill: fk ? { nrs: String(v.pain) } : {}, vars: { nrs: v.pain! } })
     }
     if (rule.key === 'vitalAbnormal') {
-      const v = input.vitals.filter((x) => x.at >= from && x.abnormal.some((k) => k !== 'pain')).sort((a, b) => +b.at - +a.at)[0]
+      const v = input.vitals.filter((x) => x.at >= from && !x.reviewed && x.abnormal.some((k) => k !== 'pain')).sort((a, b) => +b.at - +a.at)[0]
       if (!v) continue
       const fk = form(rule.formKey)
       if (fk ? formAfter(fk, v.at) : freeAfter(v.at)) continue

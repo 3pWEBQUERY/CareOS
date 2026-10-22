@@ -28,6 +28,7 @@ test('Fokus: auffälliger Vitalwert → Verlaufseintrag; freier Eintrag danach e
   assert.equal(s[0].rule, 'vitalAbnormal')
   assert.equal(s[0].formKey, null)
   assert.equal(s[0].vars.n, 2)
+  assert.equal(pendingFocus({ ...base, vitals: [{ ...v, reviewed: true }] }).length, 0)
   assert.equal(pendingFocus({ ...base, vitals: [v], notes: [{ id: 'n', at: h(0.5), text: 'Fieber, Arzt informiert', formKey: null, source: 'manual', taskId: null }] }).length, 0)
   // Quittierte Aufgaben zählen nicht als Beobachtung
   assert.equal(pendingFocus({ ...base, vitals: [v], notes: [{ id: 'n', at: h(0.5), text: 'Lagerung: erledigt.', formKey: null, source: 'task', taskId: 't' }] }).length, 1)

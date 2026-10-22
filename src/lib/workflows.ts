@@ -43,6 +43,17 @@ export async function applyWorkflowRules(orgId: string, unitIds: string[], now =
     for (const task of openRechecks) {
       const v = trig.find((x) => x.id === task.sourceId!.slice(RECHECK.length))
       if (!v) continue
+      // Auslösender Wert storniert (Fehlmessung, falsche Person): Nachkontrolle entfällt.
+      // Eine Korrektur, die weiterhin auffällig ist, löst über die Regel eine eigene Nachkontrolle aus.
+      if (v.voidedAt) {
+        const upd = await db.task.updateMany({ where: { id: task.id, status: { in: [...OPEN_STATUSES] } }, data: { status: 'skipped', completedAt: new Date(), note: t('tasks.rules.triggerVoided') } })
+        if (upd.count) {
+          out.closed++
+          await auditSystem({ orgId, action: 'task.skip', entityType: 'Task', entityId: task.id, before: { status: task.status }, after: { status: 'skipped' }, context: { residentId: task.residentId, auto: true, rule: 'vitalsRecheck', vitalId: v.id, reason: 'voided' } })
+          await emit({ orgId, type: 'task.completed', unitId: task.unitId, residentId: task.residentId, payload: { taskId: task.id, auto: true } })
+        }
+        continue
+      }
       const keys = abnormalKeys(v, mergeLimits(thresholds, v.residentId))
       const later = await db.vitalSign.findFirst({
         where: { residentId: v.residentId, at: { gt: v.at }, ...LIVE, OR: (keys.length ? keys : (['sys'] as VitalKey[])).map((k) => ({ [k]: { not: null } }) as Prisma.VitalSignWhereInput) },

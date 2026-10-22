@@ -120,14 +120,16 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
       const pts = week.map((v) => ({ v, x: readExtra(v.extra)[d.key] })).filter((p) => p.x != null)
       if (!pts.length) return null
       const vals = pts.map((p) => p.x)
-      const lo = d.lo ?? Math.min(...vals), hi = d.hi ?? Math.max(...vals)
+      // Band: Referenzbereich (fehlende Seite = Plausibilitätsgrenze), ohne Referenz die Spanne der Woche
+      const ref = d.lo != null || d.hi != null
+      const lo = ref ? d.lo ?? d.min : Math.min(...vals), hi = ref ? d.hi ?? d.max : Math.max(...vals)
       const last = pts[pts.length - 1].x
       return (
         <LineChart
           key={'x_' + d.key} title={d.label} unit={d.unit} dec={d.dec} lo={lo} hi={hi}
           points={pts.map((p, i) => ({ label: i > 0 && sameDay(pts[i - 1].v.at, p.v.at) ? '' : weekdayShort(p.v.at, locale), title: `${weekdayShort(p.v.at, locale)} ${hm(p.v.at)}: ${fc(d, p.x)} ${d.unit}`, v: p.x }))}
           current={fc(d, last)} alarm={!!customFlag(d, last)}
-          legend={{ band: d.lo != null || d.hi != null ? t('chart.vitals.reference', { range: `${fc(d, lo)}–${fc(d, hi)}` }) : t('chart.vitals.span', { range: `${fc(d, lo)}–${fc(d, hi)}` }) }}
+          legend={{ band: ref ? t('chart.vitals.reference', { range: d.lo != null && d.hi != null ? `${fc(d, lo)}–${fc(d, hi)}` : d.lo != null ? `≥ ${fc(d, lo)}` : `≤ ${fc(d, hi)}` }) : t('chart.vitals.span', { range: `${fc(d, lo)}–${fc(d, hi)}` }) }}
           ariaLabel={t('chart.vitals.chartAria', { title: d.label })}
           formatValue={(x) => fc(d, x)}
         />
@@ -198,7 +200,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
                     {v.reviewedAt && !v.voidedAt && <div><ReviewTag kind={v.reviewKind} label={t(v.reviewKind === 'action' ? 'home.review.action' : 'home.review.seen')} time={hm(v.reviewedAt)} by={names.get(v.reviewedById ?? '')?.initials ?? '?'} note={v.reviewNote} />{v.reviewKind === 'action' && v.reviewNote ? <span className="small"> {v.reviewNote}</span> : null}</div>}
                     {v.voidedAt && <div><VoidedNote tag={t('chart.void.voidedTag')} detail={t('chart.void.voidedBy', { by: names.get(v.voidedById ?? '')?.short ?? '–', at: rel(v.voidedAt) }) + (v.voidReason ? ' · ' + v.voidReason : '')} /></div>}
                   </td>
-                  {visitCol && <td><span className="row" style={{ gap: 12, flexWrap: 'nowrap', justifyContent: 'flex-end' }}>{visitCell(v)}{correctCell(v)}</span></td>}
+                  {visitCol && <td className="vt-act"><span>{visitCell(v)}{correctCell(v)}</span></td>}
                 </tr>
               ))}
             </tbody>

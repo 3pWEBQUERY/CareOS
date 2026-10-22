@@ -19,9 +19,11 @@ export type DayTask = {
 
 const CLOSED = ['done', 'partial', 'skipped']
 
-export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canManage, categories, now, me }: {
+export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canManage, categories, now, nowHm, me }: {
   residentId: string; who: string; tasks: DayTask[]; dateLabel: string; canComplete: boolean; canManage: boolean
   categories: { value: string; label: string }[]; now: string; me: string
+  /** «Jetzt»-Zeit in Stationszeit, vom Server formatiert */
+  nowHm?: string
 }) {
   const t = useT()
   const [, start] = useTransition()
@@ -39,7 +41,8 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
   const [doc, setDoc] = useState<DayTask | null>(null)
   const [adding, setAdding] = useState(false)
   const nowD = new Date(now)
-  const nowLabel = `${t('common.now')} ${hmLocal(nowD)}`
+  // Uhrzeit vom Server (Stationszeit): im Browser berechnet wiche sie bei anderer Zeitzone ab (Hydration-Fehler #418)
+  const nowLabel = `${t('common.now')} ${nowHm ?? hmLocal(nowD)}`
 
   // Doppelklick/Doppeltipp: solange die Aktion für diese Aufgabe läuft, wird kein zweiter Wechsel gebucht
   const inflight = useRef(new Set<string>())
@@ -121,7 +124,7 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
         <ActionForm action={createTask.bind(null, residentId)} success="chart.day.added" onDone={(r) => r.ok && setAdding(false)}>
           <div className="form-grid">
             <TextField label={t('chart.day.fTitle')} wrapClassName="span-all" name="title" required maxLength={200} />
-            <TimeField label={t('chart.day.fTime')} name="time" required defaultValue={defaultTime(nowD)} />
+            <TimeField label={t('chart.day.fTime')} name="time" required defaultValue={nowHm ? pad(Math.min(23, Number(nowHm.slice(0, 2)) + 1)) + ':00' : defaultTime(nowD)} />
             <NumberField label={t('chart.day.fDuration')} name="durationMin" defaultValue={10} min={1} max={480} step={1} unit={t('common.minutes')} />
             <Select label={t('chart.day.fCategory')} name="category" defaultValue={categories[0]?.value}>{categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</Select>
             <Select label={t('chart.day.fPriority')} name="priority" defaultValue="routine">

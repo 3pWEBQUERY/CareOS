@@ -3,6 +3,7 @@
 import { refresh } from 'next/cache'
 import type { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
+import { LIVE } from '@/lib/vitals'
 import { ForbiddenError, getCtx, residentInScope, type Ctx } from '@/lib/context'
 import { run, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
@@ -439,7 +440,7 @@ export async function aiAreaDraftAction(residentId: string, domain: string, curr
     const { ctx, r } = await load(residentId)
     if (!aiConfigured()) return fail('common.ai.unavailable')
     const [assessments, wounds, profile] = await Promise.all([
-      db.assessment.findMany({ where: { residentId: r.id }, orderBy: { at: 'desc' }, take: 12 }),
+      db.assessment.findMany({ where: { residentId: r.id, ...LIVE }, orderBy: { at: 'desc' }, take: 12 }),
       db.wound.findMany({ where: { residentId: r.id, status: { not: 'closed' } } }),
       db.nutritionProfile.findUnique({ where: { residentId: r.id } }),
     ])

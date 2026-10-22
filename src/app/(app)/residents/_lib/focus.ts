@@ -32,7 +32,7 @@ export async function focusFor(ctx: Ctx, r: { id: string }, opts: { only?: ('pai
     rules,
     now,
     forms: forms.map((f) => f.key!),
-    vitals: vitals.map((v) => ({ id: v.id, at: v.at, pain: v.pain, abnormal: abnormalKeys(v, limits) })),
+    vitals: vitals.map((v) => ({ id: v.id, at: v.at, pain: v.pain, abnormal: abnormalKeys(v, limits), reviewed: !!v.reviewedAt })),
     // Massgebend ist der Erfassungszeitpunkt (nachträglich erfasste Einträge erledigen den Vorschlag ebenfalls)
     notes: notes.map((n) => ({ id: n.id, at: n.createdAt > n.at ? n.createdAt : n.at, text: n.text, formKey: asStructuredForm(n.structured)?.formKey ?? null, source: n.source, taskId: n.taskId })),
     tasks: tasks.map((x) => ({ id: x.id, title: taskTitle(ctx.t, x), status: x.status, completedAt: x.completedAt })),

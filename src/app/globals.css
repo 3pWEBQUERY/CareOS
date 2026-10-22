@@ -2020,10 +2020,9 @@ img.pav { background: var(--sunken) }
 .bedside-snips { display: flex; flex-wrap: wrap; gap: 8px }
 .bedside .vform .field, .bedside textarea.field { min-height: 48px; font-size: 1.0625rem }
 .bedside .btn { min-height: 44px }
-@media (min-width: 900px) {
-  .bedside { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
-  .bedside-id, .bedside-wide { grid-column: 1 / -1 }
-}
+/* Zwei Spalten nur, wenn beide mindestens 30rem breit sind (bei grosser Schrift automatisch einspaltig) */
+.bedside { grid-template-columns: repeat(auto-fit, minmax(min(100%, 30rem), 1fr)) }
+.bedside-id, .bedside-wide { grid-column: 1 / -1 }
 .workspace:has(.bedside) { grid-template-columns: minmax(0, 1fr) }
 .workspace:has(.bedside) > aside, .workspace:has(.bedside) > .ws-list-toggle { display: none }
 .bedside-tasks { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
@@ -2031,7 +2030,8 @@ img.pav { background: var(--sunken) }
 .bedside-tasks > li:last-child { border-bottom: 0; min-height: 0 }
 .bedside-tasks .bt-time { flex: none; width: 3.25rem }
 .bedside-tasks .bt-main { flex: 1; min-width: 0 }
-.bedside-tasks .bt-title { font-weight: 500; overflow-wrap: anywhere }
+.bedside-tasks .bt-title { font-weight: 500; overflow-wrap: break-word; hyphens: auto }
+.bedside-tasks .bt-main .tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom }
 .bedside-tasks li.is-over .bt-time { color: var(--crit) }
 .bedside-tasks li.is-done .bt-title { color: var(--fg-3) }
 .bedside-tasks .btn.lg { flex: none; min-width: 8.5rem }
@@ -2055,3 +2055,36 @@ select.field::-ms-expand { display: none }
 
 /* ── Paket C: Eigene Vitalparameter (PRD §45) ─────────────────────────────────────────── */
 .cv-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 8px 10px; align-items: end; border: 1px solid var(--line); border-radius: var(--r); padding: 10px; margin: 0 }
+.vt td.vt-act > span { display: flex; flex-direction: column; align-items: flex-end; gap: 4px }
+
+/* ── Freigabeliste Pflegeplanung (/tasks/approvals) ── */
+@media (max-width: 720px) { .appr-row { flex-wrap: wrap } .appr-row > .btn { width: 100% } }
+
+/* ── Design-System-Seite (/admin/design, PRD §50–52): nur Anordnung der Beispiele, Komponenten bleiben unverändert ── */
+.ds-toc { list-style: none; margin: 0; padding: 0 }
+.ds-sec { scroll-margin-top: 8px; padding-top: 8px }
+.ds-note { margin: 0; max-width: 90ch }
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 34rem), 1fr)); gap: 12px; align-items: start }
+.ds-states { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 12.5rem), 1fr)); gap: 14px 12px; align-items: start }
+@media (max-width: 720px) { .ds-states { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.ds-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; hyphens: auto; overflow-wrap: anywhere }
+.ds-demo { min-width: 0 }
+.ds-tabs { padding: 0 }
+.ds-status .alert { min-width: 13rem }
+.ds-colors td { vertical-align: middle }
+.ds-group th { background: var(--surface-2) }
+.ds-tok { gap: 6px 10px }
+.ds-swatch { width: 28px; height: 20px; flex: none; border: 1px solid var(--line-strong); border-radius: var(--r-sm) }
+.ds-flat { border: 0; border-radius: 0 }
+.ds-space { align-items: center; padding: 6px 12px }
+.ds-space > .mono:first-child { width: 3.5rem; flex: none }
+.ds-space-bar { flex: none; height: 10px; background: var(--accent); border-radius: 2px }
+.ds-radius { flex: 1 1 9rem; display: flex; flex-direction: column; gap: 6px; align-items: flex-start }
+.ds-radius-box { width: 64px; height: 40px; border: 1.5px solid var(--accent); background: var(--accent-soft) }
+.ds-menu { max-width: 240px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--surface) }
+/* Fund über das Design System: .btn.danger:hover (crit-soft) galt auch für .btn.danger.solid → weisse Schrift auf hellem Rot (Kontrast < 2:1). */
+.btn.danger.solid:hover:not(:disabled) { background: color-mix(in srgb, var(--crit) 86%, var(--fg)); border-color: color-mix(in srgb, var(--crit) 86%, var(--fg)) }
+.bedside-snips .btn { white-space: normal; text-align: left; max-width: 100%; height: auto }
+.ds-colors th[scope="row"] { white-space: nowrap }
+@media (max-width: 720px) { .ds-toc { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px } }
+@media (max-width: 720px) { .ds-states:has(.seg) { grid-template-columns: minmax(0, 1fr) } }

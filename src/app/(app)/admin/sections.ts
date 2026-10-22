@@ -15,4 +15,5 @@ export const ADMIN_SECTIONS: { key: string; href: string; perm: Permission }[] =
   { key: 'privacy', href: '/admin/privacy', perm: 'admin.org' },
   { key: 'security', href: '/admin/security', perm: 'admin.audit' },
   { key: 'usage', href: '/admin/usage', perm: 'admin.org' },
+  { key: 'design', href: '/admin/design', perm: 'admin.config' },
 ]

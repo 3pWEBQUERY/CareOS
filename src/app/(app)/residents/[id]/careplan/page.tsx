@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
+import { LIVE } from '@/lib/vitals'
 import { getCtx, residentInScope } from '@/lib/context'
 import { aiConfigured } from '@/lib/env'
 import { addDays, dateKey, fmtDate, startOfDay } from '@/lib/time'
@@ -37,7 +38,7 @@ export default async function CarePlanPage({ params, searchParams }: { params: P
       orderBy: { version: 'desc' },
       include: { areas: { include: { interventions: { orderBy: { createdAt: 'asc' } } } } },
     }),
-    db.assessment.findMany({ where: { residentId: r.id }, orderBy: { at: 'desc' }, take: 60 }),
+    db.assessment.findMany({ where: { residentId: r.id, ...LIVE }, orderBy: { at: 'desc' }, take: 60 }),
     db.assessmentDefinition.findMany({ where: { orgId: ctx.org.id } }),
     db.wound.findMany({ where: { residentId: r.id, status: { not: 'closed' } }, select: { id: true, bodySite: true } }),
     db.auditLog.findMany({

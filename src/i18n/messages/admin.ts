@@ -45,6 +45,8 @@ export default defineMessages({
       securityHint: 'Alarme, Vorfälle, Betrieb',
       usage: 'Nutzung',
       usageHint: 'Aktive Personen, Abläufe, Rückmeldungen',
+      design: 'Design System',
+      designHint: 'Komponenten, Zustände, Statussprache, Tokens',
     },
     common: {
       actions: 'Aktionen',
@@ -698,6 +700,8 @@ export default defineMessages({
       securityHint: 'Alertes, incidents, exploitation',
       usage: 'Utilisation',
       usageHint: 'Personnes actives, déroulements, retours',
+      design: 'Design System',
+      designHint: 'Composants, états, langage des statuts, tokens',
     },
     common: {
       actions: 'Actions',
@@ -1351,6 +1355,8 @@ export default defineMessages({
       securityHint: 'Allarmi, incidenti, esercizio',
       usage: 'Utilizzo',
       usageHint: 'Persone attive, processi, riscontri',
+      design: 'Design System',
+      designHint: 'Componenti, stati, linguaggio degli stati, token',
     },
     common: {
       actions: 'Azioni',
@@ -2004,6 +2010,8 @@ export default defineMessages({
       securityHint: 'Alerts, incidents, operations',
       usage: 'Usage',
       usageHint: 'Active people, workflows, feedback',
+      design: 'Design system',
+      designHint: 'Components, states, status language, tokens',
     },
     common: {
       actions: 'Actions',
