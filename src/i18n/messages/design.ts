@@ -3,7 +3,7 @@ import { defineMessages } from '../core'
 /** Design-System-Seite (Admin → Design System, PRD §50–52): Komponenten, Zustände, Statussprache, Tokens. */
 const de = {
   title: 'Design System',
-  sub: 'Komponenten mit allen Zuständen, Statussprache und Tokens (PRD §50–52). Beispieldaten – es wird nichts gespeichert.',
+  sub: 'Komponenten mit allen Zuständen, Statussprache und Tokens. Beispieldaten – es wird nichts gespeichert.',
   toc: 'Abschnitte',
   theme: { label: 'Darstellung (Vorschau)', light: 'Hell', dark: 'Dunkel' },
   na: 'nicht vorgesehen',
@@ -287,7 +287,7 @@ const de = {
 
 const fr: typeof de = {
   title: 'Design System',
-  sub: 'Composants avec tous leurs états, langage des statuts et tokens (PRD §50–52). Données d’exemple – rien n’est enregistré.',
+  sub: 'Composants avec tous leurs états, langage des statuts et tokens. Données d’exemple – rien n’est enregistré.',
   toc: 'Sections',
   theme: { label: 'Affichage (aperçu)', light: 'Clair', dark: 'Sombre' },
   na: 'non prévu',
@@ -571,7 +571,7 @@ const fr: typeof de = {
 
 const it: typeof de = {
   title: 'Design System',
-  sub: 'Componenti con tutti gli stati, linguaggio degli stati e token (PRD §50–52). Dati di esempio – non viene salvato nulla.',
+  sub: 'Componenti con tutti gli stati, linguaggio degli stati e token. Dati di esempio – non viene salvato nulla.',
   toc: 'Sezioni',
   theme: { label: 'Visualizzazione (anteprima)', light: 'Chiaro', dark: 'Scuro' },
   na: 'non previsto',
@@ -855,7 +855,7 @@ const it: typeof de = {
 
 const en: typeof de = {
   title: 'Design system',
-  sub: 'Components in all states, status language and tokens (PRD §50–52). Sample data – nothing is saved.',
+  sub: 'Components in all states, status language and tokens. Sample data – nothing is saved.',
   toc: 'Sections',
   theme: { label: 'Appearance (preview)', light: 'Light', dark: 'Dark' },
   na: 'not applicable',

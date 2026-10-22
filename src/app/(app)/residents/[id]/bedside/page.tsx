@@ -43,7 +43,7 @@ export default async function BedsidePage({ params }: { params: Promise<{ id: st
     const cat = taskCategory(t, k.category)
     const done = ['done', 'partial', 'skipped'].includes(k.status)
     return {
-      id: k.id, time: hm(k.dueAt), title: taskTitle(t, k), category: cat.label, tone: cat.tone, over: !done && taskView(k, now) === 'over', now: !done && k.dueAt <= addMinutes(now, 30), done,
+      id: k.id, time: hm(k.dueAt), title: taskTitle(t, k), category: cat.label, tone: cat.tone, over: !done && ['over', 'escalated'].includes(taskView(k, now)) /* eskaliert = ebenfalls überfällig */, now: !done && k.dueAt <= addMinutes(now, 30), done,
       doneLabel: done ? `${t('chart.day.statusText.' + k.status)} ${k.completedAt ? hm(k.completedAt) : ''} · ${k.completedById ? names.get(k.completedById)?.short ?? '' : ''}` : null,
     }
   })

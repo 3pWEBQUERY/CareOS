@@ -4,7 +4,7 @@ export default defineMessages({
   de: {
     imported: { notify: '{n, plural, one {# Dienst wurde} other {# Dienste wurden}} in Ihren Dienstplan eingetragen' },
     title: 'Dienstplan',
-    label: 'CareOS Schedule',
+    label: 'Dienstplan',
     noUnit: 'Bitte oben einen Bereich wählen.',
     tabs: { mine: 'Meine Dienste', open: 'Offene Dienste', absences: 'Abwesenheiten', swaps: 'Schichttausch', team: 'Teamplan', coverage: 'Besetzung' },
     range: 'Zeitraum',
@@ -197,7 +197,7 @@ export default defineMessages({
   fr: {
     imported: { notify: '{n, plural, one {# service a été ajouté} other {# services ont été ajoutés}} à votre planning' },
     title: 'Planning',
-    label: 'CareOS Schedule',
+    label: 'Planning',
     noUnit: 'Veuillez choisir une unité en haut.',
     tabs: { mine: 'Mes services', open: 'Services ouverts', absences: 'Absences', swaps: 'Échange de service', team: 'Planning d’équipe', coverage: 'Effectifs' },
     range: 'Période',
@@ -390,7 +390,7 @@ export default defineMessages({
   it: {
     imported: { notify: '{n, plural, one {# turno è stato aggiunto} other {# turni sono stati aggiunti}} al suo piano turni' },
     title: 'Piano dei turni',
-    label: 'CareOS Schedule',
+    label: 'Turni',
     noUnit: 'Scegliere un reparto in alto.',
     tabs: { mine: 'I miei turni', open: 'Turni aperti', absences: 'Assenze', swaps: 'Scambio turni', team: 'Piano del team', coverage: 'Copertura' },
     range: 'Periodo',
@@ -583,7 +583,7 @@ export default defineMessages({
   en: {
     imported: { notify: '{n, plural, one {# shift was added} other {# shifts were added}} to your schedule' },
     title: 'Schedule',
-    label: 'CareOS Schedule',
+    label: 'Roster',
     noUnit: 'Please choose a unit at the top.',
     tabs: { mine: 'My shifts', open: 'Open shifts', absences: 'Absences', swaps: 'Shift swap', team: 'Team plan', coverage: 'Coverage' },
     range: 'Range',

@@ -4,7 +4,7 @@ import { defineMessages } from '../core'
 export default defineMessages({
   de: {
     title: 'Personen',
-    label: 'CareOS Team',
+    label: 'Team',
     sub: '{n, plural, one {# Person} other {# Personen}}',
     subOnDuty: '{n, plural, one {# Person} other {# Personen}} · {on} jetzt im Dienst',
     toDirectory: 'Personen',
@@ -94,7 +94,7 @@ export default defineMessages({
   },
   fr: {
     title: 'Personnes',
-    label: 'CareOS Team',
+    label: 'Équipe',
     sub: '{n, plural, one {# personne} other {# personnes}}',
     subOnDuty: '{n, plural, one {# personne} other {# personnes}} · {on} en service maintenant',
     toDirectory: 'Personnes',
@@ -184,7 +184,7 @@ export default defineMessages({
   },
   it: {
     title: 'Persone',
-    label: 'CareOS Team',
+    label: 'Team',
     sub: '{n, plural, one {# persona} other {# persone}}',
     subOnDuty: '{n, plural, one {# persona} other {# persone}} · {on} in servizio ora',
     toDirectory: 'Persone',
@@ -274,7 +274,7 @@ export default defineMessages({
   },
   en: {
     title: 'People',
-    label: 'CareOS Team',
+    label: 'Team',
     sub: '{n, plural, one {# person} other {# people}}',
     subOnDuty: '{n, plural, one {# person} other {# people}} · {on} on duty now',
     toDirectory: 'People',
