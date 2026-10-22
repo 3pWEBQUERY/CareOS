@@ -1378,6 +1378,15 @@ dialog.dlg[open]:has(.form-entry) > .dlg-body { min-height: 0; flex: 1 }
 .fb-field[data-over="before"] { box-shadow: 0 -3px 0 var(--accent) }
 .fb-field[data-over="after"] { box-shadow: 0 3px 0 var(--accent) }
 @media (hover: none) { .fb-grip { border-style: solid; cursor: default } }
+/* Insights: Referenzreihe (geplant/beantragt) mit ≥ 3:1 Kontrast und ΔE ≥ 18 zur Akzentreihe (dataviz-Validator, hell + dunkel) */
+.ins-card, .legend { --ins-ref: #86939A }
+:root[data-theme="dark"] .ins-card, :root[data-theme="dark"] .legend { --ins-ref: #5E6B73 }
+@media (prefers-color-scheme: dark) { :root[data-theme="system"] .ins-card, :root[data-theme="system"] .legend { --ins-ref: #5E6B73 } }
+.ins-card .barfill.muted { fill: var(--ins-ref) }
+.ins-card .legend i.bar.muted { background: var(--ins-ref) }
+.chart .ins-unit { font-family: var(--font-cond); font-size: 10px; letter-spacing: .04em }
+/* Abdeckungstabelle: Kollision mit .cov (Dienstplan-Chip) aufheben */
+table.cov { background: none; color: inherit; padding: 0; border-radius: 0; font-size: 12px; white-space: normal }
 /* QIA-END */
 /* Bewohnerübersicht Mobile: die Liste (mit Filter, Allergie/REA, offenen Massnahmen) ersetzt die breite Tabelle – keine Doppelanzeige */
 @media (max-width: 720px) {

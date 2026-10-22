@@ -29,7 +29,7 @@ function topRounded(x: number, y: number, w: number, h: number) {
 }
 
 /** Säulendiagramm, optional gruppiert (max. 2–3 Reihen) und mit Ziellinie. */
-export function Columns({ data, tones, ariaLabel, width = 340, height = 132, target, fmt = compact, labelLast = true, integer = false }: {
+export function Columns({ data, tones, ariaLabel, width = 340, height = 132, target, fmt = compact, labelLast = true, integer = false, yUnit, xPrefix = '' }: {
   data: ColDatum[]
   tones: Tone[]
   ariaLabel: string
@@ -40,8 +40,12 @@ export function Columns({ data, tones, ariaLabel, width = 340, height = 132, tar
   labelLast?: boolean
   /** Ganzzahlige Achse (Zählungen). */
   integer?: boolean
+  /** Einheit der y-Achse, erscheint über der Achse (z. B. «Anzahl», «Min.»). */
+  yUnit?: string
+  /** Vorsatz der x-Beschriftung, z. B. «KW». */
+  xPrefix?: string
 }) {
-  const W = width, H = height, L = 30, R = 8, T = 12, B = 20
+  const W = width, H = height, L = 30, R = 8, T = yUnit ? 20 : 12, B = 20
   const k = tones.length
   const max = Math.max(1, ...data.flatMap((d) => d.values), target ?? 0)
   const ticks = niceTicks(max, integer)
@@ -61,6 +65,7 @@ export function Columns({ data, tones, ariaLabel, width = 340, height = 132, tar
   const labelled = new Set(labelLast ? [n - 1, maxIdx] : [maxIdx])
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={ariaLabel}>
+      {yUnit && <text className="ax ins-unit" x={0} y={8}>{yUnit}</text>}
       {ticks.map((v) => (
         <g key={v}>
           <line className="grid" x1={L} x2={W - R} y1={y(v)} y2={y(v)} />
@@ -80,7 +85,7 @@ export function Columns({ data, tones, ariaLabel, width = 340, height = 132, tar
             {labelled.has(i) && first[i] > 0 && (
               <text className="barval" x={x0 + barW / 2} y={y(first[i]) - 3} textAnchor="middle">{fmt(first[i])}</text>
             )}
-            {i % every === (n - 1) % every && <text className="ax" x={L + i * band + band / 2} y={H - 6} textAnchor="middle">{d.label}</text>}
+            {i % every === (n - 1) % every && <text className="ax" x={L + i * band + band / 2} y={H - 6} textAnchor="middle">{xPrefix}{d.label}</text>}
           </g>
         )
       })}

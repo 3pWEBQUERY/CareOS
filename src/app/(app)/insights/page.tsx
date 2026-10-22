@@ -105,15 +105,15 @@ async function Care({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           title={t('insights.care.fallsTrend')}
           sub={t('insights.care.fallsTrendSub')}
           current={d.fallWeeks.reduce((s, w) => s + w.n, 0)}
-          table={{ head: [t('insights.week'), t('insights.from'), t('insights.care.falls')], rows: d.fallWeeks.map((w) => [`KW ${w.kw}`, fmtDate(w.start, locale), w.n]) }}
+          table={{ head: [t('insights.week'), t('insights.from'), t('insights.care.falls')], rows: d.fallWeeks.map((w) => [`${t('insights.ux.wk')} ${w.kw}`, fmtDate(w.start, locale), w.n]) }}
           csvName={csvName(ctx, 'stuerze')}
           labels={L}
         >
           <Columns
             tones={['accent']}
             ariaLabel={t('insights.care.fallsAria', { n: d.fallWeeks.reduce((s, w) => s + w.n, 0) })}
-            data={d.fallWeeks.map((w) => ({ label: String(w.kw), title: `KW ${w.kw} (${fmtDayMonth(w.start)}): ${w.n}`, values: [w.n] }))}
-            integer fmt={(v) => String(Math.round(v))}
+            data={d.fallWeeks.map((w) => ({ label: String(w.kw), title: `${t('insights.ux.wk')} ${w.kw} (${fmtDayMonth(w.start)}): ${w.n}`, values: [w.n] }))}
+            integer fmt={(v) => String(Math.round(v))} yUnit={t('insights.ux.count')} xPrefix={t('insights.ux.wk') + '\u2009'}
           />
         </ChartCard>
 
@@ -203,9 +203,9 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
   const L = labels(ctx)
   const plannedSum = d.care.reduce((s, c) => s + c.planned, 0)
   const docSum = d.care.reduce((s, c) => s + c.documented, 0)
-  const careLabel = (c: (typeof d.care)[number]) => (d.useWeeks ? 'KW' + ('kw' in c ? c.kw : '') : `${c.start.getDate()}.`)
+  const careLabel = (c: (typeof d.care)[number]) => (d.useWeeks ? t('insights.ux.wk') + ('kw' in c ? c.kw : '') : `${c.start.getDate()}.`)
   const careTitle = (c: (typeof d.care)[number]) =>
-    `${d.useWeeks ? 'KW ' + ('kw' in c ? c.kw : '') : weekdayShort(c.start, locale) + ' ' + fmtDayMonth(c.start)}: ${t('insights.management.planned')} ${c.planned} ${t('common.minutes')}, ${t('insights.management.documented')} ${c.documented} ${t('common.minutes')}`
+    `${d.useWeeks ? t('insights.ux.wk') + ' ' + ('kw' in c ? c.kw : '') : weekdayShort(c.start, locale) + ' ' + fmtDayMonth(c.start)}: ${t('insights.management.planned')} ${c.planned} ${t('common.minutes')}, ${t('insights.management.documented')} ${c.documented} ${t('common.minutes')}`
   const careData = d.care.map((c) => ({ label: careLabel(c), title: careTitle(c), values: [c.planned, c.documented] }))
   const trendTypes = d.trend.filter((x) => x.total > 0)
   const notePct = d.completed ? (d.withNote / d.completed) * 100 : null
@@ -227,11 +227,11 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           sub={t(d.useWeeks ? 'insights.management.careSubWeeks' : 'insights.management.careSubDays', { n: d.care.length })}
           current={<>{fmtNum(docSum / 60, 0, locale)} / {fmtNum(plannedSum / 60, 0, locale)} <span className="small muted">h</span></>}
           legend={[{ label: t('insights.management.planned'), kind: 'bar muted' }, { label: t('insights.management.documented'), kind: 'bar' }]}
-          table={{ head: [t(d.useWeeks ? 'insights.week' : 'insights.day'), t('insights.management.plannedMin'), t('insights.management.documentedMin'), t('insights.management.share')], rows: d.care.map((c) => [d.useWeeks ? `KW ${'kw' in c ? c.kw : ''}` : fmtDate(c.start, locale), c.planned, c.documented, c.planned ? Math.round((c.documented / c.planned) * 100) + ' %' : '–']) }}
+          table={{ head: [t(d.useWeeks ? 'insights.week' : 'insights.day'), t('insights.management.plannedMin'), t('insights.management.documentedMin'), t('insights.management.share')], rows: d.care.map((c) => [d.useWeeks ? `${t('insights.ux.wk')} ${'kw' in c ? c.kw : ''}` : fmtDate(c.start, locale), c.planned, c.documented, c.planned ? Math.round((c.documented / c.planned) * 100) + ' %' : '–']) }}
           csvName={csvName(ctx, 'pflegeaufwand')}
           labels={L}
         >
-          <Columns tones={['muted', 'accent']} width={400} height={140} ariaLabel={t('insights.management.careAria', { planned: plannedSum, documented: docSum })} data={careData} labelLast={false} />
+          <Columns tones={['muted', 'accent']} width={400} height={146} ariaLabel={t('insights.management.careAria', { planned: plannedSum, documented: docSum })} data={careData} labelLast={false} yUnit={t('common.minutes')} />
         </ChartCard>
               <section className="card" aria-labelledby="dq-h">
           <div className="card-head"><h2 id="dq-h">{t('insights.management.docTitle')}</h2><span className="small muted">{t('insights.periods.p' + scope.days)}</span></div>
@@ -266,11 +266,11 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
                 key={x.type.id}
                 title={x.type.name}
                 current={x.total}
-                table={{ head: [t('insights.week'), t('insights.count')], rows: x.weeks.map((w) => [`KW ${w.kw}`, w.n]) }}
+                table={{ head: [t('insights.week'), t('insights.count')], rows: x.weeks.map((w) => [`${t('insights.ux.wk')} ${w.kw}`, w.n]) }}
                 csvName={csvName(ctx, 'ereignisse-' + x.type.key)}
                 labels={L}
               >
-                <Columns tones={['accent']} height={96} ariaLabel={t('insights.management.trendAria', { type: x.type.name, n: x.total })} data={x.weeks.map((w) => ({ label: String(w.kw), title: `${x.type.name} KW ${w.kw}: ${w.n}`, values: [w.n] }))} integer fmt={(v) => String(Math.round(v))} />
+                <Columns tones={['accent']} height={96} ariaLabel={t('insights.management.trendAria', { type: x.type.name, n: x.total })} data={x.weeks.map((w) => ({ label: String(w.kw), title: `${x.type.name} ${t('insights.ux.wk')} ${w.kw}: ${w.n}`, values: [w.n] }))} integer fmt={(v) => String(Math.round(v))} yUnit={t('insights.ux.count')} xPrefix={t('insights.ux.wk') + '\u2009'} />
               </ChartCard>
             ))}
           </div>
@@ -342,7 +342,7 @@ async function Workforce({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           csvName={csvName(ctx, 'abwesenheiten')}
           labels={L}
         >
-          <Columns tones={['accent', 'muted']} width={400} height={140} integer ariaLabel={t('insights.workforce.absAria')} data={absData} fmt={(v) => String(Math.round(v))} labelLast={false} />
+          <Columns tones={['accent', 'muted']} width={400} height={146} integer ariaLabel={t('insights.workforce.absAria')} data={absData} fmt={(v) => String(Math.round(v))} labelLast={false} yUnit={t('insights.ux.people')} />
           {d.absenceKinds.length > 0 && (
             <div className="chips" aria-label={t('insights.workforce.byKind')}>
               {d.absenceKinds.map(([k, v]) => <span key={k} className="chip">{t('insights.absence.' + k)} <span className="mono">{v.approved + v.requested}</span> <span className="muted small">· {t('insights.workforce.personDays', { n: v.days })}</span></span>)}

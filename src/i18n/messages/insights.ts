@@ -2,6 +2,7 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
+    ux: {"count": "Anzahl", "people": "Personen", "wk": "KW"}, // ux-qia
     title: 'Kennzahlen',
     dashboards: 'Dashboards',
     allUnits: 'Alle Bereiche',
@@ -136,6 +137,7 @@ export default defineMessages({
     },
   },
   fr: {
+    ux: {"count": "Nombre", "people": "Personnes", "wk": "S."}, // ux-qia
     title: 'Indicateurs',
     dashboards: 'Tableaux de bord',
     allUnits: 'Toutes les unités',
@@ -270,6 +272,7 @@ export default defineMessages({
     },
   },
   it: {
+    ux: {"count": "Numero", "people": "Persone", "wk": "Sett."}, // ux-qia
     title: 'Indicatori',
     dashboards: 'Dashboard',
     allUnits: 'Tutti i reparti',
@@ -404,6 +407,7 @@ export default defineMessages({
     },
   },
   en: {
+    ux: {"count": "Count", "people": "People", "wk": "Wk"}, // ux-qia
     title: 'Insights',
     dashboards: 'Dashboards',
     allUnits: 'All units',
