@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { getCtx } from '@/lib/context'
+import { needsMfaSetup } from '@/lib/auth/mfa-gate'
 import { rateLimit } from '@/lib/rate-limit'
 import { applyOps } from '@/lib/offline/apply'
 import { syncSchema } from '@/lib/offline/validate'
@@ -21,6 +22,8 @@ export async function POST(req: NextRequest) {
   if (!body.success) return json({ error: 'invalid' }, 400)
   const ctx = await getCtx()
   if (ctx.user.id !== s.userId) return json({ error: 'unauthorized' }, 401)
+  // MFA-Pflicht der Organisation gilt wie bei Server Actions; Einträge bleiben auf dem Gerät vorgemerkt.
+  if (await needsMfaSetup(ctx)) return json({ error: 'mfa_setup_required' }, 403)
   const results = await applyOps(ctx, body.data.ops)
   return json({ results })
 }

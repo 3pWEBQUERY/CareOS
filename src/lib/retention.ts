@@ -236,5 +236,7 @@ export async function runCleanup(now = new Date()) {
   }
   // Protokoll der häufigen Jobs nach 30 Tagen kürzen; Retention-Läufe bleiben als Löschprotokoll erhalten.
   const jobRuns = (await db.jobRun.deleteMany({ where: { name: { in: ['escalations', 'cleanup'] }, startedAt: { lt: new Date(now.getTime() - 30 * 86400_000) } } })).count
-  return { challenges, sessions, jobRuns }
+  // Offline-Synchronisationsprotokoll (nur IDs, Status) nach 30 Tagen entfernen.
+  const offlineOps = (await db.offlineOp.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 30 * 86400_000) } } })).count
+  return { challenges, sessions, jobRuns, offlineOps }
 }

@@ -41,6 +41,13 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 ### Echtzeit
 - `emit({ orgId, type, unitId, residentId, actorId, userIds?, payload? })` aus `src/lib/events.ts`. Clients laden bei Events automatisch neu (`LiveUpdates`). Webhooks werden daraus zugestellt.
 - Benachrichtigungen: `notify({...})` aus `src/lib/notify.ts`, Prioritäten `critical | action | info | social`, `groupKey` bündelt.
+- Web Push (`src/lib/push.ts`, VAPID-Variablen): `notify()` sendet zusätzlich an Geräte der Personen, deren `User.pushPriorities` die Priorität enthält. Push-Inhalte enthalten **nie Gesundheitsdaten**: klinische Arten (alles ausser Dienstplan, Lernen, Dokumente, Team, Chat; immer bei Links auf `/residents`, `/quality`, `/tasks`, `/handover`) nur als allgemeiner Hinweis «Kritische Meldung in Wohngruppe 2» plus Link (`src/lib/push-shared.ts`). Neue Benachrichtigungsarten ohne klinischen Bezug dort eintragen.
+
+### Offline (PRD §39)
+- Service Worker `public/sw.js`: speichert `/offline` samt Assets vorab, Navigation ohne Verbindung → `/offline` (dann `/offline.html`). Angemeldete HTML-Seiten und API-Antworten werden nie gecacht. Nach Änderungen an `sw.js` `VERSION` erhöhen. In der Entwicklung nur mit `?sw=1` aktiv (`?sw=0` schaltet ab).
+- Outbox `src/lib/offline/` (Client): IndexedDB, AES-GCM mit nicht exportierbarem Geräteschlüssel, max. 24 h, beim Abmelden gelöscht (`SignOutForm`). In Client-Komponenten: `orQueue(() => serverAction(...), { kind, residentId, data }, { who })` – ohne Verbindung wird vorgemerkt (`isQueued(r)`).
+- Synchronisation `POST /api/offline/sync` → `src/lib/offline/apply.ts`: gleiche Prüfungen wie die Server Actions, idempotent über `OfflineOp.id`, dokumentierter Zeitpunkt bleibt erhalten, Einträge als «offline erfasst» markiert, Konflikte (`src/lib/offline/validate.ts`) gehen an das Panel «Synchronisation» in der Shell. Neue Offline-Arten: Typ in `types.ts`, Schema in `validate.ts`, Anwendung in `apply.ts`.
+- Lesestand für `/offline`: `<ShiftSnapshot />` (Home, Bewohnerliste) speichert verschlüsselt Personen (Zimmer, Allergien, REA, Risiken) und offene Aufgaben von heute, max. 12 h – keine Verlaufseinträge, keine Vitalwerte.
 
 ### Aufgaben
 - `src/lib/tasks.ts`: `ensureTasksForDay(unitId, day)` erzeugt Aufgaben aus Interventionen (Pflegeplanung), Medikamenten-Zeitpunkten und fälligen Assessments. Nach Änderungen an diesen Quellen `invalidateTaskGeneration(unitId)` aufrufen.

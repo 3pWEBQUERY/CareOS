@@ -20,8 +20,8 @@ Hell ist Standard, Dunkel ist optional (Topbar oder Profil → Darstellung).
 | **Lernen** | Kurse mit Text, Video, Dokument, Quiz, praktischem Nachweis; Zertifikate mit Ablauf, Compliance-Matrix |
 | **Qualität** | Ereignismeldung mit Smart Workflow (z. B. Sturz → Vitalwerte, Assessment, Arztinformation, Planung prüfen), Bewertung, Analyse, Abschluss |
 | **Kennzahlen** | Pflege, Management, Workforce – nur aggregiert, keine Leistungsüberwachung einzelner Personen |
-| **Admin** | Organisation, Terminologie (Bewohner/Patient/Klient), Branding, Standorte/Bereiche/Zimmer/Teams, Benutzer und Einladungen, Rollen-Matrix, klinische Konfiguration, Channels, Audit-Protokoll, API-Tokens, Webhooks, Datenexport |
-| **Profil** | Darstellung, Sprache, MFA (TOTP), Passkeys, Sitzungen und Geräte, Passwort, Zertifikate |
+| **Admin** | Organisation, Terminologie (Bewohner/Patient/Klient), Branding, Standorte/Bereiche/Zimmer/Teams, Benutzer und Einladungen, Rollen-Matrix, klinische Konfiguration (inkl. Eskalationsregeln und Bestätigungspflichten), Formulare für die Fokusdokumentation, Channels, Audit-Protokoll, API-Tokens, Webhooks, Datenschutz (Aufbewahrungsfristen, Anonymisierung, Löschprotokoll), Datenexport |
+| **Profil** | Darstellung, Sprache, MFA (TOTP), Passkeys, Push-Benachrichtigungen, Sitzungen und Geräte, Passwort, Zertifikate |
 
 Plattform: globale Suche (Ctrl/⌘ K), priorisierte und gebündelte Benachrichtigungen, Echtzeit-Aktualisierung (Server-Sent Events über Postgres LISTEN/NOTIFY), Mobile-Navigation mit zentraler Schnellaktion, Sprachen DE / FR / IT / EN, REST-API und HL7 FHIR R4 (lesend) – siehe [`docs/API.md`](docs/API.md).
 
@@ -95,8 +95,10 @@ Prüfen: `npm run typecheck`, `npm test`, `npm run build`.
 ## Bewusste Grenzen
 
 - **Medikation:** Interaktionsprüfung ist vorbereitet (Admin → Integrationen), aber ohne angebundene Datenquelle. Vor Produktivbetrieb ist eine klinische Validierung nötig (PRD §58).
-- **Offline:** Der Service Worker cached nur statische Dateien und zeigt bei fehlender Verbindung eine Offline-Seite. Gesundheitsdaten werden bewusst nicht im Browser gespeichert; eine Offline-Warteschlange für Eingaben ist nicht umgesetzt.
-- **Push:** Benachrichtigungen erscheinen in der App (Glocke, Echtzeit-Hinweise), Web-Push auf das Gerät ist noch nicht angebunden.
+- **Offline:** Verlaufseinträge, Vitalwerte, Aufgaben und Trinkmengen werden ohne Verbindung verschlüsselt auf dem Gerät vorgemerkt (max. 24 h) und danach synchronisiert; Konflikte erscheinen im Synchronisationsfenster. Der Lesestand der Schicht (`/offline`) enthält nur Name, Zimmer, Allergien, REA, Risiken und offene Aufgaben (max. 12 h). Weitere Bereiche (z. B. Medikation) sind bewusst nicht offline erfassbar. Geht eine Antwort nach erfolgreichem Speichern verloren, kann ein Verlaufseintrag doppelt ankommen (Aufgaben erkennen das).
+- **Push:** Web-Push braucht die VAPID-Variablen; Zustellung über die Push-Dienste von Google/Apple wurde nur mit einem lokalen Test-Server geprüft. Beim Abmelden wird das Gerät abgemeldet (geteilte Stationsgeräte).
+- **Löschkonzept:** Fristen sind Vorschläge – mit der Datenschutzberatung und den kantonalen Vorgaben festlegen (Admin → Datenschutz). Audit-Einträge vor einer Anonymisierung enthalten Namen bis zum Ablauf ihrer eigenen Frist.
+- **MFA-Pflicht:** gilt für Seiten und Server Actions; die REST-API ist über eigene Tokens abgesichert.
 - **Rate Limiting** läuft im Prozessspeicher – bei mehreren Instanzen auf Redis/Postgres umstellen.
 - **Datenstandort** ist pro Organisation hinterlegt, die physische Region bestimmt das Railway-Projekt.
 - **Integrationen** (Dienstplanung, Labor, Apotheke, HL7 v2) sind als Register vorbereitet; aktiv sind REST-API, Webhooks und FHIR (lesend).

@@ -187,6 +187,12 @@ export async function loadSnapshot(): Promise<ShiftSnapshot | null> {
   return unseal<ShiftSnapshot>(row.sealed)
 }
 
+/** Lesestand verwerfen (z. B. auf der Login-Seite: nächste Person soll ihn nicht sehen). Warteschlange bleibt, sie ist pro Person. */
+export async function clearSnapshot() {
+  if (!offlineSupported()) return
+  await tx('snapshot', 'readwrite', (s) => s.delete('shift')).catch(() => {})
+}
+
 /* ───────── Abmelden ───────── */
 
 /** Löscht alle Offline-Daten dieses Geräts inkl. Schlüssel (beim Abmelden). */

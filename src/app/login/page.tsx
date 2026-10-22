@@ -5,6 +5,7 @@ import { getSession } from '@/lib/auth/session'
 import { publicT } from '@/lib/i18n-server'
 import { env, ssoConfigured } from '@/lib/env'
 import { LoginForm } from './LoginForm'
+import { ClearSnapshot } from './ClearSnapshot'
 
 export const metadata: Metadata = { title: 'Anmelden' }
 
@@ -18,6 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const labels = Object.fromEntries(keys.map((k) => [k, t('auth.' + k)])) as Record<(typeof keys)[number], string>
   return (
     <main className="auth">
+      <ClearSnapshot />
       <div className="auth-card">
         <header>
           <Brand />
