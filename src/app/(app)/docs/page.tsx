@@ -6,6 +6,7 @@ import { aiConfigured } from '@/lib/env'
 import { CATEGORY_TONE, DOC_CATEGORIES, queryTerms, scoreDoc, snippet, userNames, validity, versionState } from '@/lib/docs'
 import { fmtDate } from '@/lib/time'
 import { AssistantAi, NewDocButton } from './DocsClient'
+import { TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -89,7 +90,7 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
             <form className="row" action="/docs" role="search">
               {cat && <input type="hidden" name="cat" value={cat} />}
               {f && <input type="hidden" name="f" value={f} />}
-              <input className="field grow" type="search" name="q" defaultValue={q} placeholder={t('docs.assistant.placeholder')} aria-label={t('docs.assistant.title')} style={{ minWidth: 220 }} />
+              <TextField type="search" name="q" defaultValue={q} placeholder={t('docs.assistant.placeholder')} aria-label={t('docs.assistant.title')} style={{ minWidth: 220 }} className="grow" />
               <button className="btn primary" type="submit">{t('common.search')}</button>
               {q && <Link className="btn ghost" href={href({ q: undefined })}>{t('docs.clear')}</Link>}
             </form>

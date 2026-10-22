@@ -5,7 +5,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActButton } from '../../team/_ui/ActButton'
 import { decideAbsenceAction, requestAbsenceAction, withdrawAbsenceAction } from '../actions'
 import { unitStaff } from '../lib'
-import { DateField } from '@/components/ui/DateField'
+import { DateField, Select, TextField } from '@/components/ui/fields'
 
 const dayCount = (a: { from: Date; to: Date }) => Math.round((a.to.getTime() - a.from.getTime()) / 864e5) + 1
 const tone = (s: string) => (s === 'approved' ? 'ok' : s === 'rejected' ? 'crit' : 'warn')
@@ -64,15 +64,12 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
           <div className="card-body">
             <ActionForm action={requestAbsenceAction} success="schedule.absence.saved">
               <div className="form-grid">
-                <label className="fld span-all">
-                  <span className="lbl">{t('schedule.cols.kind')}</span>
-                  <select name="kind" className="field" defaultValue="vacation">
+                <Select label={t('schedule.cols.kind')} wrapClassName="span-all" name="kind" defaultValue="vacation">
                     {(['vacation', 'training', 'compensation', 'other'] as const).map((k) => <option key={k} value={k}>{t('schedule.absence.kinds.' + k)}</option>)}
-                  </select>
-                </label>
-                <label className="fld"><span className="lbl">{t('schedule.absence.from')}</span><DateField name="from" min={today} required /></label>
-                <label className="fld"><span className="lbl">{t('schedule.absence.to')}</span><DateField name="to" min={today} required /></label>
-                <label className="fld span-all"><span className="lbl">{t('schedule.absence.note')} <span className="muted">({t('common.optional')})</span></span><input name="note" className="field" maxLength={500} /></label>
+                  </Select>
+                <DateField label={t('schedule.absence.from')} name="from" min={today} required />
+                <DateField label={t('schedule.absence.to')} name="to" min={today} required />
+                <TextField label={<>{t('schedule.absence.note')} <span className="muted">({t('common.optional')})</span></>} wrapClassName="span-all" name="note" maxLength={500} />
               </div>
               <div className="form-actions"><Submit>{t('schedule.absence.submit')}</Submit></div>
             </ActionForm>
@@ -85,9 +82,9 @@ export async function AbsencesView({ ctx, now, canManage }: { ctx: Ctx; now: Dat
             <ActionForm action={requestAbsenceAction} success="schedule.absence.sickSaved" confirm="schedule.absence.sickConfirm">
               <input type="hidden" name="kind" value="sick" />
               <div className="form-grid">
-                <label className="fld"><span className="lbl">{t('schedule.absence.from')}</span><DateField name="from" defaultValue={today} required /></label>
-                <label className="fld"><span className="lbl">{t('schedule.absence.toExpected')}</span><DateField name="to" defaultValue={today} required /></label>
-                <label className="fld span-all"><span className="lbl">{t('schedule.absence.note')} <span className="muted">({t('common.optional')})</span></span><input name="note" className="field" maxLength={500} /></label>
+                <DateField label={t('schedule.absence.from')} name="from" defaultValue={today} required />
+                <DateField label={t('schedule.absence.toExpected')} name="to" defaultValue={today} required />
+                <TextField label={<>{t('schedule.absence.note')} <span className="muted">({t('common.optional')})</span></>} wrapClassName="span-all" name="note" maxLength={500} />
               </div>
               <div className="form-actions"><Submit className="btn danger">{t('schedule.absence.reportSick')}</Submit></div>
             </ActionForm>

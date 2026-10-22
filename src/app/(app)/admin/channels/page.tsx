@@ -4,6 +4,7 @@ import { Forbidden, Empty } from '@/components/ui/Empty'
 import { ActBtn, FormDialog } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { deleteChannelAction, saveChannelAction } from './actions'
+import { Checkbox, Select, TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -27,29 +28,23 @@ export default async function ChannelsPage() {
     <>
       {c && <input type="hidden" name="id" value={c.id} />}
       <div className="form-grid">
-        <label className="fld"><span className="lbl">{t('admin.channels.name')}</span><input className="field" name="name" defaultValue={c?.name} required maxLength={80} /></label>
-        <label className="fld">
-          <span className="lbl">{t('admin.channels.kind')}</span>
-          <select className="field" name="kind" defaultValue={c?.kind ?? 'custom'}>{KINDS.map((k) => <option key={k} value={k}>{t('admin.channels.kinds.' + k)}</option>)}</select>
-        </label>
-        <label className="fld">
-          <span className="lbl">{t('admin.channels.scope')}</span>
-          <select className="field" name="scope" defaultValue={c?.unitId ? 'unit:' + c.unitId : c?.locationId ? 'loc:' + c.locationId : 'org'}>
+        <TextField label={t('admin.channels.name')} name="name" defaultValue={c?.name} required maxLength={80} />
+        <Select label={t('admin.channels.kind')} name="kind" defaultValue={c?.kind ?? 'custom'}>{KINDS.map((k) => <option key={k} value={k}>{t('admin.channels.kinds.' + k)}</option>)}</Select>
+        <Select label={t('admin.channels.scope')} name="scope" defaultValue={c?.unitId ? 'unit:' + c.unitId : c?.locationId ? 'loc:' + c.locationId : 'org'}>
             <option value="org">{t('admin.channels.scopeOrg')}</option>
             <optgroup label={t('admin.structure.locations')}>{locations.map((l) => <option key={l.id} value={'loc:' + l.id}>{l.name}</option>)}</optgroup>
             <optgroup label={t('admin.structure.unitsTitle')}>{units.map((u) => <option key={u.id} value={'unit:' + u.id}>{u.name}</option>)}</optgroup>
-          </select>
-        </label>
-        <label className="fld span-all"><span className="lbl">{t('admin.channels.description')}</span><input className="field" name="description" defaultValue={c?.description ?? ''} maxLength={300} /></label>
+          </Select>
+        <TextField label={t('admin.channels.description')} wrapClassName="span-all" name="description" defaultValue={c?.description ?? ''} maxLength={300} />
       </div>
       <fieldset>
         <legend className="lbl">{t('admin.channels.postRoles')}</legend>
         <p className="small muted" style={{ margin: '0 0 6px' }}>{t('admin.channels.postRolesHint')}</p>
         <div className="grid-3" style={{ gap: 2 }}>
-          {roles.map((r) => <label key={r.id} className="check"><input type="checkbox" name="postRoles" value={r.key} defaultChecked={c?.postRoles.includes(r.key)} /><span className="small">{r.name}</span></label>)}
+          {roles.map((r) => <Checkbox key={r.id} name="postRoles" value={r.key} defaultChecked={c?.postRoles.includes(r.key)} label={r.name} wrapClassName="small" />)}
         </div>
       </fieldset>
-      <label className="check"><input type="checkbox" name="archived" defaultChecked={c?.archived} /><span>{t('admin.channels.archived')}</span></label>
+      <Checkbox name="archived" defaultChecked={c?.archived} label={t('admin.channels.archived')} />
     </>
   )
   return (

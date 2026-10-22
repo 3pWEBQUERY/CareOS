@@ -15,6 +15,6 @@ export async function GET(req: NextRequest) {
     take: 60,
   })
   return NextResponse.json({
-    items: rows.map((n) => ({ id: n.id, priority: n.priority, title: n.title, body: n.body, href: n.href, read: !!n.readAt, at: fmtRel(n.createdAt, { today: t('common.today'), yesterday: t('common.yesterday') }) })),
+    items: rows.map((n) => ({ id: n.id, priority: n.priority, title: n.title, body: n.body, href: n.href, read: !!n.readAt, at: fmtRel(n.createdAt, { today: t('common.today'), yesterday: t('common.yesterday') }, undefined, s.user.locale as Locale) })),
   })
 }

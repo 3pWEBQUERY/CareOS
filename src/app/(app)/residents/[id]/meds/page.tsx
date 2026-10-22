@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
 import { getCtx, residentInScope } from '@/lib/context'
 import { usersWithPermission } from '@/lib/notify'
-import { addDays, addMinutes, dateKey, fmtDayMonth, hm, parseDateKey, sameDay, startOfDay } from '@/lib/time'
+import { addDays, addMinutes, dateKey, fmtDate, fmtDayMonth, hm, parseDateKey, sameDay, startOfDay } from '@/lib/time'
 import { cellsFor, EFFECT_CHECK_MIN, lowStock, medAppliesAt, prnStatus, scheduledMedsWhere, slotKey, slotsOf, stockDays, DEFAULT_SLOTS } from '@/lib/medication'
 import { MarTable } from '@/components/meds/MarTable'
 import { EffectChecks, PrnTable, type EffectDto, type PrnAdminDto, type PrnDto } from '@/components/meds/PrnTable'
@@ -50,7 +50,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
   for (const o of orders) userIds.add(o.createdById)
   const users = await db.user.findMany({ where: { id: { in: [...userIds] }, orgId: ctx.org.id }, select: { id: true, initials: true, firstName: true, lastName: true, active: true } })
   const ini = (uid: string | null | undefined) => (uid ? users.find((u) => u.id === uid)?.initials ?? '?' : null)
-  const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d) + ' ' + hm(d))
+  const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d, ctx.locale) + ' ' + hm(d))
 
   // Abgabeliste
   const slotTimes = slotsOf(scheduled)
@@ -96,9 +96,9 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
   const orderDtos: OrderDto[] = orders.map((m) => ({
     id: m.id, name: m.name, form: m.form, route: m.route, indication: m.indication, kind: m.kind, times: m.times, doses: m.doses,
     prnDose: m.prnDose, prnMaxPerDay: m.prnMaxPerDay, prnMinIntervalH: m.prnMinIntervalH,
-    start: fmtDayMonth(m.startDate) + m.startDate.getFullYear(), startKey: dateKey(m.startDate), end: m.endDate ? fmtDayMonth(m.endDate) + m.endDate.getFullYear() : null, endKey: m.endDate ? dateKey(m.endDate) : '',
+    start: fmtDate(m.startDate, ctx.locale), startKey: dateKey(m.startDate), end: m.endDate ? fmtDate(m.endDate, ctx.locale) : null, endKey: m.endDate ? dateKey(m.endDate) : '',
     prescriber: m.prescriber, requiresDoubleCheck: m.requiresDoubleCheck, stock: m.stock, stockUnit: m.stockUnit, stockDays: stockDays(m), low: lowStock(m), notes: m.notes,
-    active: m.active, stopped: m.stoppedAt ? fmtDayMonth(m.stoppedAt) + m.stoppedAt.getFullYear() + ' ' + hm(m.stoppedAt) : null, createdBy: ini(m.createdById) ?? '?',
+    active: m.active, stopped: m.stoppedAt ? fmtDate(m.stoppedAt, ctx.locale) + ' ' + hm(m.stoppedAt) : null, createdBy: ini(m.createdById) ?? '?',
   }))
   const low = orders.filter((m) => m.active && lowStock(m))
 
@@ -111,7 +111,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
   return (
     <>
       <div className="sec-head">
-        <h2 className="sec">{t('meds.mar.title', { date: fmtDayMonth(day) })}{!isToday && <span className="tag outline" style={{ marginLeft: 8, verticalAlign: 2 }}>{t(day < today ? 'meds.mar.past' : 'meds.mar.future')}</span>}</h2>
+        <h2 className="sec">{t('meds.mar.title', { date: fmtDayMonth(day, ctx.locale) })}{!isToday && <span className="tag outline" style={{ marginLeft: 8, verticalAlign: 2 }}>{t(day < today ? 'meds.mar.past' : 'meds.mar.future')}</span>}</h2>
         <div className="row">
           <nav className="seg seg-x" aria-label={t('meds.mar.dayNav')}>
             <Link href={dayHref(addDays(day, -1))} scroll={false}>‹ {t('meds.mar.prevDay')}</Link>

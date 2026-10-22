@@ -8,6 +8,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { acknowledgeAction, aiDecisionAction, aiSummaryAction, saveEntryAction, submitHandoverAction } from '@/app/(app)/handover/actions'
 import { isKey, useCall } from '@/components/meds/shared'
+import { Checkbox, Textarea } from '@/components/ui/fields'
 
 export type HoItem = { text: string; time?: string; tone?: 'c' | 'w' | ''; muted?: boolean }
 export type HoBlockDto = {
@@ -27,10 +28,25 @@ const COLS = ['happened', 'done', 'watch', 'open'] as const
  * der Server bestätigt im Hintergrund; bei Fehler kehrt die Anzeige zurück und ein Hinweis erscheint.
  * «Alle übernehmen» markiert über diesen Bereich alle Karten gleichzeitig.
  */
-const AckScope = createContext<{ all: boolean; markAll: () => void } | null>(null)
+const AckScope = createContext<{ all: boolean; markAll: () => void; extra: string[]; add: (residentId: string) => void } | null>(null)
 export function HandoverAckScope({ children }: { children: React.ReactNode }) {
   const [all, setAll] = useOptimistic(false)
-  return <AckScope.Provider value={{ all, markAll: () => setAll(true) }}>{children}</AckScope.Provider>
+  const [extra, addExtra] = useOptimistic<string[], string>([], (cur, id) => (cur.includes(id) ? cur : [...cur, id]))
+  return <AckScope.Provider value={{ all, markAll: () => setAll(true), extra, add: addExtra }}>{children}</AckScope.Provider>
+}
+
+/** Kennzahl «Übernommen n/N»: zählt optimistische Übernahmen sofort mit (Einzelkarte und «Alle übernehmen»). */
+export function HandoverAckMetric({ ackedIds, total }: { ackedIds: string[]; total: number }) {
+  const t = useT()
+  const scope = useContext(AckScope)
+  const n = scope?.all ? total : new Set([...ackedIds, ...(scope?.extra ?? [])]).size
+  return (
+    <div className="metric">
+      <span className="lbl">{t('tasks.handover.metrics.acked')}</span>
+      <span className="val">{n} <small>/ {total}</small></span>
+      <div className="bar"><i className={n === total && total ? 'ok' : ''} style={{ width: `${total ? Math.round((n / total) * 100) : 0}%` }} /></div>
+    </div>
+  )
 }
 function useAck() {
   const t = useT()
@@ -73,7 +89,7 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
           {canEdit && <button type="button" className="btn ghost" onClick={() => setEdit(true)}>{t(b.entry ? 'tasks.handover.entry.edit' : 'tasks.handover.entry.add')}</button>}
           {canAck && (
             <button type="button" className={'btn' + (important && !acked ? ' primary' : '')} disabled={acked || pending}
-              onClick={() => ack({ ...target, residentId: b.resident.id }, () => setMine(true))}>
+              onClick={() => ack({ ...target, residentId: b.resident.id }, () => { setMine(true); scope?.add(b.resident.id) })}>
               {acked ? '✓ ' + t('tasks.handover.acked', { time: b.acked ?? hmNow() }) : t(important ? 'tasks.handover.ackImportant' : 'tasks.handover.ack')}
             </button>
           )}
@@ -110,15 +126,9 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
             <input type="hidden" name="shiftCode" value={target.shiftCode} />
             <input type="hidden" name="date" value={target.date} />
             <input type="hidden" name="residentId" value={b.resident.id} />
-            <label className="fld">
-              <span className="lbl">{t('tasks.handover.cols.watch')}</span>
-              <textarea className="field" name="watch" rows={3} defaultValue={b.entry?.watch ?? ''} placeholder={t('tasks.handover.entry.watchPh')} />
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('tasks.handover.cols.open')}</span>
-              <textarea className="field" name="open" rows={3} defaultValue={b.entry?.open ?? ''} placeholder={t('tasks.handover.entry.openPh')} />
-            </label>
-            <label className="check"><input type="checkbox" name="important" defaultChecked={important} />{t('tasks.handover.entry.important')}</label>
+            <Textarea label={t('tasks.handover.cols.watch')} name="watch" rows={3} defaultValue={b.entry?.watch ?? ''} placeholder={t('tasks.handover.entry.watchPh')} />
+            <Textarea label={t('tasks.handover.cols.open')} name="open" rows={3} defaultValue={b.entry?.open ?? ''} placeholder={t('tasks.handover.entry.openPh')} />
+            <Checkbox name="important" defaultChecked={important} label={t('tasks.handover.entry.important')} />
             <p className="small muted" style={{ margin: 0 }}>{t('tasks.handover.entry.importantHint')}</p>
             <div className="form-actions">
               <span className="spacer" />
@@ -189,7 +199,7 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
       {ai && (
         <div className="ai-box" style={{ flexBasis: '100%' }} role="region" aria-label={t('tasks.handover.ai.button')}>
           <div className="ai-head"><span className="tag violet">{t('common.ai.badge')}</span><span>{t('common.ai.disclaimer')}</span></div>
-          <textarea className="ai-text field" rows={Math.min(16, 3 + ai.text.split('\n').length)} value={ai.text} onChange={(e) => setAi({ ...ai, text: e.target.value })} aria-label={t('tasks.handover.ai.button')} />
+          <Textarea rows={Math.min(16, 3 + ai.text.split('\n').length)} value={ai.text} onChange={(e) => setAi({ ...ai, text: e.target.value })} aria-label={t('tasks.handover.ai.button')} className="ai-text" />
           <div className="row">
             {canWrite && !submitted && <button type="button" className="btn sm primary" disabled={pending} onClick={() => decide(true)}>{t('tasks.handover.ai.accept')}</button>}
             <button type="button" className="btn sm" disabled={pending} onClick={() => decide(false)}>{t('common.ai.discard')}</button>
@@ -204,10 +214,7 @@ export function HandoverActions({ target, since, canAck, canAckAll, important, a
             <input type="hidden" name="shiftCode" value={target.shiftCode} />
             <input type="hidden" name="date" value={target.date} />
             <p className="small fg2" style={{ margin: 0 }}>{t('tasks.handover.submit.hint')}</p>
-            <label className="fld">
-              <span className="lbl">{t('tasks.handover.submit.note')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
-              <textarea className="field" name="note" rows={5} defaultValue={note ?? ''} placeholder={t('tasks.handover.submit.notePh')} />
-            </label>
+            <Textarea label={<>{t('tasks.handover.submit.note')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} name="note" rows={5} defaultValue={note ?? ''} placeholder={t('tasks.handover.submit.notePh')} />
             <div className="form-actions">
               <span className="spacer" />
               <button type="button" className="btn" onClick={() => setSubmit(false)}>{t('common.cancel')}</button>
@@ -241,7 +248,7 @@ function ImportantConfirm({ items, pending, onClose, onConfirm }: { items: HoImp
                 </div>
                 {i.watch && <div className="small"><span className="lbl">{t('tasks.handover.cols.watch')}</span><div className="ws-pre">{i.watch}</div></div>}
                 {i.open && <div className="small"><span className="lbl">{t('tasks.handover.cols.open')}</span><div className="ws-pre">{i.open}</div></div>}
-                <label className="check ho-check"><input type="checkbox" checked={checked.has(i.id)} onChange={() => toggle(i.id)} />{t('tasks.handover.confirm.check')}</label>
+                <Checkbox checked={checked.has(i.id)} onChange={() => toggle(i.id)} label={t('tasks.handover.confirm.check')} wrapClassName="ho-check" />
               </div>
             </div>
           </li>

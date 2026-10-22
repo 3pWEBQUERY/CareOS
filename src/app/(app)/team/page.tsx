@@ -5,8 +5,9 @@ import { Forbidden } from '@/components/ui/Empty'
 import { IconPlus } from '@/components/icons'
 import { addDays, dbDate, fmtDayMonth, fmtRel, fromDbDate, hm, startOfDay, weekdayShort } from '@/lib/time'
 import { canModerate, canPostTo, channelAudience, channelLabel, liveFilter, myRoleKeys, visibleChannels } from './lib'
-import { ackPostAction, archiveChannelAction } from './actions'
+import { archiveChannelAction } from './actions'
 import { ActButton } from './_ui/ActButton'
+import { AckCountScope, AckPending, AckQueueButton } from './_ui/AckCount'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -19,7 +20,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
   if (!ctx.can('team.read')) return <Forbidden text={t('common.notAllowed')} />
   const { ch: chParam } = await searchParams
   const now = new Date()
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
 
   const [channels, roleKeys] = await Promise.all([visibleChannels(ctx), myRoleKeys(user.id)])
   const active = channels.find((c) => c.id === chParam) ?? null
@@ -87,7 +88,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
             {p.pinned && <span className="tag outline">{t('team.feed.pinned')}</span>}
             {p.important && <span className="tag warn">{t('team.feed.important')}</span>}
             {p.requireAck && p.authorId !== user.id && (mine.has(p.id) ? <span className="tag ok">✓ {t('team.feed.acked')}</span> : <span className="tag crit">{t('team.feed.ackPending')}</span>)}
-            {p.eventAt && <span className="tag accent">{t('team.feed.event')} {fmtDayMonth(p.eventAt)} {hm(p.eventAt)}</span>}
+            {p.eventAt && <span className="tag accent">{t('team.feed.event')} {fmtDayMonth(p.eventAt, locale)} {hm(p.eventAt)}</span>}
             <span className="small muted mono" style={{ marginLeft: 'auto' }}>{rel(p.publishedAt)}</span>
           </div>
           <div style={{ fontWeight: 600 }}>{p.title}</div>
@@ -118,9 +119,10 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
       </div>
       <div className="scroll">
         <div className="tabpanel">
+          <AckCountScope>
           {toAck.length > 0 && (
             <section className="card warn team-ackq" aria-labelledby="ack" id="ack">
-              <div className="card-head"><h2 id="ack">{t('team.ux.ackQueue')}</h2><span className="pill warn">{toAck.length}</span></div>
+              <div className="card-head"><h2 id="ack">{t('team.ux.ackQueue')}</h2><AckPending total={toAck.length} className="pill" warnClass="warn" /></div>
               <ul className="list">
                 {toAck.map((p) => {
                   const inline = p.body.length <= INLINE_MAX && !p.fileIds.length
@@ -140,7 +142,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                       </div>
                       <div className="form-actions">
                         {inline ? (
-                          <ActButton action={ackPostAction.bind(null, p.id)} className="btn primary" optimistic={<>✓ {t('team.ack.confirmed')}</>} optimisticClassName="btn">✓ {t('team.ack.button')}</ActButton>
+                          <AckQueueButton postId={p.id} />
                         ) : (
                           <Link className="btn primary" href={`/team/post/${p.id}`}>{t('team.ux.readAndAck')}</Link>
                         )}
@@ -153,11 +155,12 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
             </section>
           )}
           <div className="metrics metrics-sm2">
-            <a className="metric" href={toAck.length ? '#ack' : '#feed'}><span className="lbl">{t('team.metrics.toAck')}</span><span className={'val' + (toAck.length ? ' warn' : '')}>{toAck.length}</span></a>
+            <a className="metric" href={toAck.length ? '#ack' : '#feed'}><span className="lbl">{t('team.metrics.toAck')}</span><AckPending total={toAck.length} className="val" warnClass="warn" /></a>
             {ctx.can('schedule.read') && <Link className="metric" href="/schedule?view=open"><span className="lbl">{t('team.metrics.openShifts')}</span><span className="val">{openShifts}</span></Link>}
             {ctx.can('learn.read') && <Link className="metric" href="/learn"><span className="lbl">{t('team.metrics.trainings')}</span><span className={'val' + (trainings ? ' warn' : '')}>{trainings}</span></Link>}
             {ctx.can('docs.read') && <Link className="metric" href="/docs"><span className="lbl">{t('team.metrics.newDocs')}</span><span className="val">{docs.length}</span></Link>}
           </div>
+          </AckCountScope>
 
           <nav className="chips team-chips" aria-label={t('team.channels')}>
             <Link className="chip" href="/team" aria-current={!active ? 'page' : undefined}>{t('team.all')}</Link>
@@ -188,7 +191,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                     {events.map((e) => (
                       <li key={e.id}>
                         <Link className="li" href={`/team/post/${e.id}`}>
-                          <span className="mono small" style={{ minWidth: 64 }}>{weekdayShort(e.eventAt!, locale)} {fmtDayMonth(e.eventAt!)}<br /><span className="muted">{hm(e.eventAt!)}</span></span>
+                          <span className="mono small" style={{ minWidth: 64 }}>{weekdayShort(e.eventAt!, locale)} {fmtDayMonth(e.eventAt!, locale)}<br /><span className="muted">{hm(e.eventAt!)}</span></span>
                           <span className="grow"><span>{e.title}</span>{e.eventPlace && <span className="small muted" style={{ display: 'block', fontWeight: 400 }}>{e.eventPlace}</span>}</span>
                         </Link>
                       </li>
@@ -206,7 +209,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                       <div className="chips">
                         {nextShifts.map((s) => {
                           const d = fromDbDate(s.date)
-                          return <span key={s.id} className="chip"><span className={'sh ' + s.shiftType.code} style={{ marginRight: 6 }}>{s.shiftType.code}</span>{weekdayShort(d, locale)} {fmtDayMonth(d)}</span>
+                          return <span key={s.id} className="chip"><span className={'sh ' + s.shiftType.code} style={{ marginRight: 6 }}>{s.shiftType.code}</span>{weekdayShort(d, locale)} {fmtDayMonth(d, locale)}</span>
                         })}
                       </div>
                     ) : <span className="small muted">{t('team.side.nextShiftsNone')}</span>}

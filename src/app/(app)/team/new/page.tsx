@@ -5,8 +5,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { canModerate, canPostTo, myRoleKeys, visibleChannels } from '../lib'
 import { publishPostAction } from '../actions'
 import { ackSettings } from '@/lib/acks'
-import { DateField } from '@/components/ui/DateField'
-import { TimeField } from '@/components/ui/TimeField'
+import { Checkbox, DateField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -40,30 +39,20 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
           ) : (
             <ActionForm action={publishPostAction} success="team.form.published" reset={false}>
               <div className="form-grid">
-                <label className="fld">
-                  <span className="lbl">{t('team.form.channel')}</span>
-                  <select name="channelId" className="field" defaultValue={preset} required>
+                <Select label={t('team.form.channel')} name="channelId" defaultValue={preset} required>
                     <option value="" disabled>{t('team.form.channelPick')}</option>
                     {postable.map((c) => <option key={c.id} value={c.id}>{c.name} · {t('team.kinds.' + c.kind)}</option>)}
-                  </select>
-                </label>
-                <label className="fld span-all">
-                  <span className="lbl">{t('team.form.fTitle')}</span>
-                  <input name="title" className="field" maxLength={200} required autoComplete="off" />
-                </label>
-                <label className="fld span-all">
-                  <span className="lbl">{t('team.form.body')}</span>
-                  <textarea name="body" className="field" rows={8} required />
-                  <span className="hint">{t('team.form.bodyHint')}</span>
-                </label>
+                  </Select>
+                <TextField label={t('team.form.fTitle')} wrapClassName="span-all" name="title" maxLength={200} required autoComplete="off" />
+                <Textarea label={t('team.form.body')} hint={t('team.form.bodyHint')} wrapClassName="span-all" name="body" rows={8} required />
               </div>
 
               <fieldset>
                 <legend className="lbl">{t('team.form.options')}</legend>
                 <div className="row" style={{ gap: 18 }}>
-                  <label className="check"><input type="checkbox" name="important" />{t('team.form.important')}</label>
-                  <label className="check"><input type="checkbox" name="requireAck" defaultChecked={ackSettings(ctx.org.settings).postsRequireAckDefault} />{t('team.form.requireAck')}</label>
-                  {mayPin && <label className="check"><input type="checkbox" name="pinned" />{t('team.form.pin')}</label>}
+                  <Checkbox name="important" label={t('team.form.important')} />
+                  <Checkbox name="requireAck" defaultChecked={ackSettings(ctx.org.settings).postsRequireAckDefault} label={t('team.form.requireAck')} />
+                  {mayPin && <Checkbox name="pinned" label={t('team.form.pin')} />}
                 </div>
                 <p className="small muted" style={{ margin: '6px 0 0' }}>{t('team.form.ackHint')}</p>
               </fieldset>
@@ -71,18 +60,14 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
               <fieldset>
                 <legend className="lbl">{t('team.form.event')}</legend>
                 <div className="form-grid">
-                  <label className="fld"><span className="lbl">{t('team.form.eventDate')}</span><DateField name="eventDate" /></label>
-                  <label className="fld"><span className="lbl">{t('team.form.eventTime')}</span><TimeField name="eventTime" /></label>
-                  <label className="fld"><span className="lbl">{t('team.form.eventPlace')}</span><input name="eventPlace" className="field" maxLength={200} /></label>
+                  <DateField label={t('team.form.eventDate')} name="eventDate" />
+                  <TimeField label={t('team.form.eventTime')} name="eventTime" />
+                  <TextField label={t('team.form.eventPlace')} name="eventPlace" maxLength={200} />
                 </div>
               </fieldset>
 
               <div className="form-grid">
-                <label className="fld">
-                  <span className="lbl">{t('team.form.expiresAt')}</span>
-                  <DateField name="expiresAt" />
-                  <span className="hint">{t('team.form.expiresHint')}</span>
-                </label>
+                <DateField label={t('team.form.expiresAt')} hint={t('team.form.expiresHint')} name="expiresAt" />
                 <label className="fld">
                   <span className="lbl">{t('team.form.attachments')}</span>
                   <input type="file" name="files" multiple className="field" />

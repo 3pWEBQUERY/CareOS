@@ -10,6 +10,7 @@ import {
   addTeamMemberAction, deleteLocationAction, deleteRoomAction, deleteTeamAction, deleteUnitAction,
   removeTeamMemberAction, saveLocationAction, saveRoomAction, saveTeamAction, saveUnitAction,
 } from './actions'
+import { NumberField, Select, TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -41,37 +42,28 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
   const locationFields = (l?: (typeof locations)[number]) => (
     <div className="form-grid">
       {l && <input type="hidden" name="id" value={l.id} />}
-      <label className="fld span-all"><span className="lbl">{t('admin.structure.name')}</span><input className="field" name="name" defaultValue={l?.name} required maxLength={120} autoFocus /></label>
-      <label className="fld span-all"><span className="lbl">{t('admin.structure.address')}</span><input className="field" name="address" defaultValue={l?.address ?? ''} maxLength={200} /></label>
-      <label className="fld"><span className="lbl">{t('admin.structure.phone')}</span><input className="field" name="phone" type="tel" defaultValue={l?.phone ?? ''} maxLength={40} /></label>
+      <TextField label={t('admin.structure.name')} wrapClassName="span-all" name="name" defaultValue={l?.name} required maxLength={120} autoFocus />
+      <TextField label={t('admin.structure.address')} wrapClassName="span-all" name="address" defaultValue={l?.address ?? ''} maxLength={200} />
+      <TextField label={t('admin.structure.phone')} name="phone" type="tel" defaultValue={l?.phone ?? ''} maxLength={40} />
     </div>
   )
   const unitFields = (u?: (typeof units)[number]) => (
     <div className="form-grid">
       {u && <input type="hidden" name="id" value={u.id} />}
-      <label className="fld"><span className="lbl">{t('admin.structure.name')}</span><input className="field" name="name" defaultValue={u?.name} required maxLength={120} autoFocus /></label>
-      <label className="fld"><span className="lbl">{t('admin.structure.shortName')}</span><input className="field" name="shortName" defaultValue={u?.shortName ?? ''} maxLength={12} /></label>
-      <label className="fld">
-        <span className="lbl">{t('admin.structure.kind')}</span>
-        <select className="field" name="kind" defaultValue={u?.kind ?? 'ward'}>{UNIT_KINDS.map((k) => <option key={k} value={k}>{t('admin.structure.kinds.' + k)}</option>)}</select>
-      </label>
-      <label className="fld">
-        <span className="lbl">{t('admin.structure.location')}</span>
-        <select className="field" name="locationId" defaultValue={u?.locationId ?? locations[0]?.id} required>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</select>
-      </label>
+      <TextField label={t('admin.structure.name')} name="name" defaultValue={u?.name} required maxLength={120} autoFocus />
+      <TextField label={t('admin.structure.shortName')} name="shortName" defaultValue={u?.shortName ?? ''} maxLength={12} />
+      <Select label={t('admin.structure.kind')} name="kind" defaultValue={u?.kind ?? 'ward'}>{UNIT_KINDS.map((k) => <option key={k} value={k}>{t('admin.structure.kinds.' + k)}</option>)}</Select>
+      <Select label={t('admin.structure.location')} name="locationId" defaultValue={u?.locationId ?? locations[0]?.id} required>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
     </div>
   )
   const teamFields = (tm?: (typeof teams)[number]) => (
     <div className="form-grid">
       {tm && <input type="hidden" name="id" value={tm.id} />}
-      <label className="fld"><span className="lbl">{t('admin.structure.name')}</span><input className="field" name="name" defaultValue={tm?.name} required maxLength={120} autoFocus /></label>
-      <label className="fld">
-        <span className="lbl">{t('admin.structure.unit')}</span>
-        <select className="field" name="unitId" defaultValue={tm?.unitId ?? ''}>
+      <TextField label={t('admin.structure.name')} name="name" defaultValue={tm?.name} required maxLength={120} autoFocus />
+      <Select label={t('admin.structure.unit')} name="unitId" defaultValue={tm?.unitId ?? ''}>
           <option value="">{t('admin.structure.noUnit')}</option>
           {units.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.location.name}</option>)}
-        </select>
-      </label>
+        </Select>
     </div>
   )
 
@@ -149,8 +141,8 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                 <div className="card-body">
                   <ActionForm action={saveRoomAction} success="common.saved" className="row">
                     <input type="hidden" name="unitId" value={unit.id} />
-                    <label className="fld" style={{ width: 120 }}><span className="lbl">{t('admin.structure.roomNo')}</span><input className="field mono" name="number" required maxLength={12} /></label>
-                    <label className="fld" style={{ width: 90 }}><span className="lbl">{t('admin.structure.beds')}</span><input className="field mono" name="beds" type="number" min={1} max={8} defaultValue={1} /></label>
+                    <TextField label={t('admin.structure.roomNo')} wrapStyle={{ width: 120 }} name="number" required maxLength={12} className="mono" />
+                    <NumberField label={t('admin.structure.beds')} wrapStyle={{ width: 90 }} name="beds" min={1} max={8} defaultValue={1} step={1} />
                     <div style={{ alignSelf: 'flex-end' }}><Submit className="btn">{t('admin.structure.addRoom')}</Submit></div>
                   </ActionForm>
                 </div>
@@ -168,12 +160,9 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                               <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={t('admin.structure.roomTitle', { n: r.number })} action={saveRoomAction} submit={save} success="common.saved">
                                 <input type="hidden" name="id" value={r.id} />
                                 <div className="form-grid">
-                                  <label className="fld"><span className="lbl">{t('admin.structure.roomNo')}</span><input className="field mono" name="number" defaultValue={r.number} required maxLength={12} /></label>
-                                  <label className="fld"><span className="lbl">{t('admin.structure.beds')}</span><input className="field mono" name="beds" type="number" min={1} max={8} defaultValue={r.beds} /></label>
-                                  <label className="fld">
-                                    <span className="lbl">{t('admin.structure.unit')}</span>
-                                    <select className="field" name="unitId" defaultValue={r.unitId}>{units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
-                                  </label>
+                                  <TextField label={t('admin.structure.roomNo')} name="number" defaultValue={r.number} required maxLength={12} className="mono" />
+                                  <NumberField label={t('admin.structure.beds')} name="beds" min={1} max={8} defaultValue={r.beds} step={1} />
+                                  <Select label={t('admin.structure.unit')} name="unitId" defaultValue={r.unitId}>{units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</Select>
                                 </div>
                               </FormDialog>
                               {r.residents.length === 0 && <ActBtn action={deleteRoomAction.bind(null, r.id)} className="btn sm ghost" confirm="admin.common.deleteConfirm" context={<span>{t('admin.structure.roomNo')} <strong className="mono">{r.number}</strong></span>}>{del}</ActBtn>}
@@ -219,10 +208,10 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
                         </div>
                         <ActionForm action={addTeamMemberAction} success="common.saved" className="row">
                           <input type="hidden" name="teamId" value={tm.id} />
-                          <select className="field grow" name="userId" aria-label={t('admin.structure.addMember')} required defaultValue="" style={{ minWidth: 160 }}>
+                          <Select name="userId" aria-label={t('admin.structure.addMember')} required defaultValue="" style={{ minWidth: 160 }} className="grow">
                             <option value="" disabled>{t('admin.structure.pickPerson')}</option>
                             {users.filter((u) => !memberIds.has(u.id)).map((u) => <option key={u.id} value={u.id}>{u.lastName} {u.firstName}</option>)}
-                          </select>
+                          </Select>
                           <Submit className="btn sm">{t('admin.structure.addMember')}</Submit>
                         </ActionForm>
                       </div>

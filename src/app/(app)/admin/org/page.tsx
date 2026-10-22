@@ -11,6 +11,8 @@ import { ActBtn } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { BrandColorField } from './BrandColor'
 import { removeLogoAction, resetBrandColorAction, updateBrandingAction, updateOrgAction, uploadLogoAction } from './actions'
+import { Checkbox, Combobox, FileField, Select, Switch, TextField } from '@/components/ui/fields'
+import { MAX_UPLOAD_BYTES } from '@/lib/upload-limits'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -33,43 +35,19 @@ export default async function OrgPage() {
             <div className="card-body">
               <ActionForm action={updateOrgAction} reset={false} success="common.saved">
                 <div className="form-grid">
-                  <label className="fld span-all">
-                    <span className="lbl">{t('admin.org.name')}</span>
-                    <input className="field" name="name" defaultValue={org.name} required maxLength={120} />
-                  </label>
-                  <label className="fld">
-                    <span className="lbl">{t('admin.org.terminology')}</span>
-                    <select className="field" name="terminology" defaultValue={org.terminology}>
+                  <TextField label={t('admin.org.name')} wrapClassName="span-all" name="name" defaultValue={org.name} required maxLength={120} />
+                  <Select label={t('admin.org.terminology')} hint={t('admin.org.terminologyHint')} name="terminology" defaultValue={org.terminology}>
                       {(['resident', 'patient', 'client'] as const).map((k) => <option key={k} value={k}>{t('admin.org.terms.' + k)}</option>)}
-                    </select>
-                    <span className="hint">{t('admin.org.terminologyHint')}</span>
-                  </label>
-                  <label className="fld">
-                    <span className="lbl">{t('admin.org.defaultLocale')}</span>
-                    <select className="field" name="defaultLocale" defaultValue={org.defaultLocale}>
+                    </Select>
+                  <Select label={t('admin.org.defaultLocale')} name="defaultLocale" defaultValue={org.defaultLocale}>
                       {LOCALES.map((l) => <option key={l} value={l}>{LOCALE_NAMES[l]}</option>)}
-                    </select>
-                  </label>
-                  <label className="fld">
-                    <span className="lbl">{t('admin.org.timezone')}</span>
-                    <input className="field" name="timezone" defaultValue={org.timezone} list="tz-list" required />
-                    <datalist id="tz-list">{zones.map((z) => <option key={z} value={z} />)}</datalist>
-                  </label>
-                  <label className="fld">
-                    <span className="lbl">{t('admin.org.dataRegion')}</span>
-                    <select className="field" name="dataRegion" defaultValue={org.dataRegion}>
+                    </Select>
+                  <Combobox label={t('admin.org.timezone')} name="timezone" defaultValue={org.timezone} required options={zones.map((z) => ({ value: z, label: z }))} />
+                  <Select label={t('admin.org.dataRegion')} hint={t('admin.org.dataRegionHint')} name="dataRegion" defaultValue={org.dataRegion}>
                       {DATA_REGIONS.map((r) => <option key={r} value={r}>{t('admin.org.regions.' + r.replace('-', '_'))}</option>)}
-                    </select>
-                    <span className="hint">{t('admin.org.dataRegionHint')}</span>
-                  </label>
-                  <label className="check span-all">
-                    <input type="checkbox" name="requireMfaForAdmins" defaultChecked={!!settings.requireMfaForAdmins} />
-                    <span>{t('admin.org.requireMfa')}</span>
-                  </label>
-                  <label className="check span-all">
-                    <input type="checkbox" name="requireMfaForAll" defaultChecked={!!settings.requireMfaForAll} />
-                    <span>{t('admin.org.requireMfaAll')}</span>
-                  </label>
+                    </Select>
+                  <Switch name="requireMfaForAdmins" defaultChecked={!!settings.requireMfaForAdmins} label={t('admin.org.requireMfa')} wrapClassName="span-all" />
+                  <Switch name="requireMfaForAll" defaultChecked={!!settings.requireMfaForAll} label={t('admin.org.requireMfaAll')} wrapClassName="span-all" />
                   <p className="small muted span-all" style={{ margin: 0 }}>{t('admin.org.requireMfaHint')}</p>
                 </div>
                 <div className="form-actions"><Submit>{t('common.save')}</Submit></div>
@@ -82,11 +60,7 @@ export default async function OrgPage() {
             <div className="card-body stack">
               <ActionForm action={updateBrandingAction} reset={false} success="common.saved">
                 <div className="form-grid">
-                  <label className="fld">
-                    <span className="lbl">{t('admin.org.brandName')}</span>
-                    <input className="field" name="brandName" defaultValue={org.brandName ?? ''} maxLength={40} placeholder="CareOS" />
-                    <span className="hint">{t('admin.org.brandNameHint')}</span>
-                  </label>
+                  <TextField label={t('admin.org.brandName')} hint={t('admin.org.brandNameHint')} name="brandName" defaultValue={org.brandName ?? ''} maxLength={40} placeholder="CareOS" />
                   <BrandColorField initial={org.brandColor} />
                 </div>
                 <div className="form-actions">
@@ -105,7 +79,7 @@ export default async function OrgPage() {
                 )}
                 {storageConfigured() ? (
                   <ActionForm action={uploadLogoAction} success="admin.org.logoSaved" className="row">
-                    <input className="field" type="file" name="logo" accept="image/png,image/jpeg,image/webp" style={{ maxWidth: 320 }} aria-label={t('admin.org.logo')} />
+                    <FileField name="logo" accept="image/png,image/jpeg,image/webp" maxSize={MAX_UPLOAD_BYTES} aria-label={t('admin.org.logo')} wrapStyle={{ flex: '1 1 320px', maxWidth: 420 }} />
                     <Submit className="btn">{t('admin.org.uploadLogo')}</Submit>
                   </ActionForm>
                 ) : <p className="small muted" style={{ margin: 0 }}>{t('admin.org.uploadErrors.storage_not_configured')}</p>}

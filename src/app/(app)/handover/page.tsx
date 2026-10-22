@@ -6,7 +6,7 @@ import { lastShiftEnd, shiftTypes } from '@/lib/shift'
 import { shiftName } from '@/lib/shift-name'
 import { addDays, dateKey, dbDate, fmtDayMonth, fmtRel, hm, parseDateKey, sameDay, shiftBounds, startOfDay } from '@/lib/time'
 import { Empty, Forbidden } from '@/components/ui/Empty'
-import { HandoverAckScope, HandoverActions, HandoverCard, type HoBlockDto } from '@/components/handover/HandoverUi'
+import { HandoverAckMetric, HandoverAckScope, HandoverActions, HandoverCard, type HoBlockDto } from '@/components/handover/HandoverUi'
 import { collectHandover, runningAndPrevious } from './collect'
 import { ackSettings } from '@/lib/acks'
 
@@ -76,7 +76,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
   const importantOpen = important.length
   const allAcked = myAcks.has('') && ackN === dto.length
   const aiAvailable = aiConfigured() && ctx.can('ai.use')
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
   const href = (p: Record<string, string | null>) => {
     const q = new URLSearchParams()
     const v: Record<string, string | null> = { s: sp.s ?? null, d: sp.d ?? null, since: since ? '1' : null, ...p }
@@ -94,7 +94,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
           <span className="lbl">{t('tasks.handover.label')} · {unit.name}</span>
           <h1>{shiftName(t, sel.def)} {sel.def.start}–{sel.def.end}</h1>
           <p className="sub">
-            {sameDay(shiftDay, now) ? t('common.today') : sameDay(shiftDay, addDays(now, -1)) ? t('common.yesterday') : ''} {fmtDayMonth(shiftDay)}
+            {sameDay(shiftDay, now) ? t('common.today') : sameDay(shiftDay, addDays(now, -1)) ? t('common.yesterday') : ''} {fmtDayMonth(shiftDay, ctx.locale)}
             {' · '}
             {handover?.submittedAt
               ? t('tasks.handover.status.submitted', { at: rel(handover.submittedAt), by: author ? `${author.firstName.charAt(0)}. ${author.lastName}` : '–' })
@@ -141,11 +141,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
             <div className="metric"><span className="lbl">{t('tasks.handover.metrics.notes')}</span><span className="val">{totals.notes}</span></div>
             <div className="metric"><span className="lbl">{t('tasks.handover.metrics.open')}</span><span className={'val' + (totals.open ? ' crit' : '')}>{totals.open}</span></div>
             <div className="metric"><span className="lbl">{t('tasks.handover.metrics.abnormal')}</span><span className={'val' + (totals.abnormal ? ' crit' : '')}>{totals.abnormal}</span></div>
-            <div className="metric">
-              <span className="lbl">{t('tasks.handover.metrics.acked')}</span>
-              <span className="val">{ackN} <small>/ {dto.length}</small></span>
-              <div className="bar"><i className={ackN === dto.length && dto.length ? 'ok' : ''} style={{ width: `${dto.length ? Math.round((ackN / dto.length) * 100) : 0}%` }} /></div>
-            </div>
+            <HandoverAckMetric ackedIds={dto.filter((b) => b.acked).map((b) => b.resident.id)} total={dto.length} />
           </div>
 
           {handover?.note && (

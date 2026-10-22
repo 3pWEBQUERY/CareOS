@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useT } from '@/i18n/client'
 import { HEX_RE, contrastRatio } from '@/lib/admin-shared'
+import { ColorField } from '@/components/ui/fields'
 
 /** Akzentfarbe mit Live-Prüfung des Kontrasts gegen Weiss (WCAG AA, ≥ 4.5:1). */
 export function BrandColorField({ initial }: { initial: string | null }) {
@@ -12,14 +13,18 @@ export function BrandColorField({ initial }: { initial: string | null }) {
   const ratio = valid ? contrastRatio(v, '#FFFFFF') : null
   const pass = ratio != null && ratio >= 4.5
   return (
-    <div className="fld">
-      <span className="lbl">{t('admin.org.brandColor')}</span>
-      <div className="row" style={{ flexWrap: 'nowrap' }}>
-        <input type="color" aria-label={t('admin.org.brandColorPicker')} value={valid ? v : '#0B5F74'} onChange={(e) => setV(e.target.value.toUpperCase())} style={{ width: 40, height: 34, padding: 2, border: '1px solid var(--line)', borderRadius: 'var(--r)', background: 'var(--surface-2)' }} />
-        <input className="field mono" name="brandColor" value={v} placeholder="#0B5F74" maxLength={7} onChange={(e) => setV(e.target.value.trim())} aria-invalid={v !== '' && !pass} style={{ maxWidth: 130 }} />
+    <div className="stack-sm">
+      <ColorField
+        label={t('admin.org.brandColor')}
+        name="brandColor"
+        value={v}
+        onChange={setV}
+        optional
+        hint={v === '' ? t('admin.org.brandColorDefault') : valid && pass ? t('admin.org.contrastOk') : undefined}
+        error={v === '' ? undefined : !valid ? t('admin.org.badColor') : !pass ? t('admin.org.contrastLow') : undefined}
+      >
         {ratio != null && <span className={'tag ' + (pass ? 'ok' : 'crit')}>{(pass ? '✓ ' : '✕ ') + t('admin.org.ratio', { ratio: ratio.toFixed(2) })}</span>}
-      </div>
-      <span className="hint">{v === '' ? t('admin.org.brandColorDefault') : !valid ? t('admin.org.badColor') : pass ? t('admin.org.contrastOk') : t('admin.org.contrastLow')}</span>
+      </ColorField>
       {valid && (
         <div className="row" style={{ marginTop: 6 }} aria-hidden="true">
           <span className="btn sm" style={{ background: v, borderColor: v, color: '#fff' }}>{t('admin.org.previewButton')}</span>

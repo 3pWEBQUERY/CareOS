@@ -8,7 +8,7 @@ import { ActionForm } from '@/components/ui/ActionForm'
 import { saveOrderAction, stopOrderAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { ResidentContext } from './shared'
 import type { ResidentCtxDto } from './types'
-import { DateField } from '@/components/ui/DateField'
+import { Checkbox, DateField, TextField } from '@/components/ui/fields'
 
 export type OrderDto = {
   id: string
@@ -60,7 +60,7 @@ export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescri
         <h2 className="sec" id="orders">{t('meds.orders.title')}</h2>
         <div className="row">
           {stoppedN > 0 && (
-            <label className="check small fg2"><input type="checkbox" checked={showStopped} onChange={(e) => setShowStopped(e.target.checked)} />{t('meds.orders.showStopped', { n: stoppedN })}</label>
+            <Checkbox checked={showStopped} onChange={(e) => setShowStopped(e.target.checked)} label={t('meds.orders.showStopped', { n: stoppedN })} wrapClassName="small fg2" />
           )}
           {canEdit && <button type="button" className="btn sm" onClick={() => setEdit('new')}>{t('meds.orders.new')}</button>}
         </div>
@@ -145,10 +145,7 @@ export function Orders({ orders, canEdit, resident, defaultSlots, defaultPrescri
             <input type="hidden" name="id" value={stop.id} />
             <p style={{ margin: 0 }}><strong>{stop.name}</strong> <span className="small muted">{[stop.form, stop.route].filter(Boolean).join(' · ')}</span></p>
             <p className="small fg2" style={{ margin: 0 }}>{t('meds.orders.stopHint')}</p>
-            <label className="fld">
-              <span className="lbl">{t('meds.orders.stopReason')}</span>
-              <input className="field" name="reason" required placeholder={t('meds.orders.stopReasonPh')} />
-            </label>
+            <TextField label={t('meds.orders.stopReason')} name="reason" required placeholder={t('meds.orders.stopReasonPh')} />
             <div className="form-actions">
               <span className="spacer" />
               <button type="button" className="btn" onClick={() => setStop(null)}>{t('common.cancel')}</button>
@@ -191,23 +188,14 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
         </div>
         <input type="hidden" name="kind" value={kind} />
         <div className="form-grid">
-          <label className="fld span-all">
-            <span className="lbl">{t('meds.orders.name')}</span>
-            <input className="field" name="name" required defaultValue={order?.name} placeholder={t('meds.orders.namePh')} />
-          </label>
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.form')}</span>
-            <input className="field" name="form" defaultValue={order?.form ?? ''} placeholder={t('meds.orders.formPh')} />
-          </label>
+          <TextField label={t('meds.orders.name')} wrapClassName="span-all" name="name" required defaultValue={order?.name} placeholder={t('meds.orders.namePh')} />
+          <TextField label={t('meds.orders.form')} name="form" defaultValue={order?.form ?? ''} placeholder={t('meds.orders.formPh')} />
           <label className="fld">
             <span className="lbl">{t('meds.orders.route')}</span>
-            <input className="field" name="route" list="routes" defaultValue={order?.route ?? 'p.o.'} />
+            <TextField name="route" list="routes" defaultValue={order?.route ?? 'p.o.'} />
             <datalist id="routes">{ROUTES.map((r) => <option key={r} value={r} />)}</datalist>
           </label>
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.indication')}</span>
-            <input className="field" name="indication" defaultValue={order?.indication ?? ''} />
-          </label>
+          <TextField label={t('meds.orders.indication')} name="indication" defaultValue={order?.indication ?? ''} />
         </div>
         {kind !== 'prn' ? (
           <fieldset>
@@ -216,26 +204,17 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10 }}>
               {rows.map(([tm, ds], i) => (
                 <div key={i} className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
-                  <input className="field mono" name={'time_' + i} defaultValue={tm} placeholder="HH:MM" inputMode="numeric" aria-label={t('meds.orders.time', { n: i + 1 })} style={{ width: 76 }} />
-                  <input className="field mono" name={'dose_' + i} defaultValue={ds} placeholder="0" aria-label={t('meds.orders.dose', { n: i + 1 })} />
+                  <TextField name={'time_' + i} defaultValue={tm} placeholder="HH:MM" inputMode="numeric" aria-label={t('meds.orders.time', { n: i + 1 })} style={{ width: 76 }} className="mono" />
+                  <TextField name={'dose_' + i} defaultValue={ds} placeholder="0" aria-label={t('meds.orders.dose', { n: i + 1 })} className="mono" />
                 </div>
               ))}
             </div>
           </fieldset>
         ) : (
           <div className="form-grid">
-            <label className="fld">
-              <span className="lbl">{t('meds.orders.prnDose')}</span>
-              <input className="field mono" name="prnDose" defaultValue={order?.prnDose ?? ''} required placeholder={t('meds.orders.prnDosePh')} />
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('meds.orders.prnMax')}</span>
-              <input className="field mono" name="prnMaxPerDay" inputMode="numeric" defaultValue={order?.prnMaxPerDay ?? ''} required />
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('meds.orders.prnInterval')}</span>
-              <input className="field mono" name="prnMinIntervalH" inputMode="numeric" defaultValue={order?.prnMinIntervalH ?? 4} />
-            </label>
+            <TextField label={t('meds.orders.prnDose')} name="prnDose" defaultValue={order?.prnDose ?? ''} required placeholder={t('meds.orders.prnDosePh')} className="mono" />
+            <TextField label={t('meds.orders.prnMax')} name="prnMaxPerDay" inputMode="numeric" defaultValue={order?.prnMaxPerDay ?? ''} required className="mono" />
+            <TextField label={t('meds.orders.prnInterval')} name="prnMinIntervalH" inputMode="numeric" defaultValue={order?.prnMinIntervalH ?? 4} className="mono" />
           </div>
         )}
         <div className="form-grid">
@@ -244,32 +223,20 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
             <DateField name="startDate" defaultValue={todayKey} min={order ? todayKey : undefined} />
             {order && <span className="hint">{t('meds.orders.startEditHint')}</span>}
           </label>
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.end')}{kind !== 'temporary' && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</span>
-            <DateField name="endDate" defaultValue={order?.endKey ?? ''} required={kind === 'temporary'} />
-          </label>
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.prescriber')}</span>
-            <input className="field" name="prescriber" defaultValue={order?.prescriber ?? defaultPrescriber ?? ''} />
-          </label>
+          <DateField label={<>{t('meds.orders.end')}{kind !== 'temporary' && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</>} name="endDate" defaultValue={order?.endKey ?? ''} required={kind === 'temporary'} />
+          <TextField label={t('meds.orders.prescriber')} name="prescriber" defaultValue={order?.prescriber ?? defaultPrescriber ?? ''} />
           <label className="fld">
             <span className="lbl">{t('meds.orders.stock')}</span>
             <div className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
-              <input className="field mono" name="stock" inputMode="numeric" defaultValue={order?.stock ?? ''} style={{ width: 90 }} />
-              <input className="field" name="stockUnit" defaultValue={order?.stockUnit ?? t('meds.orders.stockUnitDefault')} aria-label={t('meds.orders.stockUnit')} />
+              <TextField name="stock" inputMode="numeric" defaultValue={order?.stock ?? ''} style={{ width: 90 }} className="mono" />
+              <TextField name="stockUnit" defaultValue={order?.stockUnit ?? t('meds.orders.stockUnitDefault')} aria-label={t('meds.orders.stockUnit')} />
             </div>
           </label>
-          <label className="fld span-all">
-            <span className="lbl">{t('meds.orders.notes')}</span>
-            <input className="field" name="notes" defaultValue={order?.notes ?? ''} placeholder={t('meds.orders.notesPh')} />
-          </label>
+          <TextField label={t('meds.orders.notes')} wrapClassName="span-all" name="notes" defaultValue={order?.notes ?? ''} placeholder={t('meds.orders.notesPh')} />
         </div>
-        <label className="check"><input type="checkbox" name="requiresDoubleCheck" defaultChecked={order?.requiresDoubleCheck} />{t('meds.orders.doubleCheck')}</label>
+        <Checkbox name="requiresDoubleCheck" defaultChecked={order?.requiresDoubleCheck} label={t('meds.orders.doubleCheck')} />
         {order && (
-          <label className="fld">
-            <span className="lbl">{t('meds.orders.changeReason')}</span>
-            <input className="field" name="changeReason" required placeholder={t('meds.orders.changeReasonPh')} />
-          </label>
+          <TextField label={t('meds.orders.changeReason')} name="changeReason" required placeholder={t('meds.orders.changeReasonPh')} />
         )}
         <div className="form-actions">
           <span className="spacer" />

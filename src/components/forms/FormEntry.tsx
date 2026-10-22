@@ -8,6 +8,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { validateFormValues, type FieldError, type FormField } from '@/lib/forms'
 import { createFormEntry } from '@/app/(app)/residents/[id]/notes/form-actions'
 import { FormFields, type RawValues } from './FormFields'
+import { Checkbox, Select } from '@/components/ui/fields'
 
 export type FormOption = { id: string; name: string; description: string | null; version: number; fields: FormField[] }
 
@@ -57,7 +58,7 @@ export function FormEntry({ residentId, who, forms }: { residentId: string; who:
         <Dialog open={open} onClose={close} wide title={t('forms.entry.title')} context={<span>{who}</span>}
           footer={(
             <>
-              <label className="check small" style={{ marginRight: 'auto' }}><input type="checkbox" checked={important} onChange={(e) => setImportant(e.target.checked)} />{t('chart.notes.important')}</label>
+              <Checkbox checked={important} onChange={(e) => setImportant(e.target.checked)} label={t('chart.notes.important')} wrapClassName="small" wrapStyle={{ marginRight: 'auto' }} />
               <button type="button" className="btn" onClick={close}>{t('common.cancel')}</button>
               <button type="button" className="btn primary" onClick={save} data-loading={pending || undefined} disabled={pending}>{t('forms.entry.save')}</button>
             </>
@@ -67,12 +68,9 @@ export function FormEntry({ residentId, who, forms }: { residentId: string; who:
             onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); save() } }}
           >
             {forms.length > 1 && (
-              <label className="fld">
-                <span className="lbl">{t('forms.entry.pick')}</span>
-                <select className="field" value={form.id} onChange={(e) => reset(e.target.value)}>
+              <Select label={t('forms.entry.pick')} value={form.id} onChange={(e) => reset(e.target.value)}>
                   {forms.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                </select>
-              </label>
+                </Select>
             )}
             {form.description && <p className="small muted" style={{ margin: 0 }}>{form.description}</p>}
             <FormFields

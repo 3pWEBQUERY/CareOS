@@ -30,10 +30,10 @@ export async function SwapsView({ ctx, now, canManage }: { ctx: Ctx; now: Date; 
   const when = (s: { date: Date; shiftType: { code: string; name: string; start: string; end: string } }) => {
     const d = fromDbDate(s.date)
     return (
-      <span className="nowrap"><span className={'sh ' + s.shiftType.code}>{s.shiftType.code}</span> <span className="mono">{weekdayShort(d, locale)} {fmtDayMonth(d)}</span> <span className="small muted mono">{s.shiftType.start}–{s.shiftType.end}</span></span>
+      <span className="nowrap"><span className={'sh ' + s.shiftType.code}>{s.shiftType.code}</span> <span className="mono">{weekdayShort(d, locale)} {fmtDayMonth(d, locale)}</span> <span className="small muted mono">{s.shiftType.start}–{s.shiftType.end}</span></span>
     )
   }
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
 
   // Qualifikationsabdeckung nach dem Tausch (mindestens eine Person der höchsten Qualifikation pro Dienst).
   const key = canManage && approvals.length ? await keyQualification(ctx.org.id) : null

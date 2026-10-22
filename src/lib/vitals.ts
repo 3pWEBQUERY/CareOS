@@ -39,3 +39,10 @@ export function abnormalKeys(v: VitalRow | null | undefined, limits: Limits) {
   if (!v) return [] as VitalKey[]
   return VITAL_KEYS.filter((k) => k !== 'weight' && v[k] != null && flag(k, v[k], limits))
 }
+
+/**
+ * Filter für gültige (nicht stornierte) klinische Messungen: VitalSign, Assessment, WoundAssessment (PRD §35).
+ * Stornierte Einträge bleiben in Historie und Audit sichtbar, fliessen aber nicht in Hinweise, Trends oder Übergabe.
+ * Verwendung: `where: { residentId, ...LIVE }` bzw. `where: { residentId, AND: [LIVE] }`.
+ */
+export const LIVE = { voidedAt: null } as const

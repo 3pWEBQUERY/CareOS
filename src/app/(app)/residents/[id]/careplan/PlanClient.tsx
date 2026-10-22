@@ -12,7 +12,7 @@ import {
   discardDraftAction, dismissSuggestionAction, evaluateAction, saveAreaAction, saveInterventionAction, submitAction,
   type AiAreaDraft, type IvInput,
 } from './actions'
-import { DateField } from '@/components/ui/DateField'
+import { DateField, NumberField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 type Opt = { value: string; label: string }
 export type AreaSnapshot = { domain: string; situation: string; resources: string; needs: string; risks: string; goal: string; evaluateBy: string; interventions: { title: string; times: string[] }[] }
@@ -120,25 +120,12 @@ function IvFields({ value, onChange, categories, idp }: { value: IvInput; onChan
   const set = <K extends keyof IvInput>(k: K, v: IvInput[K]) => onChange({ ...value, [k]: v })
   return (
     <div className="form-grid">
-      <label className="fld span-all" htmlFor={idp + 'title'}>
-        <span className="lbl">{t('care.plan.iv.title')}</span>
-        <input id={idp + 'title'} className="field" value={value.title} maxLength={200} onChange={(e) => set('title', e.target.value)} />
-      </label>
-      <label className="fld" htmlFor={idp + 'cat'}>
-        <span className="lbl">{t('care.plan.iv.category')}</span>
-        <select id={idp + 'cat'} className="field" value={value.category} onChange={(e) => set('category', e.target.value)}>
+      <TextField label={t('care.plan.iv.title')} wrapClassName="span-all" id={idp + 'title'} value={value.title} maxLength={200} onChange={(e) => set('title', e.target.value)} />
+      <Select label={t('care.plan.iv.category')} id={idp + 'cat'} value={value.category} onChange={(e) => set('category', e.target.value)}>
           {categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-      </label>
-      <label className="fld" htmlFor={idp + 'times'}>
-        <span className="lbl">{t('care.plan.iv.times')}</span>
-        <input id={idp + 'times'} className="field mono" value={value.times} placeholder="07:30, 14:00" inputMode="numeric" onChange={(e) => set('times', e.target.value)} />
-        <span className="hint">{t('care.plan.iv.timesHint')}</span>
-      </label>
-      <label className="fld" htmlFor={idp + 'dur'}>
-        <span className="lbl">{t('care.plan.iv.duration')}</span>
-        <input id={idp + 'dur'} className="field mono" type="number" min={1} max={480} value={value.durationMin} onChange={(e) => set('durationMin', Number(e.target.value))} />
-      </label>
+        </Select>
+      <TextField label={t('care.plan.iv.times')} hint={t('care.plan.iv.timesHint')} id={idp + 'times'} value={value.times} placeholder="07:30, 14:00" inputMode="numeric" onChange={(e) => set('times', e.target.value)} className="mono" />
+      <NumberField label={t('care.plan.iv.duration')} id={idp + 'dur'} min={1} max={480} value={value.durationMin} onChange={(v) => set('durationMin', v === '' ? 0 : v)} step={1} />
       <fieldset className="span-all">
         <legend className="lbl">{t('care.plan.iv.weekdays')}</legend>
         <div className="chips">
@@ -153,10 +140,7 @@ function IvFields({ value, onChange, categories, idp }: { value: IvInput; onChan
         </div>
         <span className="small muted">{t('care.plan.iv.weekdaysHint')}</span>
       </fieldset>
-      <label className="fld span-all" htmlFor={idp + 'instr'}>
-        <span className="lbl">{t('care.plan.iv.instructions')} <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
-        <textarea id={idp + 'instr'} className="field" rows={2} style={{ minHeight: 56 }} value={value.instructions} onChange={(e) => set('instructions', e.target.value)} />
-      </label>
+      <Textarea label={t('care.plan.iv.instructions')} optional wrapClassName="span-all" id={idp + 'instr'} rows={2} style={{ minHeight: 56 }} value={value.instructions} onChange={(e) => set('instructions', e.target.value)} />
     </div>
   )
 }
@@ -242,14 +226,8 @@ export function EvaluateButton({ residentId, areaId, defaultNext, domainLabel }:
           </>
         }
       >
-        <label className="fld" htmlFor="ev-text">
-          <span className="lbl">{t('care.plan.evalText')}</span>
-          <textarea id="ev-text" className="field" value={text} placeholder={t('care.plan.prompts.evaluation')} onChange={(e) => setText(e.target.value)} />
-        </label>
-        <label className="fld" htmlFor="ev-next" style={{ maxWidth: 220 }}>
-          <span className="lbl">{t('care.plan.evalNext')}</span>
-          <DateField id="ev-next" value={next} onChange={setNext} />
-        </label>
+        <Textarea label={t('care.plan.evalText')} id="ev-text" value={text} placeholder={t('care.plan.prompts.evaluation')} onChange={(e) => setText(e.target.value)} />
+        <DateField label={t('care.plan.evalNext')} wrapStyle={{ maxWidth: 220 }} id="ev-next" value={next} onChange={setNext} />
         {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
       </Dialog>
     </>
@@ -392,10 +370,10 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
             {initialDomain ? (
               <strong>{domainName}</strong>
             ) : (
-              <select id="pf-domain" className="field" value={domain} onChange={(e) => { setDomain(e.target.value); load(e.target.value) }}>
+              <Select id="pf-domain" value={domain} onChange={(e) => { setDomain(e.target.value); load(e.target.value) }}>
                 <option value="">{t('care.plan.chooseDomain')}</option>
                 {domains.map((d) => <option key={d.value} value={d.value}>{d.label}{areas.some((a) => a.domain === d.value) ? ' · ' + t('care.plan.planned') : ''}</option>)}
-              </select>
+              </Select>
             )}
           </label>
           {aiEnabled && domain && (
@@ -464,10 +442,7 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
         ) : cur === 'evaluation' ? (
           <div className="stack-sm">
             <span className="fg2">{t('care.plan.prompts.evaluation')}</span>
-            <label className="fld" htmlFor="pf-eval" style={{ maxWidth: 220 }}>
-              <span className="lbl">{t('care.plan.evaluateBy')}</span>
-              <DateField id="pf-eval" value={f.evaluateBy} onChange={(v) => setF({ ...f, evaluateBy: v })} />
-            </label>
+            <DateField label={t('care.plan.evaluateBy')} wrapStyle={{ maxWidth: 220 }} id="pf-eval" value={f.evaluateBy} onChange={(v) => setF({ ...f, evaluateBy: v })} />
             <dl className="kv">
               {(['situation', 'resources', 'needs', 'risks', 'goal'] as const).map((k) => (
                 <div key={k} style={{ display: 'contents' }}><dt>{t('care.plan.fields.' + k)}</dt><dd className="ws-pre">{f[k] || <span className="muted">–</span>}</dd></div>
@@ -481,7 +456,7 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
           <label className="fld" htmlFor={'pf-' + cur}>
             <span className="lbl">{t('care.plan.fields.' + cur)}</span>
             <span className="fg2">{t('care.plan.prompts.' + cur)}</span>
-            <textarea id={'pf-' + cur} key={cur} className="field" rows={5} autoFocus value={f[cur as TextKey]} onChange={(e) => setF({ ...f, [cur]: e.target.value })} />
+            <Textarea id={'pf-' + cur} key={cur} rows={5} autoFocus value={f[cur as TextKey]} onChange={(e) => setF({ ...f, [cur]: e.target.value })} />
           </label>
         )}
         {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}

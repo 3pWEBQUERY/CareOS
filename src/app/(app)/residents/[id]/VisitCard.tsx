@@ -18,7 +18,7 @@ export async function VisitCard({ ctx, r, canWrite }: { ctx: Ctx; r: { id: strin
     canWrite ? askRefOptions(ctx, r.id, now) : Promise.resolve([]),
   ])
   const who = `${r.lastName} ${r.firstName} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`
-  const when = next ? (sameDay(next.at, now) ? `${t('common.today')} ${hm(next.at)}` : `${fmtDayMonth(next.at)} ${hm(next.at)}`) : null
+  const when = next ? (sameDay(next.at, now) ? `${t('common.today')} ${hm(next.at)}` : `${fmtDayMonth(next.at, ctx.locale)} ${hm(next.at)}`) : null
   const inUnit = ctx.unit?.id === r.unitId
   return (
     <section className="card" aria-labelledby="ov-visit">

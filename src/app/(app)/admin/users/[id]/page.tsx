@@ -15,6 +15,7 @@ import {
   resetMfaAction, resetPasswordAction, revokeUserSessionsAction, setUserActiveAction, updateUserAction,
 } from '../actions'
 import { DateField } from '@/components/ui/DateField'
+import { Select } from '@/components/ui/fields'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
@@ -48,7 +49,7 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
   ])
   const self = user.id === ctx.user.id
   const dt = (d: Date) => fmtDate(d, locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   const canRoles = ctx.can('admin.roles')
   const who = <span><strong>{user.firstName} {user.lastName}</strong> · {user.email}{user.roles.length ? ` · ${user.roles.map((r) => r.role.name).join(', ')}` : ''}</span>
 
@@ -132,15 +133,15 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
                 <div className="card-foot">
                   <ActionForm action={addAssignmentAction} success="common.saved" className="row">
                     <input type="hidden" name="userId" value={user.id} />
-                    <select className="field grow" name="roleId" required defaultValue="" aria-label={t('admin.users.role')} style={{ minWidth: 150 }}>
+                    <Select name="roleId" required defaultValue="" aria-label={t('admin.users.role')} style={{ minWidth: 150 }} className="grow">
                       <option value="" disabled>{t('admin.users.role')}</option>
                       {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-                    </select>
-                    <select className="field grow" name="scope" defaultValue={user.primaryUnitId ? 'unit:' + user.primaryUnitId : 'org'} aria-label={t('admin.users.scope')} style={{ minWidth: 150 }}>
+                    </Select>
+                    <Select name="scope" defaultValue={user.primaryUnitId ? 'unit:' + user.primaryUnitId : 'org'} aria-label={t('admin.users.scope')} style={{ minWidth: 150 }} className="grow">
                       <option value="org">{t('admin.users.scopeOrg')}</option>
                       <optgroup label={t('admin.structure.locations')}>{locations.map((l) => <option key={l.id} value={'loc:' + l.id}>{l.name}</option>)}</optgroup>
                       <optgroup label={t('admin.structure.unitsTitle')}>{units.map((u) => <option key={u.id} value={'unit:' + u.id}>{u.name}</option>)}</optgroup>
-                    </select>
+                    </Select>
                     <Submit className="btn">{t('admin.users.assign')}</Submit>
                   </ActionForm>
                 </div>
@@ -167,10 +168,10 @@ export default async function UserDetail({ params }: { params: Promise<{ id: str
                 <div className="card-foot">
                   <ActionForm action={addUserQualificationAction} success="common.saved" className="row">
                     <input type="hidden" name="userId" value={user.id} />
-                    <select className="field grow" name="qualificationId" required defaultValue="" aria-label={t('profile.qualifications.title')} style={{ minWidth: 150 }}>
+                    <Select name="qualificationId" required defaultValue="" aria-label={t('profile.qualifications.title')} style={{ minWidth: 150 }} className="grow">
                       <option value="" disabled>{t('admin.users.pickQualificationLabel')}</option>
                       {quals.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}
-                    </select>
+                    </Select>
                     <DateField name="validUntil" aria-label={t('admin.users.validUntil')} title={t('admin.users.validUntil')} style={{ width: 160 }} />
                     <Submit className="btn">{t('common.add')}</Submit>
                   </ActionForm>

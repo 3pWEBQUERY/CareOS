@@ -10,7 +10,7 @@ import { IconCheck, IconPlus } from '@/components/icons'
 import { createTask, documentTask, toggleTask } from './actions'
 import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
 import type { TaskData } from '@/lib/offline/types'
-import { TimeField } from '@/components/ui/TimeField'
+import { Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
 
 export type DayTask = {
   id: string; time: string; due: string; title: string; description: string | null; category: string; tone: string; min: number
@@ -120,18 +120,14 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
       <Dialog open={adding} onClose={() => setAdding(false)} title={t('chart.day.add')} context={<span>{who}</span>}>
         <ActionForm action={createTask.bind(null, residentId)} success="chart.day.added" onDone={(r) => r.ok && setAdding(false)}>
           <div className="form-grid">
-            <label className="fld span-all"><span className="lbl">{t('chart.day.fTitle')}</span><input className="field" name="title" required maxLength={200} /></label>
-            <label className="fld"><span className="lbl">{t('chart.day.fTime')}</span><TimeField name="time" required defaultValue={defaultTime(nowD)} /></label>
-            <label className="fld"><span className="lbl">{t('chart.day.fDuration')}</span><input className="field mono" name="durationMin" inputMode="numeric" defaultValue="10" /></label>
-            <label className="fld"><span className="lbl">{t('chart.day.fCategory')}</span>
-              <select className="field" name="category" defaultValue={categories[0]?.value}>{categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</select>
-            </label>
-            <label className="fld"><span className="lbl">{t('chart.day.fPriority')}</span>
-              <select className="field" name="priority" defaultValue="routine">
+            <TextField label={t('chart.day.fTitle')} wrapClassName="span-all" name="title" required maxLength={200} />
+            <TimeField label={t('chart.day.fTime')} name="time" required defaultValue={defaultTime(nowD)} />
+            <TextField label={t('chart.day.fDuration')} name="durationMin" inputMode="numeric" defaultValue="10" className="mono" />
+            <Select label={t('chart.day.fCategory')} name="category" defaultValue={categories[0]?.value}>{categories.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}</Select>
+            <Select label={t('chart.day.fPriority')} name="priority" defaultValue="routine">
                 {['routine', 'important', 'critical'].map((p) => <option key={p} value={p}>{t('common.priority.' + p)}</option>)}
-              </select>
-            </label>
-            <label className="fld span-all"><span className="lbl">{t('chart.day.fDescription')} <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span><textarea className="field" name="description" rows={2} /></label>
+              </Select>
+            <Textarea label={<>{t('chart.day.fDescription')} <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} wrapClassName="span-all" name="description" rows={2} />
           </div>
           <div className="form-actions"><span className="spacer" /><button type="button" className="btn" onClick={() => setAdding(false)}>{t('common.cancel')}</button><button type="submit" className="btn primary">{t('chart.day.add')}</button></div>
         </ActionForm>
@@ -236,15 +232,10 @@ function QuickDoc({ task, who, residentId, onQueued, onClose }: { task: DayTask 
             </div>
           </div>
           {status !== 'done' && (
-            <label className="fld"><span className="lbl">{t('chart.day.qdReason')}</span>
-              <textarea className="field" name="reason" rows={2} required placeholder={t('chart.day.qdReasonPh')} />
-            </label>
+            <Textarea label={t('chart.day.qdReason')} name="reason" rows={2} required placeholder={t('chart.day.qdReasonPh')} />
           )}
           {showNote ? (
-            <label className="fld"><span className="lbl">{t('chart.day.qdNote')}</span>
-              <textarea className="field" name="note" rows={3} autoFocus placeholder={t('chart.day.qdNotePh')} />
-              <span className="hint">{t('chart.day.qdNoteHint')}</span>
-            </label>
+            <Textarea label={t('chart.day.qdNote')} hint={t('chart.day.qdNoteHint')} name="note" rows={3} autoFocus placeholder={t('chart.day.qdNotePh')} />
           ) : (
             <button type="button" className="linkbtn small" style={{ alignSelf: 'flex-start' }} onClick={() => setShowNote(true)}>+ {t('chart.day.qdAddNote')}</button>
           )}

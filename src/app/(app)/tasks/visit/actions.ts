@@ -102,7 +102,7 @@ export async function completeVisit(residentId: string, input: CompleteVisitInpu
     for (const o of orders) if (o.questionId && !qIds.has(o.questionId)) return { ok: false, error: 'visit.errors.notOpen' }
     const answerOf = (id: string) => p.answers.find((a) => a.id === id)?.answer || null
     const specs = orders.map((o) => ({ o, task: orderTask(o, now, p.physician || null) }))
-    const when = (d: Date) => fmtDayMonth(d) + ' ' + hm(d)
+    const when = (d: Date) => fmtDayMonth(d, ctx.locale) + ' ' + hm(d)
     const summary = visitSummary(ctx.t, {
       physician: p.physician || null,
       answers: questions.map((q) => ({ question: q.text, answer: answerOf(q.id) })),

@@ -9,6 +9,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { setTextSizeAction, setThemeAction } from '@/app/(app)/shell-actions'
 import { LOCALES, LOCALE_NAMES, type Locale } from '@/i18n/core'
 import { auditThemeAction, confirmMfaAction, disableMfaAction, regenerateMfaAction, renamePasskeyAction, setLocaleAction, startMfaSetupAction } from './actions'
+import { TextField } from '@/components/ui/fields'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -85,10 +86,7 @@ type Setup = { qr: string; secret: string }
 
 function CodeField({ label, autoFocus }: { label: string; autoFocus?: boolean }) {
   return (
-    <label className="fld" style={{ maxWidth: 220 }}>
-      <span className="lbl">{label}</span>
-      <input className="field mono" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={7} pattern="\d{6}" required autoFocus={autoFocus} />
-    </label>
+    <TextField label={label} wrapStyle={{ maxWidth: 220 }} name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={7} pattern="\d{6}" required autoFocus={autoFocus} className="mono" />
   )
 }
 
@@ -217,10 +215,7 @@ export function PasskeyRegister({ defaultName }: { defaultName: string }) {
       }}
     >
       <div className="row" style={{ alignItems: 'flex-end' }}>
-        <label className="fld grow" style={{ minWidth: 180 }}>
-          <span className="lbl">{t('profile.passkeys.name')}</span>
-          <input className="field" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} required />
-        </label>
+        <TextField label={t('profile.passkeys.name')} wrapClassName="grow" wrapStyle={{ minWidth: 180 }} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} required />
         <button className="btn primary" type="submit" disabled={pending || !supported} data-loading={pending || undefined}>{t('profile.passkeys.add')}</button>
       </div>
       {!supported && <p className="small muted" style={{ margin: 0 }}>{t('profile.passkeys.unsupported')}</p>}
@@ -237,7 +232,7 @@ export function PasskeyRename({ id, name }: { id: string; name: string }) {
   return (
     <ActionForm action={renamePasskeyAction} reset={false} className="row" success="common.saved" onDone={(r) => r.ok && setEdit(false)}>
       <input type="hidden" name="id" value={id} />
-      <input className="field" name="name" defaultValue={name} maxLength={60} aria-label={t('profile.passkeys.name')} style={{ width: 180 }} autoFocus />
+      <TextField name="name" defaultValue={name} maxLength={60} aria-label={t('profile.passkeys.name')} style={{ width: 180 }} autoFocus />
       <Submit className="btn sm primary">{t('common.save')}</Submit>
       <button type="button" className="btn sm ghost" onClick={() => setEdit(false)}>{t('common.cancel')}</button>
     </ActionForm>

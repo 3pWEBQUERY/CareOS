@@ -7,43 +7,72 @@ import { splitQuestion, useConfirm } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { askVisitQuestion, withdrawVisitQuestion } from '@/app/(app)/tasks/visit/actions'
 import type { VisitRefOptionDto } from './types'
+import { Select, Textarea } from '@/components/ui/fields'
 
 /**
  * Vorbereiten (PRD §29): Frage für die nächste Visite vormerken. Bezug optional auf einen auffälligen Vitalwert
  * oder Verlaufseintrag der letzten 7 Tage; der Dialog zeigt die Person als Kontext (PRD §32).
  */
-export function AskQuestion({ residentId, who, options, initialRef = '', className = 'btn sm', label }: {
+export function AskQuestion({ residentId, who, options, initialRef = '', refOption, className = 'btn sm', label, onAsked }: {
   residentId: string
   who: string
   options: VisitRefOptionDto[]
   initialRef?: string
+  /** Bezug direkt an einer Zeile (Verlauf, Vitalwert): vorausgewählt, auch wenn er älter als 7 Tage ist. */
+  refOption?: VisitRefOptionDto
   className?: string
   label?: string
+  onAsked?: (ref: string) => void
+}) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  const start = refOption?.value ?? initialRef
+  return (
+    <>
+      <button type="button" className={className} onClick={() => setOpen(true)}>{label ?? t('visit.ask.button')}</button>
+      <AskQuestionDialog open={open} onClose={() => setOpen(false)} residentId={residentId} who={who} options={options} initialRef={start} refOption={refOption} onAsked={onAsked} />
+    </>
+  )
+}
+
+/** Gesteuerter Dialog «Frage für die Visite» – für Listen mit einer Aktion je Zeile (ein Dialog für alle Zeilen). */
+export function AskQuestionDialog({ open, onClose, residentId, who, options, initialRef = '', refOption, onAsked }: {
+  open: boolean
+  onClose: () => void
+  residentId: string
+  who: string
+  options: VisitRefOptionDto[]
+  initialRef?: string
+  refOption?: VisitRefOptionDto
+  onAsked?: (ref: string) => void
 }) {
   const t = useT()
   const id = useId()
-  const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [ref, setRef] = useState(initialRef)
   const [err, setErr] = useState<{ msg: string; field?: string } | null>(null)
   const [pending, start] = useTransition()
-  const close = () => { if (!pending) { setOpen(false); setErr(null) } }
+  // Beim Öffnen den Bezug der auslösenden Zeile übernehmen
+  const [seen, setSeen] = useState<string | null>(null)
+  const openKey = open ? 'open:' + initialRef : null
+  if (openKey !== seen) { setSeen(openKey); if (openKey) { setRef(initialRef); setErr(null) } }
+  const close = () => { if (!pending) { onClose(); setErr(null) } }
   const submit = () => start(async () => {
     if (text.trim().length < 3) return setErr({ msg: t('visit.errors.text'), field: 'text' })
     const r = await askVisitQuestion(residentId, { text, ref })
     if (!r.ok) return setErr({ msg: t(r.error), field: r.field })
     toast(r.message ?? t('visit.toast.asked'))
+    onAsked?.(ref)
     setText('')
     setRef(initialRef)
     setErr(null)
-    setOpen(false)
+    onClose()
   })
-  const vitals = options.filter((o) => o.group === 'vital')
-  const notes = options.filter((o) => o.group === 'observation')
+  const all = refOption && !options.some((o) => o.value === refOption.value) ? [refOption, ...options] : options
+  const vitals = all.filter((o) => o.group === 'vital')
+  const notes = all.filter((o) => o.group === 'observation')
   return (
-    <>
-      <button type="button" className={className} onClick={() => { setRef(initialRef); setOpen(true) }}>{label ?? t('visit.ask.button')}</button>
-      <Dialog
+    <Dialog
         open={open}
         onClose={close}
         title={t('visit.ask.title')}
@@ -56,26 +85,22 @@ export function AskQuestion({ residentId, who, options, initialRef = '', classNa
         <form className="stack-sm" onSubmit={(e) => { e.preventDefault(); submit() }}>
           <label className="fld" htmlFor={id + 'q'}>
             <span className="lbl">{t('visit.ask.text')}</span>
-            <textarea id={id + 'q'} className="field" rows={3} value={text} autoFocus maxLength={1000} placeholder={t('visit.ask.textPh')}
+            <Textarea id={id + 'q'} rows={3} value={text} autoFocus maxLength={1000} placeholder={t('visit.ask.textPh')}
               aria-invalid={err?.field === 'text' || undefined} aria-describedby={err?.field === 'text' ? id + 'e' : undefined}
               onChange={(e) => { setText(e.target.value); if (err) setErr(null) }}
               onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); submit() } }} />
             {err?.field === 'text' && <span className="err" id={id + 'e'} role="alert">{err.msg}</span>}
           </label>
-          {options.length > 0 && (
-            <label className="fld" htmlFor={id + 'r'}>
-              <span className="lbl">{t('visit.ask.ref')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
-              <select id={id + 'r'} className="field" value={ref} onChange={(e) => setRef(e.target.value)} aria-invalid={err?.field === 'ref' || undefined}>
+          {all.length > 0 && (
+            <Select label={<>{t('visit.ask.ref')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} id={id + 'r'} value={ref} onChange={(e) => setRef(e.target.value)} aria-invalid={err?.field === 'ref' || undefined}>
                 <option value="">{t('visit.ask.refNone')}</option>
                 {vitals.length > 0 && <optgroup label={t('visit.ask.refVital')}>{vitals.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>}
                 {notes.length > 0 && <optgroup label={t('visit.ask.refNote')}>{notes.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</optgroup>}
-              </select>
-            </label>
+              </Select>
           )}
           {err && err.field !== 'text' && <p className="err" role="alert" style={{ margin: 0 }}>{err.msg}</p>}
         </form>
       </Dialog>
-    </>
   )
 }
 

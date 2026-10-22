@@ -78,7 +78,7 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
   for (const d of days) doses = doses.concat(await openDoses(rIds, d, now, { from: doseFrom, to, includeUpcoming: true }))
   const ini = (id: string | null) => (id ? users.find((u) => u.id === id)?.initials ?? '' : '')
   const prevEntries = prevHandover?.entries ?? []
-  const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d) + ' ' + hm(d))
+  const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d, locale) + ' ' + hm(d))
   const assessName = (key: string) => {
     const n = t('care.assessments.names.' + key)
     return n.startsWith('care.') ? key : n

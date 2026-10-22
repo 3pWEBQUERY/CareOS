@@ -4,6 +4,7 @@ import { useT } from '@/i18n/client'
 import type { FieldError, FormField } from '@/lib/forms'
 import { DateField } from '@/components/ui/DateField'
 import { TimeField } from '@/components/ui/TimeField'
+import { Checkbox, Select, Textarea } from '@/components/ui/fields'
 
 export type RawValues = Record<string, string | boolean | string[]>
 
@@ -41,10 +42,7 @@ export function FormFields({ fields, values, errors, onChange, idPrefix = 'ff', 
         if (f.type === 'checkbox') {
           return (
             <div key={f.key} className="fld" style={{ justifyContent: 'flex-end' }}>
-              <label className="check" style={{ minHeight: 34 }}>
-                <input type="checkbox" {...common} checked={v === true} onChange={(e) => onChange(f.key, e.target.checked)} />
-                <span>{f.label}{f.required ? ' *' : ''}</span>
-              </label>
+              <Checkbox {...common} checked={v === true} onChange={(e) => onChange(f.key, e.target.checked)} label={<>{f.label}{f.required ? ' *' : ''}</>} wrapStyle={{ minHeight: 34 }} />
               {errEl}
             </div>
           )
@@ -78,12 +76,12 @@ export function FormFields({ fields, values, errors, onChange, idPrefix = 'ff', 
           <label key={f.key} className={'fld' + (wide ? ' span-all' : '')} htmlFor={id}>
             {label}
             {f.type === 'textarea' ? (
-              <textarea className="field" rows={3} {...common} value={str} maxLength={4000} onChange={(e) => onChange(f.key, e.target.value)} />
+              <Textarea rows={3} {...common} value={str} maxLength={4000} onChange={(e) => onChange(f.key, e.target.value)} />
             ) : f.type === 'select' ? (
-              <select className="field" {...common} value={str} onChange={(e) => onChange(f.key, e.target.value)}>
+              <Select {...common} value={str} onChange={(e) => onChange(f.key, e.target.value)}>
                 <option value="">–</option>
                 {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
+              </Select>
             ) : f.type === 'date' ? (
               <DateField id={id} disabled={disabled} aria-invalid={common['aria-invalid']} aria-describedby={errId} value={str} onChange={(x) => onChange(f.key, x)} />
             ) : f.type === 'time' ? (

@@ -53,7 +53,7 @@ export default async function VisitPage({ searchParams }: { searchParams: Promis
     <main className="panel main visit-main">
       <div className="view-head">
         <div>
-          <span className="lbl">{t('visit.label')} · {unit.name} · {fmtDayMonth(day)}</span>
+          <span className="lbl">{t('visit.label')} · {unit.name} · {fmtDayMonth(day, ctx.locale)}</span>
           <h1>{t('visit.title')}</h1>
           {titles.length > 0 && <p className="sub">{titles.join(', ')}</p>}
         </div>
@@ -134,7 +134,7 @@ async function Person({ ctx, r, now, next }: { ctx: Ctx; r: NonNullable<Awaited<
     db.appointment.findMany({ where: { residentId: r.id, kind: 'physician', at: { gte: startOfDay(now), lt: new Date(startOfDay(now).getTime() + 86_400_000) } }, orderBy: { at: 'asc' } }),
   ])
   const appt = appts.find((a) => !a.done) ?? appts[0] ?? null
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   const reaCls = r.rea === 'yes' ? 'rea-yes' : r.rea === 'no' ? 'rea-no' : ''
   const reaText = t(r.rea === 'yes' ? 'residents.banner.reaYes' : r.rea === 'no' ? 'residents.banner.reaNo' : 'residents.banner.reaUnknown')
   const name = `${r.lastName} ${r.firstName}`
@@ -190,7 +190,7 @@ async function Person({ ctx, r, now, next }: { ctx: Ctx; r: NonNullable<Awaited<
                   return (
                     <li key={o.id} className="li">
                       <span className={'tag ' + (o.kind === 'medication' ? 'violet' : 'accent')} style={{ flex: 'none' }}>{t('visit.kinds.' + o.kind)}</span>
-                      <span className="grow small">{o.text}{o.dueAt && <span className="muted mono"> · {fmtDayMonth(o.dueAt)} {hm(o.dueAt)}</span>}</span>
+                      <span className="grow small">{o.text}{o.dueAt && <span className="muted mono"> · {fmtDayMonth(o.dueAt, locale)} {hm(o.dueAt)}</span>}</span>
                       {view && <span className={'tag ' + (view === 'done' ? 'ok' : view === 'over' ? 'crit' : 'outline')}>{t('tasks.view.' + view)}</span>}
                       {o.kind === 'medication' && canMeds && <Link className="linkbtn small nowrap" href={`/residents/${r.id}/meds#orders`}>{t('visit.task.toMeds')} →</Link>}
                     </li>
@@ -253,7 +253,7 @@ async function Person({ ctx, r, now, next }: { ctx: Ctx; r: NonNullable<Awaited<
             <div className="card-head"><h3 id="vp-meds">{t('visit.person.meds')}</h3><Link className="linkbtn small" href={`/residents/${r.id}/meds`}>{t('residents.tabs.meds')} →</Link></div>
             {changes.meds.length || changes.missed.length ? (
               <ul className="list">
-                {changes.meds.map((m) => <li key={m.key} className="li"><time className="small muted mono nowrap">{fmtDayMonth(m.at)}</time><span className="grow small">{m.text}</span></li>)}
+                {changes.meds.map((m) => <li key={m.key} className="li"><time className="small muted mono nowrap">{fmtDayMonth(m.at, locale)}</time><span className="grow small">{m.text}</span></li>)}
                 {changes.missed.map((m) => <li key={m.key} className="li"><span className="tag warn" style={{ flex: 'none' }}>{t('chart.timeline.kinds.medication')}</span><span className="grow small">{m.text}</span></li>)}
               </ul>
             ) : <div className="card-body small muted">{t('visit.person.noMeds')}</div>}

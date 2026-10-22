@@ -21,8 +21,13 @@ export default async function NotesPage({ params }: { params: Promise<{ id: stri
     take: 300,
     include: { correctedBy: { select: { id: true, authorId: true, createdAt: true } } },
   })
-  const names = await userNames(ctx, [...obs.map((o) => o.authorId), ...obs.flatMap((o) => o.correctedBy.map((c) => c.authorId))])
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const [names, asked] = await Promise.all([
+    userNames(ctx, [...obs.map((o) => o.authorId), ...obs.flatMap((o) => o.correctedBy.map((c) => c.authorId))]),
+    // Bereits für die Visite vorgemerkte Einträge (offene Fragen mit Bezug auf einen Verlaufseintrag)
+    db.visitQuestion.findMany({ where: { orgId: ctx.org.id, residentId: r.id, status: 'open', refType: 'observation' }, select: { refId: true } }),
+  ])
+  const askedIds = new Set(asked.map((q) => q.refId))
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
   const canCorrectAll = can('resident.chart.correct')
   const canWrite = can('resident.chart.write')
   const rows: NoteRow[] = obs.map((o) => {
@@ -42,6 +47,7 @@ export default async function NotesPage({ params }: { params: Promise<{ id: stri
       correctedBy: corr ? { by: names.get(corr.authorId)?.short ?? '–', at: rel(corr.createdAt) } : null,
       canCorrect: !corr && canWrite && (o.authorId === ctx.user.id || canCorrectAll),
       offline: !!(o.structured as { offline?: unknown } | null)?.offline,
+      visitAsked: askedIds.has(o.id),
     }
   })
   const aiOn = aiConfigured() && can('ai.use')

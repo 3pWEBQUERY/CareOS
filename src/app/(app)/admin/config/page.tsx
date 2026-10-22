@@ -16,7 +16,7 @@ import {
   deleteShiftTypeAction, resetThresholdAction, saveAssessmentAction, saveCoverageAction, saveDomainsAction,
   saveFlagsAction, saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
 } from './actions'
-import { TimeField } from '@/components/ui/TimeField'
+import { Checkbox, NumberField, TextField, TimeField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -68,10 +68,10 @@ async function Domains() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td style={{ width: 90 }}><input className="field mono" type="number" min={0} max={999} name={'order:' + r.id} defaultValue={r.order} aria-label={t('admin.config.order')} /></td>
-                <td><input className="field" name={'name:' + r.id} defaultValue={r.name} maxLength={80} aria-label={t('admin.config.name')} style={{ minWidth: 200 }} /></td>
+                <td style={{ width: 90 }}><NumberField min={0} max={999} name={'order:' + r.id} defaultValue={r.order} aria-label={t('admin.config.order')} step={1} /></td>
+                <td><TextField name={'name:' + r.id} defaultValue={r.name} maxLength={80} aria-label={t('admin.config.name')} style={{ minWidth: 200 }} /></td>
                 <td><code className="mono small muted">{r.key}</code></td>
-                <td><label className="check"><input type="checkbox" name={'active:' + r.id} defaultChecked={r.active} /><span className="small">{t('admin.config.active')}</span></label></td>
+                <td><Checkbox name={'active:' + r.id} defaultChecked={r.active} label={<><span className="small">{t('admin.config.active')}</span></>} /></td>
               </tr>
             ))}
           </tbody>
@@ -101,9 +101,9 @@ async function Assessments() {
             <div className="card-body stack-sm">
               <ActionForm action={saveAssessmentAction} reset={false} success="common.saved" className="row">
                 <input type="hidden" name="id" value={d.id} />
-                <label className="fld" style={{ minWidth: 200 }}><span className="lbl">{t('admin.config.name')}</span><input className="field" name="name" defaultValue={d.name} maxLength={80} /></label>
-                <label className="fld" style={{ width: 150 }}><span className="lbl">{t('admin.config.intervalDays')}</span><input className="field mono" type="number" min={1} max={730} name="intervalDays" defaultValue={d.intervalDays ?? ''} placeholder="–" /></label>
-                <label className="check" style={{ alignSelf: 'flex-end', minHeight: 34 }}><input type="checkbox" name="active" defaultChecked={d.active} /><span>{t('admin.config.active')}</span></label>
+                <TextField label={t('admin.config.name')} wrapStyle={{ minWidth: 200 }} name="name" defaultValue={d.name} maxLength={80} />
+                <NumberField label={t('admin.config.intervalDays')} wrapStyle={{ width: 150 }} min={1} max={730} name="intervalDays" defaultValue={d.intervalDays ?? ''} placeholder="–" step={1} />
+                <Checkbox name="active" defaultChecked={d.active} label={t('admin.config.active')} wrapStyle={{ alignSelf: 'flex-end', minHeight: 34 }} />
                 <div style={{ alignSelf: 'flex-end' }}><Submit className="btn">{t('common.save')}</Submit></div>
               </ActionForm>
               <details>
@@ -152,13 +152,13 @@ async function Vitals() {
             {VITAL_KEYS.map((k) => {
               const v = VITALS[k]
               const row = rows.find((r) => r.key === k)
-              const step = v.dec ? '0.1' : '1'
+              const step = v.dec ? 0.1 : 1
               return (
                 <tr key={k}>
                   <th scope="row">{t('common.vitals.' + k)}</th>
                   <td className="mono small muted">{v.unit}</td>
-                  <td style={{ width: 110 }}><input className="field mono" type="number" step={step} name={'lo:' + k} defaultValue={row?.lo ?? v.lo} aria-label={`${t('common.vitals.' + k)} ${t('admin.config.lo')}`} /></td>
-                  <td style={{ width: 110 }}><input className="field mono" type="number" step={step} name={'hi:' + k} defaultValue={row?.hi ?? v.hi} aria-label={`${t('common.vitals.' + k)} ${t('admin.config.hi')}`} /></td>
+                  <td style={{ width: 110 }}><NumberField step={step} name={'lo:' + k} defaultValue={row?.lo ?? v.lo} aria-label={`${t('common.vitals.' + k)} ${t('admin.config.lo')}`} /></td>
+                  <td style={{ width: 110 }}><NumberField step={step} name={'hi:' + k} defaultValue={row?.hi ?? v.hi} aria-label={`${t('common.vitals.' + k)} ${t('admin.config.hi')}`} /></td>
                   <td className="mono small muted nowrap">{v.min}–{v.max}</td>
                   <td>{row ? (
                     <span className="row" style={{ gap: 6 }}><span className="tag accent">{t('admin.config.orgValue')}</span><ActBtn action={resetThresholdAction.bind(null, k)} className="linkbtn small">{t('admin.config.resetDefault')}</ActBtn></span>
@@ -182,8 +182,8 @@ async function Incidents() {
     <>
       {it && <input type="hidden" name="id" value={it.id} />}
       <div className="form-grid">
-        <label className="fld"><span className="lbl">{t('admin.config.name')}</span><input className="field" name="name" defaultValue={it?.name} required maxLength={80} /></label>
-        <label className="check" style={{ alignSelf: 'flex-end', minHeight: 34 }}><input type="checkbox" name="active" defaultChecked={it?.active ?? true} /><span>{t('admin.config.active')}</span></label>
+        <TextField label={t('admin.config.name')} name="name" defaultValue={it?.name} required maxLength={80} />
+        <Checkbox name="active" defaultChecked={it?.active ?? true} label={t('admin.config.active')} wrapStyle={{ alignSelf: 'flex-end', minHeight: 34 }} />
       </div>
       <WorkflowEditor initial={((it?.workflow ?? []) as unknown as WorkflowStep[]).map((s) => ({ key: s.key ?? '', title: s.title ?? '', category: s.category ?? '', offsetMin: Number(s.offsetMin) || 0, durationMin: Number(s.durationMin) || 10 }))} />
     </>
@@ -226,10 +226,10 @@ async function Shifts() {
   const fields = (st?: (typeof types)[number]) => (
     <div className="form-grid">
       {st && <input type="hidden" name="id" value={st.id} />}
-      <label className="fld"><span className="lbl">{t('admin.config.code')}</span><input className="field mono" name="code" defaultValue={st?.code} required maxLength={4} /></label>
-      <label className="fld"><span className="lbl">{t('admin.config.name')}</span><input className="field" name="name" defaultValue={st?.name} required maxLength={60} /></label>
-      <label className="fld"><span className="lbl">{t('admin.config.start')}</span><TimeField name="start" defaultValue={st?.start ?? '07:00'} required /></label>
-      <label className="fld"><span className="lbl">{t('admin.config.end')}</span><TimeField name="end" defaultValue={st?.end ?? '15:30'} required /></label>
+      <TextField label={t('admin.config.code')} name="code" defaultValue={st?.code} required maxLength={4} className="mono" />
+      <TextField label={t('admin.config.name')} name="name" defaultValue={st?.name} required maxLength={60} />
+      <TimeField label={t('admin.config.start')} name="start" defaultValue={st?.start ?? '07:00'} required />
+      <TimeField label={t('admin.config.end')} name="end" defaultValue={st?.end ?? '15:30'} required />
     </div>
   )
   return (
@@ -265,10 +265,7 @@ async function Shifts() {
         <div className="card-body">
           <ActionForm action={saveCoverageAction} reset={false} success="common.saved" className="row">
             {types.map((st) => (
-              <label key={st.id} className="fld" style={{ width: 130 }}>
-                <span className="lbl">{st.code} · {st.name}</span>
-                <input className="field mono" type="number" min={0} max={50} name={'cov:' + st.code} defaultValue={coverage[st.code] ?? ''} placeholder="–" />
-              </label>
+              <NumberField key={st.id} label={<>{st.code} · {st.name}</>} wrapStyle={{ width: 130 }} min={0} max={50} name={'cov:' + st.code} defaultValue={coverage[st.code] ?? ''} placeholder="–" step={1} />
             ))}
             <div style={{ alignSelf: 'flex-end' }}><Submit className="btn">{t('common.save')}</Submit></div>
           </ActionForm>

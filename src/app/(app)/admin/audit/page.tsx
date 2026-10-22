@@ -7,7 +7,7 @@ import { Forbidden, Empty } from '@/components/ui/Empty'
 import { AdminHead } from '../Head'
 import { auditWhere, type AuditFilter } from './filter'
 import { auditLabel } from '../audit-label'
-import { DateField } from '@/components/ui/DateField'
+import { Combobox, DateField, Select, TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -49,27 +49,18 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         <div className="tabpanel">
           <div className="alert info"><span className="grow">{t('admin.audit.immutable')}</span></div>
           <form className="form-grid" action="/admin/audit" role="search" aria-label={t('common.filter')}>
-            <label className="fld">
-              <span className="lbl">{t('admin.audit.user')}</span>
-              <select className="field" name="user" defaultValue={f.user ?? ''}>
+            <Select label={t('admin.audit.user')} name="user" defaultValue={f.user ?? ''}>
                 <option value="">{t('common.all')}</option>
                 {users.map((u) => <option key={u.id} value={u.id}>{u.lastName} {u.firstName}</option>)}
-              </select>
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('admin.audit.actionPrefix')}</span>
-              <input className="field mono" name="action" defaultValue={f.action ?? ''} placeholder="admin. / auth. / chart." list="audit-prefixes" />
-              <datalist id="audit-prefixes">{['auth.', 'admin.', 'profile.', 'api.', 'file.', 'resident.', 'chart.', 'medication.'].map((p) => <option key={p} value={p} />)}</datalist>
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('admin.audit.entity')}</span>
-              <select className="field" name="entity" defaultValue={f.entity ?? ''}>
+              </Select>
+            <Combobox label={t('admin.audit.actionPrefix')} name="action" defaultValue={f.action ?? ''} placeholder="admin. / auth. / chart." freeText
+              options={['auth.', 'admin.', 'profile.', 'api.', 'file.', 'resident.', 'chart.', 'medication.'].map((p) => ({ value: p, label: p }))} />
+            <Select label={t('admin.audit.entity')} name="entity" defaultValue={f.entity ?? ''}>
                 <option value="">{t('common.all')}</option>
                 {entities.map((e) => <option key={e.entityType} value={e.entityType}>{e.entityType}</option>)}
-              </select>
-            </label>
-            <label className="fld"><span className="lbl">{t('admin.audit.from')}</span><DateField name="from" defaultValue={f.from ?? ''} /></label>
-            <label className="fld"><span className="lbl">{t('admin.audit.to')}</span><DateField name="to" defaultValue={f.to ?? ''} /></label>
+              </Select>
+            <DateField label={t('admin.audit.from')} name="from" defaultValue={f.from ?? ''} />
+            <DateField label={t('admin.audit.to')} name="to" defaultValue={f.to ?? ''} />
             <div className="row" style={{ alignSelf: 'end' }}>
               <button className="btn primary" type="submit">{t('common.filter')}</button>
               {filtered && <Link className="btn ghost" href="/admin/audit">{t('admin.audit.reset')}</Link>}

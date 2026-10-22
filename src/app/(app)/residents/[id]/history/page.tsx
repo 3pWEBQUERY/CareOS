@@ -6,6 +6,7 @@ import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { EditMaster } from './EditMaster'
 import { FormDialog } from '@/components/admin/ui'
 import { anonymiseResidentAction } from './actions'
+import { Checkbox } from '@/components/ui/fields'
 
 const ACTIONS = [
   'resident.view', 'resident.create', 'resident.update', 'resident.file.attach', 'observation.create', 'observation.correct', 'vitals.create', 'vitals.thresholds',
@@ -143,7 +144,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
                     <div className="stack-sm">
                       <p className="small" style={{ margin: 0 }}><strong>{r.lastName} {r.firstName}</strong></p>
                       <p className="fg2" style={{ margin: 0 }}>{t('residents.dataRights.anonymiseText')}</p>
-                      <label className="check"><input type="checkbox" name="confirm" /><span>{t('residents.dataRights.anonymiseCheck')}</span></label>
+                      <Checkbox name="confirm" label={t('residents.dataRights.anonymiseCheck')} />
                     </div>
                   </FormDialog>
                 ) : <span className="small muted">{t('residents.dataRights.onlyLeavers')}</span>)}

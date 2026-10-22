@@ -114,6 +114,8 @@ export default defineMessages({
       refNote: 'Verlaufseinträge',
       save: 'Vormerken',
       forVisit: 'Für Visite',
+      rowAction: 'Für Visite vormerken',
+      marked: 'Für Visite vorgemerkt',
     },
     card: {
       title: 'Fragen für die Visite',
@@ -251,6 +253,8 @@ export default defineMessages({
       refNote: 'Entrées du suivi',
       save: 'Noter',
       forVisit: 'Pour la visite',
+      rowAction: 'Noter pour la visite',
+      marked: 'Noté pour la visite',
     },
     card: {
       title: 'Questions pour la visite',
@@ -388,6 +392,8 @@ export default defineMessages({
       refNote: 'Annotazioni del decorso',
       save: 'Annotare',
       forVisit: 'Per la visita',
+      rowAction: 'Annotare per la visita',
+      marked: 'Annotato per la visita',
     },
     card: {
       title: 'Domande per la visita',
@@ -525,6 +531,8 @@ export default defineMessages({
       refNote: 'Notes',
       save: 'Note',
       forVisit: 'For round',
+      rowAction: 'Note for round',
+      marked: 'Noted for round',
     },
     card: {
       title: 'Questions for the round',

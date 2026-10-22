@@ -8,6 +8,7 @@ import { ActionForm } from '@/components/ui/ActionForm'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { IconPlus } from '@/components/icons'
 import { deleteContact, saveContact } from './actions'
+import { Checkbox, TextField, Textarea } from '@/components/ui/fields'
 
 type C = { id: string; name: string; relation: string; phone: string | null; email: string | null; isEmergency: boolean; isLegalRep: boolean; notes: string | null }
 
@@ -63,13 +64,13 @@ export function Contacts({ residentId, who, contacts, canEdit }: { residentId: s
         {edit && (
           <ActionForm key={cur?.id ?? 'new'} action={saveContact.bind(null, residentId, cur?.id ?? null)} success="common.saved" onDone={(r) => r.ok && setEdit(null)}>
             <div className="form-grid">
-              <label className="fld"><span className="lbl">{t('residents.contacts.name')}</span><input className="field" name="name" required maxLength={120} defaultValue={cur?.name} /></label>
-              <label className="fld"><span className="lbl">{t('residents.contacts.relation')}</span><input className="field" name="relation" required maxLength={80} defaultValue={cur?.relation} placeholder={t('residents.contacts.relationPh')} /></label>
-              <label className="fld"><span className="lbl">{t('residents.contacts.phone')}</span><input className="field mono" name="phone" type="tel" maxLength={40} defaultValue={cur?.phone ?? ''} /></label>
-              <label className="fld"><span className="lbl">{t('residents.contacts.email')}</span><input className="field" name="email" type="email" maxLength={120} defaultValue={cur?.email ?? ''} /></label>
-              <label className="check span-all"><input type="checkbox" name="isEmergency" defaultChecked={cur?.isEmergency} />{t('residents.contacts.emergency')}</label>
-              <label className="check span-all"><input type="checkbox" name="isLegalRep" defaultChecked={cur?.isLegalRep} />{t('residents.contacts.legalRep')}</label>
-              <label className="fld span-all"><span className="lbl">{t('residents.contacts.notes')}</span><textarea className="field" name="notes" rows={2} maxLength={1000} defaultValue={cur?.notes ?? ''} /></label>
+              <TextField label={t('residents.contacts.name')} name="name" required maxLength={120} defaultValue={cur?.name} />
+              <TextField label={t('residents.contacts.relation')} name="relation" required maxLength={80} defaultValue={cur?.relation} placeholder={t('residents.contacts.relationPh')} />
+              <TextField label={t('residents.contacts.phone')} name="phone" type="tel" maxLength={40} defaultValue={cur?.phone ?? ''} className="mono" />
+              <TextField label={t('residents.contacts.email')} name="email" type="email" maxLength={120} defaultValue={cur?.email ?? ''} />
+              <Checkbox name="isEmergency" defaultChecked={cur?.isEmergency} label={t('residents.contacts.emergency')} wrapClassName="span-all" />
+              <Checkbox name="isLegalRep" defaultChecked={cur?.isLegalRep} label={t('residents.contacts.legalRep')} wrapClassName="span-all" />
+              <Textarea label={t('residents.contacts.notes')} wrapClassName="span-all" name="notes" rows={2} maxLength={1000} defaultValue={cur?.notes ?? ''} />
             </div>
             <div className="form-actions">
               {cur && <button type="button" className="btn danger" onClick={() => remove(cur)} disabled={pending}>{t('common.delete')}</button>}

@@ -1706,3 +1706,118 @@ td dialog.dlg, th dialog.dlg { text-align: left; white-space: normal; font-size:
 
 /* Timeline: mehrzeilige Einträge (z. B. Visite-Zusammenfassung) behalten ihre Zeilen */
 .event .body p { white-space: pre-line }
+
+/* ==========================================================================================================
+   Formularfelder des Design Systems (src/components/ui/fields/, PRD §50)
+   Zustände Default/Hover/Focus/Active/Disabled/Error kommen von .field; hier nur Rahmen, Einheit, Hinweis,
+   Warnung, Zähler, Passwort, Suche, Combobox, Checkbox/Schalter, Radio, Datei, Farbe. Nur Tokens, Schrift in rem.
+   ========================================================================================================== */
+.fld > label.lbl { cursor: default }
+.fld-opt { font-family: var(--font-ui); font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--fg-3) }
+.fld-hint { margin: 0; font-size: 0.75rem; color: var(--fg-3) }
+.fld-err { margin: 0 }
+.fld-slot:empty { display: none }
+.fld-warn { margin: 0; font-size: 0.75rem; font-weight: 500; color: var(--warn) }
+.fld-count { margin: 0; font-size: 0.75rem; color: var(--fg-3); text-align: right }
+.fld-count[data-near] { color: var(--warn) }
+/* Einheit als Suffix: Feld + Einheit als eine Gruppe */
+.fld-ctl { display: flex; align-items: stretch; min-width: 0 }
+.fld-ctl > .field { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0 }
+.fld-unit { display: flex; align-items: center; padding: 0 9px; border: 1px solid var(--line-ui); border-left: 0; border-radius: 0 var(--r) var(--r) 0; background: var(--sunken); color: var(--fg-2); font-size: 0.8125rem; white-space: nowrap }
+.fld[data-invalid] .fld-unit { border-color: var(--crit) }
+.field[data-warn]:not([aria-invalid="true"]) { border-color: var(--warn) }
+/* Passwort mit Umschalter, Suche mit Lupe */
+.pw, .srch { position: relative; display: block; min-width: 0 }
+.pw-in { padding-right: 40px }
+.pw-btn { position: absolute; top: 1px; right: 1px; bottom: 1px; width: 38px; display: grid; place-items: center; border: 0; border-radius: 0 var(--r) var(--r) 0; background: none; color: var(--fg-2); padding: 0 }
+.pw-btn:hover:not(:disabled) { background: var(--sunken); color: var(--fg) }
+.pw-btn[aria-pressed="true"] { color: var(--accent) }
+.pw-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+.pw-btn:disabled { opacity: .5; cursor: not-allowed }
+.srch-ico { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--fg-3); pointer-events: none }
+.field.srch-in { padding-left: 30px }
+/* Checkbox und Schalter */
+.cbx { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; flex: none; cursor: pointer }
+.cbx:disabled { cursor: not-allowed }
+.check:has(input:disabled) { cursor: not-allowed; color: var(--fg-3) }
+.chk-fld { display: inline-flex; flex-direction: column; gap: 2px; min-width: 0 }
+.chk-fld > .fld-hint, .chk-fld > .fld-err { padding-left: 24px }
+.chk-fld:has(.sw) > .fld-hint, .chk-fld:has(.sw) > .fld-err { padding-left: 46px }
+.fld-opts { display: flex; flex-direction: column; gap: 2px }
+.sw { appearance: none; -webkit-appearance: none; position: relative; flex: none; width: 36px; height: 20px; margin: 0; border: 1.5px solid var(--line-ui); border-radius: 999px; background: var(--surface-2); cursor: pointer; transition: background-color .12s, border-color .12s }
+.sw::before { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--fg-2); transition: transform .12s }
+.sw:hover:not(:disabled) { border-color: var(--accent) }
+.sw:checked { background: var(--accent); border-color: var(--accent) }
+.sw:checked::before { transform: translateX(16px); background: var(--accent-fg) }
+.sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.sw:disabled { opacity: .5; cursor: not-allowed }
+.sw[aria-invalid="true"] { border-color: var(--crit) }
+/* Radio-Gruppe (Liste) und Segmente */
+.rg { display: flex; flex-direction: column; gap: 2px; align-items: flex-start }
+.rg.rg-inline { flex-direction: row; flex-wrap: wrap; gap: 2px 16px }
+.rg-opt { display: inline-flex; align-items: flex-start; gap: 8px; min-height: 28px; padding: 4px 2px; border: 0; border-radius: var(--r-sm); background: none; color: var(--fg); font: inherit; text-align: left; cursor: pointer }
+.rg-dot { flex: none; display: grid; place-items: center; width: 16px; height: 16px; margin-top: 1px; border: 1.5px solid var(--line-ui); border-radius: 50%; background: var(--surface) }
+.rg-opt:hover:not(:disabled) .rg-dot { border-color: var(--accent) }
+.rg-opt[aria-checked="true"] .rg-dot { border-color: var(--accent) }
+.rg-opt[aria-checked="true"] .rg-dot::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent) }
+.rg-opt:disabled { opacity: .5; cursor: not-allowed }
+.rg-text { display: flex; flex-direction: column }
+.rg-hint { font-size: 0.75rem; color: var(--fg-3) }
+.rg[aria-invalid="true"] .rg-dot, .seg[aria-invalid="true"] { border-color: var(--crit) }
+.rg-seg { align-self: flex-start; max-width: 100% }
+/* Combobox */
+.cb { position: relative; min-width: 0 }
+.field.cb-in { padding-right: 34px; text-overflow: ellipsis }
+.cb:has(.cb-clear) .field.cb-in { padding-right: 62px }
+.cb-btn { position: absolute; top: 1px; bottom: 1px; width: 30px; display: grid; place-items: center; border: 0; border-radius: var(--r-sm); background: none; color: var(--fg-2); padding: 0 }
+.cb-btn:hover:not(:disabled) { background: var(--sunken); color: var(--fg) }
+.cb-btn:disabled { opacity: .5; cursor: not-allowed }
+.cb-toggle { right: 1px }
+.cb-clear { right: 31px }
+.cb-chev { display: grid; transform: rotate(90deg); transition: transform .12s }
+.cb-toggle[aria-expanded="true"] .cb-chev { transform: rotate(-90deg) }
+.cb-pop { position: fixed; z-index: 80; overflow: auto; overscroll-behavior: contain; padding: 4px; background: var(--surface); color: var(--fg); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: var(--shadow-pop); font-size: 0.875rem; text-align: left }
+.cb-pop:focus { outline: none }
+.cb-opt { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; min-height: 2rem; padding: 6px 10px; border-radius: var(--r-sm); cursor: pointer }
+.cb-opt[data-active] { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent) }
+.cb-opt[aria-selected="true"] { font-weight: 600 }
+.cb-opt[aria-selected="true"] .cb-opt-l::after { content: " \2713"; color: var(--accent) }
+.cb-opt[aria-disabled="true"] { color: var(--fg-3); cursor: not-allowed }
+.cb-opt-l { min-width: 0; overflow-wrap: anywhere }
+.cb-opt-h { flex: none; max-width: 50%; font-size: 0.75rem; font-weight: 400; color: var(--fg-3); text-align: right }
+.cb-group { position: sticky; top: -4px; z-index: 1; padding: 8px 10px 4px; background: var(--surface); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3) }
+.cb-empty { padding: 10px; color: var(--fg-3) }
+/* Datei */
+.ff { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1.5px dashed var(--line-ui); border-radius: var(--r); background: var(--surface-2) }
+.ff.is-over { border-color: var(--accent); border-style: solid; background: var(--accent-soft) }
+.ff:has(.ff-native:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px }
+.ff.is-disabled { opacity: .6 }
+.fld[data-invalid] .ff { border-color: var(--crit) }
+.ff-native { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; opacity: 0 }
+.ff-drop { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--fg-2) }
+.ff-btn { cursor: pointer }
+.ff.is-disabled .ff-btn { cursor: not-allowed }
+.ff-limits { font-size: 0.75rem; color: var(--fg-3) }
+.ff-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px }
+.ff-item { display: flex; align-items: center; gap: 10px; padding: 6px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); min-width: 0 }
+.ff-thumb { flex: none; width: 40px; height: 40px; object-fit: cover; border-radius: var(--r-sm); background: var(--sunken) }
+.ff-doc { display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--fg-2) }
+.ff-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.ff-size { font-size: 0.75rem; color: var(--fg-3) }
+/* Farbe */
+.clr { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.clr-pick { flex: none; width: 40px; height: 34px; padding: 2px; border: 1px solid var(--line-ui); border-radius: var(--r); background: var(--surface-2); cursor: pointer }
+.clr-pick:disabled { opacity: .6; cursor: not-allowed }
+.field.clr-in { width: 8.5rem }
+@media (max-width: 720px) {
+  .pw-btn { width: 40px }
+  .cb-btn { width: 36px }
+  .cb-clear { right: 37px }
+  .field.cb-in { padding-right: 40px }
+  .cb:has(.cb-clear) .field.cb-in { padding-right: 76px }
+  .cb-opt { min-height: 44px; align-items: center }
+  .rg-opt { min-height: 40px; align-items: center }
+  .rg-dot { margin-top: 0 }
+  .clr-pick { height: 40px }
+  .ff-item .btn { min-height: 40px }
+}

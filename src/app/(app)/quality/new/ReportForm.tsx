@@ -6,7 +6,7 @@ import { useLocale, useT } from '@/i18n/client'
 import { formatDateTime } from '@/lib/date-input'
 import { onRadioKeys } from '@/components/ui/radio'
 import { reportIncidentAction } from '../actions'
-import { DateTimeField } from '@/components/ui/DateTimeField'
+import { Checkbox, DateTimeField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 type Step = { key: string; title: string; offsetMin: number }
 type TypeOpt = { id: string; key: string; name: string; steps: Step[] }
@@ -110,17 +110,14 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
           </div>
         </fieldset>
 
-        <label className="fld">
-          <span className="lbl">{t('quality.fields.resident')} <span className="muted">({t('common.optional')})</span></span>
-          <select className="field" name="residentId" value={residentId} onChange={(e) => setResidentId(e.target.value)}>
+        <Select label={<>{t('quality.fields.resident')} <span className="muted">({t('common.optional')})</span></>} name="residentId" value={residentId} onChange={(e) => setResidentId(e.target.value)}>
             <option value="">{t('quality.report.noResident')}</option>
             {byUnit.map(([u, list]) => (
               <optgroup key={u} label={u}>
                 {list.map((r) => <option key={r.id} value={r.id}>{r.name}{r.room ? ` · ${r.room}` : ''}</option>)}
               </optgroup>
             ))}
-          </select>
-        </label>
+          </Select>
         {resident && <input type="hidden" name="unitId" value={resident.unitId} />}
         {resident && (
           <div className="dlg-context q-ctx" aria-live="polite">
@@ -129,10 +126,7 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
           </div>
         )}
 
-        <label className="fld">
-          <span className="lbl">{t('quality.report.what')}</span>
-          <textarea className="field" name="description" rows={3} required maxLength={5000} placeholder={t('quality.report.descriptionHint')} aria-invalid={invalid('description')} aria-describedby={invalid('description') ? 'q-err' : undefined} />
-        </label>
+        <Textarea label={t('quality.report.what')} name="description" rows={3} required maxLength={5000} placeholder={t('quality.report.descriptionHint')} aria-invalid={invalid('description')} aria-describedby={invalid('description') ? 'q-err' : undefined} />
 
         <div className="fld">
           <span className="lbl" id="sev-l">{t('quality.fields.severity')}</span>
@@ -150,10 +144,7 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
           <div className="alert warn" role="status"><span className="grow">{t('quality.report.severeHint')}</span></div>
         )}
 
-        <label className="fld">
-          <span className="lbl">{t('quality.fields.immediateActions')} <span className="muted">({t('common.optional')})</span></span>
-          <textarea className="field" name="immediateActions" rows={2} maxLength={5000} placeholder={t('quality.report.immediateHint')} />
-        </label>
+        <Textarea label={<>{t('quality.fields.immediateActions')} <span className="muted">({t('common.optional')})</span></>} name="immediateActions" rows={2} maxLength={5000} placeholder={t('quality.report.immediateHint')} />
 
         <details ref={details} className="q-details">
           <summary>
@@ -166,29 +157,20 @@ export function ReportForm({ now, nowLabel, types, residents, units, defaultUnit
             <span className="linkbtn small">{t('quality.ux.change')}</span>
           </summary>
           <div className="form-grid q-details-body">
-            <label className="fld">
-              <span className="lbl">{t('quality.fields.occurredAt')}</span>
-              <DateTimeField name="occurredAt" value={when} onChange={setWhen} max={now.slice(0, 10) + 'T23:59'} required aria-invalid={invalid('occurredAt')} aria-describedby={invalid('occurredAt') ? 'q-err' : undefined} />
-            </label>
+            <DateTimeField label={t('quality.fields.occurredAt')} name="occurredAt" value={when} onChange={setWhen} max={now.slice(0, 10) + 'T23:59'} required aria-invalid={invalid('occurredAt')} aria-describedby={invalid('occurredAt') ? 'q-err' : undefined} />
             <label className="fld">
               <span className="lbl">{t('quality.fields.place')}</span>
-              <input className="field" name="place" list="q-places" maxLength={200} value={place} onChange={(e) => setPlace(e.target.value)} placeholder={resident?.room ? `${t('quality.report.room')} ${resident.room}` : ''} />
+              <TextField name="place" list="q-places" maxLength={200} value={place} onChange={(e) => setPlace(e.target.value)} placeholder={resident?.room ? `${t('quality.report.room')} ${resident.room}` : ''} />
               <datalist id="q-places">
                 {['room', 'bathroom', 'corridor', 'common', 'outdoor'].map((k) => <option key={k} value={k === 'room' && resident?.room ? `${t('quality.report.room')} ${resident.room}` : t('quality.places.' + k)} />)}
               </datalist>
             </label>
             {!resident && (
-              <label className="fld">
-                <span className="lbl">{t('quality.fields.unit')}</span>
-                <select className="field" name="unitId" value={unitId} onChange={(e) => setUnitId(e.target.value)}>
+              <Select label={t('quality.fields.unit')} name="unitId" value={unitId} onChange={(e) => setUnitId(e.target.value)}>
                   {units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-              </label>
+                </Select>
             )}
-            <label className="check" style={{ alignSelf: 'end', minHeight: 34 }}>
-              <input type="checkbox" name="nearMiss" />
-              <span>{t('quality.fields.nearMiss')} <span className="small muted">– {t('quality.report.nearMissHint')}</span></span>
-            </label>
+            <Checkbox name="nearMiss" label={<><span>{t('quality.fields.nearMiss')} <span className="small muted">– {t('quality.report.nearMissHint')}</span></span></>} wrapStyle={{ alignSelf: 'end', minHeight: 34 }} />
           </div>
         </details>
 

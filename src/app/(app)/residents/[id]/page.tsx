@@ -21,7 +21,7 @@ export default async function ResidentOverview({ params }: { params: Promise<{ i
   const { t, locale } = ctx
   const now = new Date()
   const since48 = addDays(now, -2)
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   const canMeds = can('resident.medication.read')
 
   const [nurse, plan, domains, importantObs, recentObs, vitals30, weights, limitRows, incidents48, falls90, medChanges, refusals, appts, assessments, defs, tasksToday, intake] = await Promise.all([
@@ -181,7 +181,7 @@ export default async function ResidentOverview({ params }: { params: Promise<{ i
               {upcoming.slice(0, 8).map((u) => (
                 <li key={u.key}>
                   <Link className="li" href={u.href}>
-                    <time className={'small mono nowrap ' + (u.over ? 'crit-text' : 'muted')} style={{ minWidth: 86 }}>{fmtDayMonth(u.at)}{u.at.getHours() || u.at.getMinutes() ? ' ' + hm(u.at) : ''}</time>
+                    <time className={'small mono nowrap ' + (u.over ? 'crit-text' : 'muted')} style={{ minWidth: 86 }}>{fmtDayMonth(u.at, locale)}{u.at.getHours() || u.at.getMinutes() ? ' ' + hm(u.at) : ''}</time>
                     <span className={'tag ' + u.tone} style={{ flex: 'none' }}>{u.tag}</span>
                     <span className="grow small">{u.text}{u.over && <span className="crit-text"> · {t('residents.overview.overdue')}</span>}</span>
                   </Link>

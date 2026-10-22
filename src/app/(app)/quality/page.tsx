@@ -9,6 +9,7 @@ import { IconWarn } from '@/components/icons'
 import { addDays, fmtDate, fmtNum, hm } from '@/lib/time'
 import { AutoFilter, PatternAssistant } from './client'
 import { median, patternHints, qualityUnits, STAGES } from './_lib'
+import { Checkbox, Select } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -134,43 +135,31 @@ export default async function QualityPage({ searchParams }: { searchParams: SP }
               <span className="small muted">{t('quality.list.count', { n: incidents.length })}</span>
             </div>
             <AutoFilter className="form-grid q-filters">
-              <label className="fld"><span className="lbl">{t('quality.filters.type')}</span>
-                <select className="field" name="type" defaultValue={f.type}>
+              <Select label={t('quality.filters.type')} name="type" defaultValue={f.type}>
                   <option value="">{t('common.all')}</option>
                   {types.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-                </select>
-              </label>
-              <label className="fld"><span className="lbl">{t('quality.filters.stage')}</span>
-                <select className="field" name="stage" defaultValue={f.stage}>
+                </Select>
+              <Select label={t('quality.filters.stage')} name="stage" defaultValue={f.stage}>
                   <option value="">{t('common.all')}</option>
                   <option value="open">{t('quality.filters.openOnly')}</option>
                   {STAGES.map((s) => <option key={s} value={s}>{t('quality.stages.' + s)}</option>)}
-                </select>
-              </label>
+                </Select>
               {units.length > 1 && (
-                <label className="fld"><span className="lbl">{t('quality.filters.unit')}</span>
-                  <select className="field" name="unit" defaultValue={f.unit}>
+                <Select label={t('quality.filters.unit')} name="unit" defaultValue={f.unit}>
                     <option value="">{t('common.all')}</option>
                     {units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                  </select>
-                </label>
+                  </Select>
               )}
-              <label className="fld"><span className="lbl">{t('quality.filters.period')}</span>
-                <select className="field" name="period" defaultValue={f.period}>
+              <Select label={t('quality.filters.period')} name="period" defaultValue={f.period}>
                   {PERIODS.map((p) => <option key={p} value={p}>{t('quality.periods.' + p)}</option>)}
-                </select>
-              </label>
+                </Select>
               {residents.length > 0 && (
-                <label className="fld"><span className="lbl">{t('quality.filters.resident')}</span>
-                  <select className="field" name="resident" defaultValue={f.resident}>
+                <Select label={t('quality.filters.resident')} name="resident" defaultValue={f.resident}>
                     <option value="">{t('common.all')}</option>
                     {residents.map((r) => <option key={r.id} value={r.id}>{r.lastName} {r.firstName}{r.room ? ' · ' + r.room.number : ''}</option>)}
-                  </select>
-                </label>
+                  </Select>
               )}
-              <label className="check" style={{ alignSelf: 'end', minHeight: 34 }}>
-                <input type="checkbox" name="near" value="1" defaultChecked={f.near} /> {t('quality.filters.nearMiss')}
-              </label>
+              <Checkbox name="near" value="1" defaultChecked={f.near} label={t('quality.filters.nearMiss')} wrapStyle={{ alignSelf: 'end', minHeight: 34 }} />
             </AutoFilter>
 
             {incidents.length ? (

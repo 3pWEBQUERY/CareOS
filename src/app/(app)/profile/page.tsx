@@ -14,6 +14,7 @@ import { PushSection } from './PushSection'
 import { InstallApp } from '@/components/shell/InstallApp'
 import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, TextSizeChooser, ThemeChooser } from './ProfileClient'
 import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updatePhoneAction } from './actions'
+import { TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   return { title: (await getCtx()).t('nav.profile') }
@@ -33,7 +34,7 @@ export default async function ProfilePage() {
   ])
   const dt = (d: Date) => fmtDate(d, locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
   const d = (d: Date) => fmtDate(d, locale)
-  const rel = (x: Date) => fmtRel(x, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (x: Date) => fmtRel(x, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   const device = (ua: string | null) => {
     const p = parseUserAgent(ua)
     return [p.browser || t('profile.sessions.unknownBrowser'), p.os].filter(Boolean).join(' · ')
@@ -73,10 +74,7 @@ export default async function ProfilePage() {
                   <dt>{t('profile.personal.lastLogin')}</dt><dd className="mono">{user.lastLoginAt ? dt(user.lastLoginAt) : '–'}</dd>
                 </dl>
                 <ActionForm action={updatePhoneAction} reset={false} success="common.saved" className="row">
-                  <label className="fld grow" style={{ minWidth: 180 }}>
-                    <span className="lbl">{t('profile.personal.phone')}</span>
-                    <input className="field" name="phone" type="tel" autoComplete="tel" defaultValue={user.phone ?? ''} maxLength={40} />
-                  </label>
+                  <TextField label={t('profile.personal.phone')} wrapClassName="grow" wrapStyle={{ minWidth: 180 }} name="phone" type="tel" autoComplete="tel" defaultValue={user.phone ?? ''} maxLength={40} />
                   <Submit className="btn" >{t('common.save')}</Submit>
                 </ActionForm>
               </div>
@@ -183,19 +181,9 @@ export default async function ProfilePage() {
                 <ActionForm action={changePasswordAction} success="profile.password.changed">
                   {/* Für Passwortmanager: Benutzername als verstecktes Feld */}
                   <input type="text" name="username" autoComplete="username" defaultValue={user.email} hidden readOnly />
-                  <label className="fld">
-                    <span className="lbl">{t('profile.password.current')}</span>
-                    <input className="field" type="password" name="current" autoComplete="current-password" required />
-                  </label>
-                  <label className="fld">
-                    <span className="lbl">{t('profile.password.new')}</span>
-                    <input className="field" type="password" name="next" autoComplete="new-password" minLength={10} required />
-                    <span className="hint">{t('profile.password.rules')}</span>
-                  </label>
-                  <label className="fld">
-                    <span className="lbl">{t('profile.password.repeat')}</span>
-                    <input className="field" type="password" name="repeat" autoComplete="new-password" minLength={10} required />
-                  </label>
+                  <TextField label={t('profile.password.current')} type="password" name="current" autoComplete="current-password" required />
+                  <TextField label={t('profile.password.new')} hint={t('profile.password.rules')} type="password" name="next" autoComplete="new-password" minLength={10} required />
+                  <TextField label={t('profile.password.repeat')} type="password" name="repeat" autoComplete="new-password" minLength={10} required />
                   <p className="small muted" style={{ margin: 0 }}>{t('profile.password.revokeHint')}</p>
                   <div className="form-actions"><Submit>{t('profile.password.submit')}</Submit></div>
                 </ActionForm>

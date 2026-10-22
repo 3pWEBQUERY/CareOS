@@ -9,8 +9,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { EDGE, EXUDATE, TISSUE, WOUND_KINDS, WOUND_ORIGINS } from '@/lib/care'
 import { createWoundAction, saveWoundEntryAction, setWoundStatusAction } from './actions'
-import { DateField } from '@/components/ui/DateField'
-import { DateTimeField } from '@/components/ui/DateTimeField'
+import { DateField, DateTimeField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 export function NewWoundButton({ residentId, today, contextLabel }: { residentId: string; today: string; contextLabel: string }) {
   const t = useT()
@@ -34,30 +33,21 @@ export function NewWoundButton({ residentId, today, contextLabel }: { residentId
           <div className="form-grid">
             <label className="fld" htmlFor="w-site">
               <span className="lbl">{t('care.wounds.bodySite')}</span>
-              <input id="w-site" name="bodySite" className="field" list="w-sites" maxLength={120} autoComplete="off" required />
+              <TextField id="w-site" name="bodySite" list="w-sites" maxLength={120} autoComplete="off" required />
               <datalist id="w-sites">{sites.map((s) => <option key={s} value={s} />)}</datalist>
             </label>
-            <label className="fld" htmlFor="w-kind">
-              <span className="lbl">{t('care.wounds.kind')}</span>
-              <select id="w-kind" name="kind" className="field" defaultValue="pressure">
+            <Select label={t('care.wounds.kind')} id="w-kind" name="kind" defaultValue="pressure">
                 {WOUND_KINDS.map((k) => <option key={k} value={k}>{t('care.wounds.kinds.' + k)}</option>)}
-              </select>
-            </label>
+              </Select>
             <label className="fld" htmlFor="w-class">
               <span className="lbl">{t('care.wounds.classification')} <span className="muted" style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
-              <input id="w-class" name="classification" className="field" list="w-classes" maxLength={120} autoComplete="off" />
+              <TextField id="w-class" name="classification" list="w-classes" maxLength={120} autoComplete="off" />
               <datalist id="w-classes">{classes.map((s) => <option key={s} value={s} />)}</datalist>
             </label>
-            <label className="fld" htmlFor="w-origin">
-              <span className="lbl">{t('care.wounds.origin')}</span>
-              <select id="w-origin" name="origin" className="field" defaultValue="in_house">
+            <Select label={t('care.wounds.origin')} id="w-origin" name="origin" defaultValue="in_house">
                 {WOUND_ORIGINS.map((k) => <option key={k} value={k}>{t('care.wounds.origins.' + k)}</option>)}
-              </select>
-            </label>
-            <label className="fld" htmlFor="w-start">
-              <span className="lbl">{t('care.wounds.startedAt')}</span>
-              <DateField id="w-start" name="startedAt" defaultValue={today} max={today} />
-            </label>
+              </Select>
+            <DateField label={t('care.wounds.startedAt')} id="w-start" name="startedAt" defaultValue={today} max={today} />
           </div>
           <div className="form-actions">
             <span className="spacer" />
@@ -83,53 +73,31 @@ export function WoundEntryForm({ residentId, woundId, now, storage }: { resident
   }
   useEffect(() => () => previews.forEach((u) => URL.revokeObjectURL(u)), [previews])
   const sel = (name: string, group: string, list: readonly string[]) => (
-    <label className="fld" htmlFor={'we-' + name}>
-      <span className="lbl">{t('care.wounds.' + group + 'L')}</span>
-      <select id={'we-' + name} name={name} className="field" defaultValue="">
+    <Select label={t('care.wounds.' + group + 'L')} id={'we-' + name} name={name} defaultValue="">
         <option value="">–</option>
         {list.map((k) => <option key={k} value={k}>{t(`care.wounds.${group}.${k}`)}</option>)}
-      </select>
-    </label>
+      </Select>
   )
   return (
     <ActionForm action={(f) => saveWoundEntryAction(residentId, woundId, f)} success="care.wounds.entrySaved" onDone={(r) => { if (r.ok) pick(null) }}>
       <div className="vform" style={{ border: 0, padding: 0 }}>
-        <label htmlFor="we-at" style={{ gridColumn: '1 / -1', maxWidth: 260 }}>
-          <span className="lbl">{t('care.wounds.entryAt')}</span>
-          <DateTimeField id="we-at" name="at" defaultValue={now} max={now} />
-        </label>
-        <label htmlFor="we-l"><span className="lbl">{t('care.wounds.length')}</span><input id="we-l" name="length" className="field" inputMode="decimal" autoComplete="off" /></label>
-        <label htmlFor="we-w"><span className="lbl">{t('care.wounds.width')}</span><input id="we-w" name="width" className="field" inputMode="decimal" autoComplete="off" /></label>
-        <label htmlFor="we-d"><span className="lbl">{t('care.wounds.depth')}</span><input id="we-d" name="depth" className="field" inputMode="decimal" autoComplete="off" /></label>
-        <label htmlFor="we-p">
-          <span className="lbl">{t('care.wounds.pain')}</span>
-          <select id="we-p" name="pain" className="field" defaultValue="">
+        <DateTimeField label={t('care.wounds.entryAt')} wrapStyle={{ gridColumn: '1 / -1', maxWidth: 260 }} id="we-at" name="at" defaultValue={now} max={now} />
+        <TextField label={t('care.wounds.length')} id="we-l" name="length" inputMode="decimal" autoComplete="off" />
+        <TextField label={t('care.wounds.width')} id="we-w" name="width" inputMode="decimal" autoComplete="off" />
+        <TextField label={t('care.wounds.depth')} id="we-d" name="depth" inputMode="decimal" autoComplete="off" />
+        <Select label={t('care.wounds.pain')} id="we-p" name="pain" defaultValue="">
             <option value="">–</option>
             {Array.from({ length: 11 }, (_, i) => <option key={i} value={i}>{i}</option>)}
-          </select>
-        </label>
+          </Select>
       </div>
       <div className="form-grid">
         {sel('exudate', 'exudate', EXUDATE)}
         {sel('tissue', 'tissue', TISSUE)}
         {sel('edge', 'edge', EDGE)}
-        <label className="fld span-all" htmlFor="we-desc">
-          <span className="lbl">{t('care.wounds.description')}</span>
-          <textarea id="we-desc" name="description" className="field" rows={2} style={{ minHeight: 56 }} />
-        </label>
-        <label className="fld span-all" htmlFor="we-treat">
-          <span className="lbl">{t('care.wounds.treatment')}</span>
-          <input id="we-treat" name="treatment" className="field" maxLength={2000} />
-        </label>
-        <label className="fld" htmlFor="we-mat">
-          <span className="lbl">{t('care.wounds.material')}</span>
-          <input id="we-mat" name="material" className="field" maxLength={300} />
-        </label>
-        <label className="fld" htmlFor="we-next">
-          <span className="lbl">{t('care.wounds.nextChange')}</span>
-          <DateTimeField id="we-next" name="nextChange" min={now} />
-          <span className="hint">{t('care.wounds.nextChangeHint')}</span>
-        </label>
+        <Textarea label={t('care.wounds.description')} wrapClassName="span-all" id="we-desc" name="description" rows={2} style={{ minHeight: 56 }} />
+        <TextField label={t('care.wounds.treatment')} wrapClassName="span-all" id="we-treat" name="treatment" maxLength={2000} />
+        <TextField label={t('care.wounds.material')} id="we-mat" name="material" maxLength={300} />
+        <DateTimeField label={t('care.wounds.nextChange')} hint={t('care.wounds.nextChangeHint')} id="we-next" name="nextChange" min={now} />
         <div className="fld span-all">
           <span className="lbl">{t('care.wounds.photos')}</span>
           {storage ? (

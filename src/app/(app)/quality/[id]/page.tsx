@@ -9,7 +9,7 @@ import { addActionAction, saveStageAction } from '../actions'
 import { ActionCheck } from '../client'
 import { actionTitle, canManageUnit, qualityUnits, SEVERITIES, STAGES, stageIndex, toLocalInput } from '../_lib'
 import { StageForm } from './StageForm'
-import { DateTimeField } from '@/components/ui/DateTimeField'
+import { Checkbox, DateTimeField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
@@ -80,7 +80,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
     const u = users.find((x) => x.id === uid)
     return u ? `${u.firstName} ${u.lastName}` : '–'
   }
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
 
   const current = closed ? 5 : stageIndex(inc.stage)
   const view: IncidentStage = (STAGES as string[]).includes(String(sp.s)) ? (sp.s as IncidentStage) : inc.stage
@@ -116,9 +116,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
       case 'immediate':
         return !closed && canReport ? (
           <StageForm action={save} advanceLabel={isCurrent ? nextLabel('immediate') : undefined} canAdvance={canManage}>
-            <label className="fld"><span className="lbl">{t('quality.fields.immediateActions')}</span>
-              <textarea className="field" name="immediateActions" defaultValue={inc.immediateActions ?? ''} maxLength={5000} placeholder={t('quality.report.immediateHint')} />
-            </label>
+            <Textarea label={t('quality.fields.immediateActions')} name="immediateActions" defaultValue={inc.immediateActions ?? ''} maxLength={5000} placeholder={t('quality.report.immediateHint')} />
             {isCurrent && !canManage && <p className="small muted" style={{ margin: 0 }}>{t('quality.detail.manageNext')}</p>}
           </StageForm>
         ) : <ReadText label={t('quality.fields.immediateActions')} text={inc.immediateActions} empty={t('quality.detail.notRecorded')} />
@@ -126,14 +124,10 @@ export default async function IncidentPage({ params, searchParams }: { params: P
         return !closed && canManage ? (
           <StageForm action={save} advanceLabel={isCurrent ? nextLabel('assessment') : undefined}>
             <p className="small muted" style={{ margin: 0 }}>{t('quality.detail.assessmentHint')}</p>
-            <label className="fld"><span className="lbl">{t('quality.fields.assessment')}</span>
-              <textarea className="field" name="assessment" defaultValue={inc.assessment ?? ''} maxLength={5000} />
-            </label>
-            <label className="fld" style={{ maxWidth: 260 }}><span className="lbl">{t('quality.fields.severity')}</span>
-              <select className="field" name="severity" defaultValue={inc.severity}>
+            <Textarea label={t('quality.fields.assessment')} name="assessment" defaultValue={inc.assessment ?? ''} maxLength={5000} />
+            <Select label={t('quality.fields.severity')} wrapStyle={{ maxWidth: 260 }} name="severity" defaultValue={inc.severity}>
                 {SEVERITIES.map((s) => <option key={s} value={s}>{t('quality.severity.' + s)}</option>)}
-              </select>
-            </label>
+              </Select>
           </StageForm>
         ) : <ReadText label={t('quality.fields.assessment')} text={inc.assessment} empty={canManage || closed ? t('quality.detail.notRecorded') : t('quality.detail.manageOnly')} />
       case 'followup':
@@ -149,9 +143,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
         return !closed && canManage ? (
           <StageForm action={save}>
             <p className="small muted" style={{ margin: 0 }}>{t('quality.detail.analysisHint')}</p>
-            <label className="fld"><span className="lbl">{t('quality.fields.analysis')}</span>
-              <textarea className="field" name="analysis" defaultValue={inc.analysis ?? ''} maxLength={8000} style={{ minHeight: 120 }} />
-            </label>
+            <Textarea label={t('quality.fields.analysis')} name="analysis" defaultValue={inc.analysis ?? ''} maxLength={8000} style={{ minHeight: 120 }} />
             {isCurrent && <Link className="linkbtn small" href={`/quality/${inc.id}?s=closed`}>{t('quality.detail.toClose')} →</Link>}
           </StageForm>
         ) : <ReadText label={t('quality.fields.analysis')} text={inc.analysis} empty={canManage || closed ? t('quality.detail.notRecorded') : t('quality.detail.manageOnly')} />
@@ -163,9 +155,7 @@ export default async function IncidentPage({ params, searchParams }: { params: P
           </>
         ) : canManage ? (
           <StageForm action={save} advanceLabel={t('quality.detail.close')} context={dlgContext} confirmTitle={t('quality.ux.closeTitle')} confirmAdvance={t('quality.ux.closeFinal')} consequences={openActions ? [t('quality.ux.closeOpen', { n: openActions })] : undefined}>
-            <label className="fld"><span className="lbl">{t('quality.fields.conclusion')}</span>
-              <textarea className="field" name="conclusion" defaultValue={inc.conclusion ?? ''} maxLength={5000} placeholder={t('quality.detail.conclusionHint')} />
-            </label>
+            <Textarea label={t('quality.fields.conclusion')} name="conclusion" defaultValue={inc.conclusion ?? ''} maxLength={5000} placeholder={t('quality.detail.conclusionHint')} />
             {openActions > 0 && <div className="alert warn"><span className="grow">{t('quality.detail.openActionsWarn', { n: openActions })}</span></div>}
           </StageForm>
         ) : <p className="small muted" style={{ margin: 0 }}>{t('quality.detail.manageOnly')}</p>
@@ -281,13 +271,9 @@ export default async function IncidentPage({ params, searchParams }: { params: P
                 {!closed && canReport && (
                   <div className="card-foot">
                     <ActionForm action={addActionAction.bind(null, inc.id)} className="form-grid" success="quality.detail.actionAdded">
-                      <label className="fld span-all"><span className="lbl">{t('quality.detail.newAction')}</span>
-                        <input className="field" name="title" maxLength={300} required placeholder={t('quality.detail.newActionHint')} />
-                      </label>
-                      <label className="fld"><span className="lbl">{t('quality.detail.dueAt')}</span>
-                        <DateTimeField name="dueAt" defaultValue={toLocalInput(new Date(now.getTime() + 3600_000))} />
-                      </label>
-                      <label className="check" style={{ alignSelf: 'end', minHeight: 34 }}><input type="checkbox" name="asTask" defaultChecked /> {t('quality.detail.asTask')}</label>
+                      <TextField label={t('quality.detail.newAction')} wrapClassName="span-all" name="title" maxLength={300} required placeholder={t('quality.detail.newActionHint')} />
+                      <DateTimeField label={t('quality.detail.dueAt')} name="dueAt" defaultValue={toLocalInput(new Date(now.getTime() + 3600_000))} />
+                      <Checkbox name="asTask" defaultChecked label={t('quality.detail.asTask')} wrapStyle={{ alignSelf: 'end', minHeight: 34 }} />
                       <div className="form-actions" style={{ alignSelf: 'end' }}><Submit className="btn">{t('common.add')}</Submit></div>
                     </ActionForm>
                   </div>

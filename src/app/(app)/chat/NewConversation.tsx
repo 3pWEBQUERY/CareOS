@@ -6,6 +6,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { IconPlus } from '@/components/icons'
 import { createConversationAction } from './actions'
+import { Checkbox, Select, TextField } from '@/components/ui/fields'
 
 type Person = { id: string; name: string; hint: string; clinical: boolean }
 
@@ -30,30 +31,24 @@ export function NewConversation({ people, teams, canClinical }: { people: Person
 
           {canClinical && (
             <div className="stack-sm">
-              <label className="check"><input type="checkbox" name="clinical" checked={clinical} onChange={(e) => setClinical(e.target.checked)} />{t('team.chat.form.clinical')}</label>
+              <Checkbox name="clinical" checked={clinical} onChange={(e) => setClinical(e.target.checked)} label={t('team.chat.form.clinical')} />
               {clinical && <div className="alert info"><span className="grow">{t('team.chat.form.clinicalHint')}</span></div>}
             </div>
           )}
 
           {kind === 'direct' && (
-            <label className="fld">
-              <span className="lbl">{t('team.chat.form.person')}</span>
-              <select name="userId" className="field" defaultValue="">
+            <Select label={t('team.chat.form.person')} name="userId" defaultValue="">
                 <option value="" disabled>{t('team.chat.form.pickPerson')}</option>
                 {list.map((p) => <option key={p.id} value={p.id}>{p.name}{p.hint ? ` · ${p.hint}` : ''}</option>)}
-              </select>
-            </label>
+              </Select>
           )}
 
           {kind === 'group' && (
             <>
-              <label className="fld">
-                <span className="lbl">{t('team.chat.form.name')}</span>
-                <input name="name" className="field" maxLength={120} autoComplete="off" />
-              </label>
+              <TextField label={t('team.chat.form.name')} name="name" maxLength={120} autoComplete="off" />
               <fieldset>
                 <legend className="lbl">{t('team.chat.form.members')}</legend>
-                <input type="search" className="field" placeholder={t('team.chat.form.search')} aria-label={t('team.chat.form.search')} value={q} onChange={(e) => setQ(e.target.value)} style={{ marginBottom: 6 }} />
+                <TextField type="search" placeholder={t('team.chat.form.search')} aria-label={t('team.chat.form.search')} value={q} onChange={(e) => setQ(e.target.value)} style={{ marginBottom: 6 }} />
                 <div style={{ maxHeight: 240, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
                   {people.map((p) => (
                     <label key={p.id} className="check" hidden={!list.includes(p)}>
@@ -67,13 +62,9 @@ export function NewConversation({ people, teams, canClinical }: { people: Person
           )}
 
           {kind === 'team' && (
-            <label className="fld">
-              <span className="lbl">{t('team.chat.form.team')}</span>
-              <select name="teamId" className="field" defaultValue={teams[0]?.id}>
+            <Select label={t('team.chat.form.team')} hint={t('team.chat.form.teamHint')} name="teamId" defaultValue={teams[0]?.id}>
                 {teams.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-              </select>
-              <span className="hint">{t('team.chat.form.teamHint')}</span>
-            </label>
+              </Select>
           )}
 
           <div className="form-actions">

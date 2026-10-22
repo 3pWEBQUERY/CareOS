@@ -68,7 +68,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     c.kind === 'direct' ? c.members.find((m) => m.userId !== user.id)?.user.initials ?? '–' : (c.name || '#').replace(/[^A-Za-zÀ-ž0-9]/g, '').slice(0, 2).toUpperCase() || '#'
 
   const sel = sp.c ? memberships.find((m) => m.conversationId === sp.c) ?? null : null
-  const rel = (d: Date) => (sameDay(d, now) ? hm(d) : fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now))
+  const rel = (d: Date) => (sameDay(d, now) ? hm(d) : fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale))
 
   // Kandidaten für neue Unterhaltungen (nur Mitarbeitende der Organisation, keine Bewohnerdaten).
   const [people, teams, clinicalIds] = await Promise.all([

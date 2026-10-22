@@ -7,7 +7,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { deleteShiftAction, saveShiftAction } from '../actions'
 import { ActButton } from '../../team/_ui/ActButton'
-import { DateField } from '@/components/ui/DateField'
+import { DateField, Select, TextField } from '@/components/ui/fields'
 
 export type ShiftType = { id: string; code: string; name: string; start: string; end: string }
 export type StaffOpt = { id: string; name: string; qual: string }
@@ -38,38 +38,23 @@ function ShiftForm({ d, onClose, types, staff, quals, unitId }: { d: ShiftDraft;
           <input type="hidden" name="id" value={d.id ?? ''} />
           <input type="hidden" name="unitId" value={unitId} />
           <div className="form-grid">
-            <label className="fld">
-              <span className="lbl">{t('schedule.plan.date')}</span>
-              <DateField name="date" defaultValue={d.date} required />
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('schedule.plan.type')}</span>
-              <select name="shiftTypeId" className="field" defaultValue={d.typeId ?? types[0]?.id}>
+            <DateField label={t('schedule.plan.date')} name="date" defaultValue={d.date} required />
+            <Select label={t('schedule.plan.type')} name="shiftTypeId" defaultValue={d.typeId ?? types[0]?.id}>
                 {types.map((x) => <option key={x.id} value={x.id}>{x.code} · {shiftName(t, x)} {x.start}–{x.end}</option>)}
-              </select>
-            </label>
-            <label className="fld span-all">
-              <span className="lbl">{t('schedule.plan.person')}</span>
-              <select name="userId" className="field" defaultValue={d.userId ?? ''} onChange={(e) => setPerson(e.target.value)}>
+              </Select>
+            <Select label={t('schedule.plan.person')} wrapClassName="span-all" name="userId" defaultValue={d.userId ?? ''} onChange={(e) => setPerson(e.target.value)}>
                 <option value="">{t('schedule.plan.openShift')}</option>
                 {staff.map((s) => <option key={s.id} value={s.id}>{s.name}{s.qual ? ` · ${s.qual}` : ''}</option>)}
-              </select>
-            </label>
+              </Select>
             {person === '' ? (
-              <label className="fld span-all">
-                <span className="lbl">{t('schedule.plan.reqQual')}</span>
-                <select name="requiredQualification" className="field" defaultValue={d.req ?? ''}>
+              <Select label={t('schedule.plan.reqQual')} wrapClassName="span-all" name="requiredQualification" defaultValue={d.req ?? ''}>
                   <option value="">{t('schedule.plan.noReq')}</option>
                   {quals.map((q) => <option key={q} value={q}>{q}</option>)}
-                </select>
-              </label>
+                </Select>
             ) : (
               <input type="hidden" name="requiredQualification" value={d.req ?? ''} />
             )}
-            <label className="fld span-all">
-              <span className="lbl">{t('schedule.plan.note')} <span className="muted">({t('common.optional')})</span></span>
-              <input name="note" className="field" defaultValue={d.note ?? ''} maxLength={500} />
-            </label>
+            <TextField label={<>{t('schedule.plan.note')} <span className="muted">({t('common.optional')})</span></>} wrapClassName="span-all" name="note" defaultValue={d.note ?? ''} maxLength={500} />
           </div>
           <div className="form-actions">
             <Submit>{t('common.save')}</Submit>

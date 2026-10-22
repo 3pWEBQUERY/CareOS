@@ -7,6 +7,7 @@ import { FormDialog } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { createRoleAction } from './actions'
 import { RoleMatrix } from './RoleMatrix'
+import { Select, TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -24,15 +25,12 @@ export default async function RolesPage({ searchParams }: { searchParams: Promis
       <AdminHead section={t('admin.title')} title={t('admin.nav.roles')} sub={t('admin.roles.sub')}>
         <FormDialog label={t('admin.roles.create')} buttonClass="btn primary" title={t('admin.roles.create')} action={createRoleAction} submit={t('common.create')}>
           <div className="form-grid">
-            <label className="fld span-all"><span className="lbl">{t('admin.roles.name')}</span><input className="field" name="name" required maxLength={80} autoFocus /></label>
-            <label className="fld span-all"><span className="lbl">{t('admin.roles.description')}</span><input className="field" name="description" maxLength={300} /></label>
-            <label className="fld span-all">
-              <span className="lbl">{t('admin.roles.copyFrom')}</span>
-              <select className="field" name="copyFrom" defaultValue="">
+            <TextField label={t('admin.roles.name')} wrapClassName="span-all" name="name" required maxLength={80} autoFocus />
+            <TextField label={t('admin.roles.description')} wrapClassName="span-all" name="description" maxLength={300} />
+            <Select label={t('admin.roles.copyFrom')} wrapClassName="span-all" name="copyFrom" defaultValue="">
                 <option value="">{t('admin.roles.empty')}</option>
                 {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-            </label>
+              </Select>
           </div>
         </FormDialog>
       </AdminHead>

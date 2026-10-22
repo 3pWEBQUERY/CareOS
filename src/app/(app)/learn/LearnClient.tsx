@@ -7,7 +7,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { Dialog } from '@/components/ui/Dialog'
 import { toast } from '@/components/toast'
 import { assignCourse, confirmPractical, saveCourse, saveModule, submitQuiz, type QuizResult } from './actions'
-import { DateField } from '@/components/ui/DateField'
+import { Checkbox, DateField, NumberField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 const tr = (t: (k: string) => string, s: string) => (/^[a-z]+\.[\w.]+$/.test(s) ? t(s) : s)
 
@@ -117,13 +117,11 @@ export function PracticalConfirm({ courseId, moduleId, people }: { courseId: str
   return (
     <ActionForm action={confirmPractical.bind(null, courseId, moduleId)} className="form">
       <div className="form-grid">
-        <label className="fld"><span className="lbl">{t('learn.practical.person')}</span>
-          <select className="field" name="userId" required defaultValue="">
+        <Select label={t('learn.practical.person')} name="userId" required defaultValue="">
             <option value="" disabled>{t('learn.practical.choose')}</option>
             {people.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </label>
-        <label className="fld"><span className="lbl">{t('learn.practical.note')} <span className="muted">({t('common.optional')})</span></span><input className="field" name="note" maxLength={200} /></label>
+          </Select>
+        <TextField label={<>{t('learn.practical.note')} <span className="muted">({t('common.optional')})</span></>} name="note" maxLength={200} />
       </div>
       <div className="form-actions"><span className="small muted">{t('learn.practical.hint')}</span><span className="spacer" /><Submit>{t('learn.practical.confirm')}</Submit></div>
     </ActionForm>
@@ -151,12 +149,10 @@ export function AssignButton({ courses, people, roles, units, defaultCourse }: {
         <ActionForm action={assignCourse} onDone={(r) => r.ok && setOpen(false)}>
           <input type="hidden" name="mode" value={mode} />
           <div className="form-grid">
-            <label className="fld"><span className="lbl">{t('learn.assign.course')}</span>
-              <select className="field" name="courseId" defaultValue={defaultCourse ?? courses[0]?.id}>
+            <Select label={t('learn.assign.course')} name="courseId" defaultValue={defaultCourse ?? courses[0]?.id}>
                 {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-              </select>
-            </label>
-            <label className="fld"><span className="lbl">{t('learn.assign.due')}</span><DateField name="dueAt" /></label>
+              </Select>
+            <DateField label={t('learn.assign.due')} name="dueAt" />
           </div>
           <div className="stack-sm">
             <span className="lbl">{t('learn.assign.to')}</span>
@@ -166,7 +162,7 @@ export function AssignButton({ courses, people, roles, units, defaultCourse }: {
           </div>
           {mode === 'users' && (
             <div className="stack-sm">
-              <input className="field" type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={t('learn.assign.filter')} aria-label={t('learn.assign.filter')} />
+              <TextField type="search" value={filter} onChange={(e) => setFilter(e.target.value)} placeholder={t('learn.assign.filter')} aria-label={t('learn.assign.filter')} />
               <div className="card" style={{ maxHeight: 260, overflow: 'auto', padding: '4px 10px' }}>
                 {people.map((p) => (
                   <label key={p.id} className="check" style={{ display: shown.includes(p) ? 'flex' : 'none', minHeight: 36 }}>
@@ -177,16 +173,12 @@ export function AssignButton({ courses, people, roles, units, defaultCourse }: {
             </div>
           )}
           {mode === 'role' && (
-            <label className="fld"><span className="lbl">{t('learn.assign.role')}</span>
-              <select className="field" name="roleId">{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
-            </label>
+            <Select label={t('learn.assign.role')} name="roleId">{roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}</Select>
           )}
           {mode === 'unit' && (
-            <label className="fld"><span className="lbl">{t('learn.assign.unit')}</span>
-              <select className="field" name="unitId">{units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</select>
-            </label>
+            <Select label={t('learn.assign.unit')} name="unitId">{units.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}</Select>
           )}
-          <label className="check"><input type="checkbox" name="renew" /> {t('learn.assign.renew')}</label>
+          <Checkbox name="renew" label={t('learn.assign.renew')} />
           <div className="form-actions"><span className="small muted">{t('learn.assign.hint')}</span><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('learn.assign.submit')}</Submit></div>
         </ActionForm>
       </Dialog>
@@ -204,17 +196,15 @@ export function CourseFields({ c, roles }: { c?: CourseData; roles: { key: strin
     <>
       {c?.id && <input type="hidden" name="id" value={c.id} />}
       <div className="form-grid">
-        <label className="fld span-all"><span className="lbl">{t('learn.edit.title')}</span><input className="field" name="title" defaultValue={c?.title} required maxLength={200} /></label>
-        <label className="fld"><span className="lbl">{t('learn.edit.category')}</span>
-          <select className="field" name="category" defaultValue={c?.category ?? 'general'}>{COURSE_CATS.map((k) => <option key={k} value={k}>{t('learn.cat.' + k)}</option>)}</select>
-        </label>
-        <label className="fld"><span className="lbl">{t('learn.edit.minutes')}</span><input className="field mono" name="estMinutes" inputMode="numeric" defaultValue={c?.estMinutes ?? 30} /></label>
-        <label className="fld"><span className="lbl">{t('learn.edit.validity')}</span><input className="field mono" name="validityMonths" inputMode="numeric" defaultValue={c?.validityMonths ?? ''} placeholder={t('learn.edit.validityHint')} /></label>
-        <label className="fld span-all"><span className="lbl">{t('learn.edit.description')}</span><textarea className="field" name="description" rows={3} defaultValue={c?.description ?? ''} /></label>
+        <TextField label={t('learn.edit.title')} wrapClassName="span-all" name="title" defaultValue={c?.title} required maxLength={200} />
+        <Select label={t('learn.edit.category')} name="category" defaultValue={c?.category ?? 'general'}>{COURSE_CATS.map((k) => <option key={k} value={k}>{t('learn.cat.' + k)}</option>)}</Select>
+        <TextField label={t('learn.edit.minutes')} name="estMinutes" inputMode="numeric" defaultValue={c?.estMinutes ?? 30} className="mono" />
+        <TextField label={t('learn.edit.validity')} name="validityMonths" inputMode="numeric" defaultValue={c?.validityMonths ?? ''} placeholder={t('learn.edit.validityHint')} className="mono" />
+        <Textarea label={t('learn.edit.description')} wrapClassName="span-all" name="description" rows={3} defaultValue={c?.description ?? ''} />
       </div>
       <div className="row">
-        <label className="check"><input type="checkbox" name="mandatory" defaultChecked={c?.mandatory} /> {t('learn.edit.mandatory')}</label>
-        <label className="check"><input type="checkbox" name="published" defaultChecked={c?.published ?? false} /> {t('learn.edit.published')}</label>
+        <Checkbox name="mandatory" defaultChecked={c?.mandatory} label={t('learn.edit.mandatory')} />
+        <Checkbox name="published" defaultChecked={c?.published ?? false} label={t('learn.edit.published')} />
       </div>
       <fieldset>
         <legend className="lbl">{t('learn.edit.audience')}</legend>
@@ -267,17 +257,17 @@ function QuizBuilder({ initial }: { initial: ModuleData['quiz'] }) {
   return (
     <div className="stack-sm">
       <input type="hidden" name="quiz" value={json} />
-      <label className="fld" style={{ maxWidth: 220 }}><span className="lbl">{t('learn.edit.passMark')}</span><input className="field mono" type="number" min={1} max={100} value={pass} onChange={(e) => setPass(Number(e.target.value) || 0)} /></label>
+      <NumberField label={t('learn.edit.passMark')} wrapStyle={{ maxWidth: 220 }} min={1} max={100} value={pass} onChange={(v) => setPass(v === '' ? 0 : v)} step={1} />
       {qs.map((q, i) => (
         <fieldset key={i} className="stack-sm">
           <legend className="lbl">{t('learn.edit.question', { n: i + 1 })}</legend>
-          <input className="field" value={q.q} onChange={(e) => upd(i, (x) => ({ ...x, q: e.target.value }))} placeholder={t('learn.edit.questionText')} aria-label={t('learn.edit.questionText')} />
+          <TextField value={q.q} onChange={(e) => upd(i, (x) => ({ ...x, q: e.target.value }))} placeholder={t('learn.edit.questionText')} aria-label={t('learn.edit.questionText')} />
           {q.options.map((o, j) => (
             <div key={j} className="row" style={{ flexWrap: 'nowrap' }}>
               <label className="check" title={t('learn.edit.correct')}>
                 <input type="radio" name={`correct-${i}`} checked={q.answer === j} onChange={() => upd(i, (x) => ({ ...x, answer: j }))} aria-label={`${t('learn.edit.correct')}: ${t('learn.edit.option', { n: j + 1 })}`} />
               </label>
-              <input className="field grow" value={o} onChange={(e) => upd(i, (x) => ({ ...x, options: x.options.map((y, k) => (k === j ? e.target.value : y)) }))} placeholder={t('learn.edit.option', { n: j + 1 })} aria-label={t('learn.edit.option', { n: j + 1 })} />
+              <TextField value={o} onChange={(e) => upd(i, (x) => ({ ...x, options: x.options.map((y, k) => (k === j ? e.target.value : y)) }))} placeholder={t('learn.edit.option', { n: j + 1 })} aria-label={t('learn.edit.option', { n: j + 1 })} className="grow" />
               <button type="button" className="btn sm ghost" disabled={q.options.length <= 2} onClick={() => upd(i, (x) => ({ ...x, options: x.options.filter((_, k) => k !== j), answer: x.answer === j ? 0 : x.answer > j ? x.answer - 1 : x.answer }))} aria-label={t('common.delete')}>−</button>
             </div>
           ))}
@@ -306,17 +296,15 @@ export function ModuleButton({ courseId, m, label, className = 'btn' }: { course
           <input type="hidden" name="courseId" value={courseId} />
           {m?.id && <input type="hidden" name="moduleId" value={m.id} />}
           <div className="form-grid">
-            <label className="fld"><span className="lbl">{t('learn.edit.kind')}</span>
-              <select className="field" name="kind" value={kind} onChange={(e) => setKind(e.target.value)}>{KINDS.map((k) => <option key={k} value={k}>{t('learn.kind.' + k)}</option>)}</select>
-            </label>
-            <label className="fld"><span className="lbl">{t('learn.edit.moduleTitle')}</span><input className="field" name="title" defaultValue={m?.title} required maxLength={200} /></label>
+            <Select label={t('learn.edit.kind')} name="kind" value={kind} onChange={(e) => setKind(e.target.value)}>{KINDS.map((k) => <option key={k} value={k}>{t('learn.kind.' + k)}</option>)}</Select>
+            <TextField label={t('learn.edit.moduleTitle')} name="title" defaultValue={m?.title} required maxLength={200} />
           </div>
-          {kind === 'video' && <label className="fld"><span className="lbl">{t('learn.edit.videoUrl')}</span><input className="field" name="videoUrl" type="url" defaultValue={m?.videoUrl ?? ''} placeholder="https://" /><span className="hint">{t('learn.edit.videoHint')}</span></label>}
+          {kind === 'video' && <TextField label={t('learn.edit.videoUrl')} hint={t('learn.edit.videoHint')} name="videoUrl" type="url" defaultValue={m?.videoUrl ?? ''} placeholder="https://" />}
           {kind === 'document' && (
             <label className="fld"><span className="lbl">{t('learn.edit.file')}</span><input className="field" type="file" name="file" />{m?.fileName && <span className="hint">{t('learn.edit.currentFile', { name: m.fileName })}</span>}</label>
           )}
           {kind === 'quiz' ? <QuizBuilder initial={m?.quiz ?? null} /> : (
-            <label className="fld"><span className="lbl">{kind === 'practical' ? t('learn.edit.practicalBody') : t('learn.edit.body')}</span><textarea className="field" name="body" rows={kind === 'text' ? 12 : 5} defaultValue={m?.body ?? ''} /><span className="hint">{t('docs.f.bodyHint')}</span></label>
+            <Textarea label={kind === 'practical' ? t('learn.edit.practicalBody') : t('learn.edit.body')} hint={t('docs.f.bodyHint')} name="body" rows={kind === 'text' ? 12 : 5} defaultValue={m?.body ?? ''} />
           )}
           <div className="form-actions"><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('common.save')}</Submit></div>
         </ActionForm>

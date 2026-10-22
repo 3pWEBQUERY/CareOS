@@ -2,16 +2,15 @@
 
 import Link from 'next/link'
 import { useEffect, useId, useRef, useState, useTransition } from 'react'
-import { useT } from '@/i18n/client'
+import { useLocale, useT } from '@/i18n/client'
 import { splitQuestion, useConfirm } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { DateField } from '@/components/ui/DateField'
-import { TimeField } from '@/components/ui/TimeField'
 import { completeVisit } from '@/app/(app)/tasks/visit/actions'
 import { defaultDue, isEmptyVisit, ORDER_KINDS, type OrderKind } from '@/lib/visit'
 import { fmtDayMonth, hm } from '@/lib/time'
 import { setVisitDirty, useGuardedNav } from './VisitList'
 import type { VisitQuestionDto } from './types'
+import { DateField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
 
 type OrderRow = { key: number; kind: OrderKind; text: string; date: string; time: string; questionId: string | null }
 
@@ -33,6 +32,7 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
   todayKey: string
 }) {
   const t = useT()
+  const locale = useLocale()
   const id = useId()
   const [physician, setPhysician] = useState(initialPhysician)
   const [answers, setAnswers] = useState<Record<string, string>>({})
@@ -128,10 +128,7 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
       )}
       {!collapsed && <>
       {!readOnly && (
-        <label className="fld" htmlFor={id + 'p'}>
-          <span className="lbl">{t('visit.capture.physician')}</span>
-          <input id={id + 'p'} className="field" value={physician} maxLength={120} autoComplete="off" onChange={(e) => setPhysician(e.target.value)} />
-        </label>
+        <TextField label={t('visit.capture.physician')} id={id + 'p'} value={physician} maxLength={120} autoComplete="off" onChange={(e) => setPhysician(e.target.value)} />
       )}
 
       <div className="stack-sm">
@@ -148,7 +145,7 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
               <>
                 <label className="fld" htmlFor={`${id}a${q.id}`}>
                   <span className="lbl">{t('visit.capture.answer')}</span>
-                  <textarea id={`${id}a${q.id}`} className="field" rows={2} maxLength={2000} value={answers[q.id] ?? ''} aria-describedby={`${id}a${q.id}h`}
+                  <Textarea id={`${id}a${q.id}`} rows={2} maxLength={2000} value={answers[q.id] ?? ''} aria-describedby={`${id}a${q.id}h`}
                     onChange={(e) => setAnswers((cur) => ({ ...cur, [q.id]: e.target.value }))} />
                   <span className="hint" id={`${id}a${q.id}h`}>{t('visit.capture.answerHint')}</span>
                 </label>
@@ -174,31 +171,19 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
                 <legend className="sr-only">{t('visit.capture.text')} {i + 1}</legend>
                 {q && <p className="small muted vo-for">{t('visit.capture.forQuestion', { text: q.text })}</p>}
                 <div className="vo-grid">
-                  <label className="fld vo-kind" htmlFor={base + 'k'}>
-                    <span className="lbl">{t('visit.capture.kind')}</span>
-                    <select id={base + 'k'} className="field" value={o.kind} onChange={(e) => patch(o.key, { kind: e.target.value as OrderKind })}>
+                  <Select label={t('visit.capture.kind')} wrapClassName="vo-kind" id={base + 'k'} value={o.kind} onChange={(e) => patch(o.key, { kind: e.target.value as OrderKind })}>
                       {ORDER_KINDS.map((k) => <option key={k} value={k}>{t('visit.kinds.' + k)}</option>)}
-                    </select>
-                  </label>
-                  <label className="fld vo-text" htmlFor={base + 't'}>
-                    <span className="lbl">{t('visit.capture.text')}</span>
-                    <input id={base + 't'} className="field" value={o.text} maxLength={500} autoComplete="off" aria-invalid={!!errText || undefined} aria-describedby={errText ? base + 'e' : undefined}
+                    </Select>
+                  <TextField label={t('visit.capture.text')} wrapClassName="vo-text" id={base + 't'} value={o.text} maxLength={500} autoComplete="off" aria-invalid={!!errText || undefined} aria-describedby={errText ? base + 'e' : undefined}
                       onChange={(e) => patch(o.key, { text: e.target.value })} />
-                  </label>
-                  <label className="fld vo-date" htmlFor={base + 'd'}>
-                    <span className="lbl">{t('visit.capture.date')}</span>
-                    <DateField id={base + 'd'} min={todayKey} value={o.date} aria-invalid={!!fieldErr(`o${o.key}.date`) || undefined} onChange={(v) => patch(o.key, { date: v })} />
-                  </label>
-                  <label className="fld vo-time" htmlFor={base + 'h'}>
-                    <span className="lbl">{t('visit.capture.time')}</span>
-                    <TimeField id={base + 'h'} step={300} value={o.time} aria-invalid={!!fieldErr(`o${o.key}.time`) || undefined} onChange={(v) => patch(o.key, { time: v })} />
-                  </label>
+                  <DateField label={t('visit.capture.date')} wrapClassName="vo-date" id={base + 'd'} min={todayKey} value={o.date} aria-invalid={!!fieldErr(`o${o.key}.date`) || undefined} onChange={(v) => patch(o.key, { date: v })} />
+                  <TimeField label={t('visit.capture.time')} wrapClassName="vo-time" id={base + 'h'} step={300} value={o.time} aria-invalid={!!fieldErr(`o${o.key}.time`) || undefined} onChange={(v) => patch(o.key, { time: v })} />
                   <button type="button" className="btn ghost vo-del" aria-label={`${t('visit.capture.remove')} ${i + 1}`} title={t('visit.capture.remove')} onClick={() => setOrders((cur) => cur.filter((x) => x.key !== o.key))}>
                     <span aria-hidden="true">✕</span>
                   </button>
                 </div>
                 {(errText || errDue) && <p className="err" id={base + 'e'} role="alert" style={{ margin: 0 }}>{errText ?? errDue}</p>}
-                {!o.date && !o.time && due && <p className="small muted" style={{ margin: 0 }}>{t('visit.capture.dueDefault', { when: `${fmtDayMonth(due)} ${hm(due)}` })}</p>}
+                {!o.date && !o.time && due && <p className="small muted" style={{ margin: 0 }}>{t('visit.capture.dueDefault', { when: `${fmtDayMonth(due, locale)} ${hm(due)}` })}</p>}
                 {o.kind === 'medication' && <p className="small vo-med" style={{ margin: 0 }}>{t('visit.capture.medHint')}</p>}
               </fieldset>
             )
@@ -210,10 +195,7 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
       )}
 
       {!readOnly && (
-        <label className="fld" htmlFor={id + 'n'}>
-          <span className="lbl">{t('visit.capture.note')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
-          <textarea id={id + 'n'} className="field" rows={3} maxLength={4000} value={note} placeholder={t('visit.capture.noteHint')} onChange={(e) => setNote(e.target.value)} />
-        </label>
+        <Textarea label={<>{t('visit.capture.note')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} id={id + 'n'} rows={3} maxLength={4000} value={note} placeholder={t('visit.capture.noteHint')} onChange={(e) => setNote(e.target.value)} />
       )}
 
       {!readOnly && (

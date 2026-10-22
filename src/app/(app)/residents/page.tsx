@@ -20,7 +20,7 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
   const pick = sp.pick === 'notes' || sp.pick === 'vitals' ? sp.pick : null
   const unitIds = unit ? [unit.id] : ctx.unitIds
   const now = new Date()
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
 
   const residents = await db.resident.findMany({
     where: { orgId: ctx.org.id, unitId: { in: unitIds }, status: { in: ['active', 'absent'] } },

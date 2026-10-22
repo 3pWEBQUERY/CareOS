@@ -45,7 +45,7 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
         <div className="metric"><span className="lbl">{t('schedule.mine.hours')}</span><span className="val">{fmtNum(total, total % 1 ? 1 : 0, locale)} <small>h</small></span></div>
         <div className="metric">
           <span className="lbl">{t('schedule.mine.next')}</span>
-          <span className="val" style={{ fontSize: '1rem' }}>{next ? <><span className={'sh ' + next.shiftType.code}>{next.shiftType.code}</span> {weekdayShort(fromDbDate(next.date), locale)} {fmtDayMonth(fromDbDate(next.date))} <small>{next.shiftType.start}</small></> : '–'}</span>
+          <span className="val" style={{ fontSize: '1rem' }}>{next ? <><span className={'sh ' + next.shiftType.code}>{next.shiftType.code}</span> {weekdayShort(fromDbDate(next.date), locale)} {fmtDayMonth(fromDbDate(next.date), locale)} <small>{next.shiftType.start}</small></> : '–'}</span>
         </div>
         <Link className="metric" href="/schedule?view=open"><span className="lbl">{t('schedule.tabs.open')}</span><span className={'val' + (openCount ? ' warn' : '')}>{openCount}</span></Link>
         {pendingSwaps > 0 && <Link className="metric" href="/schedule?view=swaps"><span className="lbl">{t('schedule.mine.pendingSwaps')}</span><span className="val warn">{pendingSwaps}</span></Link>}
@@ -63,7 +63,7 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
               const today = sameDay(d, now)
               const dayCell = (
                 <th scope="row" className="nowrap" style={today ? { color: 'var(--accent)' } : undefined}>
-                  <span className="mono">{weekdayShort(d, locale)} {fmtDayMonth(d)}</span>{today && <span className="tag accent" style={{ marginLeft: 6 }}>{t('common.today')}</span>}
+                  <span className="mono">{weekdayShort(d, locale)} {fmtDayMonth(d, locale)}</span>{today && <span className="tag accent" style={{ marginLeft: 6 }}>{t('common.today')}</span>}
                 </th>
               )
               if (!list.length)
@@ -91,7 +91,7 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
                       {!past && s.status === 'planned' && !swap && (
                         <SwapButton
                           shiftId={s.id}
-                          label={`${shiftName(t, s.shiftType)} · ${weekdayShort(d, locale)} ${fmtDayMonth(d)} · ${s.shiftType.start}–${s.shiftType.end}`}
+                          label={`${shiftName(t, s.shiftType)} · ${weekdayShort(d, locale)} ${fmtDayMonth(d, locale)} · ${s.shiftType.start}–${s.shiftType.end}`}
                           colleagues={(staffBy.get(s.unitId) ?? []).map((c) => ({ id: c.id, name: c.name, qual: c.qual, busy: busySet.has(`${c.id}|${dbKey(s.date)}`) }))}
                         />
                       )}

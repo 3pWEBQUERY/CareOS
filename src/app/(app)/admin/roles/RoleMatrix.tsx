@@ -8,6 +8,7 @@ import { useUnsavedGuard } from '@/components/admin/ui'
 import { permKey } from '@/lib/admin-shared'
 import { GroupCheck } from './Matrix'
 import { saveRoleMatrixAction } from './actions'
+import { Checkbox, TextField } from '@/components/ui/fields'
 
 type Role = { id: string; name: string; system: boolean; permissions: string[] }
 type Group = { key: string; perms: string[] }
@@ -60,8 +61,8 @@ export function RoleMatrix({ roles, groups }: { roles: Role[]; groups: Group[] }
   return (
     <div className="stack-sm rm">
       <div className="pm-tools" role="search">
-        <input className="field" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.ux.permSearch')} aria-label={t('admin.ux.permSearch')} />
-        <label className="check"><input type="checkbox" checked={onlyDiff} onChange={(e) => setOnlyDiff(e.target.checked)} /><span>{t('admin.ux.onlyChanged')}</span></label>
+        <TextField type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.ux.permSearch')} aria-label={t('admin.ux.permSearch')} />
+        <Checkbox checked={onlyDiff} onChange={(e) => setOnlyDiff(e.target.checked)} label={t('admin.ux.onlyChanged')} />
       </div>
       <div className="rm-wrap" tabIndex={0} role="region" aria-label={t('admin.ux.matrixTitle')}>
         <table className="rm-table">

@@ -9,7 +9,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { useConfirm, splitQuestion } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
 import { createDocument, updateDocumentMeta, createVersion, updateDraft, askAssistant, type AssistantAnswer } from './actions'
-import { DateField } from '@/components/ui/DateField'
+import { Checkbox, DateField, Select, TextField, Textarea } from '@/components/ui/fields'
 
 type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 
@@ -64,23 +64,19 @@ function MetaFields({ d, users }: { d?: Meta; users?: { id: string; name: string
   const t = useT()
   return (
     <div className="form-grid">
-      <label className="fld span-all"><span className="lbl">{t('docs.f.title')}</span><input className="field" name="title" defaultValue={d?.title} required maxLength={200} /></label>
-      <label className="fld"><span className="lbl">{t('docs.f.category')}</span>
-        <select className="field" name="category" defaultValue={d?.category ?? 'guideline'}>
+      <TextField label={t('docs.f.title')} wrapClassName="span-all" name="title" defaultValue={d?.title} required maxLength={200} />
+      <Select label={t('docs.f.category')} name="category" defaultValue={d?.category ?? 'guideline'}>
           {DOC_CATS.map((c) => <option key={c} value={c}>{t('docs.cat.' + c)}</option>)}
-        </select>
-      </label>
+        </Select>
       {users && (
-        <label className="fld"><span className="lbl">{t('docs.f.owner')}</span>
-          <select className="field" name="ownerId" defaultValue={d?.ownerId}>
+        <Select label={t('docs.f.owner')} name="ownerId" defaultValue={d?.ownerId}>
             {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
-        </label>
+          </Select>
       )}
-      <label className="fld span-all"><span className="lbl">{t('docs.f.tags')}</span><input className="field" name="tags" defaultValue={d?.tags.join(', ')} placeholder={t('docs.f.tagsHint')} /></label>
-      <label className="fld"><span className="lbl">{t('docs.f.validFrom')}</span><DateField name="validFrom" defaultValue={d?.validFrom ?? ''} /></label>
-      <label className="fld"><span className="lbl">{t('docs.f.validUntil')}</span><DateField name="validUntil" defaultValue={d?.validUntil ?? ''} /></label>
-      <label className="check span-all"><input type="checkbox" name="requireAck" defaultChecked={d?.requireAck} /> {t('docs.f.requireAck')}</label>
+      <TextField label={t('docs.f.tags')} wrapClassName="span-all" name="tags" defaultValue={d?.tags.join(', ')} placeholder={t('docs.f.tagsHint')} />
+      <DateField label={t('docs.f.validFrom')} name="validFrom" defaultValue={d?.validFrom ?? ''} />
+      <DateField label={t('docs.f.validUntil')} name="validUntil" defaultValue={d?.validUntil ?? ''} />
+      <Checkbox name="requireAck" defaultChecked={d?.requireAck} label={t('docs.f.requireAck')} wrapClassName="span-all" />
     </div>
   )
 }
@@ -98,10 +94,10 @@ export function NewDocButton() {
         <ActionForm action={createDocument} success="docs.created" onDone={(r) => { if (r.ok) { setOpen(false); router.push(`/docs/${(r.data as { id: string }).id}`) } }}>
           <MetaFields />
           <div className="form-grid">
-            <label className="fld"><span className="lbl">{t('docs.f.version')}</span><input className="field mono" name="version" defaultValue="1.0" /></label>
+            <TextField label={t('docs.f.version')} name="version" defaultValue="1.0" className="mono" />
             <label className="fld"><span className="lbl">{t('docs.f.file')} <span className="muted">({t('common.optional')})</span></span><input className="field" type="file" name="file" /></label>
           </div>
-          <label className="fld"><span className="lbl">{t('docs.f.body')}</span><textarea className="field mono" name="body" rows={12} placeholder={t('docs.f.bodyHint')} /></label>
+          <Textarea label={t('docs.f.body')} name="body" rows={12} placeholder={t('docs.f.bodyHint')} className="mono" />
           <div className="form-actions"><span className="small muted">{t('docs.f.draftHint')}</span><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('common.create')}</Submit></div>
         </ActionForm>
       </Dialog>
@@ -147,21 +143,18 @@ export function VersionButton({ documentId, draft, suggest, suggestCritical, bas
         <ActionForm action={draft ? updateDraft : createVersion} success={draft ? 'common.saved' : 'docs.version.created'} reset={false} onDone={(r) => r.ok && setOpen(false)}>
           <input type="hidden" name={draft ? 'versionId' : 'documentId'} value={draft ? draft.id : documentId} />
           <div className="form-grid">
-            <label className="fld"><span className="lbl">{t('docs.f.version')}</span><input ref={verRef} className="field mono" name="version" defaultValue={draft?.version ?? suggest} required /></label>
-            <label className="check" style={{ alignSelf: 'end' }}>
-              <input type="checkbox" name="critical" defaultChecked={draft?.critical} onChange={(e) => { if (!draft && verRef.current && suggest && suggestCritical) verRef.current.value = e.target.checked ? suggestCritical : suggest }} />
-              {t('docs.f.critical')}
-            </label>
-            <label className="fld span-all"><span className="lbl">{t('docs.f.changeNote')}</span><input className="field" name="changeNote" defaultValue={draft?.changeNote ?? ''} maxLength={300} placeholder={t('docs.f.changeNoteHint')} /></label>
+            <TextField label={t('docs.f.version')} ref={verRef} name="version" defaultValue={draft?.version ?? suggest} required className="mono" />
+            <Checkbox name="critical" defaultChecked={draft?.critical} onChange={(e) => { if (!draft && verRef.current && suggest && suggestCritical) verRef.current.value = e.target.checked ? suggestCritical : suggest }} label={t('docs.f.critical')} wrapStyle={{ alignSelf: 'end' }} />
+            <TextField label={t('docs.f.changeNote')} wrapClassName="span-all" name="changeNote" defaultValue={draft?.changeNote ?? ''} maxLength={300} placeholder={t('docs.f.changeNoteHint')} />
           </div>
           <p className="small muted" style={{ margin: 0 }}>{t('docs.f.criticalHint')}</p>
-          <label className="fld"><span className="lbl">{t('docs.f.body')}</span><textarea className="field mono" name="body" rows={16} defaultValue={draft?.body ?? baseBody} /><span className="hint">{t('docs.f.bodyHint')}</span></label>
+          <Textarea label={t('docs.f.body')} hint={t('docs.f.bodyHint')} name="body" rows={16} defaultValue={draft?.body ?? baseBody} className="mono" />
           <div className="form-grid">
             <label className="fld"><span className="lbl">{t('docs.f.file')} <span className="muted">({t('common.optional')})</span></span><input className="field" type="file" name="file" /></label>
             {draft?.fileName ? (
-              <label className="check" style={{ alignSelf: 'end' }}><input type="checkbox" name="removeFile" /> {t('docs.f.removeFile', { name: draft.fileName })}</label>
+              <Checkbox name="removeFile" label={t('docs.f.removeFile', { name: draft.fileName })} wrapStyle={{ alignSelf: 'end' }} />
             ) : !draft && hasFile ? (
-              <label className="check" style={{ alignSelf: 'end' }}><input type="checkbox" name="keepFile" defaultChecked /> {t('docs.f.keepFile')}</label>
+              <Checkbox name="keepFile" defaultChecked label={t('docs.f.keepFile')} wrapStyle={{ alignSelf: 'end' }} />
             ) : null}
           </div>
           <div className="form-actions"><span className="small muted">{t('docs.f.draftHint')}</span><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('common.save')}</Submit></div>

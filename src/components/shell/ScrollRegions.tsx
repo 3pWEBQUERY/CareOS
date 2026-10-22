@@ -29,9 +29,17 @@ export function ScrollRegions() {
       }
       return fallback
     }
+    let retry = 0
+    let tries = 0
+    // Erst nach der Hydration ändern: Streaming-Inhalte (Suspense) hydrieren später als die Shell. Attribute an noch
+    // nicht hydriertem Server-HTML würden als Abweichung gemeldet («attributes didn't match», React 19). Hydrierte
+    // Elemente tragen Reacts interne Fiber-Referenz; übrige Bereiche werden kurz danach erneut geprüft.
+    const hydrated = (el: HTMLElement) => Object.keys(el).some((k) => k.startsWith('__reactFiber$'))
     const apply = () => {
       raf = 0
+      let waiting = false
       for (const el of document.querySelectorAll<HTMLElement>(SEL)) {
+        if (!el.dataset.scrollFocus && !hydrated(el)) { waiting = true; continue }
         const scrolls = el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1
         // Merker, welche Attribute von hier stammen (t = tabindex, r = role, l = aria-label) – nur diese werden zurückgenommen
         const managed = el.dataset.scrollFocus
@@ -51,13 +59,14 @@ export function ScrollRegions() {
           delete el.dataset.scrollFocus
         }
       }
+      if (waiting && !retry && tries++ < 40) retry = window.setTimeout(() => { retry = 0; schedule() }, 250)
     }
     const schedule = () => { if (!raf) raf = requestAnimationFrame(apply) }
     schedule()
-    const mo = new MutationObserver(schedule)
+    const mo = new MutationObserver(() => { tries = 0; schedule() })
     mo.observe(document.body, { childList: true, subtree: true })
     window.addEventListener('resize', schedule)
-    return () => { mo.disconnect(); window.removeEventListener('resize', schedule); if (raf) cancelAnimationFrame(raf) }
+    return () => { mo.disconnect(); window.removeEventListener('resize', schedule); if (raf) cancelAnimationFrame(raf); if (retry) clearTimeout(retry) }
   }, [fallback])
   return null
 }

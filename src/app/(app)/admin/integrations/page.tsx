@@ -12,6 +12,7 @@ import {
   createTokenAction, createWebhookAction, deleteIntegrationAction, deleteWebhookAction, revokeTokenAction,
   rotateWebhookSecretAction, saveIntegrationAction, testWebhookAction, updateWebhookAction,
 } from './actions'
+import { Checkbox, Select, TextField, Textarea } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -53,7 +54,7 @@ async function ApiTokens() {
   const tokens = await db.apiToken.findMany({ where: { orgId: ctx.org.id }, orderBy: [{ revokedAt: { sort: 'desc', nulls: 'first' } }, { createdAt: 'desc' }] })
   const creators = await db.user.findMany({ where: { id: { in: tokens.map((x) => x.createdById) } }, select: { id: true, firstName: true, lastName: true } })
   const who = new Map(creators.map((u) => [u.id, `${u.firstName} ${u.lastName}`]))
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   return (
     <>
       <dl className="kv">
@@ -65,7 +66,7 @@ async function ApiTokens() {
         <div className="card-head"><h2 id="api-new">{t('admin.api.create')}</h2></div>
         <div className="card-body">
           <SecretForm action={createTokenAction} submit={t('admin.api.createSubmit')} intro={t('admin.api.once')} label={t('admin.api.token')} success="admin.api.tokenCreated">
-            <label className="fld" style={{ maxWidth: 420 }}><span className="lbl">{t('admin.api.name')}</span><input className="field" name="name" required maxLength={80} placeholder={t('admin.api.namePlaceholder')} /></label>
+            <TextField label={t('admin.api.name')} wrapStyle={{ maxWidth: 420 }} name="name" required maxLength={80} placeholder={t('admin.api.namePlaceholder')} />
             <fieldset>
               <legend className="lbl">{t('admin.api.scopes')}</legend>
               <div className="grid-3" style={{ gap: 4 }}>
@@ -105,11 +106,11 @@ async function Webhooks() {
   const { t } = ctx
   const now = new Date()
   const hooks = await db.webhook.findMany({ where: { orgId: ctx.org.id }, include: { deliveries: { orderBy: { createdAt: 'desc' }, take: 8 } }, orderBy: { createdAt: 'asc' } })
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
   const events = (sel: string[] = []) => (
     <fieldset>
       <legend className="lbl">{t('admin.webhooks.events')}</legend>
-      <label className="check"><input type="checkbox" name="events" value="*" defaultChecked={sel.includes('*')} /><span>{t('admin.webhooks.allEvents')}</span></label>
+      <Checkbox name="events" value="*" defaultChecked={sel.includes('*')} label={t('admin.webhooks.allEvents')} />
       <div className="grid-3" style={{ gap: 0, marginTop: 4 }}>
         {EVENT_TYPES.map((e) => <label key={e} className="check"><input type="checkbox" name="events" value={e} defaultChecked={sel.includes(e)} /><code className="mono small">{e}</code></label>)}
       </div>
@@ -122,7 +123,7 @@ async function Webhooks() {
         <div className="card-head"><h2 id="wh-new">{t('admin.webhooks.create')}</h2></div>
         <div className="card-body">
           <SecretForm action={createWebhookAction} submit={t('admin.webhooks.createSubmit')} intro={t('admin.webhooks.once')} label={t('admin.webhooks.secret')} success="admin.webhooks.created">
-            <label className="fld"><span className="lbl">{t('admin.webhooks.url')}</span><input className="field mono" name="url" type="url" required placeholder="https://example.org/careos/hook" /></label>
+            <TextField label={t('admin.webhooks.url')} name="url" type="url" required placeholder="https://example.org/careos/hook" className="mono" />
             {events()}
           </SecretForm>
         </div>
@@ -139,8 +140,8 @@ async function Webhooks() {
               <ActBtn action={testWebhookAction.bind(null, h.id)} className="btn sm">{t('admin.webhooks.test')}</ActBtn>
               <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={t('admin.webhooks.edit')} action={updateWebhookAction} submit={t('common.save')} success="common.saved" wide>
                 <input type="hidden" name="id" value={h.id} />
-                <label className="fld"><span className="lbl">{t('admin.webhooks.url')}</span><input className="field mono" name="url" type="url" defaultValue={h.url} required /></label>
-                <label className="check"><input type="checkbox" name="active" defaultChecked={h.active} /><span>{t('admin.config.active')}</span></label>
+                <TextField label={t('admin.webhooks.url')} name="url" type="url" defaultValue={h.url} required className="mono" />
+                <Checkbox name="active" defaultChecked={h.active} label={t('admin.config.active')} />
                 {events(h.events)}
               </FormDialog>
               <SecretDialog label={t('admin.webhooks.rotate')} buttonClass="btn sm ghost" title={t('admin.webhooks.rotate')} action={rotateWebhookSecretAction} submit={t('admin.webhooks.rotate')} intro={t('admin.webhooks.once')} secretLabel={t('admin.webhooks.secret')} submitClass="btn danger">
@@ -185,17 +186,10 @@ async function Integrations() {
     <>
       {it && <input type="hidden" name="id" value={it.id} />}
       <div className="form-grid">
-        <label className="fld">
-          <span className="lbl">{t('admin.integrations.kind')}</span>
-          <select className="field" name="kind" defaultValue={it?.kind ?? 'hl7_fhir'}>{INTEGRATION_KINDS.map((k) => <option key={k} value={k}>{t('admin.integrations.kinds.' + k)}</option>)}</select>
-        </label>
-        <label className="fld"><span className="lbl">{t('admin.integrations.name')}</span><input className="field" name="name" defaultValue={it?.name} required maxLength={80} /></label>
-        <label className="fld span-all">
-          <span className="lbl">{t('admin.integrations.config')}</span>
-          <textarea className="field mono" name="config" rows={8} defaultValue={JSON.stringify(it ? maskConfig((it.config ?? {}) as Record<string, unknown>) : { endpoint: 'https://' }, null, 2)} spellCheck={false} />
-          <span className="hint">{t('admin.integrations.configHint')}</span>
-        </label>
-        <label className="check"><input type="checkbox" name="active" defaultChecked={it?.active ?? false} /><span>{t('admin.config.active')}</span></label>
+        <Select label={t('admin.integrations.kind')} name="kind" defaultValue={it?.kind ?? 'hl7_fhir'}>{INTEGRATION_KINDS.map((k) => <option key={k} value={k}>{t('admin.integrations.kinds.' + k)}</option>)}</Select>
+        <TextField label={t('admin.integrations.name')} name="name" defaultValue={it?.name} required maxLength={80} />
+        <Textarea label={t('admin.integrations.config')} hint={t('admin.integrations.configHint')} wrapClassName="span-all" name="config" rows={8} defaultValue={JSON.stringify(it ? maskConfig((it.config ?? {}) as Record<string, unknown>) : { endpoint: 'https://' }, null, 2)} spellCheck={false} className="mono" />
+        <Checkbox name="active" defaultChecked={it?.active ?? false} label={t('admin.config.active')} />
       </div>
     </>
   )

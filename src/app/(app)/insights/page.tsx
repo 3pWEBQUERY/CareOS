@@ -6,6 +6,7 @@ import { fmtDate, fmtDayMonth, fmtNum, weekdayShort } from '@/lib/time'
 import { careData, managementData, workforceData } from './_data'
 import { Filter } from './Filter'
 import { shiftName } from '@/lib/shift-name'
+import { Select } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -50,19 +51,15 @@ export default async function InsightsPage({ searchParams }: { searchParams: Pro
           </div>
           <Filter keep={{ tab }}>
             {units.length > 1 && (
-              <label className="fld" style={{ minWidth: 200 }}><span className="lbl">{t('insights.filters.unit')}</span>
-                <select className="field" name="unit" defaultValue={unit}>
+              <Select label={t('insights.filters.unit')} wrapStyle={{ minWidth: 200 }} name="unit" defaultValue={unit}>
                   <option value="">{t('insights.allUnits')}</option>
                   {units.map((u) => <option key={u.id} value={u.id}>{u.location.name} · {u.name}</option>)}
-                </select>
-              </label>
+                </Select>
             )}
             {tab !== 'workforce' && (
-              <label className="fld" style={{ minWidth: 160 }}><span className="lbl">{t('insights.filters.period')}</span>
-                <select className="field" name="period" defaultValue={period}>
+              <Select label={t('insights.filters.period')} wrapStyle={{ minWidth: 160 }} name="period" defaultValue={period}>
                   {PERIODS.map((p) => <option key={p} value={p}>{t('insights.periods.p' + p)}</option>)}
-                </select>
-              </label>
+                </Select>
             )}
             {tab === 'workforce' && <span className="small muted" style={{ paddingBottom: 8 }}>{t('insights.workforce.window')}</span>}
           </Filter>
@@ -113,7 +110,7 @@ async function Care({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           <Columns
             tones={['accent']}
             ariaLabel={t('insights.care.fallsAria', { n: d.fallWeeks.reduce((s, w) => s + w.n, 0) })}
-            data={d.fallWeeks.map((w) => ({ label: String(w.kw), title: `${t('insights.ux.wk')} ${w.kw} (${fmtDayMonth(w.start)}): ${w.n}`, values: [w.n] }))}
+            data={d.fallWeeks.map((w) => ({ label: String(w.kw), title: `${t('insights.ux.wk')} ${w.kw} (${fmtDayMonth(w.start, locale)}): ${w.n}`, values: [w.n] }))}
             integer fmt={(v) => String(Math.round(v))} yUnit={t('insights.ux.count')} xPrefix={t('insights.ux.wk') + '\u2009'}
           />
         </ChartCard>
@@ -206,7 +203,7 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
   const docSum = d.care.reduce((s, c) => s + c.documented, 0)
   const careLabel = (c: (typeof d.care)[number]) => (d.useWeeks ? t('insights.ux.wk') + ('kw' in c ? c.kw : '') : `${c.start.getDate()}.`)
   const careTitle = (c: (typeof d.care)[number]) =>
-    `${d.useWeeks ? t('insights.ux.wk') + ' ' + ('kw' in c ? c.kw : '') : weekdayShort(c.start, locale) + ' ' + fmtDayMonth(c.start)}: ${t('insights.management.planned')} ${c.planned} ${t('common.minutes')}, ${t('insights.management.documented')} ${c.documented} ${t('common.minutes')}`
+    `${d.useWeeks ? t('insights.ux.wk') + ' ' + ('kw' in c ? c.kw : '') : weekdayShort(c.start, locale) + ' ' + fmtDayMonth(c.start, locale)}: ${t('insights.management.planned')} ${c.planned} ${t('common.minutes')}, ${t('insights.management.documented')} ${c.documented} ${t('common.minutes')}`
   const careData = d.care.map((c) => ({ label: careLabel(c), title: careTitle(c), values: [c.planned, c.documented] }))
   const trendTypes = d.trend.filter((x) => x.total > 0)
   const notePct = d.completed ? (d.withNote / d.completed) * 100 : null
@@ -285,7 +282,7 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           <div style={{ overflowX: 'auto' }} data-scroll>
             <table className="cov" aria-label={t('insights.management.coverageTitle')}>
               <thead>
-                <tr><th scope="col"><span className="sr-only">{t('insights.shift')}</span></th>{d.coverage[0]?.days.map((x) => <th key={x.day.toISOString()} scope="col">{weekdayShort(x.day, locale)}<br /><span className="mono">{fmtDayMonth(x.day)}</span></th>)}</tr>
+                <tr><th scope="col"><span className="sr-only">{t('insights.shift')}</span></th>{d.coverage[0]?.days.map((x) => <th key={x.day.toISOString()} scope="col">{weekdayShort(x.day, locale)}<br /><span className="mono">{fmtDayMonth(x.day, locale)}</span></th>)}</tr>
               </thead>
               <tbody>
                 {d.coverage.map((c) => (
@@ -294,7 +291,7 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
                     {c.days.map((x) => {
                       const cls = x.target ? (x.staffed >= x.target ? 'ok' : x.staffed >= x.target - 1 ? 'warn' : 'crit') : ''
                       return (
-                        <td key={x.day.toISOString()} className={cls} title={`${shiftName(t, c)} ${fmtDayMonth(x.day)}: ${x.staffed}${x.target ? ' / ' + x.target : ''}${x.open ? ' · ' + t('insights.management.openN', { n: x.open }) : ''}`}>
+                        <td key={x.day.toISOString()} className={cls} title={`${shiftName(t, c)} ${fmtDayMonth(x.day, locale)}: ${x.staffed}${x.target ? ' / ' + x.target : ''}${x.open ? ' · ' + t('insights.management.openN', { n: x.open }) : ''}`}>
                           {x.staffed}{x.target ? <span className="muted">/{x.target}</span> : null}{x.open ? <sup>+{x.open}</sup> : null}
                         </td>
                       )
@@ -318,7 +315,7 @@ async function Workforce({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
   const { t, locale } = ctx
   const d = await workforceData({ ...scope, canTeam: ctx.can('team.read'), canDocs: ctx.can('docs.read') })
   const L = labels(ctx)
-  const absData = d.absDays.map((a) => ({ label: `${a.day.getDate()}.`, title: `${weekdayShort(a.day, locale)} ${fmtDayMonth(a.day)}: ${t('insights.workforce.approved')} ${a.approved}, ${t('insights.workforce.requested')} ${a.requested}`, values: [a.approved, a.requested] }))
+  const absData = d.absDays.map((a) => ({ label: `${a.day.getDate()}.`, title: `${weekdayShort(a.day, locale)} ${fmtDayMonth(a.day, locale)}: ${t('insights.workforce.approved')} ${a.approved}, ${t('insights.workforce.requested')} ${a.requested}`, values: [a.approved, a.requested] }))
   const trainingValid = d.training.reduce((s, c) => s + c.valid, 0)
   const trainingAll = d.training.reduce((s, c) => s + c.staff, 0)
   const ackAvg = d.ackItems.length && d.staff ? (d.ackItems.reduce((s, a) => s + a.n, 0) / (d.ackItems.length * d.staff)) * 100 : null
@@ -358,7 +355,7 @@ async function Workforce({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
                 <li key={s.id} className="li">
                   <span className={'sh open'}>{s.code}</span>
                   <div className="grow">
-                    <div>{weekdayShort(s.date, locale)} {fmtDayMonth(s.date)} · {shiftName(t, s)} <span className="mono small muted">{s.start}–{s.end}</span></div>
+                    <div>{weekdayShort(s.date, locale)} {fmtDayMonth(s.date, locale)} · {shiftName(t, s)} <span className="mono small muted">{s.start}–{s.end}</span></div>
                     <div className="small muted">{s.unit}{s.qual ? ' · ' + s.qual : ''}</div>
                   </div>
                 </li>

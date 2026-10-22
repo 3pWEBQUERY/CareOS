@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { splitQuestion, useConfirm } from '@/components/ui/ConfirmDialog'
 import type { VisitNavDto, VisitRosterDto } from './types'
+import { Select } from '@/components/ui/fields'
 
 /** Ungespeicherte Erfassung (eine pro Seite): Personenwechsel fragt vorher nach (PRD §32). */
 const dirty = { on: false, name: '' }
@@ -93,10 +94,10 @@ export function VisitList({ rows, currentId, residents, nav }: {
       {others.length > 0 && (
         <label className="visit-list-add">
           <span className="sr-only">{t('visit.list.add')}</span>
-          <select className="field" value="" onChange={(e) => { if (e.target.value) void go(`/tasks/visit?r=${e.target.value}`) }}>
+          <Select value="" onChange={(e) => { if (e.target.value) void go(`/tasks/visit?r=${e.target.value}`) }}>
             <option value="">{t('visit.list.add')}</option>
             {others.map((r) => <option key={r.id} value={r.id}>{[r.room, r.name].filter(Boolean).join(' ')}</option>)}
-          </select>
+          </Select>
         </label>
       )}
       <p className="small muted visit-keys">{t('visit.keys')}</p>

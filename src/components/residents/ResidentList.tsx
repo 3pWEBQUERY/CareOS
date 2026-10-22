@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { ResidentWorkspace } from '@/components/shell/ListDrawer'
+import { TextField } from '@/components/ui/fields'
 
 export type ResRow = { id: string; room: string; name: string; meta: string; over: number; open: number; changed: boolean; search: string }
 
@@ -87,7 +88,7 @@ export function ResidentList({ rows }: { rows: ResRow[] }) {
     <aside className="panel" aria-label={t('residents.list.title')}>
       <div className="list-head">
         <div className="row"><span className="lbl">{pick ? t(pick === 'vitals' ? 'residents.list.pickVitals' : 'residents.list.pickNotes') : t('residents.list.title')}</span><span className="small muted">{t('residents.list.count', { n: list.length, total: rows.length })}</span></div>
-        <input ref={ref} className="field" type="search" placeholder={t('residents.list.filter')} autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('residents.list.filter')}
+        <TextField ref={ref} type="search" placeholder={t('residents.list.filter')} autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('residents.list.filter')}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') { e.preventDefault(); links()[0]?.focus() }
             else if (e.key === 'Enter' && list.length && needle) { e.preventDefault(); router.push(href(list[0].id), { scroll: false }); setQ('') }

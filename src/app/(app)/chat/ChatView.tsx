@@ -9,6 +9,7 @@ import { IconFile, IconUpload } from '@/components/icons'
 import { INTL_LOCALE } from '@/i18n/core'
 import { REACTIONS } from './reactions'
 import { addMemberAction, deleteMessageAction, editMessageAction, leaveConversationAction, markReadAction, muteAction, reactAction, sendMessageAction } from './actions'
+import { Select, Textarea } from '@/components/ui/fields'
 
 export type ChatMsg = {
   id: string
@@ -199,10 +200,10 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
                   run(() => addMemberAction(conv.id, f))
                 }}
               >
-                <select name="userId" className="field grow" defaultValue="" aria-label={t('team.chat.addMember')} style={{ maxWidth: 320 }}>
+                <Select name="userId" defaultValue="" aria-label={t('team.chat.addMember')} style={{ maxWidth: 320 }} className="grow">
                   <option value="" disabled>{t('team.chat.addMember')}</option>
                   {candidates.map((c) => <option key={c.id} value={c.id}>{c.name}{c.hint ? ` · ${c.hint}` : ''}</option>)}
-                </select>
+                </Select>
                 <button type="submit" className="btn sm">{t('team.chat.add')}</button>
               </form>
               <button type="button" className="btn sm danger" onClick={async () => { if (await ask({ ...splitQuestion(t('team.chat.leaveConfirm')), context: <strong>{conv.title}</strong>, confirmLabel: t('team.chat.leave'), danger: true })) run(() => leaveConversationAction(conv.id)) }}>{t('team.chat.leave')}</button>
@@ -310,7 +311,7 @@ function Message({ m, renderBody, onRun, onAsk }: { m: ChatMsg; renderBody: (s: 
               })
             }}
           >
-            <textarea className="field" value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} aria-label={t('team.chat.edit')} autoFocus />
+            <Textarea value={draft} onChange={(e) => setDraft(e.target.value)} rows={3} aria-label={t('team.chat.edit')} autoFocus />
             <div className="form-actions">
               <button type="submit" className="btn sm primary">{t('common.save')}</button>
               <button type="button" className="btn sm ghost" onClick={() => setEditing(false)}>{t('common.cancel')}</button>
@@ -421,9 +422,9 @@ function Composer({ members, onSend }: { members: Member[]; onSend: (body: strin
       )}
       <input ref={fileRef} type="file" multiple hidden onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
       <button type="button" className="icon-btn composer-attach" onClick={() => fileRef.current?.click()} aria-label={t('team.chat.attach')} title={t('team.chat.attach')}><IconUpload size={18} /></button>
-      <textarea
+      <Textarea
         ref={ta}
-        className="field"
+
         rows={1}
         value={text}
         placeholder={t('team.chat.placeholder')}
@@ -443,8 +444,7 @@ function Composer({ members, onSend }: { members: Member[]; onSend: (body: strin
             if (e.key === 'Escape') { e.preventDefault(); setQuery(null); return }
           }
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
-        }}
-      />
+        }} />
       <button type="submit" className="btn primary">{t('team.chat.send')}</button>
       <p className="composer-hint small muted" id={hintId}>{t('team.chat.composerHint')}</p>
     </form>

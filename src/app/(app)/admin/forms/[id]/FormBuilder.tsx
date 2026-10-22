@@ -8,6 +8,7 @@ import { useUnsavedGuard } from '@/components/admin/ui'
 import { FormFields, type RawValues } from '@/components/forms/FormFields'
 import { FORM_FIELD_TYPES, FORM_LIMITS, fieldKey, normalizeFields, validateFormValues, type FieldError, type FormField, type FormFieldType } from '@/lib/forms'
 import { saveFormAction } from '../actions'
+import { Checkbox, Select, TextField, Textarea } from '@/components/ui/fields'
 
 const CATEGORIES = ['care', 'observation', 'physician', 'relatives', 'incident', 'handover'] as const
 
@@ -122,25 +123,12 @@ export function FormBuilder({ initial }: { initial: Initial }) {
           <div className="card-head"><h2 id="fb-master">{t('forms.admin.master')}</h2></div>
           <div className="card-body form">
             <div className="form-grid">
-              <label className="fld">
-                <span className="lbl">{t('admin.config.name')}</span>
-                <input id="fb-name" className="field" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
-              </label>
-              <label className="fld">
-                <span className="lbl">{t('forms.admin.category')}</span>
-                <select className="field" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <TextField label={t('admin.config.name')} id="fb-name" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />
+              <Select label={t('forms.admin.category')} hint={t('forms.admin.categoryHint')} value={category} onChange={(e) => setCategory(e.target.value)}>
                   {CATEGORIES.map((c) => <option key={c} value={c}>{t('chart.cat.' + c)}</option>)}
-                </select>
-                <span className="hint">{t('forms.admin.categoryHint')}</span>
-              </label>
-              <label className="fld span-all">
-                <span className="lbl">{t('forms.admin.description')}</span>
-                <input className="field" value={description} maxLength={300} onChange={(e) => setDescription(e.target.value)} />
-              </label>
-              <label className="check span-all">
-                <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
-                <span>{t('forms.admin.activeLabel')}</span>
-              </label>
+                </Select>
+              <TextField label={t('forms.admin.description')} wrapClassName="span-all" value={description} maxLength={300} onChange={(e) => setDescription(e.target.value)} />
+              <Checkbox checked={active} onChange={(e) => setActive(e.target.checked)} label={t('forms.admin.activeLabel')} wrapClassName="span-all" />
             </div>
           </div>
         </section>
@@ -175,9 +163,9 @@ export function FormBuilder({ initial }: { initial: Initial }) {
                   >
                     {i + 1}
                   </span>
-                  <input
+                  <TextField
                     id={'fl-' + f.uid}
-                    className="field"
+
                     style={{ flex: 1, minWidth: 0 }}
                     value={f.label}
                     maxLength={FORM_LIMITS.label}
@@ -190,35 +178,30 @@ export function FormBuilder({ initial }: { initial: Initial }) {
                       if (i === fields.length - 1) { if (f.label.trim() && fields.length < FORM_LIMITS.fields) add() }
                       else document.getElementById('fl-' + fields[i + 1].uid)?.focus()
                     }}
-                    aria-describedby="fb-enter-hint"
-                  />
-                  <select className="field" style={{ width: 'auto', flex: 'none' }} value={f.type} aria-label={t('forms.admin.type')} onChange={(e) => set(i, { type: e.target.value as FormFieldType })}>
+                    aria-describedby="fb-enter-hint" />
+                  <Select style={{ width: 'auto', flex: 'none' }} value={f.type} aria-label={t('forms.admin.type')} onChange={(e) => set(i, { type: e.target.value as FormFieldType })}>
                     {FORM_FIELD_TYPES.map((ty) => <option key={ty} value={ty}>{t('forms.types.' + ty)}</option>)}
-                  </select>
+                  </Select>
                 </div>
                 <div className="card-body stack-sm">
                   {(hasOptions || hasRange || hasUnit) && (
                     <div className="form-grid">
                       {hasOptions && (
-                        <label className="fld span-all">
-                          <span className="lbl">{t('forms.admin.options')}</span>
-                          <textarea className="field" rows={4} value={f.options} onChange={(e) => set(i, { options: e.target.value })} style={{ minHeight: 84 }} />
-                          <span className="hint">{t('forms.admin.optionsHint')}</span>
-                        </label>
+                        <Textarea label={t('forms.admin.options')} hint={t('forms.admin.optionsHint')} wrapClassName="span-all" rows={4} value={f.options} onChange={(e) => set(i, { options: e.target.value })} style={{ minHeight: 84 }} />
                       )}
                       {hasRange && (
                         <>
-                          <label className="fld"><span className="lbl">{t('forms.admin.min')}</span><input className="field mono" inputMode="decimal" value={f.min} onChange={(e) => set(i, { min: e.target.value })} /></label>
-                          <label className="fld"><span className="lbl">{t('forms.admin.max')}</span><input className="field mono" inputMode="decimal" value={f.max} onChange={(e) => set(i, { max: e.target.value })} /></label>
+                          <TextField label={t('forms.admin.min')} inputMode="decimal" value={f.min} onChange={(e) => set(i, { min: e.target.value })} className="mono" />
+                          <TextField label={t('forms.admin.max')} inputMode="decimal" value={f.max} onChange={(e) => set(i, { max: e.target.value })} className="mono" />
                         </>
                       )}
                       {hasUnit && (
-                        <label className="fld"><span className="lbl">{t('forms.admin.unit')}</span><input className="field mono" value={f.unit} maxLength={16} placeholder="ml" onChange={(e) => set(i, { unit: e.target.value })} /></label>
+                        <TextField label={t('forms.admin.unit')} value={f.unit} maxLength={16} placeholder="ml" onChange={(e) => set(i, { unit: e.target.value })} className="mono" />
                       )}
                     </div>
                   )}
                   <div className="row-between">
-                    <label className="check small"><input type="checkbox" checked={f.required} onChange={(e) => set(i, { required: e.target.checked })} />{t('forms.admin.required')}</label>
+                    <Checkbox checked={f.required} onChange={(e) => set(i, { required: e.target.checked })} label={t('forms.admin.required')} wrapClassName="small" />
                     <span className="row" style={{ gap: 4 }}>
                       <code className="mono small muted" title={t('forms.admin.keyHint')}>{f.key || fieldKey(f.label) || '–'}</code>
                       <button type="button" id={'fb-up-' + f.uid} className="btn sm ghost" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`${t('forms.admin.up')}: ${fieldName(f, i)}`} title={t('forms.admin.up')}>↑</button>

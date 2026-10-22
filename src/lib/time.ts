@@ -58,14 +58,19 @@ export function age(birth: Date, now = new Date()) {
 export function fmtDate(d: Date, locale: Locale, opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' }) {
   return new Intl.DateTimeFormat(INTL_LOCALE[locale], opts).format(d)
 }
-export const fmtDayMonth = (d: Date) => pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.'
+/**
+ * Kurzdatum ohne Jahr: «22.10.» (DE, FR, IT – in der Schweiz mit Punkt), «22/10» (EN, en-GB).
+ * Fest statt Intl, weil Intl je Sprache uneinheitlich ist (it-CH «22/10», fr-CH «22.10» ohne Schlusspunkt).
+ */
+export const fmtDayMonth = (d: Date, locale?: Locale) =>
+  locale === 'en' ? pad(d.getDate()) + '/' + pad(d.getMonth() + 1) : pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.'
 export const fmtDbDate = (d: Date, locale: Locale) => fmtDate(fromDbDate(d), locale)
 
-/** "heute 14:05", "gestern 08:10" oder "12.10. 09:30". */
-export function fmtRel(d: Date, labels: { today: string; yesterday: string }, now = new Date()) {
+/** "heute 14:05", "gestern 08:10" oder "12.10. 09:30" (EN "12/10 09:30"). */
+export function fmtRel(d: Date, labels: { today: string; yesterday: string }, now = new Date(), locale?: Locale) {
   if (sameDay(d, now)) return labels.today + ' ' + hm(d)
   if (sameDay(d, addDays(now, -1))) return labels.yesterday + ' ' + hm(d)
-  return fmtDayMonth(d) + ' ' + hm(d)
+  return fmtDayMonth(d, locale) + ' ' + hm(d)
 }
 
 export function weekdayShort(d: Date, locale: Locale) {

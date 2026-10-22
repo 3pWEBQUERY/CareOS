@@ -100,7 +100,7 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
         <div className="alert warn" role="alert">
           <div className="grow">
             <strong>{t('care.nutrition.warnFluid')}</strong>
-            <span className="fg">{t('care.nutrition.warnFluidText', { d1: fmtDayMonth(d2.d), v1: d2.v, d2: fmtDayMonth(d1.d), v2: d1.v, target: target ?? 0 })}</span>
+            <span className="fg">{t('care.nutrition.warnFluidText', { d1: fmtDayMonth(d2.d, locale), v1: d2.v, d2: fmtDayMonth(d1.d, locale), v2: d1.v, target: target ?? 0 })}</span>
           </div>
         </div>
       )}
@@ -203,7 +203,7 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
           unit="ml"
           bars={daySums.map(({ d, v, n }, i) => ({
             label: i === 6 ? t('common.today') : weekdayShort(d, locale),
-            title: n ? `${fmtDayMonth(d)}: ${v} ml${target ? ` (${Math.round((v / target) * 100)} %)` : ''}` : `${fmtDayMonth(d)}: ${t('care.nutrition.notRecorded')}`,
+            title: n ? `${fmtDayMonth(d, locale)}: ${v} ml${target ? ` (${Math.round((v / target) * 100)} %)` : ''}` : `${fmtDayMonth(d, locale)}: ${t('care.nutrition.notRecorded')}`,
             v: n ? v : null,
             tone: i === 6 ? 'muted' : target && v < target * 0.75 ? 'crit' : '',
           }))}
@@ -211,7 +211,7 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
           current={String(todaySum)}
           alarm={fluidWarn}
           legend={{ bar: t('care.nutrition.legendIntake'), crit: target ? t('care.nutrition.legendBelow') : undefined, muted: t('care.nutrition.legendToday'), target: t('care.nutrition.legendTarget') + (target ? ` ${target} ml` : '') }}
-          ariaLabel={t('care.nutrition.weekAria') + ': ' + daySums.map((x) => `${fmtDayMonth(x.d)} ${x.n ? x.v + ' ml' : t('care.nutrition.notRecorded')}`).join(', ')}
+          ariaLabel={t('care.nutrition.weekAria') + ': ' + daySums.map((x) => `${fmtDayMonth(x.d, locale)} ${x.n ? x.v + ' ml' : t('care.nutrition.notRecorded')}`).join(', ')}
         />
         {weights.length ? (
           (() => {
@@ -221,7 +221,7 @@ export default async function NutritionPage({ params }: { params: Promise<{ id: 
                 title={t('care.nutrition.weight')}
                 unit="kg"
                 dec={1}
-                points={weights.slice(-14).map((w) => ({ label: fmtDayMonth(w.at), title: `${fmtDate(w.at, locale)}: ${fmtNum(w.weight, 1, locale)} kg`, v: w.weight }))}
+                points={weights.slice(-14).map((w) => ({ label: fmtDayMonth(w.at, locale), title: `${fmtDate(w.at, locale)}: ${fmtNum(w.weight, 1, locale)} kg`, v: w.weight }))}
                 lo={+(base * 0.95).toFixed(1)}
                 hi={+(base * 1.05).toFixed(1)}
                 current={fmtNum(latestW!.weight, 1, locale)}

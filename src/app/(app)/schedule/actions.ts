@@ -23,7 +23,7 @@ function parseDay(s: string) {
 
 const label = (ctx: Ctx, s: { date: Date; shiftType: { code: string; name: string } }) => {
   const d = fromDbDate(s.date)
-  return { shift: shiftName(ctx.t, s.shiftType), date: `${weekdayShort(d, ctx.locale)} ${fmtDayMonth(d)}` }
+  return { shift: shiftName(ctx.t, s.shiftType), date: `${weekdayShort(d, ctx.locale)} ${fmtDayMonth(d, ctx.locale)}` }
 }
 const weekHref = (date: Date) => `/schedule?w=${dateKey(weekStart(fromDbDate(date)))}`
 

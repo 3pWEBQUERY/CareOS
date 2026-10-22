@@ -137,7 +137,7 @@ export default async function AssessmentsPage({ params, searchParams }: { params
                 <LineChart
                   title={name}
                   unit={t('care.assessments.colScore')}
-                  points={pts.map((a) => ({ label: fmtDayMonth(a.at), title: `${fmtDate(a.at, locale)}: ${a.score ?? '–'} · ${a.result ?? ''}`, v: a.score }))}
+                  points={pts.map((a) => ({ label: fmtDayMonth(a.at, locale), title: `${fmtDate(a.at, locale)}: ${a.score ?? '–'} · ${a.result ?? ''}`, v: a.score }))}
                   lo={lo} hi={hi}
                   current={String(last.score ?? '–')}
                   alarm={levelFor(sel, last.score) === 'crit'}

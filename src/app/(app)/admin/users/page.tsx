@@ -10,6 +10,7 @@ import { AdminHead } from '../Head'
 import { UserFields } from './fields'
 import { ModeFields } from './ModeFields'
 import { createUserAction, deleteQualificationAction, saveQualificationAction } from './actions'
+import { Select, TextField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -37,7 +38,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   ])
   const unitName = new Map(units.map((u) => [u.id, u.name]))
   const now = new Date()
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
   const qs = (p: Record<string, string | undefined>) => {
     const s = new URLSearchParams()
     const m = { q: q || undefined, status: status === 'active' ? undefined : status, role: sp.role, ...p }
@@ -61,20 +62,14 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         >
           <UserFields t={t} units={units} defaultLocale={org.defaultLocale} />
           <div className="form-grid">
-            <label className="fld">
-              <span className="lbl">{t('admin.users.initialRole')}</span>
-              <select className="field" name="roleId" defaultValue="">
+            <Select label={t('admin.users.initialRole')} name="roleId" defaultValue="">
                 <option value="">{t('admin.users.noRole')}</option>
                 {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-              </select>
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('admin.users.scope')}</span>
-              <select className="field" name="roleScope" defaultValue="unit">
+              </Select>
+            <Select label={t('admin.users.scope')} name="roleScope" defaultValue="unit">
                 <option value="unit">{t('admin.users.scopePrimaryUnit')}</option>
                 <option value="org">{t('admin.users.scopeOrg')}</option>
-              </select>
-            </label>
+              </Select>
           </div>
           <ModeFields linkLabel={t('admin.users.modeInvite')} linkHint={t('admin.users.modeInviteHint')} />
         </SecretDialog>
@@ -82,7 +77,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
       <div className="scroll">
         <div className="tabpanel">
           <form className="row" role="search" action="/admin/users">
-            <input className="field grow" type="search" name="q" defaultValue={q} placeholder={t('admin.users.search')} aria-label={t('admin.users.search')} style={{ minWidth: 200 }} />
+            <TextField type="search" name="q" defaultValue={q} placeholder={t('admin.users.search')} aria-label={t('admin.users.search')} style={{ minWidth: 200 }} className="grow" />
             {status !== 'active' && <input type="hidden" name="status" value={status} />}
             {sp.role && <input type="hidden" name="role" value={sp.role} />}
             <button className="btn" type="submit">{t('common.search')}</button>
@@ -139,10 +134,10 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             </ul>
             <div className="card-foot">
               <ActionForm action={saveQualificationAction} success="common.saved" className="row">
-                <input className="field grow" name="name" placeholder={t('admin.users.qualName')} aria-label={t('admin.users.qualName')} required maxLength={80} style={{ minWidth: 180 }} />
-                <select className="field" name="level" defaultValue="2" aria-label={t('admin.users.qualLevel')} style={{ width: 120 }}>
+                <TextField name="name" placeholder={t('admin.users.qualName')} aria-label={t('admin.users.qualName')} required maxLength={80} style={{ minWidth: 180 }} className="grow" />
+                <Select name="level" defaultValue="2" aria-label={t('admin.users.qualLevel')} style={{ width: 120 }}>
                   {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{t('profile.qualifications.level', { n })}</option>)}
-                </select>
+                </Select>
                 <Submit className="btn">{t('common.add')}</Submit>
               </ActionForm>
             </div>

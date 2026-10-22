@@ -8,6 +8,7 @@ import { PlanGrid, type GridCov, type GridDay, type GridRow } from '../_ui/PlanG
 import { saveTargetsAction } from '../actions'
 import { planWeek } from '../lib'
 import { shiftName } from '@/lib/shift-name'
+import { NumberField } from '@/components/ui/fields'
 
 type Plan = Awaited<ReturnType<typeof planWeek>>
 
@@ -16,7 +17,7 @@ function warnings(ctx: Ctx, p: Plan) {
   const out: { key: string; tone: 'crit' | 'warn'; text: string }[] = []
   const names = new Map(p.staff.map((s) => [s.id, s.short]))
   for (const d of p.coverage) {
-    const date = `${weekdayShort(d.day, locale)} ${fmtDayMonth(d.day)}`
+    const date = `${weekdayShort(d.day, locale)} ${fmtDayMonth(d.day, locale)}`
     for (const c of d.types) {
       if (c.n < c.target) out.push({ key: `u${d.key}${c.code}`, tone: c.n === 0 || c.target - c.n >= 2 ? 'crit' : 'warn', text: t('schedule.coverage.underLine', { date, shift: shiftName(t, c), n: c.n, target: c.target }) + (c.open ? ' · ' + t('schedule.coverage.openLine', { n: c.open }) : '') })
       if (p.key && c.target > 0 && !c.hf) out.push({ key: `q${d.key}${c.code}`, tone: 'crit', text: t('schedule.coverage.qualLine', { date, shift: shiftName(t, c), qual: p.key.name }) })
@@ -49,7 +50,7 @@ export async function PlanView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
   if (!unit) return <Empty title={t('schedule.noUnit')} />
   const p = await planWeek(ctx.org.id, ctx.org.settings, unit.id, week, 7)
   const quals = await db.qualification.findMany({ where: { orgId: ctx.org.id }, orderBy: { level: 'desc' } })
-  const days: GridDay[] = p.coverage.map((d) => ({ key: d.key, label: `${weekdayShort(d.day, locale)} ${fmtDayMonth(d.day)}`, today: sameDay(d.day, now) }))
+  const days: GridDay[] = p.coverage.map((d) => ({ key: d.key, label: `${weekdayShort(d.day, locale)} ${fmtDayMonth(d.day, locale)}`, today: sameDay(d.day, now) }))
   const typeById = new Map(p.types.map((x) => [x.id, x]))
   const rows: GridRow[] = p.staff.map((s) => ({
     id: s.id, name: s.name, qual: s.qual, job: s.job,
@@ -126,7 +127,7 @@ export async function CoverageView({ ctx, week, now }: { ctx: Ctx; week: Date; n
           <tbody>
             {p.coverage.map((d) => (
               <tr key={d.key}>
-                <th scope="row" className="nowrap mono" style={sameDay(d.day, now) ? { color: 'var(--accent)' } : undefined}>{weekdayShort(d.day, locale)} {fmtDayMonth(d.day)}</th>
+                <th scope="row" className="nowrap mono" style={sameDay(d.day, now) ? { color: 'var(--accent)' } : undefined}>{weekdayShort(d.day, locale)} {fmtDayMonth(d.day, locale)}</th>
                 {d.types.map((c) => {
                   const short = c.n < c.target
                   return (
@@ -155,10 +156,7 @@ export async function CoverageView({ ctx, week, now }: { ctx: Ctx; week: Date; n
             <ActionForm action={saveTargetsAction} success="schedule.coverage.targetsSaved" reset={false}>
               <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))' }}>
                 {p.types.map((x) => (
-                  <label key={x.id} className="fld">
-                    <span className="lbl">{x.code} · {shiftName(t, x)}</span>
-                    <input type="number" name={'target_' + x.code} className="field mono" min={0} max={50} step={1} defaultValue={p.targets[x.code]} inputMode="numeric" />
-                  </label>
+                  <NumberField key={x.id} label={<>{x.code} · {shiftName(t, x)}</>} name={'target_' + x.code} min={0} max={50} step={1} defaultValue={p.targets[x.code]} />
                 ))}
               </div>
               <p className="small muted" style={{ margin: 0 }}>{t('schedule.coverage.targetsHint')}</p>

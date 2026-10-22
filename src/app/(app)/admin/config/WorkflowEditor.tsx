@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useT } from '@/i18n/client'
+import { NumberField, TextField } from '@/components/ui/fields'
 
 type Step = { key: string; title: string; category: string; offsetMin: number; durationMin: number }
 
@@ -31,11 +32,11 @@ export function WorkflowEditor({ initial }: { initial: Step[] }) {
               {steps.map((s, i) => (
                 <tr key={i}>
                   <td className="num">{i + 1}</td>
-                  <td><input className="field" value={s.title} onChange={(e) => set(i, { title: e.target.value })} aria-label={t('admin.config.stepTitleLabel')} style={{ minWidth: 180 }} required /></td>
-                  <td><input className="field" value={s.category} onChange={(e) => set(i, { category: e.target.value })} aria-label={t('admin.config.stepCategory')} style={{ minWidth: 120 }} /></td>
-                  <td><input className="field mono" type="number" min={0} value={s.offsetMin} onChange={(e) => set(i, { offsetMin: Number(e.target.value) })} aria-label={t('admin.config.offsetMin')} style={{ width: 90 }} /></td>
-                  <td><input className="field mono" type="number" min={1} value={s.durationMin} onChange={(e) => set(i, { durationMin: Number(e.target.value) })} aria-label={t('admin.config.durationMin')} style={{ width: 80 }} /></td>
-                  <td><input className="field mono" value={s.key} onChange={(e) => set(i, { key: e.target.value })} aria-label={t('admin.config.stepKey')} placeholder={t('admin.config.auto')} style={{ width: 110 }} /></td>
+                  <td><TextField value={s.title} onChange={(e) => set(i, { title: e.target.value })} aria-label={t('admin.config.stepTitleLabel')} style={{ minWidth: 180 }} required /></td>
+                  <td><TextField value={s.category} onChange={(e) => set(i, { category: e.target.value })} aria-label={t('admin.config.stepCategory')} style={{ minWidth: 120 }} /></td>
+                  <td><NumberField min={0} value={s.offsetMin} onChange={(v) => set(i, { offsetMin: v === '' ? 0 : v })} aria-label={t('admin.config.offsetMin')} style={{ width: 90 }} step={1} /></td>
+                  <td><NumberField min={1} value={s.durationMin} onChange={(v) => set(i, { durationMin: v === '' ? 0 : v })} aria-label={t('admin.config.durationMin')} style={{ width: 80 }} step={1} /></td>
+                  <td><TextField value={s.key} onChange={(e) => set(i, { key: e.target.value })} aria-label={t('admin.config.stepKey')} placeholder={t('admin.config.auto')} style={{ width: 110 }} className="mono" /></td>
                   <td className="nowrap">
                     <button type="button" className="btn sm ghost" onClick={() => move(i, -1)} disabled={i === 0} aria-label={t('admin.config.up')}>▲</button>
                     <button type="button" className="btn sm ghost" onClick={() => move(i, 1)} disabled={i === steps.length - 1} aria-label={t('admin.config.down')}>▼</button>

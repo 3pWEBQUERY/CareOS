@@ -7,7 +7,7 @@ import { vitalChanges, visitSince } from '@/lib/visit'
 import type { VisitQuestionDto, VisitRefOptionDto, VisitRosterDto } from '@/components/visit/types'
 
 /** Bezüge werden gespeichert: immer mit Datum. */
-const full = (d: Date) => fmtDayMonth(d) + ' ' + hm(d)
+const full = (d: Date, locale: Ctx['locale']) => fmtDayMonth(d, locale) + ' ' + hm(d)
 const short = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : s)
 
 export async function limitsFor(ctx: Ctx, residentId: string) {
@@ -23,10 +23,10 @@ export function vitalRefLabel(ctx: Ctx, v: Parameters<typeof abnormalKeys>[0] & 
     const f = flag(k, v[k] as number, limits)
     return `${ctx.t('common.vitals.' + k)} ${fmtNum(v[k] as number, VITALS[k].dec, ctx.locale)} ${VITALS[k].unit}${f === 'hi' ? ' ▲' : f === 'lo' ? ' ▼' : ''}`
   })
-  return `${parts.join(', ')} · ${full(v.at)}`
+  return `${parts.join(', ')} · ${full(v.at, ctx.locale)}`
 }
 export function noteRefLabel(ctx: Ctx, o: { at: Date; category: string; text: string }) {
-  return `${ctx.t('chart.cat.' + o.category)} · ${full(o.at)} · ${short(o.text, 70)}`
+  return `${ctx.t('chart.cat.' + o.category)} · ${full(o.at, ctx.locale)} · ${short(o.text, 70)}`
 }
 
 /** Auswahl für «Bezug» beim Vormerken: auffällige Vitalwerte und Verlaufseinträge der letzten 7 Tage. */
@@ -49,7 +49,7 @@ export async function openQuestions(ctx: Ctx, residentIds: string[], now = new D
   const qs = await db.visitQuestion.findMany({ where: { orgId: ctx.org.id, residentId: { in: residentIds }, status: 'open' }, orderBy: { createdAt: 'asc' } })
   const users = await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: [...new Set(qs.map((q) => q.createdById))] } }, select: { id: true, firstName: true, lastName: true } })
   const name = (id: string) => { const u = users.find((x) => x.id === id); return u ? `${u.firstName.charAt(0)}. ${u.lastName}` : '–' }
-  const rel = (d: Date) => fmtRel(d, { today: ctx.t('common.today'), yesterday: ctx.t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: ctx.t('common.today'), yesterday: ctx.t('common.yesterday') }, now, ctx.locale)
   return qs.map((q) => ({
     residentId: q.residentId,
     dto: {

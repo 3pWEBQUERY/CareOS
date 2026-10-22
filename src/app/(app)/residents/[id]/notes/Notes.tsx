@@ -10,6 +10,8 @@ import { correctNote, createNote, discardDraft, draftNote, type NoteInput } from
 import { isQueued, orQueue } from '@/lib/offline/client'
 import { NoteAck, StructuredView, type NoteAckInfo } from '@/components/forms/StructuredView'
 import type { StructuredForm } from '@/lib/forms'
+import { AskQuestionDialog } from '@/components/visit/AskQuestion'
+import { Checkbox, TextField, Textarea } from '@/components/ui/fields'
 
 export type NoteRow = {
   id: string; at: string; rel: string; category: string; text: string; author: string; important: boolean; aiAssisted: boolean
@@ -20,6 +22,8 @@ export type NoteRow = {
   offline?: boolean
   /** Optimistisch angezeigt, Speicherung läuft (PRD §31) */
   pending?: boolean
+  /** Offene Frage für die Visite mit Bezug auf diesen Eintrag */
+  visitAsked?: boolean
 }
 type Cat = { key: string; label: string; tone: string }
 
@@ -61,6 +65,9 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
   const [listening, setListening] = useState(false)
   const [speechOk, setSpeechOk] = useState(false)
   const [correcting, setCorrecting] = useState<NoteRow | null>(null)
+  // «Für Visite vormerken» an der Zeile (PRD §29): ein Dialog für alle Zeilen, Markierung sofort nach dem Speichern
+  const [asking, setAsking] = useState<NoteRow | null>(null)
+  const [askedNow, setAskedNow] = useState<string[]>([])
   const ta = useRef<HTMLTextAreaElement>(null)
   const rec = useRef<SpeechRec | null>(null)
   const tone = (k: string) => categories.find((c) => c.key === k)?.tone ?? ''
@@ -157,6 +164,8 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
     setDraft(null)
   }
 
+  // Vormerkbar: gespeicherte, nicht korrigierte Einträge ohne offene Frage (gleiche Berechtigung wie in der Übersicht)
+  const askable = (n: NoteRow) => canWrite && !n.pending && !n.correctedBy && !n.id.startsWith('queued-') && !n.visitAsked && !askedNow.includes(n.id)
   const synced = (q: NoteRow) => notes.some((n) => n.text === q.text && n.category === q.category)
   const list = [...queuedNotes.filter((q) => !synced(q)), ...optNotes].filter((n) => filter === 'all' || n.category === filter || (filter === 'important' && n.important))
 
@@ -194,7 +203,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
           )}
           <div className="entry-foot">
             <span className="small muted">{me} · {t('chart.notes.ctrlEnter')}</span>
-            <label className="check small"><input type="checkbox" checked={important} onChange={(e) => setImportant(e.target.checked)} />{t('chart.notes.important')}</label>
+            <Checkbox checked={important} onChange={(e) => setImportant(e.target.checked)} label={t('chart.notes.important')} wrapClassName="small" />
             {source === 'voice' && <span className="tag outline">{t('chart.notes.voiceDraft')}</span>}
             {source === 'ai' && <span className="tag violet">{t('chart.notes.aiAssisted')}</span>}
             {err && <span className="err" id="ntext-err" role="alert">{err}</span>}
@@ -239,9 +248,15 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
                   {n.source === 'voice' && <span className="tag outline">{t('chart.notes.voiceTag')}</span>}
                   {n.fromTask && <span className="tag outline">{t('chart.notes.fromTask')}</span>}
                   {n.offline && <span className="tag outline">{t('common.offlineSync.tag')}</span>}
+                  {(n.visitAsked || askedNow.includes(n.id)) && <span className="tag accent">{t('visit.ask.marked')}</span>}
                   {n.pending && <span className="small muted">{t('common.saving')}</span>}
                   <span className="au">{n.author}</span>
-                  {n.canCorrect && <button type="button" className="linkbtn small" style={{ marginLeft: 'auto' }} onClick={() => setCorrecting(n)}>{t('chart.notes.correct')}</button>}
+                  {(n.canCorrect || askable(n)) && (
+                    <span className="row" style={{ marginLeft: 'auto', gap: 12 }}>
+                      {askable(n) && <button type="button" className="linkbtn small" onClick={() => setAsking(n)}>{t('visit.ask.rowAction')}</button>}
+                      {n.canCorrect && <button type="button" className="linkbtn small" onClick={() => setCorrecting(n)}>{t('chart.notes.correct')}</button>}
+                    </span>
+                  )}
                 </div>
                 {n.structured ? <StructuredView s={n.structured} /> : <p>{n.text}</p>}
                 {n.ack && <NoteAck residentId={residentId} id={n.id} ack={n.ack} />}
@@ -255,6 +270,18 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, 
       )}
 
       <Correct residentId={residentId} who={who} note={correcting} onClose={() => setCorrecting(null)} onDone={(id) => { setFresh(id); setFilter('all') }} />
+      {canWrite && (
+        <AskQuestionDialog
+          open={!!asking}
+          onClose={() => setAsking(null)}
+          residentId={residentId}
+          who={who}
+          options={[]}
+          initialRef={asking ? 'observation:' + asking.id : ''}
+          refOption={asking ? { value: 'observation:' + asking.id, group: 'observation', label: `${label(asking.category)} · ${asking.rel} · ${asking.text.length > 70 ? asking.text.slice(0, 69).trimEnd() + '…' : asking.text}` } : undefined}
+          onAsked={(ref) => { const id = ref.split(':')[1]; if (id) setAskedNow((c) => [...c, id]) }}
+        />
+      )}
     </>
   )
 }
@@ -287,8 +314,8 @@ function Correct({ residentId, who, note, onClose, onDone }: { residentId: strin
         <>
           <p className="small muted" style={{ margin: 0 }}>{t('chart.notes.correctHint')}</p>
           <div className="note superseded" style={{ padding: 0 }}><time className="mono">{note.rel}</time><p>{note.text}</p></div>
-          <label className="fld"><span className="lbl">{t('chart.notes.correctText')}</span><textarea className="field" rows={5} value={text} onChange={(e) => setText(e.target.value)} /></label>
-          <label className="fld"><span className="lbl">{t('chart.notes.correctReason')}</span><input className="field" value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('chart.notes.correctReasonPh')} /></label>
+          <Textarea label={t('chart.notes.correctText')} rows={5} value={text} onChange={(e) => setText(e.target.value)} />
+          <TextField label={t('chart.notes.correctReason')} value={reason} onChange={(e) => setReason(e.target.value)} placeholder={t('chart.notes.correctReasonPh')} />
           {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
         </>
       )}

@@ -4,6 +4,8 @@ import { abnormalKeys, flag, mergeLimits, VITALS, type VitalKey } from '@/lib/vi
 import { LineChart, type Point } from '@/components/ui/LineChart'
 import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { VitalForm, Thresholds } from './VitalForm'
+import { AskQuestion } from '@/components/visit/AskQuestion'
+import { vitalRefLabel } from '@/lib/visit-data'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return residentTitle((await params).id, 'vitals')
@@ -14,19 +16,22 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
   const { ctx, r, can } = await pageResident(id)
   const { t, locale } = ctx
   const now = new Date()
-  const [recent, week, limitRows, glucoseCount] = await Promise.all([
+  const [recent, week, limitRows, glucoseCount, asked] = await Promise.all([
     db.vitalSign.findMany({ where: { residentId: r.id }, orderBy: { at: 'desc' }, take: 10 }),
     db.vitalSign.findMany({ where: { residentId: r.id, at: { gte: addDays(now, -7) } }, orderBy: { at: 'asc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
     db.vitalSign.count({ where: { residentId: r.id, glucose: { not: null } } }),
+    // Bereits für die Visite vorgemerkte Messungen (offene Fragen mit Bezug auf einen Vitalwert)
+    db.visitQuestion.findMany({ where: { orgId: ctx.org.id, residentId: r.id, status: 'open', refType: 'vital' }, select: { refId: true } }),
   ])
+  const askedIds = new Set(asked.map((q) => q.refId))
   const limits = mergeLimits(limitRows, r.id)
   const orgLimits = mergeLimits(limitRows)
   const individual = new Set(limitRows.filter((l) => l.residentId === r.id).map((l) => l.key))
   const showGlucose = glucoseCount > 0 || r.risks.some((x) => /diab/i.test(x))
   const names = await userNames(ctx, recent.map((v) => v.recordedById))
   const f = (k: VitalKey, v: number | null | undefined) => fmtNum(v, VITALS[k].dec, locale)
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   const todayAbn = recent.filter((v) => sameDay(v.at, now)).reduce((a, v) => a + abnormalKeys(v, limits).length, 0)
 
   const formKeys: VitalKey[] = ['sys', 'dia', 'pulse', 'temp', 'spo2', ...(showGlucose ? (['glucose'] as VitalKey[]) : []), 'respRate', 'pain', 'weight']
@@ -87,6 +92,15 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
   ].filter(Boolean)
 
   const canWrite = can('resident.vitals.write')
+  // «Für Visite vormerken» an auffälligen Messungen (PRD §29), Berechtigung wie in der Übersicht
+  const canAsk = can('resident.chart.write')
+  const who = `${r.lastName} ${r.firstName} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`
+  const visitCell = (v: (typeof recent)[number]) => {
+    if (askedIds.has(v.id)) return <span className="tag accent">{t('visit.ask.marked')}</span>
+    if (!canAsk || !abnormalKeys(v, limits).length) return null
+    return <AskQuestion residentId={r.id} who={who} options={[]} refOption={{ value: 'vital:' + v.id, group: 'vital', label: vitalRefLabel(ctx, v, limits) }} className="linkbtn small" label={t('visit.ask.rowAction')} />
+  }
+  const visitCol = recent.some((v) => askedIds.has(v.id) || (canAsk && abnormalKeys(v, limits).length > 0))
   return (
     <>
       {canWrite && (
@@ -107,7 +121,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
       {recent.length ? (
         <div className="tablewrap">
           <table className="vt">
-            <thead><tr><th>{t('chart.vitals.measurement')}</th>{usedCols.map((c) => <th key={c.key}>{c.label}</th>)}<th>{t('chart.vitals.by')}</th></tr></thead>
+            <thead><tr><th>{t('chart.vitals.measurement')}</th>{usedCols.map((c) => <th key={c.key}>{c.label}</th>)}<th>{t('chart.vitals.by')}</th>{visitCol && <th><span className="sr-only">{t('visit.ask.forVisit')}</span></th>}</tr></thead>
             <tbody>
               {recent.map((v) => (
                 <tr key={v.id}>
@@ -122,6 +136,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
                     return <td key={k} className={'num' + (fl ? ' ' + fl : '')}>{f(k, v[k])}</td>
                   })}
                   <td className="small muted">{names.get(v.recordedById)?.short ?? '–'}{v.note ? ` · ${v.note}` : ''}</td>
+                  {visitCol && <td>{visitCell(v)}</td>}
                 </tr>
               ))}
             </tbody>

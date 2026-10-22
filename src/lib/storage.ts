@@ -20,16 +20,7 @@ function s3() {
   return client
 }
 
-export const MAX_UPLOAD_BYTES = 12 * 1024 * 1024
-export const ALLOWED_TYPES = [
-  'image/jpeg', 'image/png', 'image/webp', 'image/heic',
-  'application/pdf',
-  'text/plain', 'text/csv',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'video/mp4',
-]
+export { MAX_UPLOAD_BYTES, ALLOWED_TYPES } from './upload-limits'
 
 export function objectKey(orgId: string, purpose: string, filename: string) {
   const ext = filename.includes('.') ? filename.split('.').pop()!.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 8) : 'bin'

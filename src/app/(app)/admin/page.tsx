@@ -52,7 +52,7 @@ export default async function AdminHome() {
     const p = people.find((u) => u.id === id)
     return p ? `${p.firstName} ${p.lastName}` : t('admin.audit.system')
   }
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
 
   return (
     <main className="panel main">

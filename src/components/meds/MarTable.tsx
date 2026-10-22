@@ -10,6 +10,7 @@ import { useConfirm, type ConfirmOptions } from '@/components/ui/ConfirmDialog'
 import { FourEyes, ResidentContext, useDoseCall } from './shared'
 import { doseText } from './dose'
 import type { CellDto, ColleagueDto, DoseStateDto, MarRowDto, ResidentCtxDto } from './types'
+import { Textarea } from '@/components/ui/fields'
 
 type Slot = { time: string; key: string }
 
@@ -218,10 +219,7 @@ export function DoseDialog({ row, slots, initialTime, initialStatus, day, editab
               ))}
             </div>
             {status !== 'open' && (
-              <label className="fld">
-                <span className="lbl">{t(needsReason ? 'meds.dialog.reason' : 'meds.dialog.note')}{!needsReason && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</span>
-                <textarea className="field" name="reason" rows={2} style={{ minHeight: 60 }} required={needsReason} placeholder={t(status === 'held' ? 'meds.dialog.reasonHeldPh' : status === 'omitted' ? 'meds.dialog.reasonOmittedPh' : status === 'refused' ? 'meds.dialog.reasonRefusedPh' : 'meds.dialog.notePh')} />
-              </label>
+              <Textarea label={<>{t(needsReason ? 'meds.dialog.reason' : 'meds.dialog.note')}{!needsReason && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</>} name="reason" rows={2} style={{ minHeight: 60 }} required={needsReason} placeholder={t(status === 'held' ? 'meds.dialog.reasonHeldPh' : status === 'omitted' ? 'meds.dialog.reasonOmittedPh' : status === 'refused' ? 'meds.dialog.reasonRefusedPh' : 'meds.dialog.notePh')} />
             )}
             {status === 'refused' && <p className="small muted" style={{ margin: 0 }}>{t('meds.dialog.refusedHint')}</p>}
             {status === 'given' && row.requiresDoubleCheck && (

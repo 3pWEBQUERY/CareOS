@@ -45,7 +45,7 @@ export default async function DayPage({ params }: { params: Promise<{ id: string
       residentId={r.id}
       who={`${residentName(r)} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`}
       tasks={rows}
-      dateLabel={fmtDayMonth(now)}
+      dateLabel={fmtDayMonth(now, ctx.locale)}
       canComplete={can('task.complete')}
       canManage={can('task.manage')}
       now={now.toISOString()}

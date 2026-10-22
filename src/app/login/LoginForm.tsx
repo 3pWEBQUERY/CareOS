@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from 'react'
 import { startAuthentication } from '@simplewebauthn/browser'
 import { loginAction, type LoginState } from './actions'
+import { TextField } from '@/components/ui/fields'
 
 type Labels = Record<'email' | 'password' | 'submit' | 'passkey' | 'or' | 'invalid' | 'locked' | 'inactive' | 'passkeyFailed', string>
 
@@ -34,14 +35,8 @@ export function LoginForm({ labels, next, sso }: { labels: Labels; next: string;
     <>
       <form action={action} className="form" noValidate>
         <input type="hidden" name="next" value={next} />
-        <label className="fld">
-          <span className="lbl">{labels.email}</span>
-          <input className="field" name="email" type="email" autoComplete="username webauthn" required defaultValue={state?.email} aria-invalid={!!error} aria-describedby={error ? 'login-err' : undefined} autoFocus />
-        </label>
-        <label className="fld">
-          <span className="lbl">{labels.password}</span>
-          <input ref={pw} className="field" name="password" type="password" autoComplete="current-password" required aria-invalid={!!error} aria-describedby={error ? 'login-err' : undefined} />
-        </label>
+        <TextField label={labels.email} name="email" type="email" autoComplete="username webauthn" required defaultValue={state?.email} aria-invalid={!!error} aria-describedby={error ? 'login-err' : undefined} autoFocus />
+        <TextField label={labels.password} ref={pw} name="password" type="password" autoComplete="current-password" required aria-invalid={!!error} aria-describedby={error ? 'login-err' : undefined} />
         {error && <p className="err" id="login-err" role="alert" style={{ margin: 0 }}>{error}</p>}
         <button className="btn primary lg block" type="submit" data-loading={pending} disabled={pending}>{labels.submit}</button>
       </form>

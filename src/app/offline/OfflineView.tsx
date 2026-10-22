@@ -8,6 +8,7 @@ import { toast, Toaster } from '@/components/toast'
 import { offlineSupported, queueOp, useOutbox } from '@/lib/offline/client'
 import { loadSnapshot } from '@/lib/offline/store'
 import { NOTE_CATEGORIES, type ShiftSnapshot } from '@/lib/offline/types'
+import { Select, Textarea } from '@/components/ui/fields'
 
 type State = { status: 'loading' } | { status: 'none' } | { status: 'ok'; snap: ShiftSnapshot }
 
@@ -146,16 +147,10 @@ function ResidentRow({ r, tasks, userId }: { r: ShiftSnapshot['residents'][numbe
         )}
         {open && (
           <form className="stack-sm" onSubmit={(e) => { e.preventDefault(); void save() }}>
-            <label className="fld">
-              <span className="lbl">{t('common.offlineSync.page.category')}</span>
-              <select className="field" value={category} onChange={(e) => setCategory(e.target.value)}>
+            <Select label={t('common.offlineSync.page.category')} value={category} onChange={(e) => setCategory(e.target.value)}>
                 {NOTE_CATEGORIES.map((c) => <option key={c} value={c}>{t('chart.cat.' + c)}</option>)}
-              </select>
-            </label>
-            <label className="fld">
-              <span className="lbl">{t('common.offlineSync.page.text')}</span>
-              <textarea className="field" rows={4} value={text} onChange={(e) => { setText(e.target.value); setErr(null) }} maxLength={8000} />
-            </label>
+              </Select>
+            <Textarea label={t('common.offlineSync.page.text')} rows={4} value={text} onChange={(e) => { setText(e.target.value); setErr(null) }} maxLength={8000} />
             {err && <p className="err" role="alert" style={{ margin: 0 }}>{err}</p>}
             <div className="row" style={{ justifyContent: 'flex-end' }}>
               <button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button>

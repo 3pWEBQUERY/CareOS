@@ -13,7 +13,7 @@ type Result = { ok: true; message?: string } | { ok: false; error: string }
  * `optimistic`: Inhalt, der sofort nach dem Klick erscheint (nur für ungefährliche, idempotente Aktionen ohne
  * Bestätigung, z. B. Kenntnisnahme); bei Fehler kehrt die Schaltfläche zurück (PRD §31).
  */
-export function ActButton({ action, children, className = 'btn sm', success, confirm, title, pressed, disabled, context, optimistic, optimisticClassName }: {
+export function ActButton({ action, children, className = 'btn sm', success, confirm, title, pressed, disabled, context, optimistic, optimisticClassName, onOptimistic }: {
   action: () => Promise<Result>
   children: React.ReactNode
   className?: string
@@ -26,6 +26,8 @@ export function ActButton({ action, children, className = 'btn sm', success, con
   context?: React.ReactNode
   optimistic?: React.ReactNode
   optimisticClassName?: string
+  /** Wird in derselben Transition aufgerufen (z. B. optimistischer Zähler); endet mit ihr. */
+  onOptimistic?: () => void
 }) {
   const t = useT()
   const [pending, start] = useTransition()
@@ -48,6 +50,7 @@ export function ActButton({ action, children, className = 'btn sm', success, con
         if (confirm && !(await ask({ ...splitQuestion(tr(confirm)), context, confirmLabel: label, danger: /\bdanger\b/.test(className) }))) return
         start(async () => {
           setDone(true)
+          onOptimistic?.()
           const r = await action()
           if (r.ok) {
             const msg = r.message ?? success

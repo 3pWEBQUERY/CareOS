@@ -11,8 +11,8 @@ import { IconCheck } from '@/components/icons'
 import { assignTaskAction, completeManyAction, completeTaskAction, createTaskAction, escalateTaskAction, reopenManyAction, reopenTaskAction, startTaskAction } from '@/app/(app)/tasks/actions'
 import { isKey, useCall } from '@/components/meds/shared'
 import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
-import { DateField } from '@/components/ui/DateField'
-import { TimeField } from '@/components/ui/TimeField'
+import { dueView } from '@/lib/task-view'
+import { Checkbox, DateField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
 
 export type TaskRowDto = {
   id: string
@@ -25,6 +25,8 @@ export type TaskRowDto = {
   durationMin: number
   priority: 'critical' | 'important' | 'routine'
   view: 'done' | 'partial' | 'skipped' | 'escalated' | 'in_progress' | 'over' | 'due' | 'up'
+  /** Fälligkeit (ISO): Zustand nach dem Wiederöffnen clientseitig ableiten */
+  due: string
   resident: { id: string; name: string; room: string | null } | null
   assignee: { id: string; initials: string; name: string } | null
   completed: string | null
@@ -93,7 +95,7 @@ export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meI
     if (reopen && (queued[row.id] || isOffline())) return void toast(t('common.offlineSync.notOffline'), { kind: 'crit' })
     inflight.current.add(row.id)
     startQuick(async () => {
-      setOptView({ id: row.id, view: reopen ? 'up' : 'done' })
+      setOptView({ id: row.id, view: reopen ? dueView(new Date(row.due)) : 'done' })
       try {
         const f = new FormData()
         f.set('id', row.id)
@@ -260,12 +262,9 @@ function BulkDialog({ rows, onClose, onDone }: { rows: TaskRowDto[]; onClose: ()
       <ul className="list card bulk-list">
         {rows.map((r) => (
           <li key={r.id}>
-            <label className="li check bulk-item">
-              <input type="checkbox" checked={sel.has(r.id)} onChange={() => toggle(r.id)} />
-              {r.resident?.room && <span className="roomtag">{r.resident.room}</span>}
+            <Checkbox checked={sel.has(r.id)} onChange={() => toggle(r.id)} label={<>{r.resident?.room && <span className="roomtag">{r.resident.room}</span>}
               <span className="grow">{r.resident?.name ?? t('tasks.noResident')}</span>
-              {r.view === 'over' && <span className="tag crit">{t('tasks.view.over')}</span>}
-            </label>
+              {r.view === 'over' && <span className="tag crit">{t('tasks.view.over')}</span>}</>} wrapClassName="li bulk-item" />
           </li>
         ))}
       </ul>
@@ -319,13 +318,10 @@ function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode;
         <ActionForm action={assignTaskAction} onDone={(r) => r.ok && onClose()}>
           <input type="hidden" name="id" value={row.id} />
           {head}
-          <label className="fld">
-            <span className="lbl">{t('tasks.col.assignee')}</span>
-            <select className="field" name="assigneeId" defaultValue={row.assignee?.id ?? ''}>
+          <Select label={t('tasks.col.assignee')} name="assigneeId" defaultValue={row.assignee?.id ?? ''}>
               <option value="">{t('tasks.unassigned')}</option>
               {staff.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.initials})</option>)}
-            </select>
-          </label>
+            </Select>
           {foot(t('tasks.actions.assignSave'))}
         </ActionForm>
       </Dialog>
@@ -338,10 +334,7 @@ function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode;
           <input type="hidden" name="id" value={row.id} />
           {head}
           <p className="small fg2" style={{ margin: 0 }}>{t('tasks.escalate.hint')}</p>
-          <label className="fld">
-            <span className="lbl">{t('tasks.escalate.reason')}</span>
-            <textarea className="field" name="reason" rows={3} required placeholder={t('tasks.escalate.reasonPh')} />
-          </label>
+          <Textarea label={t('tasks.escalate.reason')} name="reason" rows={3} required placeholder={t('tasks.escalate.reasonPh')} />
           {foot(t('tasks.actions.escalate'), 'btn danger solid')}
         </ActionForm>
       </Dialog>
@@ -353,10 +346,7 @@ function RowDialog({ row, mode, staff, onClose }: { row: TaskRowDto; mode: Mode;
         <input type="hidden" name="id" value={row.id} />
         <input type="hidden" name="status" value={mode} />
         {head}
-        <label className="fld">
-          <span className="lbl">{t('tasks.complete.reason')}</span>
-          <textarea className="field" name="reason" rows={3} required placeholder={t(mode === 'partial' ? 'tasks.complete.partialPh' : 'tasks.complete.skipPh')} />
-        </label>
+        <Textarea label={t('tasks.complete.reason')} name="reason" rows={3} required placeholder={t(mode === 'partial' ? 'tasks.complete.partialPh' : 'tasks.complete.skipPh')} />
         {foot(t(mode === 'partial' ? 'tasks.actions.partial' : 'tasks.actions.skip'))}
       </ActionForm>
     </Dialog>
@@ -397,51 +387,27 @@ export function CreateTask({ initialOpen, residents, staff, categories, todayKey
         <Dialog open onClose={close} title={t('tasks.create.title')} wide>
           <ActionForm action={createTaskAction} success="tasks.toast.created" onDone={(r) => r.ok && close()}>
             <div className="form-grid">
-              <label className="fld span-all">
-                <span className="lbl">{t('tasks.create.titleField')}</span>
-                <input ref={first} className="field" name="title" required maxLength={200} placeholder={t('tasks.create.titlePh')} />
-              </label>
-              <label className="fld">
-                <span className="lbl">{t('tasks.col.resident')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
-                <select className="field" name="residentId" defaultValue="">
+              <TextField label={t('tasks.create.titleField')} wrapClassName="span-all" ref={first} name="title" required maxLength={200} placeholder={t('tasks.create.titlePh')} />
+              <Select label={<>{t('tasks.col.resident')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} name="residentId" defaultValue="">
                   <option value="">{t('tasks.create.noResident')}</option>
                   {residents.map((r) => <option key={r.id} value={r.id}>{r.room ? r.room + ' · ' : ''}{r.name}</option>)}
-                </select>
-              </label>
+                </Select>
               <label className="fld">
                 <span className="lbl">{t('tasks.col.category')}</span>
-                <input className="field" name="category" list="task-cats" defaultValue="" placeholder={t('tasks.categoryDefault')} />
+                <TextField name="category" list="task-cats" defaultValue="" placeholder={t('tasks.categoryDefault')} />
                 <datalist id="task-cats">{categories.map((c) => <option key={c} value={c} />)}</datalist>
               </label>
-              <label className="fld">
-                <span className="lbl">{t('tasks.create.date')}</span>
-                <DateField name="date" defaultValue={todayKey} required />
-              </label>
-              <label className="fld">
-                <span className="lbl">{t('tasks.create.time')}</span>
-                <TimeField name="time" defaultValue={defaultTime} required />
-              </label>
-              <label className="fld">
-                <span className="lbl">{t('tasks.details.duration')}</span>
-                <input className="field mono" name="durationMin" inputMode="numeric" defaultValue="10" />
-              </label>
-              <label className="fld">
-                <span className="lbl">{t('tasks.details.priority')}</span>
-                <select className="field" name="priority" defaultValue="routine">
+              <DateField label={t('tasks.create.date')} name="date" defaultValue={todayKey} required />
+              <TimeField label={t('tasks.create.time')} name="time" defaultValue={defaultTime} required />
+              <TextField label={t('tasks.details.duration')} name="durationMin" inputMode="numeric" defaultValue="10" className="mono" />
+              <Select label={t('tasks.details.priority')} name="priority" defaultValue="routine">
                   {(['routine', 'important', 'critical'] as const).map((p) => <option key={p} value={p}>{t('common.priority.' + p)}</option>)}
-                </select>
-              </label>
-              <label className="fld">
-                <span className="lbl">{t('tasks.col.assignee')}</span>
-                <select className="field" name="assigneeId" defaultValue="">
+                </Select>
+              <Select label={t('tasks.col.assignee')} name="assigneeId" defaultValue="">
                   <option value="">{t('tasks.unassigned')}</option>
                   {staff.map((s) => <option key={s.id} value={s.id}>{s.id === meId ? t('tasks.me') + ' – ' : ''}{s.name} ({s.initials})</option>)}
-                </select>
-              </label>
-              <label className="fld span-all">
-                <span className="lbl">{t('tasks.create.description')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></span>
-                <textarea className="field" name="description" rows={3} />
-              </label>
+                </Select>
+              <Textarea label={<>{t('tasks.create.description')} <span style={{ textTransform: 'none', letterSpacing: 0 }}>({t('common.optional')})</span></>} wrapClassName="span-all" name="description" rows={3} />
             </div>
             <div className="form-actions">
               <span className="spacer" />

@@ -108,7 +108,7 @@ export function useFormBinding(input: RefObject<HTMLInputElement | null>, api: R
       if (!msg) return
       e.preventDefault()
       e.stopPropagation() // React-onSubmit (am Dokument) nicht auslösen; andere Felder prüfen trotzdem
-      const first = form.querySelector<HTMLInputElement>('.dtf-in:invalid')
+      const first = form.querySelector<HTMLInputElement>('.dtf-in:invalid, .nf-in:invalid, .cb-in:invalid')
       if (!first || first === el) el.focus()
     }
     const onReset = () => setTimeout(() => api.current.reset())

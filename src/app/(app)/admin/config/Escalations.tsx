@@ -4,6 +4,7 @@ import { fmtDate, hm } from '@/lib/time'
 import { ESCALATION_LIMITS, escalationPolicy } from '@/lib/escalation-policy'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { saveEscalationAction } from './escalation-actions'
+import { Checkbox, NumberField, Switch } from '@/components/ui/fields'
 
 /** Admin → Klinische Konfiguration → Eskalationen (PRD §45 Workflow). */
 export async function Escalations() {
@@ -19,11 +20,8 @@ export async function Escalations() {
   const minutes = (name: keyof typeof ESCALATION_LIMITS, label: string) => {
     const lim = ESCALATION_LIMITS[name]
     return (
-      <label className="fld">
-        <span className="lbl">{label}</span>
-        <input className="field mono" type="number" name={name} min={lim.min} max={lim.max} step={1} defaultValue={p[name]} required style={{ maxWidth: 140 }} />
-        <span className="hint">{t('admin.escalation.range', { min: lim.min, max: lim.max })}</span>
-      </label>
+      <NumberField label={label} name={name} min={lim.min} max={lim.max} step={1} defaultValue={p[name]} required unit={t('common.minutes')}
+        hint={t('admin.escalation.range', { min: lim.min, max: lim.max })} wrapStyle={{ maxWidth: 220 }} />
     )
   }
   const rolePicker = (name: 'taskNotifyRoles' | 'vitalsAbnormalNotifyRoles' | 'incidentSevereNotifyRoles', label: string) => (
@@ -31,10 +29,7 @@ export async function Escalations() {
       <legend className="lbl" style={{ padding: 0, marginBottom: 4 }}>{label}</legend>
       <div className="row" style={{ gap: '4px 16px' }}>
         {roles.map((r) => (
-          <label key={r.key} className="check">
-            <input type="checkbox" name={name} value={r.key} defaultChecked={p[name].includes(r.key)} />
-            <span>{r.name}</span>
-          </label>
+          <Checkbox key={r.key} name={name} value={r.key} defaultChecked={p[name].includes(r.key)} label={r.name} />
         ))}
       </div>
       {!p[name].length && <span className="hint">{t('admin.escalation.noRoles')}</span>}
@@ -55,10 +50,7 @@ export async function Escalations() {
           ) : t('admin.escalation.neverRun')}
         </span>
       </div>
-      <label className="check">
-        <input type="checkbox" name="enabled" defaultChecked={p.enabled} />
-        <span>{t('admin.escalation.enabled')}</span>
-      </label>
+      <Switch name="enabled" defaultChecked={p.enabled} label={t('admin.escalation.enabled')} />
 
       <section className="card" aria-labelledby="esc-tasks">
         <div className="card-head"><h2 id="esc-tasks">{t('admin.escalation.tasks')}</h2></div>

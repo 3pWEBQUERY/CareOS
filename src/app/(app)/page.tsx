@@ -21,7 +21,7 @@ export default async function HomePage() {
   const ctx = await getCtx()
   const { t, user, unit, locale } = ctx
   const now = new Date()
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
   const h = now.getHours()
   const greet = t(h < 5 || h >= 22 ? 'home.night' : h < 11 ? 'home.morning' : h < 18 ? 'home.day' : 'home.evening', { name: user.firstName })
 
@@ -283,7 +283,7 @@ export default async function HomePage() {
                   <span className="lbl">{t('home.toAck')}</span>
                   {postsToAck.length + docsToAck.length + notesToAck.length + (handoverOpen ? 1 : 0) ? (
                     <ul className="list">
-                      {handoverOpen && <li><Link className="li" href="/handover"><span className="tag warn">{t('nav.handover')}</span><span className="grow">{handoverOpen.shiftCode} · {fmtDayMonth(fromDbDate(handoverOpen.date))}</span></Link></li>}
+                      {handoverOpen && <li><Link className="li" href="/handover"><span className="tag warn">{t('nav.handover')}</span><span className="grow">{handoverOpen.shiftCode} · {fmtDayMonth(fromDbDate(handoverOpen.date), locale)}</span></Link></li>}
                       {postsToAck.map((p) => <li key={p.id}><Link className="li" href={`/team/post/${p.id}`}><span className="tag accent">{t('nav.team')}</span><span className="grow">{p.title}</span></Link></li>)}
                       {notesToAck.map((o) => <li key={o.id}><Link className="li" href={`/residents/${o.residentId}/notes`}><span className="tag crit">{t('residents.tabs.notes')}</span><span className="grow" style={{ minWidth: 0 }}><span style={{ display: 'block' }}>{name(o.residentId)}</span><span className="small muted ellipsis" style={{ display: 'block' }}>{o.text}</span></span><span className="small muted nowrap">{rel(o.at)}</span></Link></li>)}
                       {docsToAck.map((d) => <li key={d.id}><Link className="li" href={`/docs/${d.id}`}><span className="tag violet">{t('nav.docs')}</span><span className="grow">{d.title} <span className="muted mono small">v{d.currentVersion}</span></span></Link></li>)}
@@ -296,7 +296,7 @@ export default async function HomePage() {
                       {trainingsOpen.map((e) => {
                         const over = e.dueAt && e.dueAt < now
                         return (
-                          <li key={e.id}><Link className="li" href={`/learn/${e.courseId}`}><span className="grow">{e.course.title}{e.course.mandatory && <span className="tag outline" style={{ marginLeft: 6 }}>{t('learn.mandatory')}</span>}</span>{e.dueAt && <span className={'small nowrap ' + (over ? 'crit-text' : 'muted')}>{t(over ? 'home.overdueSince' : 'home.dueIn', { date: fmtDayMonth(e.dueAt) })}</span>}</Link></li>
+                          <li key={e.id}><Link className="li" href={`/learn/${e.courseId}`}><span className="grow">{e.course.title}{e.course.mandatory && <span className="tag outline" style={{ marginLeft: 6 }}>{t('learn.mandatory')}</span>}</span>{e.dueAt && <span className={'small nowrap ' + (over ? 'crit-text' : 'muted')}>{t(over ? 'home.overdueSince' : 'home.dueIn', { date: fmtDayMonth(e.dueAt, locale) })}</span>}</Link></li>
                         )
                       })}
                     </ul>
@@ -307,7 +307,7 @@ export default async function HomePage() {
                     <div className="chips">
                       {nextShifts.map((s) => {
                         const d = fromDbDate(s.date)
-                        return <Link key={s.id} href="/schedule" className="chip"><span className={'sh ' + s.shiftType.code} style={{ marginRight: 6 }}>{s.shiftType.code}</span>{new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d)} {fmtDayMonth(d)}</Link>
+                        return <Link key={s.id} href="/schedule" className="chip"><span className={'sh ' + s.shiftType.code} style={{ marginRight: 6 }}>{s.shiftType.code}</span>{new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d)} {fmtDayMonth(d, locale)}</Link>
                       })}
                     </div>
                   ) : <p className="small muted" style={{ margin: 0 }}>{t('home.nextShiftsNone')}</p>}

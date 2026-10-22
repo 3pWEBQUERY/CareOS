@@ -9,6 +9,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { canModerate, channelAudience, channelVisible } from '../../lib'
 import { ackPostAction, commentAction, deletePostAction, pinPostAction, remindAckAction } from '../../actions'
 import { ActButton } from '../../_ui/ActButton'
+import { Textarea } from '@/components/ui/fields'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
@@ -24,7 +25,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   if (!ctx.can('team.read')) return <Forbidden text={t('common.notAllowed')} />
   const { id } = await params
   const now = new Date()
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
 
   const post = await db.post.findFirst({
     where: { id, channel: { orgId: ctx.org.id } },
@@ -166,7 +167,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                   <div className="card-foot">
                     <ActionForm action={commentAction.bind(null, post.id)} success="team.comments.saved" className="stack-sm">
                       <label className="sr-only" htmlFor="cbody">{t('team.comments.placeholder')}</label>
-                      <textarea id="cbody" name="body" className="field" rows={2} placeholder={t('team.comments.placeholder')} style={{ minHeight: 60 }} maxLength={4000} />
+                      <Textarea id="cbody" name="body" rows={2} placeholder={t('team.comments.placeholder')} style={{ minHeight: 60 }} maxLength={4000} />
                       <div className="form-actions"><Submit className="btn sm">{t('team.comments.send')}</Submit></div>
                     </ActionForm>
                   </div>

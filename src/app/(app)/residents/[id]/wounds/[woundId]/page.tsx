@@ -85,7 +85,7 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
         </div>
         <div className="metric">
           <span className="lbl">{t('care.wounds.nextNow')}</span>
-          <span className={'val' + (nextOver ? ' crit' : '')} style={{ fontSize: '1rem' }}>{next && w.status !== 'closed' ? `${fmtDayMonth(next)} ${hm(next)}` : '–'}</span>
+          <span className={'val' + (nextOver ? ' crit' : '')} style={{ fontSize: '1rem' }}>{next && w.status !== 'closed' ? `${fmtDayMonth(next, locale)} ${hm(next)}` : '–'}</span>
           <span className={'small ' + (nextOver ? 'crit-text' : 'muted')}>{nextOver ? '▲ ' + t('care.wounds.overdue') : !next || w.status === 'closed' ? t('care.wounds.noNext') : ''}</span>
         </div>
       </div>
@@ -95,7 +95,7 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
           <LineChart
             title={t('care.wounds.chartTitle')}
             unit="mm²"
-            points={sized.slice(-12).map((e) => ({ label: fmtDayMonth(e.at), title: `${fmtDate(e.at, locale)}: ${woundArea(e.lengthMm, e.widthMm)} mm² (${e.lengthMm} × ${e.widthMm} mm)`, v: woundArea(e.lengthMm, e.widthMm) }))}
+            points={sized.slice(-12).map((e) => ({ label: fmtDayMonth(e.at, locale), title: `${fmtDate(e.at, locale)}: ${woundArea(e.lengthMm, e.widthMm)} mm² (${e.lengthMm} × ${e.widthMm} mm)`, v: woundArea(e.lengthMm, e.widthMm) }))}
             lo={0} hi={firstArea ?? 0}
             current={String(lastArea ?? '–')}
             alarm={change != null && change > 0}
@@ -152,7 +152,7 @@ export default async function WoundDetailPage({ params }: { params: Promise<{ id
                         <div className="small">{e.treatment ?? '–'}</div>
                         {e.material && <div className="small muted">{e.material}</div>}
                       </td>
-                      <td className="num nowrap">{e.nextChange ? `${fmtDayMonth(e.nextChange)} ${hm(e.nextChange)}` : '–'}</td>
+                      <td className="num nowrap">{e.nextChange ? `${fmtDayMonth(e.nextChange, locale)} ${hm(e.nextChange)}` : '–'}</td>
                       <td>
                         {e.photoIds.length ? (
                           <div className="thumbs">

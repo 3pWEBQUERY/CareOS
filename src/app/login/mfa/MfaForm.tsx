@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef } from 'react'
 import { mfaAction, type LoginState } from '../actions'
+import { TextField } from '@/components/ui/fields'
 
 export function MfaForm({ next, labels }: { next: string; labels: Record<'mfaCode' | 'mfaSubmit' | 'mfaInvalid' | 'locked', string> }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(mfaAction, undefined)
@@ -11,10 +12,7 @@ export function MfaForm({ next, labels }: { next: string; labels: Record<'mfaCod
   return (
     <form action={action} className="form" noValidate>
       <input type="hidden" name="next" value={next} />
-      <label className="fld">
-        <span className="lbl">{labels.mfaCode}</span>
-        <input ref={code} className="field otp" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={7} required autoFocus aria-invalid={!!error} aria-describedby={error ? 'mfa-err' : undefined} />
-      </label>
+      <TextField label={labels.mfaCode} ref={code} name="code" inputMode="numeric" autoComplete="one-time-code" pattern="\d{6}" maxLength={7} required autoFocus aria-invalid={!!error} aria-describedby={error ? 'mfa-err' : undefined} className="otp" />
       {error && <p className="err" id="mfa-err" role="alert" style={{ margin: 0 }}>{error}</p>}
       <button className="btn primary lg block" type="submit" data-loading={pending} disabled={pending}>{labels.mfaSubmit}</button>
     </form>

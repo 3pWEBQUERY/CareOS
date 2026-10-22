@@ -73,7 +73,7 @@ export default async function MedRoundPage({ searchParams }: { searchParams: Pro
     <main className="panel main" style={{ flex: 1 }}>
       <div className="view-head">
         <div>
-          <span className="lbl">{t('meds.round.label')} · {unit.name} · {fmtDayMonth(day)}</span>
+          <span className="lbl">{t('meds.round.label')} · {unit.name} · {fmtDayMonth(day, ctx.locale)}</span>
           <h1>{slot ? `${t('meds.slots.' + slotKey(slot))} ${slot}` : t('meds.round.label')}</h1>
         </div>
         <div className="row head-actions">

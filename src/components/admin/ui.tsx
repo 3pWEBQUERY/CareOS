@@ -7,6 +7,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ConfirmDialog, splitQuestion, useConfirm } from '@/components/ui/ConfirmDialog'
 import { useRouter } from 'next/navigation'
+import { TextField } from '@/components/ui/fields'
 
 type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 
@@ -245,10 +246,7 @@ export function SecretBox({ value, intro, label, onDismiss }: { value: string; i
     <div className="alert warn" role="status">
       <div className="grow stack-sm">
         <strong>{intro}</strong>
-        <label className="fld">
-          <span className="lbl">{label}</span>
-          <input className="field mono" readOnly value={value} onFocus={(e) => e.currentTarget.select()} aria-label={label} />
-        </label>
+        <TextField label={label} readOnly value={value} onFocus={(e) => e.currentTarget.select()} aria-label={label} className="mono" />
         <div className="row">
           <button
             type="button"

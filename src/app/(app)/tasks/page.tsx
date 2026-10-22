@@ -97,8 +97,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     const medSlot = k.source === 'medication' && k.title === 'medication.slot'
     const prn = k.source === 'medication' && k.sourceId?.startsWith('prn:')
     return {
-      id: k.id, time: hm(k.dueAt), day: sameDay(k.dueAt, now) ? null : fmtDayMonth(k.dueAt), title, description: k.description, category: k.category, catTone: TONE[k.category] ?? '',
-      durationMin: k.durationMin, priority: k.priority, view: taskView(k, now),
+      id: k.id, time: hm(k.dueAt), day: sameDay(k.dueAt, now) ? null : fmtDayMonth(k.dueAt, ctx.locale), title, description: k.description, category: k.category, catTone: TONE[k.category] ?? '',
+      durationMin: k.durationMin, priority: k.priority, view: taskView(k, now), due: k.dueAt.toISOString(),
       resident: r ? { id: r.id, name: `${r.lastName} ${r.firstName}`, room: r.room?.number ?? null } : null,
       assignee: a ? { id: a.id, initials: a.initials, name: `${a.firstName.charAt(0)}. ${a.lastName}` } : null,
       completed: k.completedAt ? t('tasks.completedBy', { time: hm(k.completedAt), by: uName(k.completedById) ?? '–' }) : null,
@@ -116,7 +116,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     const s = p.toString()
     return '/tasks' + (s ? '?' + s : '')
   }
-  const winLabel = def ? `${shiftName(t, def)} ${hm(win.start)}–${hm(win.end)}${sameDay(win.start, now) ? '' : ' · ' + fmtDayMonth(win.start)}` : t('tasks.wholeDay', { date: fmtDayMonth(today) })
+  const winLabel = def ? `${shiftName(t, def)} ${hm(win.start)}–${hm(win.end)}${sameDay(win.start, now) ? '' : ' · ' + fmtDayMonth(win.start, ctx.locale)}` : t('tasks.wholeDay', { date: fmtDayMonth(today, ctx.locale) })
   const nextHour = new Date(Math.ceil(now.getTime() / 1800_000) * 1800_000)
 
   return (

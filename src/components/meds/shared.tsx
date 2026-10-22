@@ -5,6 +5,7 @@ import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { setDoseAction } from '@/app/(app)/residents/[id]/meds/actions'
 import type { ColleagueDto, DoseStateDto, ResidentCtxDto } from './types'
+import { Select, TextField } from '@/components/ui/fields'
 
 export type Result = { ok: true; message?: string; data?: unknown } | { ok: false; error: string; field?: string }
 export const isKey = (s: string) => /^[a-z]+\.[\w.]+$/.test(s)
@@ -76,17 +77,11 @@ export function FourEyes({ colleagues, summary }: { colleagues: ColleagueDto[]; 
         </ol>
         {summary && <div className="four-eyes-check">{summary}</div>}
         <div className="form-grid">
-          <label className="fld">
-            <span className="lbl">{t('meds.fourEyes.colleague')}</span>
-            <select className="field" name="checkerId" required defaultValue="">
+          <Select label={t('meds.fourEyes.colleague')} name="checkerId" required defaultValue="">
               <option value="" disabled>{t('meds.fourEyes.choose')}</option>
               {colleagues.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </label>
-          <label className="fld">
-            <span className="lbl">{t('meds.fourEyes.password')}</span>
-            <input className="field" type="password" name="checkerPassword" autoComplete="off" required />
-          </label>
+            </Select>
+          <TextField label={t('meds.fourEyes.password')} type="password" name="checkerPassword" autoComplete="off" required />
         </div>
         {!colleagues.length && <p className="err" style={{ margin: 0 }}>{t('meds.fourEyes.none')}</p>}
       </div>

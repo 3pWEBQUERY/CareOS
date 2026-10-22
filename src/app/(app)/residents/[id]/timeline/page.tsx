@@ -208,7 +208,7 @@ export default async function TimelinePage({ params, searchParams }: { params: P
           ) : <div className="card-body small muted">{t('residents.rec.nextNone')}</div>}
         </section>
       )}
-      {newCount > 0 && <p className="small muted" style={{ margin: 0 }}><span className="tag accent">{t('residents.rec.newTag')}</span> {t('residents.rec.newHint', { n: newCount, at: fmtRel(last.at, { today: t('common.today'), yesterday: t('common.yesterday') }, now) })}</p>}
+      {newCount > 0 && <p className="small muted" style={{ margin: 0 }}><span className="tag accent">{t('residents.rec.newTag')}</span> {t('residents.rec.newHint', { n: newCount, at: fmtRel(last.at, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale) })}</p>}
       {events.length ? (
         <ol className="events" aria-label={t('chart.timeline.title')}>
           {days.flatMap((d) => [

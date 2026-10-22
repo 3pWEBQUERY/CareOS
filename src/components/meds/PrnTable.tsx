@@ -9,6 +9,7 @@ import { ActionForm } from '@/components/ui/ActionForm'
 import { givePrnAction, recordEffectAction, voidPrnAction } from '@/app/(app)/residents/[id]/meds/actions'
 import { FourEyes, ResidentContext } from './shared'
 import type { ColleagueDto, ResidentCtxDto } from './types'
+import { TextField, Textarea } from '@/components/ui/fields'
 
 export type PrnDto = {
   id: string
@@ -116,11 +117,7 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
               <div className="small fg2 mono" style={{ marginTop: 2 }}>{give.max != null ? t('meds.prn.countOfMax', { n: give.count24, max: give.max }) : t('meds.prn.count', { n: give.count24 })}</div>
             </div>
             <div className="form-grid">
-              <label className="fld">
-                <span className="lbl">{t('meds.prn.dose')}</span>
-                <input className="field mono" name="dose" defaultValue={give.prnDose} required />
-                <span className="hint">{t('meds.prn.doseHint')}</span>
-              </label>
+              <TextField label={t('meds.prn.dose')} hint={t('meds.prn.doseHint')} name="dose" defaultValue={give.prnDose} required className="mono" />
               <div className="fld">
                 <span className="lbl">{t('meds.dialog.route')}</span>
                 <span style={{ paddingTop: 6 }}>{give.route}</span>
@@ -128,7 +125,7 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
             </div>
             <div className="fld">
               <label className="lbl" htmlFor="prn-reason">{t('meds.prn.reason')}</label>
-              <textarea ref={reasonRef} id="prn-reason" className="field" name="reason" rows={2} style={{ minHeight: 60 }} required placeholder={give.indication ?? ''} />
+              <Textarea ref={reasonRef} id="prn-reason" name="reason" rows={2} style={{ minHeight: 60 }} required placeholder={give.indication ?? ''} />
               {give.indication && (
                 <div className="row" style={{ gap: 6 }}>
                   <span className="small muted">{t('meds.prn.asIndicated')}</span>
@@ -139,10 +136,7 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
             {give.nextAllowed && (
               <>
                 <div className="alert warn" role="alert"><span className="grow"><strong>{t('meds.prn.intervalWarn', { h: give.minIntervalH ?? 0 })}</strong>{t('meds.prn.intervalWarnText', { time: give.nextAllowed })}</span></div>
-                <label className="fld">
-                  <span className="lbl">{t('meds.prn.override')}</span>
-                  <input className="field" name="override" required placeholder={t('meds.prn.overridePh')} />
-                </label>
+                <TextField label={t('meds.prn.override')} name="override" required placeholder={t('meds.prn.overridePh')} />
               </>
             )}
             {give.requiresDoubleCheck && <FourEyes colleagues={colleagues} summary={<><strong>{resident.name}</strong>{resident.room && <span className="mono">{t('meds.roomShort', { room: resident.room })}</span>} · {give.name} · <span className="mono">{give.prnDose}</span> · {give.route}</>} />}
@@ -160,10 +154,7 @@ export function PrnTable({ items, recent, canGive, resident, colleagues }: {
           <ActionForm action={voidPrnAction} onDone={(r) => r.ok && setVoiding(null)} confirm={{ ...splitQuestion(t('meds.prn.voidConfirm')), context: <><ResidentContext r={resident} /><span><span className="mono">{voiding.at}</span> · {voiding.drug} · <span className="mono">{voiding.dose}</span></span></>, danger: true }}>
             <input type="hidden" name="adminId" value={voiding.id} />
             <p style={{ margin: 0 }}><span className="mono">{voiding.at}</span> · {voiding.drug} · <span className="mono">{voiding.dose}</span></p>
-            <label className="fld">
-              <span className="lbl">{t('meds.dialog.reason')}</span>
-              <input className="field" name="reason" required placeholder={t('meds.prn.voidPh')} />
-            </label>
+            <TextField label={t('meds.dialog.reason')} name="reason" required placeholder={t('meds.prn.voidPh')} />
             <div className="form-actions">
               <span className="spacer" />
               <button type="button" className="btn" onClick={() => setVoiding(null)}>{t('common.cancel')}</button>
@@ -214,10 +205,7 @@ export function EffectChecks({ items, canRecord, resident }: { items: EffectDto[
                 </button>
               ))}
             </div>
-            <label className="fld">
-              <span className="lbl">{t('meds.effect.note')}{effect === 'effective' && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</span>
-              <textarea className="field" name="note" rows={2} style={{ minHeight: 60 }} required={effect !== 'effective'} placeholder={t('meds.effect.notePh')} />
-            </label>
+            <Textarea label={<>{t('meds.effect.note')}{effect === 'effective' && <span style={{ textTransform: 'none', letterSpacing: 0 }}> ({t('common.optional')})</span>}</>} name="note" rows={2} style={{ minHeight: 60 }} required={effect !== 'effective'} placeholder={t('meds.effect.notePh')} />
             <div className="form-actions">
               <span className="spacer" />
               <button type="button" className="btn" onClick={() => setOpen(null)}>{t('common.cancel')}</button>

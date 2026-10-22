@@ -8,6 +8,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { runRetentionNowAction, saveRetentionAction } from './actions'
+import { Checkbox, NumberField } from '@/components/ui/fields'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -76,7 +77,7 @@ export default async function PrivacyPage() {
                             </th>
                             <td className="nowrap">
                               <span className="row" style={{ gap: 6, flexWrap: 'nowrap' }}>
-                                <input className="field mono" type="number" name={c} min={r.min} max={r.max} step={1} defaultValue={policy[c]} required style={{ width: 84 }} aria-label={`${t('admin.privacy.cat.' + c)} (${unit})`} />
+                                <NumberField name={c} min={r.min} max={r.max} step={1} defaultValue={policy[c]} required style={{ width: 84 }} aria-label={`${t('admin.privacy.cat.' + c)} (${unit})`} />
                                 <span className="small muted">{unit}</span>
                               </span>
                             </td>
@@ -92,10 +93,7 @@ export default async function PrivacyPage() {
                     </tbody>
                   </table>
                 </div>
-                <label className="check">
-                  <input type="checkbox" name="auto" defaultChecked={policy.auto} />
-                  <span>{t('admin.privacy.auto')}</span>
-                </label>
+                <Checkbox name="auto" defaultChecked={policy.auto} label={t('admin.privacy.auto')} />
                 <div className="form-actions"><Submit>{t('common.save')}</Submit></div>
               </ActionForm>
             </div>

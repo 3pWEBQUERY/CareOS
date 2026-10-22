@@ -31,11 +31,11 @@ export async function residentSummary(residentId: string): Promise<ActionResult<
     if (r.importantNotes) lines.push(`Wichtige Hinweise: ${r.importantNotes}`)
     for (const a of plan?.areas ?? []) if (a.needs) lines.push(`Pflegebedarf ${a.domain}: ${a.needs}${a.goal ? ' – Ziel: ' + a.goal : ''}`)
     lines.push('Pflegebericht:')
-    for (const o of obs) lines.push(`${fmtDayMonth(o.at)} ${hm(o.at)} [${o.category}] ${o.text}`)
+    for (const o of obs) lines.push(`${fmtDayMonth(o.at, ctx.locale)} ${hm(o.at)} [${o.category}] ${o.text}`)
     const ab = vitals.map((v) => ({ v, k: abnormalKeys(v, limits) })).filter((x) => x.k.length)
     lines.push('Auffällige Vitalwerte:')
-    for (const { v, k } of ab) lines.push(`${fmtDayMonth(v.at)} ${hm(v.at)} ${k.map((key) => `${key} ${v[key]} ${VITALS[key].unit}`).join(', ')}`)
-    for (const i of incidents) lines.push(`Ereignis ${fmtDayMonth(i.occurredAt)}: ${i.type.name} – ${i.description}`)
+    for (const { v, k } of ab) lines.push(`${fmtDayMonth(v.at, ctx.locale)} ${hm(v.at)} ${k.map((key) => `${key} ${v[key]} ${VITALS[key].unit}`).join(', ')}`)
+    for (const i of incidents) lines.push(`Ereignis ${fmtDayMonth(i.occurredAt, ctx.locale)}: ${i.type.name} – ${i.description}`)
     try {
       const res = await aiDraft(ctx, 'resident_summary', INSTRUCTION, lines.join('\n').slice(0, 16000), 900)
       return { ok: true, data: res }

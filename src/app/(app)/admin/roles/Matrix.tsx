@@ -5,6 +5,7 @@ import { useT } from '@/i18n/client'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { useUnsavedGuard } from '@/components/admin/ui'
 import { permKey } from '@/lib/admin-shared'
+import { Checkbox, TextField } from '@/components/ui/fields'
 
 type Group = { key: string; perms: string[] }
 type Filter = 'all' | 'on' | 'off' | 'changed'
@@ -47,13 +48,13 @@ export function PermissionMatrix({ roleId, name, description, groups, initial, a
     <ActionForm action={action} reset={false} success="admin.ux.roleSaved" onDone={(r) => r.ok && setBase(new Set(sel))} className="form pm">
       <input type="hidden" name="id" value={roleId} />
       <div className="form-grid">
-        <label className="fld"><span className="lbl">{t('admin.roles.name')}</span><input className="field" name="name" defaultValue={name} required maxLength={80} /></label>
-        <label className="fld"><span className="lbl">{t('admin.roles.description')}</span><input className="field" name="description" defaultValue={description} maxLength={300} /></label>
+        <TextField label={t('admin.roles.name')} name="name" defaultValue={name} required maxLength={80} />
+        <TextField label={t('admin.roles.description')} name="description" defaultValue={description} maxLength={300} />
       </div>
       {/* Ausgeblendete Berechtigungen werden trotzdem mitgeschickt */}
       {[...sel].filter((p) => !shown.some((g) => g.list.includes(p))).map((p) => <input key={p} type="hidden" name="perm" value={p} />)}
       <div className="pm-tools" role="search">
-        <input className="field" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.ux.permSearch')} aria-label={t('admin.ux.permSearch')} />
+        <TextField type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('admin.ux.permSearch')} aria-label={t('admin.ux.permSearch')} />
         <div className="seg-x"><div className="seg" role="group" aria-label={t('admin.ux.permFilter')}>
           {(['all', 'on', 'off', 'changed'] as const).map((f) => (
             <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}>{t('admin.ux.pf.' + f)}{f === 'changed' && changed ? ` (${changed})` : ''}</button>
@@ -115,9 +116,6 @@ export function GroupCheck({ label, state, onChange, hideLabel }: { label: strin
     if (ref.current) ref.current.indeterminate = state === 'some'
   }, [state])
   return (
-    <label className="check pm-gcheck">
-      <input ref={ref} type="checkbox" checked={state === 'all'} aria-checked={state === 'some' ? 'mixed' : state === 'all'} onChange={() => onChange(state !== 'all')} />
-      <span className={hideLabel ? 'sr-only' : 'lbl'}>{label}</span>
-    </label>
+    <Checkbox ref={ref} checked={state === 'all'} aria-checked={state === 'some' ? 'mixed' : state === 'all'} onChange={() => onChange(state !== 'all')} label={<><span className={hideLabel ? 'sr-only' : 'lbl'}>{label}</span></>} wrapClassName="pm-gcheck" />
   )
 }

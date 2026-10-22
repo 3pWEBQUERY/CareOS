@@ -8,6 +8,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { PORTIONS, QUICK_ML, portionLabel } from '@/lib/care'
 import { addDrinkAction, addMealAction, saveProfileAction, undoIntakeAction } from './actions'
 import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
+import { TextField, Textarea } from '@/components/ui/fields'
 
 function useTr() {
   const t = useT()
@@ -42,7 +43,7 @@ export function DrinkQuick({ residentId, defaultItem }: { residentId: string; de
     <div className="stack-sm">
       <label className="fld" htmlFor="dq-item">
         <span className="lbl">{t('care.nutrition.item')}</span>
-        <input id="dq-item" className="field" list="dq-items" value={item} maxLength={120} autoComplete="off" onChange={(e) => setItem(e.target.value)} />
+        <TextField id="dq-item" list="dq-items" value={item} maxLength={120} autoComplete="off" onChange={(e) => setItem(e.target.value)} />
         <datalist id="dq-items">{items.map((s) => <option key={s} value={s} />)}</datalist>
       </label>
       <div className="quick-ml" role="group" aria-label={t('care.nutrition.quickAdd')}>
@@ -52,7 +53,7 @@ export function DrinkQuick({ residentId, defaultItem }: { residentId: string; de
       </div>
       <form className="row" onSubmit={(e) => { e.preventDefault(); const n = Number(ml); if (n) add(n) }}>
         <label className="sr-only" htmlFor="dq-ml">{t('care.nutrition.customMl')}</label>
-        <input id="dq-ml" className="field mono" style={{ width: 120 }} inputMode="numeric" placeholder={t('care.nutrition.customMl')} value={ml} onChange={(e) => setMl(e.target.value.replace(/[^\d]/g, ''))} />
+        <TextField id="dq-ml" style={{ width: 120 }} inputMode="numeric" placeholder={t('care.nutrition.customMl')} value={ml} onChange={(e) => setMl(e.target.value.replace(/[^\d]/g, ''))} className="mono" />
         <button type="submit" className="btn" disabled={pending || !ml}>{t('care.nutrition.add')}</button>
       </form>
     </div>
@@ -100,7 +101,7 @@ export function ProfileButton({ residentId, values, contextLabel }: { residentId
     <label className={'fld' + (opts.span ? ' span-all' : '')} htmlFor={'np-' + name}>
       <span className="lbl">{t('care.nutrition.fields.' + (name === 'fluidTargetMl' ? 'fluidTarget' : name))}</span>
       {opts.area ? (
-        <textarea id={'np-' + name} name={name} className="field" rows={2} style={{ minHeight: 56 }} defaultValue={values[name]} />
+        <Textarea id={'np-' + name} name={name} rows={2} style={{ minHeight: 56 }} defaultValue={values[name]} />
       ) : (
         <input id={'np-' + name} name={name} className={'field' + (opts.num ? ' mono' : '')} defaultValue={values[name]} list={opts.list ? 'np-l-' + name : undefined} inputMode={opts.num ? 'numeric' : undefined} autoComplete="off" />
       )}

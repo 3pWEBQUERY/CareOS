@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useT } from '@/i18n/client'
+import { TextField } from '@/components/ui/fields'
 
 /** Auswahl: Einmal-Link (empfohlen) oder vorläufiges Passwort. */
 export function ModeFields({ linkLabel, linkHint }: { linkLabel: string; linkHint: string }) {
@@ -14,11 +15,7 @@ export function ModeFields({ linkLabel, linkHint }: { linkLabel: string; linkHin
       {mode === 'link' && <span className="small muted" style={{ paddingLeft: 24 }}>{linkHint}</span>}
       <label className="check"><input type="radio" name="mode" value="password" checked={mode === 'password'} onChange={() => setMode('password')} /><span>{t('admin.users.modePassword')}</span></label>
       {mode === 'password' && (
-        <label className="fld" style={{ paddingLeft: 24 }}>
-          <span className="lbl">{t('admin.users.tempPassword')}</span>
-          <input className="field" type="password" name="password" autoComplete="new-password" minLength={10} required />
-          <span className="hint">{t('profile.password.rules')}</span>
-        </label>
+        <TextField label={t('admin.users.tempPassword')} hint={t('profile.password.rules')} wrapStyle={{ paddingLeft: 24 }} type="password" name="password" autoComplete="new-password" minLength={10} required />
       )}
     </fieldset>
   )

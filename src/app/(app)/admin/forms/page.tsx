@@ -24,7 +24,7 @@ export default async function FormsPage() {
   const defs = await db.formDefinition.findMany({ where: { orgId: ctx.org.id }, orderBy: [{ active: 'desc' }, { name: 'asc' }] })
   const usage = await formUsage(ctx.org.id, defs.map((d) => d.key))
   const now = new Date()
-  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)
+  const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, ctx.locale)
   return (
     <main className="panel main">
       <AdminHead section={t('admin.title')} title={t('admin.nav.forms')} sub={t('forms.admin.sub')}>

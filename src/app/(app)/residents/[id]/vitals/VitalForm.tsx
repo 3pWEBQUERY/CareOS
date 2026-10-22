@@ -7,6 +7,7 @@ import { toast } from '@/components/toast'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { recordVitals, saveThresholds } from './actions'
 import { isQueued, orQueue } from '@/lib/offline/client'
+import { TextField } from '@/components/ui/fields'
 
 type Field = { key: string; label: string; unit: string; min: number; max: number; dec: number; lo: number; hi: number }
 
@@ -87,20 +88,16 @@ export function VitalForm({ residentId, fields, who }: { residentId: string; fie
       {fields.map((f) => (
         <label key={f.key} htmlFor={'v_' + f.key}>
           <span className="lbl">{f.label} <span style={{ textTransform: 'none', letterSpacing: 0 }}>{f.unit}</span></span>
-          <input
-            className="field" id={'v_' + f.key} name={f.key} inputMode="decimal" autoComplete="off" placeholder={PH[f.key] != null ? nf(PH[f.key], f.dec) : ''}
+          <TextField
+ id={'v_' + f.key} name={f.key} inputMode="decimal" autoComplete="off" placeholder={PH[f.key] != null ? nf(PH[f.key], f.dec) : ''}
             value={vals[f.key] ?? ''} aria-invalid={err?.field === f.key || hint[f.key]?.kind === 'err' || undefined}
             aria-describedby={[hint[f.key] && 'vh_' + f.key, err?.field === f.key && !dupErr && 'v_err'].filter(Boolean).join(' ') || undefined}
             onChange={(e) => { setVals((v) => ({ ...v, [f.key]: e.target.value })); setWarn(null); if (hint[f.key]) setHint((cur) => { const n = { ...cur }; delete n[f.key]; return n }) }}
-            onBlur={() => check(f)}
-          />
+            onBlur={() => check(f)} />
           {hint[f.key] && <span id={'vh_' + f.key} className={'small mono ' + (hint[f.key].kind === 'err' ? 'crit-text' : 'warn-text')} role={hint[f.key].kind === 'err' ? 'alert' : undefined}>{hint[f.key].text}</span>}
         </label>
       ))}
-      <label htmlFor="v_note" style={{ gridColumn: 'span 2' }}>
-        <span className="lbl">{t('chart.vitals.note')}</span>
-        <input className="field" id="v_note" name="note" autoComplete="off" maxLength={500} style={{ fontFamily: 'var(--font-ui)' }} />
-      </label>
+      <TextField label={t('chart.vitals.note')} wrapStyle={{ gridColumn: 'span 2' }} id="v_note" name="note" autoComplete="off" maxLength={500} style={{ fontFamily: 'var(--font-ui)' }} />
       {warn && (
         <div className="alert warn" role="alert" style={{ gridColumn: '1 / -1' }}>
           <div className="grow">
@@ -150,8 +147,8 @@ export function Thresholds({ residentId, rows, canEdit }: { residentId: string; 
                   <td className="num">{nf(r.orgLo, r.dec)}–{nf(r.orgHi, r.dec)}</td>
                   {edit ? (
                     <>
-                      <td><input className="field mono" name={'lo_' + r.key} inputMode="decimal" defaultValue={r.individual ? nf(r.lo, r.dec) : ''} placeholder={nf(r.orgLo, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualLo')}`} /></td>
-                      <td><input className="field mono" name={'hi_' + r.key} inputMode="decimal" defaultValue={r.individual ? nf(r.hi, r.dec) : ''} placeholder={nf(r.orgHi, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualHi')}`} /></td>
+                      <td><TextField name={'lo_' + r.key} inputMode="decimal" defaultValue={r.individual ? nf(r.lo, r.dec) : ''} placeholder={nf(r.orgLo, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualLo')}`} className="mono" /></td>
+                      <td><TextField name={'hi_' + r.key} inputMode="decimal" defaultValue={r.individual ? nf(r.hi, r.dec) : ''} placeholder={nf(r.orgHi, r.dec)} style={{ maxWidth: 110 }} aria-label={`${r.label} ${t('chart.vitals.individualHi')}`} className="mono" /></td>
                     </>
                   ) : (
                     <td colSpan={2} className="num">{r.individual ? <><span className="tag accent" style={{ marginRight: 8 }}>{t('chart.vitals.individualTag')}</span>{nf(r.lo, r.dec)}–{nf(r.hi, r.dec)}</> : <span className="muted">–</span>}</td>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { useConfirm, splitQuestion, type ConfirmOptions } from '@/components/ui/ConfirmDialog'
@@ -31,6 +32,8 @@ export function ActionForm({
   const t = useT()
   const ref = useRef<HTMLFormElement>(null)
   const [error, setError] = useState<string | null>(null)
+  // Platz für die Meldung direkt am Feld (Feld-Komponenten: `[data-err-slot]` im Rahmen .fld), sonst unten im Formular
+  const [slot, setSlot] = useState<HTMLElement | null>(null)
   const [pending, start] = useTransition()
   const errId = useId()
   const focusAfter = useRef<HTMLElement | null>(null)
@@ -53,7 +56,13 @@ export function ActionForm({
   const [ask, confirmDialog] = useConfirm()
   const submit = (formEl: HTMLFormElement) => {
     // Markierungen aus dem letzten Versuch entfernen
-    formEl.querySelectorAll(`[aria-describedby="${errId}"]`).forEach((x) => { x.removeAttribute('aria-invalid'); x.removeAttribute('aria-describedby') })
+    formEl.querySelectorAll<HTMLElement>('[data-err-mark]').forEach((x) => {
+      x.removeAttribute('aria-invalid')
+      x.removeAttribute('data-err-mark')
+      const rest = (x.getAttribute('aria-describedby') ?? '').split(' ').filter((v) => v && v !== errId).join(' ')
+      if (rest) x.setAttribute('aria-describedby', rest)
+      else x.removeAttribute('aria-describedby')
+    })
     const form = new FormData(formEl)
     restore.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null
     start(async () => {
@@ -69,9 +78,16 @@ export function ActionForm({
         let el = r.field ? (ref.current?.querySelector(`[name="${r.field}"]`) as HTMLElement | null) : null
         // Eigene Felder (DateField/TimeField) schreiben in ein verstecktes Feld – markiert wird das sichtbare
         if (el instanceof HTMLInputElement && el.type === 'hidden' && el.dataset.for) el = document.getElementById(el.dataset.for) ?? el
+        // Gruppen (RadioGroup) sind selbst nicht fokussierbar → erste Option
+        if (el && !el.matches('input, select, textarea, button, [tabindex]')) el = el.querySelector<HTMLElement>('[tabindex="0"], input:not([type="hidden"]), button, select, textarea') ?? el
+        const host = el?.closest('.fld, .chk-fld')?.querySelector<HTMLElement>(':scope > [data-err-slot]') ?? null
+        setSlot(host)
         if (el) {
           el.setAttribute('aria-invalid', 'true')
-          el.setAttribute('aria-describedby', errId)
+          // Hinweis/Einheit des Felds bleiben verknüpft; die Meldung kommt dazu
+          const prev = (el.getAttribute('aria-describedby') ?? '').split(' ').filter((v) => v && v !== errId)
+          el.setAttribute('aria-describedby', [...prev, errId].join(' '))
+          el.setAttribute('data-err-mark', '')
           focusAfter.current = el // erst fokussieren, wenn das Fieldset wieder aktiv ist
         }
       }
@@ -106,7 +122,9 @@ export function ActionForm({
       <fieldset disabled={pending} style={{ border: 0, padding: 0, margin: 0, minWidth: 0, display: 'contents' }}>
         {children}
       </fieldset>
-      {error && <p className="err" id={errId} role="alert" style={{ margin: 0 }}>{error}</p>}
+      {error && (slot?.isConnected
+        ? createPortal(<span className="err fld-err" id={errId} role="alert">{error}</span>, slot)
+        : <p className="err" id={errId} role="alert" style={{ margin: 0 }}>{error}</p>)}
     </form>
     {confirmDialog}
     </>

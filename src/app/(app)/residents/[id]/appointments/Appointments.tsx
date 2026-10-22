@@ -7,8 +7,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { IconPlus } from '@/components/icons'
 import { saveAppointment, setAppointmentDone } from './actions'
-import { DateField } from '@/components/ui/DateField'
-import { TimeField } from '@/components/ui/TimeField'
+import { Checkbox, DateField, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
 
 export type ApptRow = { id: string; title: string; kind: string; place: string | null; notes: string | null; done: boolean; date: string; time: string; label: string; today: boolean; past: boolean }
 
@@ -63,15 +62,13 @@ export function Appointments({ residentId, who, upcoming, past, canWrite, today 
         {edit && (
           <ActionForm key={cur?.id ?? 'new'} action={saveAppointment.bind(null, residentId, cur?.id ?? null)} success="common.saved" onDone={(r) => r.ok && setEdit(null)}>
             <div className="form-grid">
-              <label className="fld span-all"><span className="lbl">{t('residents.appointments.fTitle')}</span><input className="field" name="title" required maxLength={200} defaultValue={cur?.title} /></label>
-              <label className="fld"><span className="lbl">{t('residents.appointments.fKind')}</span>
-                <select className="field" name="kind" defaultValue={cur ? kind(cur.kind) : 'physician'}>{KINDS.map((k) => <option key={k} value={k}>{t('residents.appointments.kinds.' + k)}</option>)}</select>
-              </label>
-              <label className="fld"><span className="lbl">{t('residents.appointments.fDate')}</span><DateField name="date" required defaultValue={cur?.date ?? today} /></label>
-              <label className="fld"><span className="lbl">{t('residents.appointments.fTime')}</span><TimeField name="time" required defaultValue={cur?.time ?? '10:00'} /></label>
-              <label className="fld"><span className="lbl">{t('residents.appointments.fPlace')}</span><input className="field" name="place" maxLength={200} defaultValue={cur?.place ?? ''} /></label>
-              <label className="fld span-all"><span className="lbl">{t('residents.appointments.fNotes')}</span><textarea className="field" name="notes" rows={3} maxLength={2000} defaultValue={cur?.notes ?? ''} /></label>
-              {cur && <label className="check span-all"><input type="checkbox" name="done" defaultChecked={cur.done} />{t('residents.appointments.doneTag')}</label>}
+              <TextField label={t('residents.appointments.fTitle')} wrapClassName="span-all" name="title" required maxLength={200} defaultValue={cur?.title} />
+              <Select label={t('residents.appointments.fKind')} name="kind" defaultValue={cur ? kind(cur.kind) : 'physician'}>{KINDS.map((k) => <option key={k} value={k}>{t('residents.appointments.kinds.' + k)}</option>)}</Select>
+              <DateField label={t('residents.appointments.fDate')} name="date" required defaultValue={cur?.date ?? today} />
+              <TimeField label={t('residents.appointments.fTime')} name="time" required defaultValue={cur?.time ?? '10:00'} />
+              <TextField label={t('residents.appointments.fPlace')} name="place" maxLength={200} defaultValue={cur?.place ?? ''} />
+              <Textarea label={t('residents.appointments.fNotes')} wrapClassName="span-all" name="notes" rows={3} maxLength={2000} defaultValue={cur?.notes ?? ''} />
+              {cur && <Checkbox name="done" defaultChecked={cur.done} label={t('residents.appointments.doneTag')} wrapClassName="span-all" />}
             </div>
             <div className="form-actions"><span className="spacer" /><button type="button" className="btn" onClick={() => setEdit(null)}>{t('common.cancel')}</button><button type="submit" className="btn primary">{t('common.save')}</button></div>
           </ActionForm>
