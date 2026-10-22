@@ -22,8 +22,9 @@ import platform from './messages/platform'
 import people from './messages/people'
 import imports from './messages/imports'
 import design from './messages/design'
+import register from './messages/register'
 
-const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms, visit, people, platform, imports, design }
+const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms, visit, people, platform, imports, design, register }
 
 export type Namespace = keyof typeof NAMESPACES
 

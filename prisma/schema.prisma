@@ -358,6 +358,10 @@ model User {
   workPhone        String?
   /// `phone` ist die private Nummer: sichtbar für die Person selbst, Leitung/HR im Bereich – und für alle nur, wenn die Person sie freigibt.
   phoneShared      Boolean            @default(false)
+  /// Selbstregistrierung (PRD §33): gesetzt, solange die Anfrage auf Freigabe wartet (Konto dabei inaktiv). Freigabe setzt null.
+  pendingSince     DateTime?
+  /// Angaben der Registrierung: { note, consentAt, approvedAt?, approvedById? } – nur Admin → Benutzer → Anfragen.
+  registration     Json?
 
   @@index([orgId])
 }

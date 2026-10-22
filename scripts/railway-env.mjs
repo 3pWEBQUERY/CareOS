@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Erzeugt den Variablenblock für den CareOS-Service auf Railway (Raw Editor → einfügen).
 // Neue Geheimnisse (APP_SECRET, VAPID-Schlüssel) werden bei jedem Aufruf frisch erzeugt.
-// Aufruf: node scripts/railway-env.mjs [--demo] [--admin=mail@example.ch] [--org="Alterszentrum Muster"]
+// Aufruf: node scripts/railway-env.mjs [--demo] [--admin=mail@example.ch] [--org="Alterszentrum Muster"] [--bucket=Bucket]
+//        [--first=Martina --last=Keller] [--units=4] [--staff=15] [--residents=100]
 import { randomBytes } from 'node:crypto'
 import webpush from 'web-push'
 
@@ -9,18 +10,21 @@ const args = Object.fromEntries(process.argv.slice(2).map((a) => {
   const [k, ...v] = a.replace(/^--/, '').split('=')
   return [k, v.length ? v.join('=') : true]
 }))
+const val = (k, d) => (args[k] && args[k] !== true ? String(args[k]) : d)
 const vapid = webpush.generateVAPIDKeys()
+const B = args.bucket && args.bucket !== true ? args.bucket : 'Bucket'
 const lines = [
   '# Datenbank (Railway Postgres)',
   'DATABASE_URL=${{Postgres.DATABASE_URL}}',
   '',
-  '# Railway Bucket – Dienstname "Bucket" anpassen, falls anders benannt',
-  'BUCKET=${{Bucket.BUCKET}}',
-  'ENDPOINT=${{Bucket.ENDPOINT}}',
-  'REGION=${{Bucket.REGION}}',
-  'ACCESS_KEY_ID=${{Bucket.ACCESS_KEY_ID}}',
-  'SECRET_ACCESS_KEY=${{Bucket.SECRET_ACCESS_KEY}}',
-  'S3_FORCE_PATH_STYLE=true',
+  `# Railway Bucket – Dienstname «${B}» (mit --bucket=<Name> anpassen)`,
+  `BUCKET=\${{${B}.BUCKET}}`,
+  `ENDPOINT=\${{${B}.ENDPOINT}}`,
+  `REGION=\${{${B}.REGION}}`,
+  `ACCESS_KEY_ID=\${{${B}.ACCESS_KEY_ID}}`,
+  `SECRET_ACCESS_KEY=\${{${B}.SECRET_ACCESS_KEY}}`,
+  '# Tab «Credentials» des Buckets: «virtual-hosted» → false (neue Railway Buckets), «path-style» → true',
+  'S3_FORCE_PATH_STYLE=false',
   '',
   '# Anwendung',
   'APP_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}',
@@ -38,10 +42,23 @@ if (args.demo) {
   lines.push('# Demodaten "Haus Lindenhof" beim ersten Start (nur Test/Pilot)', 'SEED_DEMO=true', '')
 } else {
   lines.push(
-    '# Erststart: Organisation und Systemadministration anlegen (danach INIT_ADMIN_PASSWORD entfernen)',
+    '# Erststart auf leerer Datenbank: Organisation und Systemadministration anlegen (danach INIT_ADMIN_PASSWORD entfernen)',
     `INIT_ORG_NAME=${args.org && args.org !== true ? args.org : 'Meine Organisation'}`,
     `INIT_ADMIN_EMAIL=${args.admin && args.admin !== true ? args.admin : 'admin@example.ch'}`,
     `INIT_ADMIN_PASSWORD=${randomBytes(12).toString('base64url')}`,
+    `INIT_ADMIN_FIRST_NAME=${val('first', 'System')}`,
+    `INIT_ADMIN_LAST_NAME=${val('last', 'Administration')}`,
+    '# Struktur: Anzahl Wohngruppen (Wohngruppe 1, 2 …) am Standort',
+    `INIT_UNITS=${val('units', '4')}`,
+    '# INIT_LOCATION_NAME=Hauptstandort',
+    '# Optional: zufällig erzeugte Mitarbeitende (ohne Passwort; Einladungslinks unter Admin → Benutzer → Einladungen)',
+    '# und Bewohnende (nur Stammdaten, Akte leer). Adressen unter INIT_STAFF_DOMAIN sind Platzhalter – vor dem Versand ändern.',
+    `INIT_STAFF=${val('staff', '0')}`,
+    'INIT_STAFF_DOMAIN=example.ch',
+    `INIT_RESIDENTS=${val('residents', '0')}`,
+    '# INIT_SEED=beliebiger-text   (reproduzierbare Zufallsdaten)',
+    '# Optional: neue Organisationen über /register anlegen (Mehrmandanten-Instanz)',
+    '# ORG_SIGNUP=false',
     '',
   )
 }

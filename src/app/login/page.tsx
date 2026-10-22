@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Brand } from '@/components/Brand'
 import { getSession } from '@/lib/auth/session'
 import { publicT } from '@/lib/i18n-server'
 import { env, ssoConfigured } from '@/lib/env'
+import { registrationOpen } from '@/lib/registration'
 import { LoginForm } from './LoginForm'
 import { ClearSnapshot } from './ClearSnapshot'
 
@@ -17,7 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (s?.mfaPassed) redirect('/')
   const { t } = await publicT()
   const next = sp.next?.startsWith('/') && !sp.next.startsWith('//') ? sp.next : '/'
-  const keys = ['email', 'password', 'submit', 'passkey', 'or', 'invalid', 'locked', 'inactive', 'passkeyFailed'] as const
+  const keys = ['email', 'password', 'submit', 'passkey', 'or', 'invalid', 'locked', 'inactive', 'pending', 'passkeyFailed'] as const
   const labels = Object.fromEntries(keys.map((k) => [k, t('auth.' + k)])) as Record<(typeof keys)[number], string>
   return (
     <main className="auth">
@@ -37,6 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <footer>
           <span>{t('auth.footer')}</span>
+          {(await registrationOpen()) && <Link className="linkbtn small" href="/register">{t('auth.requestAccount')}</Link>}
         </footer>
       </div>
     </main>

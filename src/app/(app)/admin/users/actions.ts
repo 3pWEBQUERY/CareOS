@@ -7,13 +7,13 @@ import { env } from '@/lib/env'
 import { getCtx, assertCan, type Ctx } from '@/lib/context'
 import { run, fd, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
-import { randomToken } from '@/lib/crypto'
-import { hashToken } from '@/lib/auth/session'
+import { encrypt } from '@/lib/crypto'
+import { INVITE_DAYS, awaitingAccessWhere, issueLink } from '@/lib/invites'
+import { hashCode, newRegistrationCode, readRegistration } from '@/lib/registration-core'
+import { settleNotifications } from '@/lib/notify'
 import { hashPassword, passwordProblem } from '@/lib/auth/password'
 import { guardLastAdmin, LastAdminError } from '@/lib/admin'
 import { LOCALES } from '@/i18n/core'
-
-const INVITE_DAYS = 7
 
 async function admin() {
   const ctx = await getCtx()
@@ -49,14 +49,6 @@ async function manageError(ctx: Ctx, targetUserId: string): Promise<string | nul
   const rows = await db.roleAssignment.findMany({ where: { userId: targetUserId }, include: { role: { select: { permissions: true } } } })
   const perms = new Set(rows.flatMap((r) => r.role.permissions))
   return [...perms].some((p) => !holdsOrgWide(ctx, p)) ? 'admin.users.outranks' : null
-}
-
-/** Einmal-Link zum Setzen eines Passworts (Einladung oder Zurücksetzen). Nur der Hash wird gespeichert. */
-async function issueLink(userId: string, kind: 'invite' | 'reset') {
-  const token = randomToken(32)
-  await db.authChallenge.deleteMany({ where: { userId, kind: { in: ['invite', 'reset'] } } })
-  await db.authChallenge.create({ data: { userId, kind, challenge: hashToken(token), expiresAt: new Date(Date.now() + INVITE_DAYS * 86400_000) } })
-  return new URL('/login/invite?token=' + token, env.appUrl).toString()
 }
 
 const initialsFrom = (first: string, last: string) => ((first[0] ?? '') + (last[0] ?? '')).toUpperCase()
@@ -319,5 +311,120 @@ export async function deleteQualificationAction(id: string): Promise<ActionResul
     await audit(ctx, { action: 'admin.qualification.delete', entityType: 'Qualification', entityId: id, before: { name: q.name, level: q.level } })
     refresh()
     return { ok: true, message: 'admin.common.deleted' }
+  })
+}
+
+// ───────── Einladungen (Konten ohne Zugang, z. B. aus dem Erststart) ─────────
+
+export type InviteLinkRow = { id: string; name: string; email: string; link: string }
+
+/** Neue Einladungslinks für die gewählten Konten ohne Zugang. Frühere Links werden ungültig; Anzeige nur einmal. */
+export async function issueInvitesAction(ids: string[]): Promise<ActionResult<{ links: InviteLinkRow[] }>> {
+  return run(async () => {
+    const ctx = await admin()
+    const users = await db.user.findMany({
+      where: { ...awaitingAccessWhere(ctx.org.id), id: { in: ids.slice(0, 1000) } },
+      select: { id: true, firstName: true, lastName: true, email: true },
+      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+    })
+    const links: InviteLinkRow[] = []
+    for (const u of users) {
+      if (await manageError(ctx, u.id)) continue
+      links.push({ id: u.id, name: `${u.lastName} ${u.firstName}`, email: u.email, link: await issueLink(u.id, 'invite') })
+      await audit(ctx, { action: 'admin.user.invite', entityType: 'User', entityId: u.id, context: { expiresInDays: INVITE_DAYS, bulk: users.length > 1 } })
+    }
+    if (!links.length) return { ok: false, error: 'admin.users.outranks' }
+    refresh()
+    return { ok: true, data: { links } }
+  })
+}
+
+// ───────── Selbstregistrierung (PRD §33) ─────────
+
+async function saveRegistration(ctx: Ctx, patch: { enabled?: boolean; code?: string }) {
+  const org = await db.organization.findUniqueOrThrow({ where: { id: ctx.org.id }, select: { settings: true } })
+  const settings = (org.settings && typeof org.settings === 'object' ? org.settings : {}) as Record<string, unknown>
+  const cur = readRegistration(settings)
+  const next = {
+    enabled: patch.enabled ?? cur.enabled,
+    codeHash: patch.code ? hashCode(patch.code) : cur.codeHash,
+    codeEnc: patch.code ? encrypt(patch.code) : cur.codeEnc,
+    rotatedAt: patch.code ? new Date().toISOString() : cur.rotatedAt,
+  }
+  await db.organization.update({ where: { id: ctx.org.id }, data: { settings: { ...settings, registration: next } } })
+  return { before: cur, after: next }
+}
+
+export async function setRegistrationAction(enabled: boolean): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    const org = await db.organization.findUniqueOrThrow({ where: { id: ctx.org.id }, select: { settings: true } })
+    const needsCode = enabled && !readRegistration(org.settings).codeHash
+    const { before, after } = await saveRegistration(ctx, { enabled, code: needsCode ? newRegistrationCode() : undefined })
+    await audit(ctx, { action: enabled ? 'admin.registration.enable' : 'admin.registration.disable', entityType: 'Organization', entityId: ctx.org.id, before: { enabled: before.enabled }, after: { enabled: after.enabled } })
+    refresh()
+    return { ok: true, message: enabled ? 'register.admin.enabled' : 'register.admin.disabled' }
+  })
+}
+
+export async function rotateRegistrationCodeAction(): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    await saveRegistration(ctx, { code: newRegistrationCode() })
+    await audit(ctx, { action: 'admin.registration.code_rotated', entityType: 'Organization', entityId: ctx.org.id })
+    refresh()
+    return { ok: true, message: 'register.admin.rotated' }
+  })
+}
+
+async function pendingUser(ctx: Ctx, id: string) {
+  return db.user.findFirst({ where: { id, orgId: ctx.org.id, pendingSince: { not: null } } })
+}
+
+/** Anfrage freigeben: Rolle im gewählten Bereich, Konto aktiv. */
+export async function approveRequestAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    const id = fd(form, 'id')
+    const u = await pendingUser(ctx, id)
+    if (!u) return { ok: false, error: 'register.admin.notPending' }
+    const role = await db.role.findFirst({ where: { id: fd(form, 'roleId'), orgId: ctx.org.id } })
+    if (!role) return { ok: false, error: 'register.admin.pickRole', field: 'roleId' }
+    const esc = escalationError(ctx, id, role.permissions)
+    if (esc) return { ok: false, error: esc, field: 'roleId' }
+    const unit = await db.unit.findFirst({ where: { id: fd(form, 'unitId'), orgId: ctx.org.id } })
+    if (!unit) return { ok: false, error: 'register.admin.pickUnit', field: 'unitId' }
+    const jobTitle = fd(form, 'jobTitle').slice(0, 80) || null
+    const reg = (u.registration && typeof u.registration === 'object' ? u.registration : {}) as Record<string, unknown>
+    const done = await db.$transaction(async (tx) => {
+      // Doppelklick / zwei Geräte: nur eine Freigabe zählt
+      const r = await tx.user.updateMany({
+        where: { id, pendingSince: { not: null } },
+        data: { active: true, pendingSince: null, primaryUnitId: unit.id, jobTitle, registration: { ...reg, approvedAt: new Date().toISOString(), approvedById: ctx.user.id } },
+      })
+      if (!r.count) return false
+      await tx.roleAssignment.create({ data: { userId: id, roleId: role.id, unitId: unit.id } })
+      await audit(ctx, { action: 'admin.user.registration_approved', entityType: 'User', entityId: id, before: { active: false }, after: { active: true, role: role.key, unitId: unit.id, jobTitle } }, tx)
+      return true
+    })
+    if (!done) return { ok: false, error: 'register.admin.notPending' }
+    await settleNotifications(ctx.org.id, 'registration:' + id)
+    refresh()
+    return { ok: true, message: 'register.admin.approved' }
+  })
+}
+
+/** Anfrage ablehnen: das beantragte Konto wird gelöscht (hat nie Daten erfasst). */
+export async function rejectRequestAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    const u = await pendingUser(ctx, id)
+    if (!u) return { ok: false, error: 'register.admin.notPending' }
+    const r = await db.user.deleteMany({ where: { id, pendingSince: { not: null }, active: false } })
+    if (!r.count) return { ok: false, error: 'register.admin.notPending' }
+    await audit(ctx, { action: 'admin.user.registration_rejected', entityType: 'User', entityId: id, before: { email: u.email, firstName: u.firstName, lastName: u.lastName, registration: u.registration } })
+    await settleNotifications(ctx.org.id, 'registration:' + id)
+    refresh()
+    return { ok: true, message: 'register.admin.rejected' }
   })
 }

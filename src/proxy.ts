@@ -5,10 +5,10 @@ import { REPORT_PATH, buildCsp, cspHeaderName, makeNonce } from '@/lib/csp'
  * Läuft vor jeder Seite (nicht für /api, statische Dateien und Build-Assets):
  * 1. Content-Security-Policy mit neuer Nonce pro Anfrage (PRD §37). Next.js liest die Nonce aus dem
  *    weitergereichten CSP-Header und setzt sie auf seine Skripte; Server-Komponenten lesen sie bei Bedarf aus `x-nonce`.
- * 2. Optimistische Prüfung: ohne Sitzungs-Cookie direkt zum Login (ausser /login und /offline).
+ * 2. Optimistische Prüfung: ohne Sitzungs-Cookie direkt zum Login (ausser /login, /register und /offline).
  *    Die eigentliche Autorisierung erfolgt serverseitig in jeder Seite und Aktion.
  */
-const PUBLIC = /^\/(login|offline)(\/|$)/
+const PUBLIC = /^\/(login|register|offline)(\/|$)/
 
 export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname
