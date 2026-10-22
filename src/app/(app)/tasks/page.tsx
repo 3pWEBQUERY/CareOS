@@ -15,6 +15,7 @@ import { Forbidden, Empty } from '@/components/ui/Empty'
 import { CreateTask, RememberFilter, TaskTable, type SeriesDto, type StaffDto, type TaskRowDto } from '@/components/tasks/TaskTable'
 import { describeRecurrence, type TemplateDto } from '@/lib/recurrence'
 import { categoryLabel } from '@/lib/care'
+import { myResidentIds } from '@/lib/assignment'
 
 export async function generateMetadata() {
   return { title: (await getCtx()).t('nav.tasks') }
@@ -59,7 +60,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   await ensureTasksForDay(unit.id, win.start)
   if (!sameDay(win.start, win.end)) await ensureTasksForDay(unit.id, win.end)
 
-  const [tasks, residents, staffIds] = await Promise.all([
+  const [allTasks, residents, staffIds, mine] = await Promise.all([
     db.task.findMany({
       where: {
         unitId: unit.id,
@@ -72,7 +73,11 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     }),
     db.resident.findMany({ where: { unitId: unit.id, orgId: ctx.org.id, status: { in: ['active', 'absent'] } }, include: { room: true }, orderBy: [{ room: { number: 'asc' } }, { lastName: 'asc' }] }),
     usersWithPermission(ctx.org.id, 'task.complete', unit.id),
+    myResidentIds(ctx, { unitId: unit.id, now }),
   ])
+  // Medikamentenaufgaben (Zeitpunkte, Wirkungskontrolle) nur für Personen, die abgeben dürfen – auch in den Zählern.
+  const tasks = canRound ? allTasks : allTasks.filter((k) => k.source !== 'medication')
+  const mineSet = new Set(mine ?? [])
   const ids = new Set<string>(staffIds)
   for (const k of tasks) [k.assigneeId, k.completedById, k.createdById].forEach((u) => u && ids.add(u))
   const users = await db.user.findMany({ where: { id: { in: [...ids] }, orgId: ctx.org.id }, select: { id: true, firstName: true, lastName: true, initials: true, active: true } })
@@ -88,7 +93,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     if (filter === 'done') return isClosed(k.status) && k.dueAt >= win.start
     if (isClosed(k.status)) return false
     if (filter === 'over') return taskView(k, now) === 'over'
-    if (filter === 'mine') return k.assigneeId === user.id
+    // «Meine»: mir zugewiesen oder bei mir zugeteilten Personen und niemand anderem zugewiesen
+    if (filter === 'mine') return k.assigneeId === user.id || (!k.assigneeId && !!k.residentId && mineSet.has(k.residentId))
     return true
   })
 
@@ -202,6 +208,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             canComplete={canComplete}
             meId={user.id}
             series={canManage ? series : undefined}
+            note={filter === 'mine' && !mine ? t('tasks.mineHint') : undefined}
             emptyText={t(filter === 'over' ? 'tasks.empty.over' : filter === 'mine' ? 'tasks.empty.mine' : filter === 'done' ? 'tasks.empty.done' : 'tasks.empty.open')}
           />
 

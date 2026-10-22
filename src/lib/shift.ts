@@ -46,7 +46,7 @@ export async function runningShift(orgId: string, now = new Date()) {
  */
 export async function lastShiftEnd(userId: string, currentSessionId: string, now = new Date()) {
   const past = await db.shift.findMany({
-    where: { userId, date: { lt: dbDate(now), gte: dbDate(addDays(now, -21)) }, status: { not: 'cancelled' } },
+    where: { userId, date: { lte: dbDate(now), gte: dbDate(addDays(now, -21)) }, status: { not: 'cancelled' } },
     include: { shiftType: true },
     orderBy: { date: 'desc' },
     take: 3,

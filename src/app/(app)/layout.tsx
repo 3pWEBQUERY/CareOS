@@ -93,7 +93,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/" style={{ textDecoration: 'none' }} aria-label={`${org.brandName || 'CareOS'} – ${t('nav.home')}`}><Brand name={org.brandName} logoUrl={org.logoFileId ? `/api/files/${org.logoFileId}` : null} /></Link>
           <div className="ctx">
             <UnitSwitcher units={units} current={ctx.unit?.id ?? null} label={t('nav.areas')} />
-            <span>{org.name}{ctx.unit ? ` · ${t('home.residentCount', { n: residentCount })}` : ''}</span>
+            <span>{org.name}{ctx.unit && ctx.can('resident.read') ? ` · ${t('home.residentCount', { n: residentCount })}` : ''}</span>
           </div>
           <CommandPalette items={palette} />
           {shift && (
