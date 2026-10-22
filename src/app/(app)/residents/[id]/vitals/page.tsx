@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { db } from '@/lib/db'
 import { addDays, fmtNum, fmtRel, hm, sameDay, weekdayShort } from '@/lib/time'
 import { abnormalKeys, flag, LIVE, mergeLimits, VITALS, type VitalKey } from '@/lib/vitals'
@@ -6,7 +7,6 @@ import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { VitalForm, Thresholds } from './VitalForm'
 import { VitalCorrect } from './VitalCorrect'
 import { ReviewTag } from '@/components/residents/ReviewTag'
-import { CustomVitalsEditor } from '@/components/residents/CustomVitalsEditor'
 import { LabResults } from '@/components/labs/LabResults'
 import { customFlag, customVitals, readExtra } from '@/lib/vitals-custom'
 import { FocusSuggestions } from '@/components/forms/FocusSuggestions'
@@ -224,7 +224,11 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
         }))}
       />
       {/* Klinische Konfiguration: eigene Parameter der Organisation (nur mit admin.config) */}
-      {ctx.can('admin.config') && <CustomVitalsEditor defs={custom} />}
+      {ctx.can('admin.config') && (
+        <p className="small muted" style={{ margin: 0 }}>
+          {t('chart.custom.title')}: {custom.length ? t('chart.custom.count', { n: custom.length }) : t('chart.custom.none')} · <Link href="/admin/config?tab=customVitals">{t('admin.config.editInConfig')}</Link>
+        </p>
+      )}
     </>
   )
 }

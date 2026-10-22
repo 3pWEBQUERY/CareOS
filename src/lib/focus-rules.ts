@@ -30,6 +30,9 @@ export const DEFAULT_FOCUS_RULES: FocusRule[] = [
   { key: 'taskSkipped', enabled: true, formKey: null, threshold: 2, windowH: 48 },
 ]
 
+/** Grenzen für die Admin-Oberfläche (entsprechen der Prüfung in focusRules). */
+export const FOCUS_LIMITS = { windowH: { min: 1, max: 168 }, threshold: { pain: { min: 1, max: 10 }, taskSkipped: { min: 1, max: 10 } } } as const
+
 /** Regeln aus den Organisationseinstellungen, ergänzt um Standardwerte; ungültige Angaben werden ignoriert. */
 export function focusRules(settings: unknown): FocusRule[] {
   const raw = (settings && typeof settings === 'object' ? (settings as Record<string, unknown>).focusDocumentation : null) as Record<string, unknown> | null

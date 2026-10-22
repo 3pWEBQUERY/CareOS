@@ -14,6 +14,9 @@ import { Escalations } from './Escalations'
 import { Acks } from './Acks'
 import { Workflows } from './Workflows'
 import { Recurring } from './Recurring'
+import { FocusRules } from './FocusRules'
+import { CustomVitalsEditor } from '@/components/residents/CustomVitalsEditor'
+import { customVitals } from '@/lib/vitals-custom'
 import { AssessmentBuilderButton, type BuilderValue } from './AssessmentBuilder'
 import { ASSESSMENTS } from '@/lib/clinical-config'
 import {
@@ -27,7 +30,7 @@ export async function generateMetadata() {
   return { title: `${t('admin.nav.config')} · ${t('nav.admin')}` }
 }
 
-const TABS = ['domains', 'assessments', 'vitals', 'incidents', 'workflows', 'recurring', 'shifts', 'features', 'escalations', 'acks'] as const
+const TABS = ['domains', 'assessments', 'vitals', 'customVitals', 'incidents', 'focus', 'workflows', 'recurring', 'shifts', 'features', 'escalations', 'acks'] as const
 /** Reiter aus Paket «Aufgaben/Workflows»: Beschriftung im Namespace tasks. */
 const TAB_KEYS: Partial<Record<(typeof TABS)[number], string>> = { workflows: 'tasks.rules.tab', recurring: 'tasks.recur.admin.tab' }
 type Tab = (typeof TABS)[number]
@@ -49,7 +52,9 @@ export default async function ConfigPage({ searchParams }: { searchParams: Promi
           {tab === 'domains' && <Domains />}
           {tab === 'assessments' && <Assessments />}
           {tab === 'vitals' && <Vitals />}
+          {tab === 'customVitals' && <CustomVitalsEditor defs={customVitals(ctx.org.settings)} />}
           {tab === 'incidents' && <Incidents />}
+          {tab === 'focus' && <FocusRules />}
           {tab === 'workflows' && <Workflows />}
           {tab === 'recurring' && <Recurring />}
           {tab === 'shifts' && <Shifts />}
