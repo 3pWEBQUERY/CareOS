@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
       ? db.intervention.findMany({
           where: { active: true, title: like, resident: { orgId: ctx.org.id, unitId: { in: ctx.unitIds }, status: { in: ['active', 'absent'] } } },
           include: { resident: { select: { id: true, firstName: true, lastName: true } } },
-          take: 5,
+          take: 15,
         })
       : [],
     ctx.can('admin.config') || ctx.can('resident.chart.write')
@@ -73,7 +73,8 @@ export async function GET(req: NextRequest) {
   for (const f of forms) items.push({ group: t('common.palette.groupForm'), label: f.name, hint: f.active ? undefined : t('admin.config.inactive'), href: ctx.can('admin.config') ? `/admin/forms/${f.id}` : '/residents?pick=notes' })
   for (const p of people) items.push({ group: t('common.palette.groupPerson'), label: `${p.firstName} ${p.lastName}`, hint: p.jobTitle ?? undefined, href: `/chat?with=${p.id}` })
   for (const k of tasks) items.push({ group: t('common.palette.groupTask'), label: k.title, hint: k.resident ? `${k.resident.lastName}` : undefined, href: k.residentId ? `/residents/${k.residentId}` : '/tasks' })
-  for (const i of interventions) items.push({ group: t('common.palette.groupIntervention'), label: i.title, hint: `${i.resident.lastName} ${i.resident.firstName}`, href: `/residents/${i.resident.id}/careplan` })
+  const seenIv = new Set<string>()
+  for (const i of interventions) if (seenIv.size < 5 && !seenIv.has(i.resident.id + i.title) && seenIv.add(i.resident.id + i.title)) items.push({ group: t('common.palette.groupIntervention'), label: i.title, hint: `${i.resident.lastName} ${i.resident.firstName}`, href: `/residents/${i.resident.id}/careplan` })
   for (const p of posts) items.push({ group: t('common.palette.groupPost'), label: p.title, hint: p.title.toLowerCase().includes(q.toLowerCase()) ? p.channel.name : snippet(p.body, q, 60), href: `/team/post/${p.id}` })
   for (const m of messages) {
     const c = m.conversation

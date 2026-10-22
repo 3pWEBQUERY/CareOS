@@ -28,7 +28,10 @@ export const offlineSupported = () =>
   typeof window !== 'undefined' && 'indexedDB' in window && !!window.crypto?.subtle && typeof crypto.randomUUID === 'function'
 
 let dbp: Promise<IDBDatabase> | null = null
+/** Nach dem Abmelden in diesem Dokument nichts mehr anlegen (die Seite wechselt zur Anmeldung). */
+let cleared = false
 function open(): Promise<IDBDatabase> {
+  if (cleared) return Promise.reject(new Error('offline_cleared'))
   if (dbp) return dbp
   dbp = new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, VERSION)
@@ -193,6 +196,7 @@ export async function clearOfflineData() {
     const d = await open()
     d.close()
   } catch {}
+  cleared = true
   dbp = null
   keyp = null
   await new Promise<void>((resolve) => {

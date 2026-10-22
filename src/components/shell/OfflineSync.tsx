@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useLocale, useT } from '@/i18n/client'
@@ -25,9 +25,11 @@ export function OfflineSync({ userId, offline }: { userId: string; offline: bool
   const counts = useOutbox(userId)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const inflight = useRef(false)
 
   const sync = useCallback(async (manual = false) => {
-    if (!offlineSupported() || isOffline()) return
+    if (!offlineSupported() || isOffline() || inflight.current) return
+    inflight.current = true
     setBusy(true)
     try {
       const s = await syncOutbox()
@@ -35,6 +37,7 @@ export function OfflineSync({ userId, offline }: { userId: string; offline: bool
       if (s.conflicts) toast(t('common.offlineSync.conflictToast', { n: s.conflicts }), { kind: 'crit', ms: 8000 })
       if (s.failed && manual) toast(t('common.offlineSync.failed'), { kind: 'crit' })
     } finally {
+      inflight.current = false
       setBusy(false)
     }
   }, [router, t])

@@ -13,7 +13,10 @@ type State = { status: 'loading' } | { status: 'none' } | { status: 'ok'; snap: 
 
 export function OfflineView({ messages }: { messages: Record<Locale, Tree> }) {
   const [state, setState] = useState<State>({ status: 'loading' })
+  // Sprache erst nach dem Laden bestimmen (Server kennt weder Lesestand noch Browsersprache)
+  const [browserLocale, setBrowserLocale] = useState<Locale>('de')
   useEffect(() => {
+    setBrowserLocale(pickLocale(navigator.language))
     if (!offlineSupported()) { setState({ status: 'none' }); return }
     void loadSnapshot().then((snap) => {
       setState(snap ? { status: 'ok', snap } : { status: 'none' })
@@ -23,7 +26,7 @@ export function OfflineView({ messages }: { messages: Record<Locale, Tree> }) {
   }, [])
   const locale: Locale = state.status === 'ok' && (LOCALES as readonly string[]).includes(state.snap.locale)
     ? (state.snap.locale as Locale)
-    : typeof navigator !== 'undefined' ? pickLocale(navigator.language) : 'de'
+    : browserLocale
   return (
     <I18nProvider locale={locale} terminology="resident" messages={messages[locale]}>
       <View state={state} />

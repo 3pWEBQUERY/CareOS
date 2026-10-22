@@ -9,8 +9,17 @@ export type ActionResult<T = undefined> = { ok: true; data?: T; message?: string
  * in verständliche Rückgaben um, statt die Seite abstürzen zu lassen.
  * Fehlertexte sind i18n-Schlüssel oder bereits übersetzte Texte.
  */
-export async function run<T>(fn: () => Promise<ActionResult<T> | void>): Promise<ActionResult<T>> {
+export async function run<T>(fn: () => Promise<ActionResult<T> | void>, opts: { allowDuringMfaSetup?: boolean } = {}): Promise<ActionResult<T>> {
   try {
+    // MFA-Pflicht der Organisation gilt auch für Aktionen, nicht nur für Seiten (ausser Einrichtung im Profil).
+    if (!opts.allowDuringMfaSetup) {
+      const { getSession } = await import('@/lib/auth/session')
+      const session = await getSession()
+      if (session?.mfaPassed) {
+        const [{ getCtx }, { needsMfaSetup }] = await Promise.all([import('@/lib/context'), import('@/lib/auth/mfa-gate')])
+        if (await needsMfaSetup(await getCtx())) return { ok: false, error: 'profile.mfaSetup.required' }
+      }
+    }
     return (await fn()) ?? { ok: true }
   } catch (e) {
     if (e instanceof ForbiddenError) return { ok: false, error: 'common.notAllowed' }
@@ -35,3 +44,6 @@ export const fdNum = (form: FormData, k: string) => {
   return Number.isFinite(n) ? n : NaN
 }
 export const fdBool = (form: FormData, k: string) => form.get(k) === 'on' || form.get(k) === 'true'
+
+/** Für Aktionen, die während einer offenen MFA-Pflicht erlaubt sind (Einrichtung im Profil). */
+export const runSetup = <T>(fn: () => Promise<ActionResult<T> | void>) => run(fn, { allowDuringMfaSetup: true })

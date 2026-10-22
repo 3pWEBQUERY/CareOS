@@ -1,6 +1,7 @@
 'use server'
 
 import { refresh } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getCtx, assertCan } from '@/lib/context'
@@ -91,7 +92,6 @@ export async function deleteFormAction(id: string): Promise<ActionResult> {
     if ((await formUsage(ctx.org.id, [before.key])).get(before.key)) return { ok: false, error: 'forms.errors.inUse' }
     await db.formDefinition.delete({ where: { id } })
     await audit(ctx, { action: 'admin.config.form_delete', entityType: 'FormDefinition', entityId: id, before: { key: before.key, name: before.name, version: before.version, fields: before.fields } })
-    refresh()
-    return { ok: true, message: 'admin.common.deleted' }
+    redirect('/admin/forms')
   })
 }

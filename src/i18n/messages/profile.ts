@@ -24,6 +24,7 @@ export default defineMessages({
       languageHint: 'Gilt für Oberfläche, Benachrichtigungen und Ausdrucke.',
     },
     mfaSetup: {
+      required: 'Bitte richten Sie zuerst im Profil einen zweiten Faktor ein.',
       title: 'Zweiter Faktor erforderlich',
       textAll: 'Ihre Organisation verlangt für alle Konten einen zweiten Faktor. Bitte richten Sie eine Authenticator-App oder einen Passkey ein, um CareOS weiter zu nutzen.',
       textAdmin: 'Ihre Organisation verlangt für Konten mit Admin-Rechten einen zweiten Faktor. Bitte richten Sie eine Authenticator-App oder einen Passkey ein, um CareOS weiter zu nutzen.',
@@ -190,6 +191,7 @@ export default defineMessages({
       languageHint: 'S’applique à l’interface, aux notifications et aux impressions.',
     },
     mfaSetup: {
+      required: 'Veuillez d’abord configurer un second facteur dans votre profil.',
       title: 'Second facteur requis',
       textAll: 'Votre organisation exige un second facteur pour tous les comptes. Veuillez configurer une application d’authentification ou une passkey pour continuer à utiliser CareOS.',
       textAdmin: 'Votre organisation exige un second facteur pour les comptes disposant de droits d’administration. Veuillez configurer une application d’authentification ou une passkey pour continuer à utiliser CareOS.',
@@ -356,6 +358,7 @@ export default defineMessages({
       languageHint: 'Vale per interfaccia, notifiche e stampe.',
     },
     mfaSetup: {
+      required: 'Configuri prima un secondo fattore nel profilo.',
       title: 'Secondo fattore richiesto',
       textAll: 'La sua organizzazione richiede un secondo fattore per tutti gli account. Configuri un’app di autenticazione o una passkey per continuare a usare CareOS.',
       textAdmin: 'La sua organizzazione richiede un secondo fattore per gli account con diritti di amministrazione. Configuri un’app di autenticazione o una passkey per continuare a usare CareOS.',
@@ -522,6 +525,7 @@ export default defineMessages({
       languageHint: 'Applies to the interface, notifications and printouts.',
     },
     mfaSetup: {
+      required: 'Please set up a second factor in your profile first.',
       title: 'Second factor required',
       textAll: 'Your organisation requires a second factor for all accounts. Please set up an authenticator app or a passkey to continue using CareOS.',
       textAdmin: 'Your organisation requires a second factor for accounts with admin rights. Please set up an authenticator app or a passkey to continue using CareOS.',

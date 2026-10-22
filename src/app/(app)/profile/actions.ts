@@ -5,7 +5,7 @@ import { refresh } from 'next/cache'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
-import { run, fd, type ActionResult } from '@/lib/action'
+import { run, runSetup, fd, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { rateLimit } from '@/lib/rate-limit'
 import { encrypt, decrypt } from '@/lib/crypto'
@@ -18,7 +18,7 @@ const MFA_SETUP = 'mfa_setup'
 
 /** Telefonnummer ist das einzige selbst änderbare Stammdatum. */
 export async function updatePhoneAction(form: FormData): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     const phone = fd(form, 'phone').slice(0, 40)
     if (phone && !/^[+\d][\d\s()./-]{3,}$/.test(phone)) return { ok: false, error: 'profile.errors.phone', field: 'phone' }
@@ -30,7 +30,7 @@ export async function updatePhoneAction(form: FormData): Promise<ActionResult> {
 }
 
 export async function setLocaleAction(locale: string): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     const v = z.enum(LOCALES).parse(locale)
     await db.user.update({ where: { id: ctx.user.id }, data: { locale: v } })
@@ -42,7 +42,7 @@ export async function setLocaleAction(locale: string): Promise<ActionResult> {
 
 /** Protokolliert die Änderung der Darstellung (die Speicherung erfolgt über setThemeAction der Shell). */
 export async function auditThemeAction(theme: string): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     await audit(ctx, { action: 'profile.theme', entityType: 'User', entityId: ctx.user.id, before: { theme: ctx.user.theme }, after: { theme: normalizeTheme(theme) } })
   })
@@ -63,7 +63,7 @@ async function createSetup(userId: string, email: string) {
 
 /** Startet die Einrichtung: neues Geheimnis (verschlüsselt, 10 Min. gültig), QR-Code und manueller Code. */
 export async function startMfaSetupAction(): Promise<ActionResult<{ qr: string; secret: string }>> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     if (ctx.user.mfaEnabled) return { ok: false, error: 'profile.mfa.alreadyEnabled' }
     return { ok: true, data: await createSetup(ctx.user.id, ctx.user.email) }
@@ -72,7 +72,7 @@ export async function startMfaSetupAction(): Promise<ActionResult<{ qr: string; 
 
 /** Neues Geheimnis erzeugen; erfordert einen gültigen Code des bisherigen Geheimnisses. */
 export async function regenerateMfaAction(form: FormData): Promise<ActionResult<{ qr: string; secret: string }>> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     if (!rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
     if (!ctx.user.mfaEnabled || !ctx.user.mfaSecret) return { ok: false, error: 'common.genericError' }
@@ -86,7 +86,7 @@ export async function regenerateMfaAction(form: FormData): Promise<ActionResult<
 
 /** Bestätigt die Einrichtung mit einem Code aus der Authenticator-App und aktiviert MFA. */
 export async function confirmMfaAction(form: FormData): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     if (!rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
     const ch = await pendingSetup(ctx.user.id)
@@ -107,7 +107,7 @@ export async function confirmMfaAction(form: FormData): Promise<ActionResult> {
 }
 
 export async function disableMfaAction(form: FormData): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     if (!rateLimit('mfa-profile:' + ctx.user.id, 8, 10 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
     if (!ctx.user.mfaEnabled || !ctx.user.mfaSecret) return { ok: true }
@@ -127,7 +127,7 @@ export async function disableMfaAction(form: FormData): Promise<ActionResult> {
 // ───────── Passkeys ─────────
 
 export async function renamePasskeyAction(form: FormData): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     const id = fd(form, 'id')
     const name = fd(form, 'name').slice(0, 60)
@@ -141,7 +141,7 @@ export async function renamePasskeyAction(form: FormData): Promise<ActionResult>
 }
 
 export async function deletePasskeyAction(id: string): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     const pk = await db.passkey.findFirst({ where: { id, userId: ctx.user.id } })
     if (!pk) return { ok: false, error: 'common.notFound' }
@@ -155,7 +155,7 @@ export async function deletePasskeyAction(id: string): Promise<ActionResult> {
 // ───────── Sitzungen ─────────
 
 export async function revokeSessionAction(id: string): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     if (id === ctx.sessionId) return { ok: false, error: 'profile.sessions.notCurrent' }
     const s = await db.session.findFirst({ where: { id, userId: ctx.user.id, revokedAt: null } })
@@ -168,7 +168,7 @@ export async function revokeSessionAction(id: string): Promise<ActionResult> {
 }
 
 export async function revokeOtherSessionsAction(): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     const r = await db.session.updateMany({ where: { userId: ctx.user.id, revokedAt: null, id: { not: ctx.sessionId } }, data: { revokedAt: new Date() } })
     await audit(ctx, { action: 'profile.sessions_revoked_others', entityType: 'User', entityId: ctx.user.id, context: { count: r.count } })
@@ -180,7 +180,7 @@ export async function revokeOtherSessionsAction(): Promise<ActionResult> {
 // ───────── Passwort ─────────
 
 export async function changePasswordAction(form: FormData): Promise<ActionResult> {
-  return run(async () => {
+  return runSetup(async () => {
     const ctx = await getCtx()
     if (!rateLimit('pw-change:' + ctx.user.id, 6, 15 * 60_000).ok) return { ok: false, error: 'profile.errors.rate' }
     const current = String(form.get('current') ?? '')

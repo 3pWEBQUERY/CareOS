@@ -9,6 +9,9 @@ import { savePushPrioritiesAction } from './push-actions'
 
 type Support = 'checking' | 'ok' | 'unsupported' | 'ios'
 
+/** Push-Dienst nicht erreichbar (z. B. Firmennetz): nicht endlos warten. */
+const within = <T,>(p: Promise<T>, ms = 20_000) => Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))])
+
 const b64ToBytes = (s: string) => {
   const b = atob((s + '='.repeat((4 - (s.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/'))
   const out = new Uint8Array(new ArrayBuffer(b.length))
@@ -45,10 +48,10 @@ export function PushSettings({ configured, priorities, devices: initialDevices }
       setPermission(perm)
       if (perm !== 'granted') return
       const reg = (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register(swScriptUrl()))
-      await navigator.serviceWorker.ready
+      await within(navigator.serviceWorker.ready)
       const k = await fetch('/api/push/key').then((r) => (r.ok ? r.json() : null)) as { key?: string } | null
       if (!k?.key) throw new Error('key')
-      const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(k.key) }))
+      const sub = (await reg.pushManager.getSubscription()) ?? (await within(reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(k.key) })))
       const res = await fetch('/api/push/subscription', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(sub.toJSON()) })
       if (!res.ok) throw new Error('subscribe')
       setDevices(((await res.json()) as { devices: number }).devices)
