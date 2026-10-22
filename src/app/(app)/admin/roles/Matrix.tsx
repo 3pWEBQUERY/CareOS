@@ -108,7 +108,7 @@ export function PermissionMatrix({ roleId, name, description, groups, initial, a
 }
 
 /** Gruppen-Schalter mit Zwischenzustand («teilweise»). */
-export function GroupCheck({ label, state, onChange }: { label: string; state: 'all' | 'some' | 'none'; onChange: (on: boolean) => void }) {
+export function GroupCheck({ label, state, onChange, hideLabel }: { label: string; state: 'all' | 'some' | 'none'; onChange: (on: boolean) => void; hideLabel?: boolean }) {
   const ref = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = state === 'some'
@@ -116,7 +116,7 @@ export function GroupCheck({ label, state, onChange }: { label: string; state: '
   return (
     <label className="check pm-gcheck">
       <input ref={ref} type="checkbox" checked={state === 'all'} aria-checked={state === 'some' ? 'mixed' : state === 'all'} onChange={() => onChange(state !== 'all')} />
-      <span className="lbl">{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'lbl'}>{label}</span>
     </label>
   )
 }

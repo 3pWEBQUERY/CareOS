@@ -81,3 +81,34 @@ export async function deleteRoleAction(id: string): Promise<ActionResult> {
   if (r.ok) redirect('/admin/roles')
   return r
 }
+
+/** Matrix über alle Rollen speichern: alle Änderungen in einer Transaktion, Audit je Rolle mit hinzugefügt/entfernt. */
+export async function saveRoleMatrixAction(changes: { id: string; permissions: string[] }[]): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    if (!Array.isArray(changes) || !changes.length) return { ok: true }
+    const roles = await db.role.findMany({ where: { orgId: ctx.org.id, id: { in: changes.map((c) => c.id) } } })
+    if (roles.length !== new Set(changes.map((c) => c.id)).size) return { ok: false, error: 'common.notFound' }
+    const next = new Map(changes.map((c) => [c.id, ALL_PERMISSIONS.filter((p) => new Set((c.permissions ?? []).map(String)).has(p))]))
+    try {
+      await guardLastAdmin(ctx.org.id, async (tx) => {
+        for (const r of roles) await tx.role.update({ where: { id: r.id }, data: { permissions: next.get(r.id)! } })
+      })
+    } catch (e) {
+      if (e instanceof LastAdminError) return { ok: false, error: 'admin.errors.lastAdmin' }
+      throw e
+    }
+    for (const r of roles) {
+      const permissions = next.get(r.id)!
+      const added = permissions.filter((p) => !r.permissions.includes(p))
+      const removed = r.permissions.filter((p) => !permissions.includes(p as never))
+      if (!added.length && !removed.length) continue
+      await audit(ctx, {
+        action: 'admin.role.update', entityType: 'Role', entityId: r.id,
+        before: { permissions: r.permissions }, after: { permissions },
+        context: { added, removed, via: 'matrix' },
+      })
+    }
+    refresh()
+  })
+}
