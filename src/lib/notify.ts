@@ -2,6 +2,7 @@ import 'server-only'
 import type { NotificationPriority } from '@prisma/client'
 import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
+import { pushForNotification } from '@/lib/push'
 
 export type NotifyInput = {
   orgId: string
@@ -32,6 +33,8 @@ export async function notify(n: NotifyInput) {
     })
   }
   await emit({ orgId: n.orgId, type: 'notification.created', userIds: ids, payload: { priority: n.priority, title: n.title } })
+  // Web Push (PRD §25) nach Einstellung der Person, ohne Gesundheitsdaten; blockiert die Aktion nicht.
+  void pushForNotification({ ...n, userIds: ids }).catch((e) => console.error('[push]', e))
 }
 
 /** Benutzer einer Organisation mit einer bestimmten Berechtigung (optional im Bereich). */

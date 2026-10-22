@@ -4,10 +4,13 @@ import { usersWithPermission } from '@/lib/notify'
 import { dateKey, fmtDate, fromDbDate, hm } from '@/lib/time'
 import { pageResident, userNames } from '../../_lib/resident'
 import { EditMaster } from './EditMaster'
+import { FormDialog } from '@/components/admin/ui'
+import { anonymiseResidentAction } from './actions'
 
 const ACTIONS = [
   'resident.view', 'resident.create', 'resident.update', 'resident.file.attach', 'observation.create', 'observation.correct', 'vitals.create', 'vitals.thresholds',
   'task.complete', 'task.reopen', 'task.document', 'task.create', 'appointment.create', 'appointment.update', 'contact.create', 'contact.update', 'contact.delete', 'file.upload',
+  'resident.export', 'resident.anonymise', 'task.escalate', 'handover.escalate',
 ]
 const FIELDS = [
   'firstName', 'lastName', 'birthDate', 'sex', 'roomId', 'careLevel', 'physician', 'rea', 'allergies', 'risks', 'diet', 'mobility', 'status', 'importantNotes', 'insuranceNo',
@@ -52,7 +55,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
   }
   const ENUMS: Record<string, (v: string) => string | null> = {
     category: (v) => (['care', 'observation', 'physician', 'relatives', 'incident', 'handover'].includes(v) ? t('chart.cat.' + v) : null),
-    status: (v) => (['done', 'partial', 'skipped'].includes(v) ? t('chart.day.statusText.' + v) : v === 'planned' ? t('chart.day.subPlanned') : ['active', 'absent', 'discharged', 'deceased'].includes(v) ? t('residents.status.' + v) : null),
+    status: (v) => (['done', 'partial', 'skipped'].includes(v) ? t('chart.day.statusText.' + v) : v === 'escalated' || v === 'in_progress' ? t('tasks.view.' + v) : v === 'planned' ? t('chart.day.subPlanned') : ['active', 'absent', 'discharged', 'deceased'].includes(v) ? t('residents.status.' + v) : null),
     rea: (v) => (v === 'yes' ? t('residents.banner.reaYes') : v === 'no' ? t('residents.banner.reaNo') : v === 'unknown' ? t('residents.banner.reaUnknown') : null),
     sex: (v) => (['f', 'm', 'd'].includes(v) ? t('residents.form.sex' + v.toUpperCase()) : null),
     kind: (v) => (['physician', 'therapy', 'hospital', 'relatives', 'other'].includes(v) ? t('residents.appointments.kinds.' + v) : null),
@@ -76,6 +79,9 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
   }
 
   const canEdit = can('resident.edit')
+  const canExport = canEdit || ctx.can('admin.org')
+  const canAnonymise = ctx.can('admin.org')
+  const leaver = r.status === 'discharged' || r.status === 'deceased'
   let editProps = null
   if (canEdit) {
     const [rooms, nurseIds] = await Promise.all([
@@ -109,6 +115,39 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
           <dt>{t('residents.form.sex')}</dt><dd>{r.sex ? t('residents.form.sex' + r.sex.toUpperCase()) : '–'}</dd>
         </dl>
       </div>
+
+      {(canExport || canAnonymise) && (
+        <>
+          <div className="sec-head"><h2 className="sec">{t('residents.dataRights.title')}</h2></div>
+          <div className="card card-body stack-sm">
+            {r.anonymisedAt && <div><span className="tag outline">{t('residents.dataRights.anonymised', { date: fmtDate(r.anonymisedAt, locale) })}</span></div>}
+            <div className="row-between">
+              <p className="small muted" style={{ margin: 0, maxWidth: '70ch' }}>{t('residents.dataRights.exportHint')}</p>
+              <div className="row">
+                {canExport && <a className="btn sm" href={`/residents/${r.id}/export`} download>{t('residents.dataRights.export')}</a>}
+                {canAnonymise && !r.anonymisedAt && (leaver ? (
+                  <FormDialog
+                    label={t('residents.dataRights.anonymise')}
+                    buttonClass="btn sm danger"
+                    title={t('residents.dataRights.anonymiseTitle')}
+                    action={anonymiseResidentAction.bind(null, r.id)}
+                    submit={t('residents.dataRights.anonymise')}
+                    submitClass="btn danger"
+                    confirm="residents.dataRights.anonymiseConfirm"
+                    success="residents.dataRights.done"
+                  >
+                    <div className="stack-sm">
+                      <p className="small" style={{ margin: 0 }}><strong>{r.lastName} {r.firstName}</strong></p>
+                      <p className="fg2" style={{ margin: 0 }}>{t('residents.dataRights.anonymiseText')}</p>
+                      <label className="check"><input type="checkbox" name="confirm" /><span>{t('residents.dataRights.anonymiseCheck')}</span></label>
+                    </div>
+                  </FormDialog>
+                ) : <span className="small muted">{t('residents.dataRights.onlyLeavers')}</span>)}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="sec-head">
         <h2 className="sec">{t('residents.history.title')}</h2>

@@ -6,6 +6,7 @@ import { ResidentList, Workspace, type ResRow } from '@/components/residents/Res
 import { ensureTasksForDay, OPEN_STATUSES } from '@/lib/tasks'
 import { lastShiftEnd } from '@/lib/shift'
 import { addDays, addMinutes, age, startOfDay } from '@/lib/time'
+import { ShiftSnapshot } from '@/components/offline/ShiftSnapshot'
 
 export default async function ResidentsLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getCtx()
@@ -43,6 +44,7 @@ export default async function ResidentsLayout({ children }: { children: React.Re
         <ResidentList rows={rows} />
       </Suspense>
       {children}
+      <ShiftSnapshot />
     </Workspace>
   )
 }

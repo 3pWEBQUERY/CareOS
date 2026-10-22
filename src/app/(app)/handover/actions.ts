@@ -10,6 +10,7 @@ import { aiDraft, aiFeedback, AiUnavailable } from '@/lib/ai'
 import { lastShiftEnd, shiftTypes } from '@/lib/shift'
 import { dbDate, parseDateKey, shiftBounds } from '@/lib/time'
 import { collectHandover, handoverText } from './collect'
+import { ackSettings } from '@/lib/acks'
 
 const err = (error: string, field?: string): ActionResult => ({ ok: false, error, field })
 
@@ -94,9 +95,11 @@ export async function acknowledgeAction(form: FormData): Promise<ActionResult> {
       if (!r || r.unitId !== unit.id) return err('common.notFound')
       if (!has.has(r.id)) created = [r.id]
     } else {
-      const entries = await db.handoverEntry.findMany({ where: { handoverId: handover.id, important: true } })
-      const missing = entries.filter((e) => !has.has(e.residentId))
-      if (missing.length) return err('tasks.handover.errors.importantFirst')
+      if (ackSettings(ctx.org.settings).handoverImportantRequiresAck) {
+        const entries = await db.handoverEntry.findMany({ where: { handoverId: handover.id, important: true } })
+        const missing = entries.filter((e) => !has.has(e.residentId))
+        if (missing.length) return err('tasks.handover.errors.importantFirst')
+      }
       const residents = await db.resident.findMany({ where: { unitId: unit.id, orgId: ctx.org.id, status: { in: ['active', 'absent'] } }, select: { id: true } })
       created = [...residents.map((r) => r.id).filter((id) => !has.has(id)), ...(has.has('') ? [] : [''])]
     }

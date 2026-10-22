@@ -6,12 +6,13 @@ import { INTL_LOCALE } from '@/i18n/core'
 import { toast } from '@/components/toast'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { recordVitals, saveThresholds } from './actions'
+import { isQueued, orQueue } from '@/lib/offline/client'
 
 type Field = { key: string; label: string; unit: string; min: number; max: number; dec: number; lo: number; hi: number }
 
 const PH: Record<string, number> = { temp: 36.8, glucose: 6.5, weight: 62 }
 
-export function VitalForm({ residentId, fields }: { residentId: string; fields: Field[] }) {
+export function VitalForm({ residentId, fields, who }: { residentId: string; fields: Field[]; who?: string }) {
   const t = useT()
   const locale = useLocale()
   const ref = useRef<HTMLFormElement>(null)
@@ -54,7 +55,10 @@ export function VitalForm({ residentId, fields }: { residentId: string; fields: 
     }
     const form = new FormData(ref.current!)
     start(async () => {
-      const r = await recordVitals(residentId, form)
+      // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
+      const note = String(form.get('note') ?? '').trim().slice(0, 500) || null
+      const r = await orQueue(() => recordVitals(residentId, form), { kind: 'vitals', residentId, data: { values: out, note } }, { who })
+      if (isQueued(r)) { setVals({}); setWarn(null); toast(t(r.message)); return }
       if (!r.ok) {
         setErr({ msg: /^[a-z]+\.[\w.]+$/.test(r.error) ? t(r.error) : r.error, field: r.field })
         return

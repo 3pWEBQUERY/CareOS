@@ -4,11 +4,12 @@ import { getCtx } from '@/lib/context'
 import { fmtDate, fmtRel } from '@/lib/time'
 import { parseUserAgent } from '@/lib/admin-shared'
 import { normalizeTheme } from '@/lib/theme'
-import { logoutAction } from '@/app/login/actions'
+import { SignOutForm } from '@/components/shell/SignOutForm'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn } from '@/components/admin/ui'
 import { Empty } from '@/components/ui/Empty'
 import { MfaSetupBanner } from './MfaSetupBanner'
+import { PushSection } from './PushSection'
 import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, ThemeChooser } from './ProfileClient'
 import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updatePhoneAction } from './actions'
 
@@ -48,7 +49,7 @@ export default async function ProfilePage() {
             <p className="sub">{[user.jobTitle, user.email].filter(Boolean).join(' · ')}</p>
           </div>
         </div>
-        <form action={logoutAction}><button className="btn" type="submit">{t('common.signOut')}</button></form>
+        <SignOutForm className="btn" label={t('common.signOut')} />
       </div>
       <div className="scroll">
         <div className="tabpanel">
@@ -93,6 +94,8 @@ export default async function ProfilePage() {
               </div>
             </section>
           </div>
+
+          <PushSection />
 
           <h2 className="sec">{t('profile.security')}</h2>
           <div className="grid-2">

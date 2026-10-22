@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
+import { OfflineSync } from '@/components/shell/OfflineSync'
 
 /**
  * Echtzeit (PRD §44): Server-Sent Events. Bei relevanten Domain Events wird die Ansicht neu geladen,
@@ -11,7 +11,6 @@ import { toast } from '@/components/toast'
  */
 export function LiveUpdates({ userId }: { userId: string }) {
   const router = useRouter()
-  const t = useT()
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [offline, setOffline] = useState(false)
 
@@ -55,5 +54,6 @@ export function LiveUpdates({ userId }: { userId: string }) {
     }
   }, [router, userId])
 
-  return offline ? <div className="offline-bar" role="status">{t('common.offline')}</div> : null
+  // Offline-Leiste mit wartenden Einträgen und Synchronisation (PRD §39)
+  return <OfflineSync userId={userId} offline={offline} />
 }

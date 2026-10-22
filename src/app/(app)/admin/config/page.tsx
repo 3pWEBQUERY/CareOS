@@ -10,6 +10,8 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn, FormDialog } from '@/components/admin/ui'
 import { AdminHead } from '../Head'
 import { WorkflowEditor } from './WorkflowEditor'
+import { Escalations } from './Escalations'
+import { Acks } from './Acks'
 import {
   deleteShiftTypeAction, resetThresholdAction, saveAssessmentAction, saveCoverageAction, saveDomainsAction,
   saveFlagsAction, saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
@@ -17,7 +19,7 @@ import {
 
 export const metadata = { title: 'Admin · Klinische Konfiguration' }
 
-const TABS = ['domains', 'assessments', 'vitals', 'incidents', 'shifts', 'features'] as const
+const TABS = ['domains', 'assessments', 'vitals', 'incidents', 'shifts', 'features', 'escalations', 'acks'] as const
 type Tab = (typeof TABS)[number]
 
 export default async function ConfigPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -40,6 +42,8 @@ export default async function ConfigPage({ searchParams }: { searchParams: Promi
           {tab === 'incidents' && <Incidents />}
           {tab === 'shifts' && <Shifts />}
           {tab === 'features' && <Features />}
+          {tab === 'escalations' && <Escalations />}
+          {tab === 'acks' && <Acks />}
         </div>
       </div>
     </main>

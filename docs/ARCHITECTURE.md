@@ -50,6 +50,12 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 ### Zeit
 - Server läuft mit `TZ=Europe/Zurich`. Hilfen in `src/lib/time.ts`. `@db.Date`-Felder mit `dbDate()` schreiben und `fromDbDate()` lesen.
 
+### Hintergrundjobs, Eskalationen, Löschkonzept
+- `src/instrumentation.ts` startet `src/lib/jobs.ts` (nur Node.js-Laufzeit; `JOBS_DISABLED=true` schaltet ab). Jeder Lauf hält `pg_try_advisory_xact_lock(hashtext(name))` in einer Transaktion, damit bei mehreren Instanzen nur eine arbeitet; jeder Lauf wird in `JobRun` protokolliert.
+- `escalations` (alle 5 Min., `src/lib/escalations.ts`): Regeln aus `Organization.settings.escalation` (`src/lib/escalation-policy.ts`, Admin → Klinische Konfiguration → Eskalationen). Systemvorgänge mit `auditSystem()` protokollieren.
+- `retention` (täglich 02:30 Europe/Zurich, `src/lib/retention.ts`): Fristen aus `Organization.settings.retention` (`src/lib/retention-policy.ts`, Admin → Datenschutz). Akten werden anonymisiert, nie gelöscht; jeder Lauf schreibt `retention.run` ins Audit-Protokoll. Audit-Einträge sind nur über `deleteAuditBefore()` löschbar (Trigger erlaubt DELETE nur mit `SET LOCAL careos.retention = 'on'` und älter als 10 Jahre).
+- `cleanup` (stündlich): abgelaufene Anmelde-Challenges und Sitzungen.
+
 ### i18n (DE, FR, IT, EN)
 - Jedes Modul hat einen Namespace in `src/i18n/messages/<ns>.ts`, alle vier Sprachen vollständig (`defineMessages` prüft das beim Typecheck).
 - Server: `ctx.t('ns.key', vars)`. Client: `const t = useT()` aus `@/i18n/client`.

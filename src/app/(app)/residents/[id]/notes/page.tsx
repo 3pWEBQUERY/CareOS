@@ -3,6 +3,8 @@ import { aiConfigured } from '@/lib/env'
 import { fmtRel } from '@/lib/time'
 import { OBS_CATEGORIES, OBS_TONE, pageResident, residentName, userNames } from '../../_lib/resident'
 import { Notes, type NoteRow } from './Notes'
+import { FormEntry } from '@/components/forms/FormEntry'
+import { notesExtras } from './extras'
 
 export default async function NotesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -35,9 +37,12 @@ export default async function NotesPage({ params }: { params: Promise<{ id: stri
       supersedes: !!o.supersedesId,
       correctedBy: corr ? { by: names.get(corr.authorId)?.short ?? '–', at: rel(corr.createdAt) } : null,
       canCorrect: !corr && canWrite && (o.authorId === ctx.user.id || canCorrectAll),
+      offline: !!(o.structured as { offline?: unknown } | null)?.offline,
     }
   })
   const aiOn = aiConfigured() && can('ai.use')
+  const extras = await notesExtras(ctx, obs, canWrite)
+  for (const row of rows) Object.assign(row, extras.row(row.id))
   return (
     <Notes
       residentId={r.id}
@@ -47,6 +52,7 @@ export default async function NotesPage({ params }: { params: Promise<{ id: stri
       categories={OBS_CATEGORIES.map((c) => ({ key: c, label: t('chart.cat.' + c), tone: OBS_TONE[c] }))}
       canWrite={canWrite}
       aiOn={aiOn}
+      formSlot={extras.forms.length ? <FormEntry residentId={r.id} who={`${residentName(r)} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`} forms={extras.forms} /> : null}
     />
   )
 }

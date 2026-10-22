@@ -6,6 +6,8 @@ import { lastShiftEnd, myShiftNow, runningShift } from '@/lib/shift'
 import { addDays, dbDate, fmtDayMonth, fmtNum, fmtRel, fromDbDate, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
 import { taskTitle } from '@/lib/task-title'
+import { ShiftSnapshot } from '@/components/offline/ShiftSnapshot'
+import { observationsToAck } from '@/lib/acks-server'
 
 export const metadata = { title: 'Home' }
 
@@ -74,6 +76,7 @@ export default async function HomePage() {
   const postsToAck = posts.filter((p) => !acked.has(`post:${p.id}:`))
   const docsToAck = docs.filter((d) => !acked.has(`document:${d.id}:${d.currentVersion ?? ''}`))
   const handoverOpen = handover && !acked.has(`handover:${handover.id}:`) && handover.authorId !== user.id ? handover : null
+  const notesToAck = canClinical ? await observationsToAck(ctx, rIds, now) : []
 
   // Kritisch / Wichtig
   const critical: { key: string; text: string; who?: string; href: string }[] = []
@@ -141,6 +144,7 @@ export default async function HomePage() {
 
   return (
     <main className="panel main" style={{ flex: 1 }}>
+      <ShiftSnapshot />
       <div className="view-head">
         <div>
           <span className="lbl">{unit ? `${unit.location.name} · ${unit.name}` : ctx.org.name}</span>
@@ -237,10 +241,11 @@ export default async function HomePage() {
                 <div className="card-head"><h2 id="foryou">{t('home.team')}</h2></div>
                 <div className="card-body stack-sm">
                   <span className="lbl">{t('home.toAck')}</span>
-                  {postsToAck.length + docsToAck.length + (handoverOpen ? 1 : 0) ? (
+                  {postsToAck.length + docsToAck.length + notesToAck.length + (handoverOpen ? 1 : 0) ? (
                     <ul className="list">
                       {handoverOpen && <li><Link className="li" href="/handover"><span className="tag warn">{t('nav.handover')}</span><span className="grow">{handoverOpen.shiftCode} · {fmtDayMonth(fromDbDate(handoverOpen.date))}</span></Link></li>}
                       {postsToAck.map((p) => <li key={p.id}><Link className="li" href={`/team/post/${p.id}`}><span className="tag accent">{t('nav.team')}</span><span className="grow">{p.title}</span></Link></li>)}
+                      {notesToAck.map((o) => <li key={o.id}><Link className="li" href={`/residents/${o.residentId}/notes`}><span className="tag crit">{t('residents.tabs.notes')}</span><span className="grow" style={{ minWidth: 0 }}><span style={{ display: 'block' }}>{name(o.residentId)}</span><span className="small muted ellipsis" style={{ display: 'block' }}>{o.text}</span></span><span className="small muted nowrap">{rel(o.at)}</span></Link></li>)}
                       {docsToAck.map((d) => <li key={d.id}><Link className="li" href={`/docs/${d.id}`}><span className="tag violet">{t('nav.docs')}</span><span className="grow">{d.title} <span className="muted mono small">v{d.currentVersion}</span></span></Link></li>)}
                     </ul>
                   ) : <p className="small muted" style={{ margin: 0 }}>{t('home.ackNone')}</p>}

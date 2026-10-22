@@ -8,6 +8,8 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { IconCheck, IconPlus } from '@/components/icons'
 import { createTask, documentTask, toggleTask } from './actions'
+import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
+import type { TaskData } from '@/lib/offline/types'
 
 export type DayTask = {
   id: string; time: string; due: string; title: string; description: string | null; category: string; tone: string; min: number
@@ -22,18 +24,30 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
 }) {
   const t = useT()
   const [, start] = useTransition()
-  const [opt, setOpt] = useOptimistic(tasks, (cur: DayTask[], u: { id: string; done: boolean; at: string }) =>
+  const [optBase, setOpt] = useOptimistic(tasks, (cur: DayTask[], u: { id: string; done: boolean; at: string }) =>
     cur.map((k) => (k.id === u.id ? { ...k, status: u.done ? 'done' : 'planned', view: u.done ? 'done' : reView(k, now), at: u.done ? u.at : null, by: u.done ? me : null } : k)),
   )
+  // Offline vorgemerkte Abschlüsse bis zur Synchronisation als erledigt zeigen (PRD §39)
+  const [queued, setQueued] = useState<Record<string, { status: string; at: string }>>({})
+  const offTag = t('common.offlineSync.marker')
+  const opt = optBase.map((k) => {
+    const q = queued[k.id]
+    return q && !CLOSED.includes(k.status) ? { ...k, status: q.status, view: 'done', at: q.at, by: `${me} · ${offTag}` } : k
+  })
+  const markQueued = (id: string, status: string) => setQueued((cur) => ({ ...cur, [id]: { status, at: hmLocal(new Date()) } }))
   const [doc, setDoc] = useState<DayTask | null>(null)
   const [adding, setAdding] = useState(false)
   const nowD = new Date(now)
   const nowLabel = `${t('common.now')} ${hmLocal(nowD)}`
 
   const toggle = (k: DayTask, done: boolean) => {
+    if (!done && (isOffline() || queued[k.id])) return void toast(t('common.offlineSync.notOffline'), { kind: 'crit' })
     start(async () => {
       setOpt({ id: k.id, done, at: hmLocal(new Date()) })
-      const r = await toggleTask(k.id, done)
+      const r = done
+        ? await orQueue(() => toggleTask(k.id, done), { kind: 'task', residentId, data: { taskId: k.id, status: 'done' } }, { who, label: k.title })
+        : await toggleTask(k.id, done)
+      if (isQueued(r)) { markQueued(k.id, 'done'); return void toast(t(r.message)) }
       if (!r.ok) return void toast(t(r.error), { kind: 'crit' })
       toast(t(done ? 'chart.day.toastDone' : 'chart.day.toastOpen', { title: k.title }), {
         undo: () => start(async () => { setOpt({ id: k.id, done: !done, at: hmLocal(new Date()) }); await toggleTask(k.id, !done) }),
@@ -88,7 +102,7 @@ export function DayPlan({ residentId, who, tasks, dateLabel, canComplete, canMan
       </div>
       {opt.length ? <ol className="timeline">{rows}</ol> : <p className="empty">{t('chart.day.empty')}</p>}
 
-      <QuickDoc task={doc} who={who} onClose={() => setDoc(null)} />
+      <QuickDoc task={doc} who={who} residentId={residentId} onQueued={markQueued} onClose={() => setDoc(null)} />
 
       <Dialog open={adding} onClose={() => setAdding(false)} title={t('chart.day.add')} context={<span>{who}</span>}>
         <ActionForm action={createTask.bind(null, residentId)} success="chart.day.added" onDone={(r) => r.ok && setAdding(false)}>
@@ -164,7 +178,7 @@ function Row({ k, residentId, canComplete, onToggle, onOpen }: { k: DayTask; res
   )
 }
 
-function QuickDoc({ task, who, onClose }: { task: DayTask | null; who: string; onClose: () => void }) {
+function QuickDoc({ task, who, residentId, onQueued, onClose }: { task: DayTask | null; who: string; residentId: string; onQueued: (id: string, status: string) => void; onClose: () => void }) {
   const t = useT()
   const [status, setStatus] = useState<string>('done')
   const [showNote, setShowNote] = useState(false)
@@ -182,7 +196,16 @@ function QuickDoc({ task, who, onClose }: { task: DayTask | null; who: string; o
   return (
     <Dialog open={!!task} onClose={onClose} title={task?.title ?? ''} context={<span>{who} · <span className="mono">{task?.time}</span></span>}>
       {task && (
-        <ActionForm action={documentTask} success="chart.day.documented" onDone={(r) => r.ok && onClose()}>
+        <ActionForm action={async (form) => {
+          // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
+          const st = String(form.get('status') ?? '') as TaskData['status']
+          const reason = String(form.get('reason') ?? '').trim()
+          const note = String(form.get('note') ?? '').trim()
+          if (st !== 'done' && reason.length < 3 && isOffline()) return { ok: false as const, error: 'chart.day.errors.reason', field: 'reason' }
+          const r = await orQueue(() => documentTask(form), { kind: 'task', residentId, data: { taskId: task.id, status: st, reason: reason || undefined, note: note || undefined } }, { who, label: task.title })
+          if (isQueued(r)) { onQueued(task.id, st); return { ok: true as const, message: r.message } }
+          return r
+        }} success="chart.day.documented" onDone={(r) => r.ok && onClose()}>
           <input type="hidden" name="taskId" value={task.id} />
           <input type="hidden" name="status" value={status} />
           {task.description && <p className="small fg2" style={{ margin: 0 }}>{task.description}</p>}

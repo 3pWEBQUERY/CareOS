@@ -6,6 +6,7 @@ import { PrismaClient, type Prisma } from '@prisma/client'
 import { hash } from '@node-rs/argon2'
 import { DEFAULT_ROLES } from '../src/lib/permissions'
 import { ASSESSMENTS, CARE_DOMAINS, INCIDENT_TYPES } from '../src/lib/clinical-config'
+import { DEFAULT_FORMS } from '../src/lib/forms'
 
 const db = new PrismaClient()
 
@@ -137,6 +138,7 @@ export async function seedDemo(client: PrismaClient = db) {
   // Klinische Konfiguration
   for (const [i, d] of CARE_DOMAINS.entries()) await client.careDomain.create({ data: { orgId: org.id, key: d.key, name: d.de, order: i } })
   for (const a of ASSESSMENTS) await client.assessmentDefinition.create({ data: { orgId: org.id, key: a.key, name: a.name, description: a.description, items: a.items as unknown as Prisma.InputJsonValue, intervalDays: a.intervalDays } })
+  for (const f of DEFAULT_FORMS) await client.formDefinition.create({ data: { orgId: org.id, key: f.key, name: f.name, category: f.category, description: f.description, fields: f.fields as unknown as Prisma.InputJsonValue, active: true } })
   const itypes: Record<string, string> = {}
   for (const it of INCIDENT_TYPES) itypes[it.key] = (await client.incidentType.create({ data: { orgId: org.id, key: it.key, name: it.de, workflow: it.workflow as unknown as Prisma.InputJsonValue } })).id
   const LIMITS = { sys: [100, 150], dia: [50, 90], pulse: [55, 100], temp: [36.0, 37.9], spo2: [92, 100], glucose: [4, 10], respRate: [12, 20], pain: [0, 3] }

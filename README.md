@@ -31,7 +31,8 @@ Plattform: globale Suche (Ctrl/⌘ K), priorisierte und gebündelte Benachrichti
 - PostgreSQL mit Prisma 6, Migrationen unter `prisma/migrations`
 - Dateien im **Railway Bucket** (S3-kompatibel), ausgeliefert nur über kurzlebige, berechtigungsgeprüfte Links
 - Anmeldung: Passwort (Argon2id), TOTP-MFA, Passkeys (WebAuthn), optional Single Sign-on (OpenID Connect)
-- Unveränderbares Audit-Protokoll (Datenbank-Trigger verhindert UPDATE/DELETE)
+- Unveränderbares Audit-Protokoll (Datenbank-Trigger verhindert UPDATE/DELETE; einzige Ausnahme: Löschung nach 10 Jahren durch den Aufbewahrungsjob)
+- Hintergrundjobs (Eskalationen, Aufbewahrung/Löschkonzept, Bereinigung) laufen in der App-Instanz und sind über Postgres-Advisory-Locks gegen Mehrfachausführung geschützt
 - CareOS AI (optional): Formulierungs-, Übergabe-, Zusammenfassungs- und Suchassistent mit Claude; Ergebnisse sind immer gekennzeichnete Entwürfe und werden nie automatisch gespeichert
 
 Architektur und Konventionen: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -63,6 +64,7 @@ Architektur und Konventionen: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
    - `ANTHROPIC_API_KEY` (und `AI_MODEL`, Standard `claude-opus-5-5`) aktiviert CareOS AI. Abschaltbar pro Organisation unter Admin → Klinische Konfiguration → Funktionen.
    - `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_LABEL` für Single Sign-on (z. B. Microsoft Entra ID). Redirect-URI: `<APP_URL>/api/auth/sso/callback`. Benutzer werden über die E-Mail zugeordnet, Konten werden nicht automatisch angelegt.
    - `SESSION_HOURS` (Standard 12) – gleitende Sitzungsdauer.
+   - `JOBS_DISABLED=true` schaltet die Hintergrundjobs in dieser Instanz ab.
    - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`mailto:…`) aktivieren Web-Push-Benachrichtigungen (Profil → Push-Benachrichtigungen). Schlüsselpaar mit `npx web-push generate-vapid-keys` erzeugen. Push-Nachrichten enthalten nie Gesundheitsdaten, nur einen allgemeinen Hinweis und den Link. Auf iPhone/iPad nur in der installierten Web-App (Home-Bildschirm).
 
 **Produktivstart ohne Demodaten:** `INIT_ADMIN_EMAIL`, `INIT_ADMIN_PASSWORD` (min. 12 Zeichen) und optional `INIT_ORG_NAME`, `INIT_LOCATION_NAME`, `INIT_UNIT_NAME` setzen. Beim ersten Start wird auf leerer Datenbank die Organisation mit Standardkonfiguration (Rollen, Schichten, Pflegebereiche, Assessments, Ereignistypen, Grenzwerte) und ein Systemadministrator angelegt. Danach `INIT_ADMIN_PASSWORD` wieder entfernen und weitere Personen unter Admin → Benutzer einladen.

@@ -13,6 +13,7 @@ import { aiDraft, AiUnavailable } from '@/lib/ai'
 import { aiConfigured } from '@/lib/env'
 import { ackAudience, DOC_CATEGORIES, loadDoc, queryTerms, scoreDoc } from '@/lib/docs'
 import { parseDateKey } from '@/lib/time'
+import { ackSettings } from '@/lib/acks'
 
 const tagsOf = (s: string) => [...new Set(s.split(/[,;]/).map((x) => x.trim().toLowerCase()).filter(Boolean))].slice(0, 20)
 const dateOf = (s: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? parseDateKey(s) : null)
@@ -180,18 +181,20 @@ export async function approveVersion(versionId: string) {
     const doc = v.document
     const prevVersion = doc.currentVersion
     const now = new Date()
+    // Admin → Bestätigungen: ohne "erneute Kenntnisnahme" gelten Bestätigungen auch bei kritischen Versionen weiter.
+    const reAck = v.critical && ackSettings(ctx.org.settings).criticalDocsReAck
     await db.$transaction(async (tx) => {
       await tx.documentVersion.update({ where: { id: v.id }, data: { approvedAt: now, approvedById: ctx.user.id, submittedAt: v.submittedAt ?? now } })
       await tx.document.update({ where: { id: doc.id }, data: { status: 'approved', currentVersion: v.version, validFrom: doc.validFrom && doc.validFrom > now ? doc.validFrom : now } })
       // Nicht-kritische Änderung: bestehende Kenntnisnahmen gelten weiter.
-      if (prevVersion && !v.critical) {
+      if (prevVersion && !reAck) {
         const acks = await tx.acknowledgement.findMany({ where: { subjectType: 'document', subjectId: doc.id, version: prevVersion }, select: { userId: true } })
         if (acks.length) await tx.acknowledgement.createMany({ data: acks.map((a) => ({ userId: a.userId, subjectType: 'document', subjectId: doc.id, version: v.version, at: now })), skipDuplicates: true })
       }
       await audit(ctx, { action: 'document.approve', entityType: 'Document', entityId: doc.id, before: { currentVersion: prevVersion, status: doc.status }, after: { currentVersion: v.version, status: 'approved', critical: v.critical } }, tx)
     })
     const audience = (await ackAudience(ctx.org.id)).filter((id) => id !== ctx.user.id)
-    const needsAck = doc.requireAck && (!prevVersion || v.critical)
+    const needsAck = doc.requireAck && (!prevVersion || reAck)
     await notifyT({
       orgId: ctx.org.id, userIds: audience, priority: needsAck ? 'action' : 'info', kind: needsAck ? 'ack' : 'document.published',
       titleKey: needsAck ? 'docs.notify.ackTitle' : 'docs.notify.publishedTitle', bodyKey: v.changeNote ? 'docs.notify.changeNote' : undefined,

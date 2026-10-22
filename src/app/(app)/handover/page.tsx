@@ -7,6 +7,7 @@ import { addDays, dateKey, dbDate, fmtDayMonth, fmtRel, hm, parseDateKey, sameDa
 import { Empty, Forbidden } from '@/components/ui/Empty'
 import { HandoverActions, HandoverCard, type HoBlockDto } from '@/components/handover/HandoverUi'
 import { collectHandover, runningAndPrevious } from './collect'
+import { ackSettings } from '@/lib/acks'
 
 export const metadata = { title: 'Übergabe' }
 
@@ -65,7 +66,8 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
   })
   const totals = blocks.reduce((s, b) => ({ notes: s.notes + b.counts.notes, open: s.open + b.counts.open, abnormal: s.abnormal + b.counts.abnormal }), { notes: 0, open: 0, abnormal: 0 })
   const ackN = dto.filter((b) => b.acked).length
-  const importantOpen = dto.filter((b) => b.entry?.important && !b.acked).length
+  // Admin → Bestätigungen: wichtige Einträge vor "Alle übernehmen" einzeln übernehmen (abschaltbar)
+  const importantOpen = ackSettings(ctx.org.settings).handoverImportantRequiresAck ? dto.filter((b) => b.entry?.important && !b.acked).length : 0
   const allAcked = myAcks.has('') && ackN === dto.length
   const aiAvailable = aiConfigured() && ctx.can('ai.use')
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now)

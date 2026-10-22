@@ -29,6 +29,8 @@ export type StructuredForm = {
   values: FormValues
   labels: Record<string, string>
   units?: Record<string, string>
+  /** Feldreihenfolge (jsonb speichert Objektschlüssel nicht in Einfügereihenfolge). */
+  order?: string[]
 }
 
 export const FORM_LIMITS = { fields: 40, options: 30, label: 120, option: 80, text: 2000, textarea: 4000 } as const
@@ -197,7 +199,7 @@ export function structuredSnapshot(def: { key: string; version: number; name: st
     labels[f.key] = f.label
     if (f.unit) units[f.key] = f.unit
   }
-  return { formKey: def.key, formVersion: def.version, formName: def.name, values, labels, ...(Object.keys(units).length ? { units } : {}) }
+  return { formKey: def.key, formVersion: def.version, formName: def.name, values, labels, order: fields.map((f) => f.key), ...(Object.keys(units).length ? { units } : {}) }
 }
 
 /** Erkennt eine Formular-Momentaufnahme in Observation.structured. */
@@ -212,7 +214,16 @@ export function asStructuredForm(s: unknown): StructuredForm | null {
     values: o.values as FormValues,
     labels: o.labels as Record<string, string>,
     units: o.units && typeof o.units === 'object' ? (o.units as Record<string, string>) : undefined,
+    order: Array.isArray(o.order) ? o.order.map(String) : undefined,
   }
+}
+
+/** Zeilen für die Anzeige im Verlauf (Definitionsliste): Reihenfolge der Momentaufnahme, nur ausgefüllte Felder. */
+export function structuredRows(s: StructuredForm, words: { yes: string; no: string }) {
+  const keys = s.order?.length ? s.order : Object.keys(s.labels)
+  return keys
+    .filter((k) => hasValue(s.values[k]))
+    .map((k) => ({ key: k, label: s.labels[k] ?? k, value: formatFormValue(s.values[k], words, s.units?.[k]) }))
 }
 
 /** Haben sich Felder inhaltlich geändert? (Massgeblich für die Versionierung.) */
@@ -230,7 +241,7 @@ export const DEFAULT_FORMS: { key: string; name: string; category: 'care' | 'obs
       { key: 'verletzungen', label: 'Verletzungen', type: 'multiselect', options: ['Keine sichtbar', 'Hämatom', 'Schürfung', 'Platzwunde', 'Verdacht auf Fraktur', 'Kopfverletzung'] },
       { key: 'schmerz', label: 'Schmerz (NRS)', type: 'scale', min: 0, max: 10, required: true },
       { key: 'massnahmen', label: 'Massnahmen', type: 'textarea' },
-      { key: 'arzt', label: 'Arzt informiert', type: 'checkbox', required: false },
+      { key: 'arzt', label: 'Arzt informiert', type: 'checkbox' },
     ],
   },
   {

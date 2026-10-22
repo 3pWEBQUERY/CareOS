@@ -90,6 +90,7 @@ export default async function VitalsPage({ params }: { params: Promise<{ id: str
           <div className="sec-head"><h2 className="sec">{t('chart.vitals.new')}</h2></div>
           <VitalForm
             residentId={r.id}
+            who={`${r.lastName} ${r.firstName}`}
             fields={formKeys.map((k) => ({ key: k, label: t('common.vitals.' + k), unit: VITALS[k].unit, min: VITALS[k].min, max: VITALS[k].max, dec: VITALS[k].dec, lo: limits[k].lo, hi: limits[k].hi }))}
           />
         </>

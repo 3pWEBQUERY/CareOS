@@ -4,6 +4,7 @@ import { Forbidden } from '@/components/ui/Empty'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { canModerate, canPostTo, myRoleKeys, visibleChannels } from '../lib'
 import { publishPostAction } from '../actions'
+import { ackSettings } from '@/lib/acks'
 
 export const metadata = { title: 'Team' }
 
@@ -56,7 +57,7 @@ export default async function NewPostPage({ searchParams }: { searchParams: Prom
                 <legend className="lbl">{t('team.form.options')}</legend>
                 <div className="row" style={{ gap: 18 }}>
                   <label className="check"><input type="checkbox" name="important" />{t('team.form.important')}</label>
-                  <label className="check"><input type="checkbox" name="requireAck" />{t('team.form.requireAck')}</label>
+                  <label className="check"><input type="checkbox" name="requireAck" defaultChecked={ackSettings(ctx.org.settings).postsRequireAckDefault} />{t('team.form.requireAck')}</label>
                   {mayPin && <label className="check"><input type="checkbox" name="pinned" />{t('team.form.pin')}</label>}
                 </div>
                 <p className="small muted" style={{ margin: '6px 0 0' }}>{t('team.form.ackHint')}</p>

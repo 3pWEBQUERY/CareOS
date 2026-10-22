@@ -7,6 +7,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { PORTIONS, QUICK_ML, portionLabel } from '@/lib/care'
 import { addDrinkAction, addMealAction, saveProfileAction, undoIntakeAction } from './actions'
+import { isOffline, isQueued, orQueue } from '@/lib/offline/client'
 
 function useTr() {
   const t = useT()
@@ -22,7 +23,10 @@ export function DrinkQuick({ residentId, defaultItem }: { residentId: string; de
   const items = t('care.nutrition.itemList').split(',')
   const add = (amount: number) =>
     start(async () => {
-      const r = await addDrinkAction(residentId, amount, item)
+      // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
+      if (isOffline() && !(Number.isInteger(amount) && amount >= 10 && amount <= 2000)) return toast(tr('care.nutrition.errors.amount'), { kind: 'crit' })
+      const r = await orQueue(() => addDrinkAction(residentId, amount, item), { kind: 'intake', residentId, data: { type: 'drink', ml: amount, item: item.trim().slice(0, 120) || undefined } })
+      if (isQueued(r)) { if (amount === Number(ml)) setMl(''); return toast(t(r.message)) }
       if (!r.ok) return toast(tr(r.error), { kind: 'crit' })
       if (amount === Number(ml)) setMl('')
       const id = r.data?.id
@@ -64,7 +68,8 @@ export function MealPortion({ residentId, meal, mealLabel, current }: { resident
   const pick = (p: number) =>
     start(async () => {
       setOptimistic(p)
-      const r = await addMealAction(residentId, meal, p)
+      const r = await orQueue(() => addMealAction(residentId, meal, p), { kind: 'intake', residentId, data: { type: 'meal', meal, portion: p } })
+      if (isQueued(r)) return toast(t(r.message))
       setOptimistic(null)
       if (!r.ok) return toast(tr(r.error), { kind: 'crit' })
       const id = r.data?.id

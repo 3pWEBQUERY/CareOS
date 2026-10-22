@@ -7,6 +7,7 @@ import { PrismaClient, type Prisma } from '@prisma/client'
 import { hash } from '@node-rs/argon2'
 import { DEFAULT_ROLES } from '../src/lib/permissions'
 import { ASSESSMENTS, CARE_DOMAINS, INCIDENT_TYPES } from '../src/lib/clinical-config'
+import { DEFAULT_FORMS } from '../src/lib/forms'
 import { VITALS, VITAL_KEYS } from '../src/lib/vitals'
 
 const db = new PrismaClient()
@@ -34,6 +35,7 @@ async function main() {
   ]) await db.shiftType.create({ data: { orgId: org.id, ...s } })
   for (const [i, d] of CARE_DOMAINS.entries()) await db.careDomain.create({ data: { orgId: org.id, key: d.key, name: d.de, order: i } })
   for (const a of ASSESSMENTS) await db.assessmentDefinition.create({ data: { orgId: org.id, key: a.key, name: a.name, description: a.description, items: a.items as unknown as Prisma.InputJsonValue, intervalDays: a.intervalDays } })
+  for (const f of DEFAULT_FORMS) await db.formDefinition.create({ data: { orgId: org.id, key: f.key, name: f.name, category: f.category, description: f.description, fields: f.fields as unknown as Prisma.InputJsonValue, active: true } })
   for (const it of INCIDENT_TYPES) await db.incidentType.create({ data: { orgId: org.id, key: it.key, name: it.de, workflow: it.workflow as unknown as Prisma.InputJsonValue } })
   for (const k of VITAL_KEYS.filter((k) => k !== 'weight')) await db.vitalThreshold.create({ data: { orgId: org.id, key: k, lo: VITALS[k].lo, hi: VITALS[k].hi } })
   for (const c of [

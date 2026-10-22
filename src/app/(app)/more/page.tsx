@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { getCtx } from '@/lib/context'
-import { logoutAction } from '@/app/login/actions'
+import { SignOutForm } from '@/components/shell/SignOutForm'
 
 /** Mobile "Mehr": alle Bereiche, die nicht in der Bottom-Navigation liegen. */
 export default async function MorePage() {
@@ -26,7 +26,7 @@ export default async function MorePage() {
         <nav className="more-grid" aria-label={t('nav.more')}>
           {items.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}
         </nav>
-        <form action={logoutAction}><button className="btn block" type="submit">{t('common.signOut')}</button></form>
+        <SignOutForm className="btn block" label={t('common.signOut')} />
       </div>
     </main>
   )

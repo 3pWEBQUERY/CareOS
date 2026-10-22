@@ -7,10 +7,17 @@ import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { IconMic, IconSpark } from '@/components/icons'
 import { correctNote, createNote, discardDraft, draftNote, type NoteInput } from './actions'
+import { isQueued, orQueue } from '@/lib/offline/client'
+import { NoteAck, StructuredView, type NoteAckInfo } from '@/components/forms/StructuredView'
+import type { StructuredForm } from '@/lib/forms'
 
 export type NoteRow = {
   id: string; at: string; rel: string; category: string; text: string; author: string; important: boolean; aiAssisted: boolean
   source: string; fromTask: boolean; supersedes: boolean; correctedBy: { by: string; at: string } | null; canCorrect: boolean
+  /** Formulareintrag (Fokusdokumentation) und Kenntnisnahme wichtiger Einträge */
+  structured?: StructuredForm | null; ack?: NoteAckInfo | null
+  /** Offline erfasst und später synchronisiert (PRD §39) */
+  offline?: boolean
 }
 type Cat = { key: string; label: string; tone: string }
 
@@ -28,8 +35,10 @@ const speechCtor = () => {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }
 
-export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn }: {
+export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn, formSlot }: {
   residentId: string; who: string; me: string; notes: NoteRow[]; categories: Cat[]; canWrite: boolean; aiOn: boolean
+  /** Knopf "Formular" (Fokusdokumentation), vom Server gerendert */
+  formSlot?: React.ReactNode
 }) {
   const t = useT()
   const locale = useLocale()
@@ -95,7 +104,9 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn }
     if (v.length < 3) { setErr(t('chart.notes.errors.empty')); ta.current?.focus(); return }
     rec.current?.stop()
     start(async () => {
-      const r = await createNote(residentId, { category: category as NoteInput['category'], text: v, important, source, aiId })
+      // Ohne Verbindung: verschlüsselt vormerken und später synchronisieren (PRD §39)
+      const r = await orQueue(() => createNote(residentId, { category: category as NoteInput['category'], text: v, important, source, aiId }), { kind: 'note', residentId, data: { category, text: v, important } }, { who })
+      if (isQueued(r)) { setErr(null); setText(''); setImportant(false); setSource('manual'); setAiId(null); setDraft(null); toast(t(r.message)); return }
       if (!r.ok) { setErr(t(r.error)); return }
       setErr(null); setText(''); setImportant(false); setSource('manual'); setAiId(null); setDraft(null)
       setFresh(r.data?.id ?? null); setFilter('all')
@@ -162,6 +173,7 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn }
             {source === 'ai' && <span className="tag violet">{t('chart.notes.aiAssisted')}</span>}
             {err && <span className="err" role="alert">{err}</span>}
             <span className="push">
+              {formSlot}
               {speechOk && (
                 <button type="button" className="btn" onClick={toggleMic} aria-pressed={listening} title={t('chart.notes.voiceHint')}
                   style={listening ? { borderColor: 'var(--crit)', color: 'var(--crit)' } : undefined}>
@@ -200,10 +212,12 @@ export function Notes({ residentId, who, me, notes, categories, canWrite, aiOn }
                   {n.aiAssisted && <span className="tag violet">{t('chart.notes.aiAssisted')}</span>}
                   {n.source === 'voice' && <span className="tag outline">{t('chart.notes.voiceTag')}</span>}
                   {n.fromTask && <span className="tag outline">{t('chart.notes.fromTask')}</span>}
+                  {n.offline && <span className="tag outline">{t('common.offlineSync.tag')}</span>}
                   <span className="au">{n.author}</span>
                   {n.canCorrect && <button type="button" className="linkbtn small" style={{ marginLeft: 'auto' }} onClick={() => setCorrecting(n)}>{t('chart.notes.correct')}</button>}
                 </div>
-                <p>{n.text}</p>
+                {n.structured ? <StructuredView s={n.structured} /> : <p>{n.text}</p>}
+                {n.ack && <NoteAck residentId={residentId} id={n.id} ack={n.ack} />}
                 {n.correctedBy && <div className="small muted" style={{ marginTop: 4 }}>{t('chart.notes.correctedBy', { by: n.correctedBy.by, at: n.correctedBy.at })}</div>}
               </div>
             </li>
