@@ -2,16 +2,14 @@ import 'server-only'
 import type { Prisma, Task } from '@prisma/client'
 import { db } from '@/lib/db'
 import { addDays, addMinutes, atTime, dateKey, startOfDay } from '@/lib/time'
+import { dueView } from '@/lib/task-view'
 
 export type TaskView = 'done' | 'partial' | 'skipped' | 'escalated' | 'over' | 'due' | 'up' | 'in_progress'
 
 /** Anzeigezustand einer Aufgabe. Überfällig ab 15 Min. nach Fälligkeit, "jetzt fällig" 30 Min. davor. */
 export function taskView(t: Pick<Task, 'status' | 'dueAt'>, now = new Date()): TaskView {
   if (t.status === 'done' || t.status === 'partial' || t.status === 'skipped' || t.status === 'escalated' || t.status === 'in_progress') return t.status
-  const diff = (t.dueAt.getTime() - now.getTime()) / 60_000
-  if (diff < -15) return 'over'
-  if (diff <= 30) return 'due'
-  return 'up'
+  return dueView(t.dueAt, now)
 }
 export const isClosed = (s: Task['status']) => s === 'done' || s === 'partial' || s === 'skipped'
 export const OPEN_STATUSES = ['planned', 'ready', 'in_progress', 'escalated'] as const
@@ -74,7 +72,7 @@ export async function ensureTasksForDay(unitId: string, day = new Date()) {
       if (!a.nextDue) continue
       rows.push({
         orgId: unit.orgId, unitId, residentId: r.id, title: 'assessment.' + a.key, category: 'Assessment',
-        dueAt: a.nextDue < startOfDay(day) || (a.nextDue.getHours() === 0 && a.nextDue.getMinutes() === 0) ? atTime(day, '10:00') : a.nextDue, // Fälligkeit ohne Uhrzeit → 10:00 statt Mitternacht durationMin: 15, source: 'assessment', sourceId: `${r.id}:${a.key}`,
+        dueAt: a.nextDue < startOfDay(day) || (a.nextDue.getHours() === 0 && a.nextDue.getMinutes() === 0) ? atTime(day, '10:00') : a.nextDue, /* Fälligkeit ohne Uhrzeit → 10:00 statt Mitternacht */ durationMin: 15, source: 'assessment', sourceId: `${r.id}:${a.key}`,
         priority: 'important',
       })
     }
