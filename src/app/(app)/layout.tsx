@@ -4,6 +4,7 @@ import { getCtx } from '@/lib/context'
 import { dictionary } from '@/i18n'
 import { I18nProvider } from '@/i18n/client'
 import { Brand } from '@/components/Brand'
+import { Avatar } from '@/components/people/Avatar'
 import { Toaster } from '@/components/toast'
 import { SwUpdateNotice } from '@/components/shell/SwUpdateNotice'
 import { ThemeToggle } from '@/components/shell/ThemeToggle'
@@ -107,7 +108,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <ThemeToggle />
           <Notifications unread={unread} critical={critical} />
           <Link className="me" href="/profile">
-            <span className="av">{user.initials}</span>
+            <Avatar src={user.avatarFileId ? `/api/files/${user.avatarFileId}` : null} initials={user.initials} />
             <div>{user.firstName.charAt(0)}. {user.lastName}<small>{user.jobTitle ?? ctx.roleNames[0] ?? ''}</small></div>
           </Link>
         </header>

@@ -72,6 +72,10 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 - `escalations` (alle 5 Min., `src/lib/escalations.ts`): Regeln aus `Organization.settings.escalation` (`src/lib/escalation-policy.ts`, Admin → Klinische Konfiguration → Eskalationen). Systemvorgänge mit `auditSystem()` protokollieren.
 - `retention` (täglich 02:30 Europe/Zurich, `src/lib/retention.ts`): Fristen aus `Organization.settings.retention` (`src/lib/retention-policy.ts`, Admin → Datenschutz). Akten werden anonymisiert, nie gelöscht; jeder Lauf schreibt `retention.run` ins Audit-Protokoll. Audit-Einträge sind nur über `deleteAuditBefore()` löschbar (Trigger erlaubt DELETE nur mit `SET LOCAL careos.retention = 'on'` und älter als 10 Jahre).
 - `cleanup` (stündlich): abgelaufene Anmelde-Challenges und Sitzungen.
+- `reminders` (täglich 06:30, `src/lib/reminders.ts`, Fristen in `src/lib/reminder-policy.ts`): ablaufende Zertifikate/Qualifikationen, Schulungsfristen, Dokument-Gültigkeit. Jede Stufe wird nur einmal gemeldet (Merker: Audit-Eintrag `reminder.*`).
+
+### Zielgruppen
+- `Post.audienceRoles` und `Document.audienceRoles` (Rollen-Schlüssel, leer = alle). Prüfen mit `inAudience(audience, roleKeys)` aus `src/lib/audience.ts` – überall, wo Mitteilungen/Dokumente angezeigt, bestätigt, gezählt oder benachrichtigt werden.
 
 ### i18n (DE, FR, IT, EN)
 - Jedes Modul hat einen Namespace in `src/i18n/messages/<ns>.ts`, alle vier Sprachen vollständig (`defineMessages` prüft das beim Typecheck).

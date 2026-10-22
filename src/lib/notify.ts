@@ -89,3 +89,18 @@ export async function usersWithPermission(orgId: string, perm: string, unitId?: 
     ),
   ]
 }
+
+/**
+ * Erledigt gebündelte Benachrichtigungen für alle Empfangenden (z. B. auffälliger Vitalwert als «gesehen» markiert):
+ * ungelesene Meldungen mit diesem groupKey werden als gelesen markiert, damit sie bei anderen Personen im Dienst
+ * nicht offen bleiben. Rückgabe: betroffene Personen (für die Aktualisierung der Glocke).
+ */
+export async function settleNotifications(orgId: string, groupKey: string, upTo = new Date()) {
+  const rows = await db.notification.findMany({ where: { groupKey, readAt: null, createdAt: { lte: upTo }, user: { orgId } }, select: { id: true, userId: true } })
+  if (!rows.length) return []
+  await db.notification.updateMany({ where: { id: { in: rows.map((r) => r.id) } }, data: { readAt: new Date() } })
+  const userIds = [...new Set(rows.map((r) => r.userId))]
+  count('careos_notifications_settled_total', undefined, rows.length)
+  await emit({ orgId, type: 'notification.created', userIds, payload: { settled: groupKey } })
+  return userIds
+}

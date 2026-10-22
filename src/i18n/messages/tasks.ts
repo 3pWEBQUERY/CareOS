@@ -17,6 +17,7 @@ export default defineMessages({
     toAssessment: 'Durchführen',
     toEvaluation: 'Evaluieren',
     toVitals: 'Messen',
+    mineHint: 'Für diese Schicht ist Ihnen niemand zugeteilt. «Meine» zeigt nur Aufgaben, die Ihnen zugewiesen sind.',
     categories: { assessment: 'Assessment', organisation: 'Organisation', planning: 'Planung', quality: 'Qualität' },
     recur: {
       repeat: 'Wiederholen',
@@ -334,6 +335,7 @@ export default defineMessages({
     toAssessment: 'Réaliser',
     toEvaluation: 'Évaluer',
     toVitals: 'Mesurer',
+    mineHint: 'Personne ne vous est attribué pour ce service. « Les miennes » affiche seulement les tâches qui vous sont attribuées.',
     categories: { assessment: 'Évaluation', organisation: 'Organisation', planning: 'Planification', quality: 'Qualité' },
     recur: {
       repeat: 'Répéter',
@@ -651,6 +653,7 @@ export default defineMessages({
     toAssessment: 'Eseguire',
     toEvaluation: 'Valutare',
     toVitals: 'Misurare',
+    mineHint: 'In questo turno non le è assegnato nessuno. «Le mie» mostra solo i compiti assegnati a lei.',
     categories: { assessment: 'Valutazione', organisation: 'Organizzazione', planning: 'Pianificazione', quality: 'Qualità' },
     recur: {
       repeat: 'Ripetere',
@@ -968,6 +971,7 @@ export default defineMessages({
     toAssessment: 'Perform',
     toEvaluation: 'Evaluate',
     toVitals: 'Measure',
+    mineHint: 'Nobody is assigned to you for this shift. “Mine” shows only tasks assigned to you.',
     categories: { assessment: 'Assessment', organisation: 'Organisation', planning: 'Planning', quality: 'Quality' },
     recur: {
       repeat: 'Repeat',

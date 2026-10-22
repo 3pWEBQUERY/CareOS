@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { addDays, dbDate, fmtDayMonth, fromDbDate } from '@/lib/time'
+import { inAudience, roleKeysByUserIds } from '@/lib/audience'
 
 /**
  * «Für dich» (PRD §2.1 Mitteilungen, Weisungen, Schulungen, Dienste) – gleich für alle Rollen.
@@ -25,8 +26,10 @@ export async function ForYou({ ctx, now, extra, extraCount = 0, unitId }: { ctx:
     select: { subjectType: true, subjectId: true, version: true },
   })
   const acked = new Set(acks.map((a) => `${a.subjectType}:${a.subjectId}:${a.version}`))
-  const postsToAck = posts.filter((p) => !acked.has(`post:${p.id}:`))
-  const docsToAck = docs.filter((d) => !acked.has(`document:${d.id}:${d.currentVersion ?? ''}`))
+  // Zielgruppen (Rollen) beachten: nur bestätigen, was an mich gerichtet ist.
+  const myRoles = (await roleKeysByUserIds([user.id])).get(user.id) ?? new Set<string>()
+  const postsToAck = posts.filter((p) => inAudience(p.audienceRoles, myRoles) && !acked.has(`post:${p.id}:`))
+  const docsToAck = docs.filter((d) => inAudience(d.audienceRoles, myRoles) && !acked.has(`document:${d.id}:${d.currentVersion ?? ''}`))
   const trainingsOpen = enrollments.filter((e) => e.course.mandatory || e.dueAt)
   const canSchedule = ctx.can('schedule.read')
 

@@ -201,6 +201,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             {canMeds && <a className="metric" href="#meds-open"><span className="lbl">{t('tasks.metrics.meds')}</span><span className={'val' + (doses.length ? ' crit' : '')}>{doses.length}</span></a>}
           </div>
 
+          {filter === 'mine' && !mine && <p className="small muted" style={{ margin: 0 }}>{t('tasks.mineHint')}</p>}
           <TaskTable
             rows={rows}
             staff={staff}
@@ -208,7 +209,6 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             canComplete={canComplete}
             meId={user.id}
             series={canManage ? series : undefined}
-            note={filter === 'mine' && !mine ? t('tasks.mineHint') : undefined}
             emptyText={t(filter === 'over' ? 'tasks.empty.over' : filter === 'mine' ? 'tasks.empty.mine' : filter === 'done' ? 'tasks.empty.done' : 'tasks.empty.open')}
           />
 

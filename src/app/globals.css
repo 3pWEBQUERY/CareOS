@@ -1987,3 +1987,6 @@ img.pav { background: var(--sunken) }
 }
 .ab-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: abq }
 .ab-q .stable td { vertical-align: middle }
+
+/* Topbar: Profilbild in der Grösse des bisherigen Kürzels */
+.me .pav { width: 1.75rem; height: 1.75rem; font-size: 0.75rem }

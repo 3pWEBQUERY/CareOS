@@ -7,6 +7,7 @@ import { assertCan, getCtx, residentInScope } from '@/lib/context'
 import { run, fd, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
+import { settleNotifications } from '@/lib/notify'
 import { shiftFromKey } from '@/lib/assignment'
 import { cleanPairs, diffPairs } from '@/lib/assignment-plan'
 import { dbDate, fmtNum, hm } from '@/lib/time'
@@ -129,6 +130,9 @@ export async function reviewVitalAction(form: FormData): Promise<ActionResult> {
     })
     if (!done) return { ok: true, message: ctx.t('home.review.toast.already') }
     await emit({ orgId: ctx.org.id, type: 'vitals.reviewed', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { vitalId: v.id, kind: input.kind } })
+    // Benachrichtigung «auffälliger Wert» bei allen Empfangenden erledigen, sofern kein späterer auffälliger Wert offen ist (PRD §25)
+    const later = await db.vitalSign.findMany({ where: { residentId: r.id, at: { gt: v.at }, reviewedAt: null, ...LIVE } })
+    if (!later.some((x) => abnormalKeys(x, limits).length)) await settleNotifications(ctx.org.id, `vitals:${r.id}`, now)
     if (input.kind === 'action' && canChart) await emit({ orgId: ctx.org.id, type: 'observation.created', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id })
     refresh()
     return { ok: true, message: ctx.t(input.kind === 'action' ? 'home.review.toast.action' : 'home.review.toast.seen') }
