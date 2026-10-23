@@ -3,7 +3,7 @@ import type { Grid, RProblem, RRules } from '@/lib/roster/model'
 /** Daten für das Monatsraster (serialisierbar, vom Server vorbereitet). */
 export type RDay = { key: string; dom: number; wd: string; label: string; weekend: boolean; past: boolean; today: boolean }
 export type RTypeOpt = { id: string; code: string; name: string; rawName: string; start: string; end: string; hours: number; night: boolean; color: string; breakMinutes: number; target: number; days: number[]; inUse: boolean }
-export type RPersonRow = { id: string; name: string; short: string; qual: string; job: string; pct: number; key: boolean; allowed: string[]; preferred: string[]; maxNights: number | null }
+export type RPersonRow = { id: string; name: string; short: string; qual: string; job: string; pct: number; key: boolean; allowed: string[]; preferred: string[]; maxNights: number | null; group: string }
 export type RShiftMeta = { id: string; typeId: string; status: string; note: string | null; req: string | null; unit: string | null }
 export type RProposalView = {
   id: string
