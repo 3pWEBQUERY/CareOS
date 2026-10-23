@@ -5,7 +5,7 @@ CareOS ist API-first (PRD §40/§41). Es gibt drei Schnittstellen:
 | Schnittstelle | Basis-URL | Zweck |
 |---|---|---|
 | REST API v1 | `/api/v1` | Lesen und Schreiben ausgewählter Daten (JSON), Patientenadministration (ADT) |
-| HL7 FHIR R4 | `/api/fhir` | Gesundheitsdaten im FHIR-Format: lesend; `Observation` (Vitalwerte) und `AllergyIntolerance` auch schreibend |
+| HL7 FHIR R4 | `/api/fhir` | Gesundheitsdaten im FHIR-Format: lesend; `Observation` (Vitalwerte), `AllergyIntolerance` und `DocumentReference` (externe Berichte) auch schreibend |
 | HL7 v2 | `/api/v1/hl7` | Patientenadministration (ADT A01/A02/A03/A21/A22) aus Spital- und Klinikinformationssystemen |
 | Webhooks | Ziel-URL des Empfängers | Domain Events in Echtzeit (HTTP POST, signiert) |
 
@@ -47,6 +47,7 @@ Authorization: Bearer cos_…
 | `events:read` | `GET /api/v1/events` | `resident.read`, `task.read` |
 | `fhir:read` | alle lesenden Ressourcen unter `/api/fhir` | `resident.read` |
 | `labs:write` | `POST /api/v1/labs` (Laborbefunde, Schnittstelle vorbereitet) | `admin.integrations` |
+| `documents:write` | `POST /api/fhir/DocumentReference` (Austritts- und Klinikberichte in die Akte) | `resident.chart.write` |
 
 ### Module
 
@@ -243,7 +244,7 @@ Event-Payloads enthalten nur Referenzen (IDs), keine Gesundheitsdaten. Details w
 
 ## HL7 FHIR R4
 
-Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `searchset`. Lesen mit Scope `fhir:read`, Schreiben (`POST /api/fhir/Observation`, `POST /api/fhir/AllergyIntolerance`) mit Scope `observations:write`.
+Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `searchset`. Lesen mit Scope `fhir:read`, Schreiben (`POST /api/fhir/Observation`, `POST /api/fhir/AllergyIntolerance`) mit Scope `observations:write`, externe Berichte (`POST /api/fhir/DocumentReference`) mit Scope `documents:write`.
 
 | Ressource | Interaktionen | Suchparameter |
 |---|---|---|
@@ -252,6 +253,7 @@ Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `sear
 | `Observation` | read, search, **create** | `patient`/`subject`, `code`, `category=vital-signs`, `date` (`eq`/`ge`/`gt`/`le`/`lt`), `_count` |
 | `MedicationStatement` | search (nur mit Modul «Medikation») | `patient`/`subject`, `status` (`active`, `stopped`, `completed`), `_count` |
 | `AllergyIntolerance` | search, **create** (ergänzt die Allergien der Person, nie überschreiben; bereits erfasst → `200`) | `patient`, `_count` |
+| `DocumentReference` | read, search, **create** (externer Bericht als PDF/Bild in die Akte) | `patient`/`subject`, `_count` |
 
 ### Abbildung
 
@@ -271,6 +273,10 @@ Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `sear
 
 - **MedicationStatement** ← Verordnung: Präparat als Text, `status`, `effectivePeriod`, `reasonCode` (Indikation), `informationSource` (verordnende Person), `dosage` je Zeitpunkt bzw. als Reserve (`asNeededBoolean`).
 - **AllergyIntolerance** ← Allergie-Einträge der Akte (Freitext in `code.text`, `verificationStatus = unconfirmed`), ID `<bewohner>-<index>`.
+- **DocumentReference** ← Datei der Akte (Akte → Dateien): `description` = Titel, `category` = CareOS-Kategorie (`urn:careos:file-category`),
+  `date` = Berichtsdatum bzw. Ablagezeitpunkt, `content[0].attachment` nur mit Metadaten (`contentType`, `title`, `size`, `creation`; der
+  Inhalt ist in der App abrufbar). Externe Berichte zusätzlich mit LOINC-Typ (`18842-5` Austrittsbericht, `11488-4` Klinikbericht) und den
+  Extensions `urn:careos:external-report` (`true`) und `urn:careos:received-via` (`fhir`).
 
 Beispiel:
 
@@ -316,6 +322,31 @@ oder abwesend) und `code.text` oder `code.coding[].display` (höchstens 80 Zeich
 Antwort `201` mit der AllergyIntolerance und Header `Location`; ist dieselbe Allergie bereits erfasst (ohne Gross-/Kleinschreibung
 und Akzente), `200` mit dem bestehenden Eintrag. Gleichzeitige Änderung der Akte → `409 conflict` (erneut senden). Event
 `resident.updated`, Audit `api.fhir.allergy.create`.
+
+### DocumentReference schreiben (externe Berichte)
+
+`POST /api/fhir/DocumentReference` (Scope `documents:write`) – Austrittsbericht des Spitals oder Bericht einer externen Klinik. Die
+Datei wird wie ein Upload in der Akte unter **Dateien** abgelegt (Kategorie «Bericht», Railway Bucket, Zugriff nur mit Leserecht auf
+die Akte), als externer Bericht markiert und mit «eingegangen über Schnittstelle» angezeigt. Die Pflege des Bereichs wird benachrichtigt
+(dienstbewusst, wie andere klinische Meldungen).
+
+Pflichtfelder: `status = current`, `subject.reference` (`Patient/{id}`, Person aktiv oder abwesend), `type` (LOINC-Code oder `type.text`;
+`18842-5`, `34105-7` und `11490-0` gelten als Austrittsbericht, alle anderen als Klinikbericht), Titel (`content[0].attachment.title`,
+sonst `description`, höchstens 200 Zeichen), Datum (`date`, sonst `attachment.creation`; ISO 8601 als Datum oder mit Zeitzone, nicht in
+der Zukunft) und genau ein Anhang mit `contentType` `application/pdf`, `image/jpeg`, `image/png`, `image/webp` oder `image/heic` und
+dem Inhalt base64-kodiert in `data` (höchstens 12 MB; `url` wird nicht unterstützt). Der Inhalt muss zum Dateityp passen (Dateisignatur).
+
+```json
+{
+  "resourceType": "DocumentReference", "status": "current",
+  "subject": { "reference": "Patient/cmv…" }, "date": "2026-10-22T14:30:00+02:00",
+  "type": { "coding": [{ "system": "http://loinc.org", "code": "18842-5", "display": "Discharge summary" }] },
+  "content": [{ "attachment": { "contentType": "application/pdf", "title": "Austrittsbericht Kantonsspital", "data": "JVBERi0xLjcK…" } }]
+}
+```
+
+Antwort `201` mit der DocumentReference und Header `Location`. Fehler: `422` (Prüfung), `404` (Person nicht gefunden oder nicht aktuell),
+`413` (Anfrage zu gross), `503 storage_not_configured` (keine Dateiablage eingerichtet). Event `resident.updated`, Audit `api.fhir.document.create`.
 
 ## Webhooks
 

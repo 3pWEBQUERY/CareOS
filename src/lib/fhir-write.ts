@@ -103,3 +103,68 @@ export function parseFhirAllergy(raw: unknown): ParsedAllergy | { error: string 
   if (text.length > 80) return { error: 'allergy text longer than 80 characters' }
   return { residentId: m[1], text }
 }
+
+/** Externe Berichte (PRD §41): LOINC-Dokumenttypen für Austrittsberichte; andere Typen gelten als Klinikbericht. */
+export const DISCHARGE_LOINC = ['18842-5', '34105-7', '11490-0']
+export const REPORT_LOINC = { discharge: { code: '18842-5', display: 'Discharge summary' }, clinic: { code: '11488-4', display: 'Consult note' } } as const
+export type ReportKind = keyof typeof REPORT_LOINC
+
+const ascii = (b: Uint8Array, from: number, to: number) => String.fromCharCode(...b.slice(from, to))
+
+/** Erlaubte Anhänge (PDF und Bilder) mit Dateisignatur; Endung für den Dateinamen. */
+const REPORT_TYPES: Record<string, { ext: string; magic: (b: Uint8Array) => boolean }> = {
+  'application/pdf': { ext: 'pdf', magic: (b) => ascii(b, 0, 5) === '%PDF-' },
+  'image/png': { ext: 'png', magic: (b) => b[0] === 0x89 && ascii(b, 1, 4) === 'PNG' },
+  'image/jpeg': { ext: 'jpg', magic: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  'image/webp': { ext: 'webp', magic: (b) => ascii(b, 0, 4) === 'RIFF' && ascii(b, 8, 12) === 'WEBP' },
+  'image/heic': { ext: 'heic', magic: (b) => ascii(b, 4, 8) === 'ftyp' },
+}
+export const REPORT_CONTENT_TYPES = Object.keys(REPORT_TYPES)
+
+type DocRef = {
+  resourceType?: string; status?: string; subject?: { reference?: string }; date?: string; description?: string
+  type?: { text?: string; coding?: (Coding & { display?: string })[] }
+  content?: { attachment?: { contentType?: string; data?: string; title?: string; creation?: string } }[]
+}
+export type ParsedDocumentReference = { residentId: string; kind: ReportKind; title: string; date: Date; contentType: string; bytes: Uint8Array; filename: string }
+
+const isoOk = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s) || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?([zZ]|[+-]\d{2}:\d{2})$/.test(s)
+
+/**
+ * FHIR R4 DocumentReference schreibend (PRD §41): Austrittsbericht oder Bericht einer externen Klinik als PDF/Bild
+ * (base64 in content[0].attachment.data). Prüft Status, Patient, Typ, Titel, Datum, Dateityp (inkl. Signatur) und Grösse.
+ */
+export function parseFhirDocumentReference(raw: unknown, maxBytes: number, now = new Date()): ParsedDocumentReference | { error: string } {
+  const o = (raw ?? {}) as DocRef
+  if (o.resourceType !== 'DocumentReference') return { error: 'resourceType must be DocumentReference' }
+  if (o.status !== 'current') return { error: 'status must be current' }
+  const m = /^Patient\/([\w-]+)$/.exec(o.subject?.reference ?? '')
+  if (!m) return { error: 'subject.reference must be Patient/{id}' }
+  const codes = (o.type?.coding ?? []).filter((c) => !c.system || c.system === 'http://loinc.org').map((c) => c.code)
+  if (!codes.length && !o.type?.text?.trim()) return { error: 'type.coding (LOINC) or type.text required' }
+  const kind: ReportKind = codes.some((c) => !!c && DISCHARGE_LOINC.includes(c)) ? 'discharge' : 'clinic'
+  const contents = o.content ?? []
+  if (contents.length !== 1) return { error: 'exactly one content.attachment required' }
+  const att = contents[0].attachment ?? {}
+  const title = (att.title || o.description || o.type?.text || o.type?.coding?.find((c) => c.display)?.display || '').replace(/[\r\n]+/g, ' ').trim()
+  if (!title) return { error: 'content.attachment.title or description required' }
+  if (title.length > 200) return { error: 'title longer than 200 characters' }
+  const when = o.date ?? att.creation
+  if (!when) return { error: 'date required' }
+  if (!isoOk(when)) return { error: 'date must be ISO 8601 (date or date-time with time zone)' }
+  const date = new Date(when.length === 10 ? when + 'T00:00:00' : when)
+  if (Number.isNaN(date.getTime())) return { error: 'date invalid' }
+  if (date.getTime() > now.getTime() + 5 * 60_000) return { error: 'date must not be in the future' }
+  const type = REPORT_TYPES[att.contentType ?? '']
+  if (!type) return { error: `content.attachment.contentType must be one of ${REPORT_CONTENT_TYPES.join(', ')}` }
+  const data = (att.data ?? '').replace(/\s+/g, '')
+  if (!data) return { error: 'content.attachment.data (base64) required; url is not supported' }
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(data) || data.length % 4 === 1) return { error: 'content.attachment.data is not valid base64' }
+  const mb = Math.round(maxBytes / 1024 / 1024)
+  if (Math.floor((data.length * 3) / 4) > maxBytes + 2) return { error: `attachment larger than ${mb} MB` }
+  const bytes = new Uint8Array(Buffer.from(data, 'base64'))
+  if (!bytes.length || bytes.length > maxBytes) return { error: `attachment empty or larger than ${mb} MB` }
+  if (!type.magic(bytes)) return { error: `attachment content does not match ${att.contentType}` }
+  const base = title.replace(/[^\p{L}\p{N} ._-]+/gu, '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'report'
+  return { residentId: m[1], kind, title, date, contentType: att.contentType!, bytes, filename: `${base}.${type.ext}` }
+}

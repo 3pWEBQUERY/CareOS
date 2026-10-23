@@ -13,6 +13,7 @@ import { reconcileIncidentActions } from '@/lib/tasks'
  * Idempotent: jede Aufgabe wird höchstens einmal automatisch eskaliert (Audit "task.escalate"),
  * jeder wichtige Übergabeeintrag höchstens einmal pro Fassung (Audit "handover.escalate"),
  * Vitalwert- und Ereignismeldungen werden über einen Cursor auf die Domain Events genau einmal verarbeitet.
+ * Überfällige Docs-Freigaben und Visitenfragen werden je einmal gemeldet (Merker reviewEscalatedAt bzw. escalatedAt).
  */
 
 /** Aktive Benutzer mit einer der Rollen (Role.key), deren Geltungsbereich den Bereich umfasst. */
@@ -187,5 +188,8 @@ export async function runEscalations(now = new Date(), cursor?: Date | null) {
   s.incidentActions = await reconcileIncidentActions()
   // Paket Ä: telefonische/mündliche Verordnungen ohne Gegenzeichnung nach Fristablauf (src/lib/phone-orders-server.ts)
   const phoneOrders = await import('@/lib/phone-orders-server').then((m) => m.escalatePhoneOrders(now))
-  return { ...s, phoneOrders, cursor: next.toISOString() }
+  // PRD §49 Escalate: überfällige Docs-Freigaben (src/lib/docs-review-server.ts) und unbeantwortete Visitenfragen (src/lib/visit-escalate.ts)
+  const docReviews = await import('@/lib/docs-review-server').then((m) => m.escalateDocReviews(now))
+  const visitQuestions = await import('@/lib/visit-escalate').then((m) => m.escalateVisitQuestions(now))
+  return { ...s, phoneOrders, docReviews, visitQuestions, cursor: next.toISOString() }
 }

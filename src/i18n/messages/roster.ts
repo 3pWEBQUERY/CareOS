@@ -3,6 +3,10 @@ import { defineMessages } from '../core'
 export default defineMessages({
   de: {
     tab: 'Monatsplan',
+    payroll: {
+      link: 'Stunden für den Lohn exportieren (CSV)',
+      cols: { person: 'Person', employeeNo: 'Personalnummer', pct: 'Pensum (%)', soll: 'Soll (h)', ist: 'Geplant (h)', diff: 'Saldo (h)', nights: 'Nachtdienste', weekends: 'Wochenendtage', absence: '{kind} (Tage)' },
+    },
     period: {
       draft: 'Entwurf',
       released: 'Freigegeben',
@@ -215,6 +219,10 @@ export default defineMessages({
   },
   fr: {
     tab: 'Plan mensuel',
+    payroll: {
+      link: 'Exporter les heures pour les salaires (CSV)',
+      cols: { person: 'Personne', employeeNo: 'Matricule', pct: 'Taux (%)', soll: 'Cible (h)', ist: 'Planifié (h)', diff: 'Solde (h)', nights: 'Services de nuit', weekends: 'Jours de week-end', absence: '{kind} (jours)' },
+    },
     period: {
       draft: 'Brouillon',
       released: 'Publié',
@@ -427,6 +435,10 @@ export default defineMessages({
   },
   it: {
     tab: 'Piano mensile',
+    payroll: {
+      link: 'Esportare le ore per gli stipendi (CSV)',
+      cols: { person: 'Persona', employeeNo: 'Numero del personale', pct: 'Grado d’occupazione (%)', soll: 'Previsto (h)', ist: 'Pianificato (h)', diff: 'Saldo (h)', nights: 'Turni di notte', weekends: 'Giorni nel fine settimana', absence: '{kind} (giorni)' },
+    },
     period: {
       draft: 'Bozza',
       released: 'Pubblicato',
@@ -639,6 +651,10 @@ export default defineMessages({
   },
   en: {
     tab: 'Monthly roster',
+    payroll: {
+      link: 'Export hours for payroll (CSV)',
+      cols: { person: 'Person', employeeNo: 'Employee no.', pct: 'FTE (%)', soll: 'Target (h)', ist: 'Planned (h)', diff: 'Balance (h)', nights: 'Night shifts', weekends: 'Weekend days', absence: '{kind} (days)' },
+    },
     period: {
       draft: 'Draft',
       released: 'Published',

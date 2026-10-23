@@ -18,13 +18,22 @@ export async function saveUpload(ctx: Ctx, file: File, purpose: string, clinical
   if (file.size > MAX_UPLOAD_BYTES) throw new UploadError('too_large')
   const type = file.type || 'application/octet-stream'
   if (!ALLOWED_TYPES.includes(type)) throw new UploadError('type')
-  const key = objectKey(ctx.org.id, purpose, file.name)
-  await putObject(key, new Uint8Array(await file.arrayBuffer()), type)
-  const obj = await db.fileObject.create({
-    data: { orgId: ctx.org.id, key, filename: file.name.slice(0, 200), contentType: type, size: file.size, purpose, clinical, uploadedById: ctx.user.id },
-  })
+  const obj = await storeFile({ orgId: ctx.org.id, uploadedById: ctx.user.id, filename: file.name, contentType: type, bytes: new Uint8Array(await file.arrayBuffer()), purpose, clinical })
   await audit(ctx, { action: 'file.upload', entityType: 'FileObject', entityId: obj.id, after: { filename: obj.filename, purpose, size: obj.size } })
   return obj
+}
+
+/**
+ * Ablage ohne Sitzung (Schnittstellen, z. B. FHIR DocumentReference): Bytes in den Bucket, FileObject anlegen.
+ * Prüfung von Typ und Grösse und das Audit übernimmt die aufrufende Stelle.
+ */
+export async function storeFile(f: { orgId: string; uploadedById: string; filename: string; contentType: string; bytes: Uint8Array; purpose: string; clinical: boolean }) {
+  if (!storageConfigured()) throw new UploadError('storage_not_configured')
+  const key = objectKey(f.orgId, f.purpose, f.filename)
+  await putObject(key, f.bytes, f.contentType)
+  return db.fileObject.create({
+    data: { orgId: f.orgId, key, filename: f.filename.slice(0, 200), contentType: f.contentType, size: f.bytes.length, purpose: f.purpose, clinical: f.clinical, uploadedById: f.uploadedById },
+  })
 }
 
 /** URL, unter der eine Datei mit Berechtigungsprüfung ausgeliefert wird. */
