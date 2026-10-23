@@ -170,13 +170,20 @@ export type GenStaff = {
   unitIndex: number
 }
 
+type StaffOpts = { rng: Rng; domain: string; takenEmails?: Iterable<string>; takenInitials?: Iterable<string>; takenNames?: Iterable<string> }
+
 /** n Mitarbeitende nach planStaff, E-Mail vorname.nachname@domain (eindeutig, auch gegenüber `takenEmails`). */
-export function generateStaff(n: number, opts: { units: number; rng: Rng; domain: string; takenEmails?: Iterable<string>; takenInitials?: Iterable<string> }): GenStaff[] {
+export function generateStaff(n: number, opts: StaffOpts & { units: number }): GenStaff[] {
+  return generateStaffFor(planStaff(n, opts.units), opts)
+}
+
+/** Mitarbeitende für vorgegebene Plätze (Art + Wohngruppe), z. B. zum Auffüllen eines bestehenden Teams. */
+export function generateStaffFor(plan: { kind: StaffKind; unitIndex: number }[], opts: StaffOpts): GenStaff[] {
   const { rng } = opts
-  const seen = new Set<string>()
+  const seen = new Set<string>(opts.takenNames ?? [])
   const emails = new Set([...(opts.takenEmails ?? [])].map((e) => e.toLowerCase()))
   const initials = new Set(opts.takenInitials ?? [])
-  return planStaff(n, opts.units).map(({ kind, unitIndex }) => {
+  return plan.map(({ kind, unitIndex }) => {
     const sex: Sex = rng() < 0.82 ? 'f' : 'm'
     const name = uniqueName(rng, STAFF_FIRST[sex], seen)
     const base = `${mailPart(name.firstName)}.${mailPart(name.lastName)}`
