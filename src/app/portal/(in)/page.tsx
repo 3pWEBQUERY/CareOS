@@ -3,16 +3,19 @@ import { hm } from '@/lib/time'
 import { getPortalCtx } from '@/lib/portal/context'
 import { portalAppointments, portalThreads, portalUpdates, portalVisits } from '@/lib/portal/data'
 import { fmtDay, fmtWhen, NoAccess, PortalHead, portalPage } from './ui'
+import { SelfHome } from './SelfHome'
 
 export async function generateMetadata() {
-  return { title: (await getPortalCtx()).t('portal.nav.home') }
+  const p = await getPortalCtx()
+  return { title: p.t(p.self ? 'residentPortal.nav.home' : 'portal.nav.home') }
 }
 
-/** Übersicht: Person, nächste Termine, Mitteilungen der Station, Besuche, offene Nachrichten. */
+/** Übersicht: Person, nächste Termine, Mitteilungen der Station, Besuche, offene Nachrichten. Für die Person selbst: «Mein Tag». */
 export default async function PortalHome() {
   const p = await portalPage('home')
   const { t, locale, current } = p
   if (!current) return <NoAccess p={p} />
+  if (p.self) return <SelfHome p={p} />
   const r = current.resident
   const [appts, updates, visits, threads] = await Promise.all([
     portalAppointments(p, current, { from: new Date(Date.now() - 3600_000), days: 14, take: 5 }),

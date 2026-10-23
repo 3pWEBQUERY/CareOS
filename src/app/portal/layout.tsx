@@ -9,7 +9,7 @@ import { getPortalSession } from '@/lib/portal/auth'
 export const metadata: Metadata = { title: { default: 'Portal', template: '%s · Portal' }, robots: { index: false, follow: false } }
 
 /**
- * Angehörigenportal (PRD §60): eigener Bereich ausserhalb der Stationsapp, eigenes Wörterbuch (common + portal).
+ * Angehörigen- und Bewohnerportal (PRD §60): eigener Bereich ausserhalb der Stationsapp, eigenes Wörterbuch (common + portal + residentPortal).
  * Sprache aus dem Portal-Konto, sonst aus Cookie/Browser – nie aus der Sitzung der Mitarbeitenden.
  */
 export default async function PortalRootLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +17,7 @@ export default async function PortalRootLayout({ children }: { children: React.R
   const jar = await cookies()
   const locale: Locale = (s?.account.locale as Locale) ?? pickLocale(jar.get('careos_locale')?.value ?? (await headers()).get('accept-language'))
   const d = dictionary(locale)
-  const messages: Tree = { common: d.common, portal: d.portal }
+  const messages: Tree = { common: d.common, portal: d.portal, residentPortal: d.residentPortal }
   return (
     <I18nProvider locale={locale} terminology="resident" messages={messages}>
       <div lang={locale} className="portal-root">{children}</div>

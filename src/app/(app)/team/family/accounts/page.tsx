@@ -4,7 +4,7 @@ import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
 import { dateKey, fmtDate } from '@/lib/time'
 import { portalEnabled } from '@/lib/portal/module'
-import { accessState, isShareableFileCategory, normalizeGrants, portalSettings } from '@/lib/portal/policy'
+import { SELF_ROLE, accessState, isSelfAccess, isShareableFileCategory, normalizeGrants, portalSettings } from '@/lib/portal/policy'
 import { FamilyHead, ModuleOff } from '../Head'
 import { familyUnits } from '../lib'
 import { AccessActions, PortalSettingsForm, type FileRow } from './AccessActions'
@@ -16,18 +16,24 @@ export async function generateMetadata() {
 
 const TONE: Record<string, string> = { invited: 'accent', expired: 'warn', active: 'ok', revoked: '', locked: 'crit' }
 const STATES = ['all', 'active', 'invited', 'locked', 'revoked'] as const
+/** Wessen Zugänge: Angehörige (relative, legal_rep) oder die Person selbst (Bewohnerportal). */
+const WHO = ['all', 'family', 'self'] as const
 
 /** Übersicht der Portal-Zugänge: Status, Freigaben, Einwilligung; Freigaben ändern, Dateien teilen, sperren, widerrufen. */
-export default async function FamilyAccounts({ searchParams }: { searchParams: Promise<{ resident?: string; state?: string }> }) {
+export default async function FamilyAccounts({ searchParams }: { searchParams: Promise<{ resident?: string; state?: string; who?: string }> }) {
   const ctx = await getCtx()
   const { t, locale } = ctx
   if (!portalEnabled(ctx.org)) return <ModuleOff ctx={ctx} />
   if (!ctx.can('portal.manage') && !ctx.can('portal.respond')) return <Forbidden text={t('common.notAllowed')} />
   const sp = await searchParams
   const state = (STATES as readonly string[]).includes(sp.state ?? '') ? sp.state! : 'all'
+  const who = (WHO as readonly string[]).includes(sp.who ?? '') ? sp.who! : 'all'
   const units = familyUnits(ctx).concat(familyUnits(ctx, 'portal.manage')).filter((u, i, a) => a.findIndex((x) => x.id === u.id) === i)
   const rows = await db.portalAccess.findMany({
-    where: { orgId: ctx.org.id, resident: { orgId: ctx.org.id, unitId: { in: units.map((u) => u.id) } }, ...(sp.resident ? { residentId: sp.resident } : {}) },
+    where: {
+      orgId: ctx.org.id, resident: { orgId: ctx.org.id, unitId: { in: units.map((u) => u.id) } }, ...(sp.resident ? { residentId: sp.resident } : {}),
+      ...(who === 'self' ? { role: SELF_ROLE } : who === 'family' ? { role: { not: SELF_ROLE } } : {}),
+    },
     include: {
       account: { select: { id: true, name: true, email: true, lockedAt: true, lastLoginAt: true, mfaEnabled: true } },
       resident: { select: { id: true, firstName: true, lastName: true, unitId: true, room: { select: { number: true } }, unit: { select: { name: true, locationId: true } } } },
@@ -43,7 +49,7 @@ export default async function FamilyAccounts({ searchParams }: { searchParams: P
   const filterRes = sp.resident ? rows.find((r) => r.residentId === sp.resident)?.resident : null
   const s = portalSettings(ctx.org.settings)
   const today = dateKey(new Date())
-  const q = (st: string) => '/team/family/accounts?' + new URLSearchParams({ ...(st !== 'all' ? { state: st } : {}), ...(sp.resident ? { resident: sp.resident } : {}) }).toString()
+  const q = (st: string, w = who) => '/team/family/accounts?' + new URLSearchParams({ ...(st !== 'all' ? { state: st } : {}), ...(w !== 'all' ? { who: w } : {}), ...(sp.resident ? { resident: sp.resident } : {}) }).toString()
   return (
     <main className="panel main" style={{ flex: 1 }}>
       <FamilyHead ctx={ctx} tab="accounts" title={t('portal.team.accountsTitle')} sub={t('portal.team.accountsSub')} />
@@ -52,6 +58,9 @@ export default async function FamilyAccounts({ searchParams }: { searchParams: P
           <div className="row-between" style={{ gap: 8, flexWrap: 'wrap' }}>
             <nav className="chips" aria-label={t('common.filter')}>
               {STATES.map((x) => <Link key={x} className="chip" scroll={false} href={q(x)} aria-current={state === x ? 'page' : undefined}>{t('portal.team.states.' + x)}</Link>)}
+            </nav>
+            <nav className="seg" aria-label={t('residentPortal.team.whoLabel')}>
+              {WHO.map((x) => <Link key={x} scroll={false} href={q(state, x)} aria-current={who === x ? 'page' : undefined}>{t('residentPortal.team.who.' + x)}</Link>)}
             </nav>
             {filterRes && <Link className="chip" href="/team/family/accounts" aria-label={t('portal.team.clearFilter')}>{filterRes.lastName} {filterRes.firstName} ×</Link>}
           </div>
@@ -69,6 +78,7 @@ export default async function FamilyAccounts({ searchParams }: { searchParams: P
                           <strong>{a.account?.name ?? a.inviteName}</strong>
                           <span className={'tag ' + TONE[a.state]}>{t('portal.state.' + a.state)}</span>
                           {a.role === 'legal_rep' && <span className="tag violet">{t('portal.roles.legal_rep')}</span>}
+                          {isSelfAccess(a) && <span className="tag accent">{t('residentPortal.team.self')}</span>}
                           {a.account?.mfaEnabled && <span className="tag outline">{t('portal.team.mfa')}</span>}
                         </div>
                         <div className="small">
@@ -94,7 +104,7 @@ export default async function FamilyAccounts({ searchParams }: { searchParams: P
                 })}
               </ul>
             </section>
-          ) : <div className="empty"><strong>{t('portal.team.noAccounts')}</strong><span className="small">{t('portal.team.noAccountsHint')}</span></div>}
+          ) : <div className="empty"><strong>{t('portal.team.noAccounts')}</strong><span className="small">{t(who === 'self' ? 'residentPortal.team.noAccountsSelf' : 'portal.team.noAccountsHint')}</span></div>}
 
           {ctx.can('admin.config') && (
             <section className="card" aria-labelledby="fa-settings">

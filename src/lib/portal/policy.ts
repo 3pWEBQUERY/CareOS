@@ -17,11 +17,14 @@ export const NEVER_SHARED = [
   'tasks', 'handover', 'incidents', 'diagnoses', 'allergies', 'risks', 'labs', 'visits.physician',
 ] as const
 
-/** Rollen eines Zugangs. `self` = Bewohnerportal (Datenmodell vorbereitet, Oberfläche folgt). */
+/** Rollen eines Zugangs. `self` = Bewohnerportal: die Person selbst (ohne Kontakt, Einladung aus der Akte). */
 export const PORTAL_ROLES = ['relative', 'legal_rep', 'self'] as const
 export type PortalRole = (typeof PORTAL_ROLES)[number]
-/** Rollen, die heute eingeladen werden können. */
+/** Rollen, die über eine Kontaktperson eingeladen werden können. `self` lädt das Team direkt aus der Akte ein. */
 export const INVITABLE_ROLES: PortalRole[] = ['relative', 'legal_rep']
+export const SELF_ROLE = 'self' satisfies PortalRole
+/** Zugang der Person selbst (Bewohnerportal). */
+export const isSelfAccess = (a: { role: string } | null | undefined) => a?.role === SELF_ROLE
 
 /** Ärztliche Kontaktpersonen (Beziehung frei erfasst, DE/FR/IT/EN). Ärztinnen und Ärzte arbeiten im Ärzteportal (/md), nicht im Angehörigenportal. */
 const PHYSICIAN_RELATION = /(a|ae)rzt|medecin|docteur|\bmedic[oa]\b|dottor|physician|doctor|\bgp\b|general practitioner|\bdr\.?\s?med\b/
@@ -115,12 +118,18 @@ export function portalResident(r: { id: string; firstName: string; lastName: str
   return { id: r.id, firstName: r.firstName, lastName: r.lastName, unit: r.unit.name, room: r.room?.number ?? null }
 }
 
+/** Therapiearten (TherapyPlan.discipline). Die Person selbst sieht bei Therapieeinheiten die Art, nie Ziel oder Anleitung. */
+export const THERAPY_DISCIPLINES = ['physio', 'ergo', 'speech', 'activation'] as const
+
 /** Terminarten, deren Titel ins Portal darf. Ärztliche, Therapie- und Spitaltermine nur mit der Art (Titel kann Diagnosen enthalten). */
 export const APPOINTMENT_TITLE_KINDS = ['relatives', 'other'] as const
 export const APPOINTMENT_KINDS = ['physician', 'therapy', 'hospital', 'relatives', 'other'] as const
 
-/** Termin im Portal: Zeit, Art, Ort; Titel nur bei nicht klinischen Arten; nie Notizen. */
-export function portalAppointment(a: { id: string; at: Date; kind: string; title: string; place: string | null; done: boolean }) {
+/**
+ * Termin im Portal: Zeit, Art, Ort; Titel nur bei nicht klinischen Arten; nie Notizen.
+ * `discipline` (nur Bewohnerportal): Therapieart einer Therapieeinheit, z. B. «Physiotherapie».
+ */
+export function portalAppointment(a: { id: string; at: Date; kind: string; title: string; place: string | null; done: boolean }, discipline?: string | null) {
   const kind = (APPOINTMENT_KINDS as readonly string[]).includes(a.kind) ? a.kind : 'other'
   return {
     id: a.id,
@@ -129,6 +138,7 @@ export function portalAppointment(a: { id: string; at: Date; kind: string; title
     title: (APPOINTMENT_TITLE_KINDS as readonly string[]).includes(kind) ? a.title : null,
     place: a.place,
     done: a.done,
+    discipline: kind === 'therapy' && (THERAPY_DISCIPLINES as readonly string[]).includes(discipline ?? '') ? discipline! : null,
   }
 }
 
@@ -164,6 +174,105 @@ export function visitProblem(v: { start: Date; end: Date; visitors: number }, se
 export function visitTransition(from: string, to: VisitStatus, by: 'staff' | 'family'): boolean {
   if (by === 'staff') return from === 'requested' && (to === 'confirmed' || to === 'declined')
   return to === 'cancelled' && (from === 'requested' || from === 'confirmed')
+}
+
+// ───────── Bewohnerportal: was der Zugang der Person selbst sieht ─────────
+
+/** Empfängerkreis einer Mitteilung. Bestehende Mitteilungen gelten für Angehörige. */
+export const UPDATE_AUDIENCES = ['family', 'residents', 'all'] as const
+export type UpdateAudience = (typeof UPDATE_AUDIENCES)[number]
+export const normalizeAudience = (v: unknown): UpdateAudience => ((UPDATE_AUDIENCES as readonly unknown[]).includes(v) ? (v as UpdateAudience) : 'family')
+
+/** Mitteilungen, die ein Zugang sieht: die Person selbst nur «für Bewohnende» und «für alle», Angehörige nie «für Bewohnende». */
+export function updateAudiencesFor(role: string): UpdateAudience[] {
+  return role === SELF_ROLE ? ['residents', 'all'] : ['family', 'all']
+}
+
+type Scope = { role: string; residentId: string; unitId: string }
+
+/**
+ * Filter der Mitteilungen eines Zugangs: an die Person, an ihren Bereich oder an die ganze Organisation – nie an
+ * eine andere Person. Persönliche Mitteilungen (residentId gesetzt) sind immer an diese Person gebunden.
+ */
+export function updateWhere(orgId: string, cur: Scope, now: Date) {
+  return {
+    orgId,
+    publishedAt: { lte: now },
+    audience: { in: updateAudiencesFor(cur.role) },
+    AND: [
+      { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      { OR: [{ residentId: cur.residentId }, { residentId: null, unitId: cur.unitId }, { residentId: null, unitId: null }] },
+    ],
+  }
+}
+
+/** Besuchsstatus, die die Person selbst auch bei Besuchen anderer sieht (abgelehnte oder zurückgezogene Anfragen nicht). */
+export const SELF_VISIBLE_VISIT_STATUS = ['requested', 'confirmed'] as const
+
+/**
+ * Filter der Besuche eines Zugangs. Immer an die Person gebunden.
+ * - Angehörige: nur die eigenen Anfragen.
+ * - Die Person selbst: eigene Anmeldungen und die offenen bzw. bestätigten Besuche ihrer Angehörigen.
+ */
+export function visitWhere(orgId: string, cur: Scope, accountId: string, since: Date) {
+  const base = { orgId, residentId: cur.residentId, end: { gte: since } }
+  if (cur.role !== SELF_ROLE) return { ...base, access: { accountId } }
+  return { ...base, OR: [{ access: { accountId } }, { status: { in: [...SELF_VISIBLE_VISIT_STATUS] } }] }
+}
+
+/** Gespräche eines Zugangs: nur die eigenen, an die Person gebunden (auch für die Person selbst). */
+export const threadWhere = (orgId: string, cur: Scope, accountId: string) => ({ orgId, residentId: cur.residentId, access: { accountId } })
+
+export type VisitRow = {
+  id: string; residentId: string; start: Date; end: Date; visitors: number; note: string | null; status: string; reply: string | null
+  visitorName: string | null; decidedAt: Date | null; createdAt: Date; appointmentId: string | null
+  access: { accountId: string | null; role: string; inviteName: string; account: { name: string } | null } | null
+}
+
+/**
+ * Besuch im Portal. Eigene Anfragen vollständig (mit Notiz und Antwort des Teams); Besuche anderer nur Zeit,
+ * Personenzahl, Status und wer kommt – nie deren Notiz an das Team oder die Antwort.
+ * Gehört der Besuch nicht zur Person des Zugangs, gibt es nichts (null).
+ */
+export function portalVisit(v: VisitRow, cur: { residentId: string }, accountId: string) {
+  if (v.residentId !== cur.residentId) return null
+  const own = !!v.access && v.access.accountId === accountId
+  if (!own && !(SELF_VISIBLE_VISIT_STATUS as readonly string[]).includes(v.status)) return null
+  const by = v.access?.account?.name ?? v.access?.inviteName ?? null
+  return {
+    id: v.id,
+    residentId: v.residentId,
+    start: v.start,
+    end: v.end,
+    visitors: v.visitors,
+    status: v.status,
+    own,
+    /** Wer kommt: bei Anmeldungen der Person selbst der erfasste Name, sonst die anfragende Person */
+    who: v.access?.role === SELF_ROLE ? v.visitorName : by,
+    note: own ? v.note : null,
+    reply: own ? v.reply : null,
+    decidedAt: own ? v.decidedAt : null,
+    createdAt: v.createdAt,
+    /** Termin «Angehörige» aus der Bestätigung – damit «Mein Tag» den Besuch nicht doppelt zeigt */
+    appointmentId: v.status === 'confirmed' ? v.appointmentId : null,
+  }
+}
+export type PortalVisit = NonNullable<ReturnType<typeof portalVisit>>
+
+export const VISITOR_NAME_MAX = 120
+
+/** «Mein Tag»: Termine und Besuche in eine Zeitleiste, getrennt nach heute und den nächsten Tagen. */
+export type DayItem = { key: string; at: Date; until?: Date; kind: 'appointment' | 'visit'; residentId: string }
+export function dayPlan<T extends DayItem>(items: T[], cur: { residentId: string }, now: Date, days = 7) {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrow = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1)
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 1 + days)
+  // Doppelte Absicherung: nur Einträge der eigenen Person
+  const mine = items.filter((i) => i.residentId === cur.residentId).sort((a, b) => a.at.getTime() - b.at.getTime())
+  return {
+    today: mine.filter((i) => i.at >= start && i.at < tomorrow).map((i) => ({ ...i, past: (i.until ?? i.at).getTime() < now.getTime() })),
+    upcoming: mine.filter((i) => i.at >= tomorrow && i.at < end),
+  }
 }
 
 // ───────── Nachrichten ─────────

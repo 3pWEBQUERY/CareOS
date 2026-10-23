@@ -6,6 +6,7 @@ import { toast } from '@/components/toast'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { Combobox, DateField, FileField, RadioGroup, Select, TextField, Textarea, type ComboOption } from '@/components/ui/fields'
+import { UPDATE_AUDIENCES } from '@/lib/portal/policy'
 import { createUpdateAction, deleteUpdateAction } from '../actions'
 
 export function UpdateForm({ units, defaultUnit, residents, orgWide, storage, today }: {
@@ -31,6 +32,9 @@ export function UpdateForm({ units, defaultUnit, residents, orgWide, storage, to
           </Select>
         )}
         {scope === 'resident' && <Combobox label={t('portal.team.resident')} name="residentId" options={residents} required />}
+        {/* Empfängerkreis: Angehörige (Standard), Bewohnende selbst (Bewohnerportal) oder beide */}
+        <RadioGroup label={t('residentPortal.team.audience')} name="audience" defaultValue="family" inline wrapClassName="span-all" hint={t('residentPortal.team.audienceHint')}
+          options={UPDATE_AUDIENCES.map((a) => ({ value: a, label: t('residentPortal.team.audiences.' + a) }))} />
         <DateField label={t('portal.team.updExpires')} name="expiresAt" optional min={today} />
         {storage && <FileField label={t('portal.team.updFiles')} name="files" multiple optional accept="application/pdf,image/png,image/jpeg" wrapClassName="span-all" hint={t('portal.team.updFilesHint')} />}
       </div>

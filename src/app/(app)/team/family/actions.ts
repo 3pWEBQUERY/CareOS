@@ -17,7 +17,7 @@ import { makeT, type Locale, type Terminology } from '@/i18n/core'
 import { portalEnabled } from '@/lib/portal/module'
 import { revokePortalSessions } from '@/lib/portal/auth'
 import { accessSnap, revokeAccess } from '@/lib/portal/manage'
-import { CONSENT_BY, MESSAGE_MAX, clampToConsent, isShareableFileCategory, normalizeGrants, portalSettings, threadStatusAfter, visitTransition } from '@/lib/portal/policy'
+import { CONSENT_BY, MESSAGE_MAX, clampToConsent, isSelfAccess, isShareableFileCategory, normalizeAudience, normalizeGrants, portalSettings, threadStatusAfter, visitTransition } from '@/lib/portal/policy'
 import { assertFamily, threadInScope, visitInScope } from './lib'
 
 const body = z.string().min(2, 'portal.errors.body').max(MESSAGE_MAX, 'portal.errors.bodyLong')
@@ -82,7 +82,7 @@ export async function setThreadStatusAction(threadId: string, status: 'open' | '
   })
 }
 
-/** Nachricht in den Verlauf übernehmen (Kategorie Angehörige, manuell, mit Verweis). */
+/** Nachricht in den Verlauf übernehmen (Kategorie Angehörige bzw. Beobachtung bei der Person selbst, manuell, mit Verweis). */
 export async function messageToChartAction(threadId: string, messageId: string, form: FormData): Promise<ActionResult> {
   return run(async () => {
     const ctx = await getCtx()
@@ -93,9 +93,10 @@ export async function messageToChartAction(threadId: string, messageId: string, 
     if (!m) return { ok: false, error: 'common.notFound' }
     if (m.observationId) return { ok: false, error: 'portal.errors.inChart' }
     const text = z.string().min(2, 'portal.errors.body').max(4000).parse(fd(form, 'text'))
-    const o = await db.observation.create({ data: { residentId: th.residentId, category: 'relatives', source: 'manual', authorId: ctx.user.id, text, structured: { kind: 'portal-message', threadId: th.id, messageId: m.id } } })
+    const category = isSelfAccess(th.access) ? 'observation' : 'relatives'
+    const o = await db.observation.create({ data: { residentId: th.residentId, category, source: 'manual', authorId: ctx.user.id, text, structured: { kind: 'portal-message', threadId: th.id, messageId: m.id } } })
     await db.portalMessage.update({ where: { id: m.id }, data: { observationId: o.id } })
-    await audit(ctx, { action: 'observation.create', entityType: 'Observation', entityId: o.id, after: { category: 'relatives', text }, context: { residentId: th.residentId, from: 'portal', messageId: m.id } })
+    await audit(ctx, { action: 'observation.create', entityType: 'Observation', entityId: o.id, after: { category, text }, context: { residentId: th.residentId, from: 'portal', messageId: m.id } })
     await emit({ orgId: ctx.org.id, type: 'observation.created', unitId: th.resident.unitId, residentId: th.residentId, actorId: ctx.user.id })
     refresh()
     return { ok: true, message: 'portal.team.inChart' }
@@ -118,7 +119,8 @@ export async function decideVisitAction(visitId: string, form: FormData): Promis
     const done = await db.visitRequest.updateMany({ where: { id: v.id, status: 'requested' }, data: { status: decision, reply, decidedById: ctx.user.id, decidedAt: new Date(), staffReadAt: new Date(), assigneeId: v.assigneeId ?? ctx.user.id } })
     if (!done.count) return { ok: false, error: 'portal.errors.visitState' }
     if (decision === 'confirmed') {
-      const who = v.access?.account?.name ?? v.access?.inviteName ?? ''
+      // Anmeldung der Person selbst: im Termin steht, wer kommt
+      const who = v.visitorName ?? v.access?.account?.name ?? v.access?.inviteName ?? ''
       const a = await db.appointment.create({
         data: { residentId: v.residentId, at: v.start, kind: 'relatives', title: ctx.t('portal.team.visitTitle', { name: who }), notes: [ctx.t('portal.team.visitUntil', { time: hm(v.end), n: v.visitors }), v.note].filter(Boolean).join(' · '), createdById: ctx.user.id },
       })
@@ -194,8 +196,9 @@ export async function createUpdateAction(form: FormData): Promise<ActionResult> 
         throw e
       }
     }
-    const u = await db.portalUpdate.create({ data: { orgId: ctx.org.id, unitId, residentId, title: p.title, body: p.body, fileIds, authorId: ctx.user.id, expiresAt } })
-    await audit(ctx, { action: 'portal.update.create', entityType: 'PortalUpdate', entityId: u.id, after: { title: p.title, unitId, residentId, expiresAt, files: fileIds.length } })
+    const audience = normalizeAudience(fd(form, 'audience'))
+    const u = await db.portalUpdate.create({ data: { orgId: ctx.org.id, unitId, residentId, title: p.title, body: p.body, fileIds, authorId: ctx.user.id, expiresAt, audience } })
+    await audit(ctx, { action: 'portal.update.create', entityType: 'PortalUpdate', entityId: u.id, after: { title: p.title, unitId, residentId, expiresAt, audience, files: fileIds.length } })
     refresh()
     return { ok: true, message: 'portal.team.updatePublished' }
   })
@@ -210,7 +213,7 @@ export async function deleteUpdateAction(id: string): Promise<ActionResult> {
     if (u.unitId && !unit) throw new ForbiddenError('portal.manage')
     assertCan(ctx, 'portal.manage', unit ? { unitId: unit.id, locationId: unit.locationId } : undefined)
     await db.portalUpdate.delete({ where: { id: u.id } })
-    await audit(ctx, { action: 'portal.update.delete', entityType: 'PortalUpdate', entityId: u.id, before: { title: u.title, body: u.body, unitId: u.unitId, residentId: u.residentId } })
+    await audit(ctx, { action: 'portal.update.delete', entityType: 'PortalUpdate', entityId: u.id, before: { title: u.title, body: u.body, unitId: u.unitId, residentId: u.residentId, audience: u.audience } })
     refresh()
     return { ok: true, message: 'portal.team.updateDeleted' }
   })

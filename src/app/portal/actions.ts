@@ -11,7 +11,7 @@ import { auditSystem } from '@/lib/audit'
 import { createPortalSession, destroyPortalSession, getPortalSession, PortalOrgBlockedError } from '@/lib/portal/auth'
 import { findPortalInvite } from '@/lib/portal/invites'
 import { normalizeEmail } from '@/lib/portal/invite-core'
-import { residentVisible } from '@/lib/portal/policy'
+import { isSelfAccess, residentVisible } from '@/lib/portal/policy'
 import { portalEnabled } from '@/lib/portal/module'
 import { PORTAL_RESIDENT_COOKIE, safePortalNext } from '@/lib/portal/routing'
 import { pickLocale, type Locale } from '@/i18n/core'
@@ -119,7 +119,8 @@ export async function acceptPortalInviteAction(_: PortalAuthState, form: FormDat
     const jar = await cookies()
     const locale: Locale = pickLocale(String(form.get('locale') ?? '') || jar.get('careos_locale')?.value || org?.defaultLocale || 'de')
     const created = await db.portalAccount.create({
-      data: { orgId: access.orgId, email: access.inviteEmail, name, passwordHash: await hashPassword(pw), locale },
+      // Bewohnerportal: grosse Schrift von Anfang an (im Kopf jederzeit umschaltbar)
+      data: { orgId: access.orgId, email: access.inviteEmail, name, passwordHash: await hashPassword(pw), locale, textSize: isSelfAccess(access) ? 'l' : null },
     })
     accountId = created.id
   }

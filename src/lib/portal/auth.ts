@@ -6,6 +6,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { db } from '@/lib/db'
 import { env } from '@/lib/env'
 import { orgBlockReason, orgLoginBlock, requestMeta } from '@/lib/auth/session'
+import { TEXT_COOKIE, normalizeTextSize } from '@/lib/theme'
 import { PORTAL_COOKIE, PORTAL_COOKIE_PATH } from './routing'
 
 /**
@@ -26,7 +27,7 @@ export class PortalOrgBlockedError extends Error {
 
 export async function createPortalSession(accountId: string, mfaPassed: boolean) {
   // Gesperrte Organisation (Plattform-Administration): keine neuen Portal-Sitzungen
-  const acc = await db.portalAccount.findUnique({ where: { id: accountId }, select: { orgId: true } })
+  const acc = await db.portalAccount.findUnique({ where: { id: accountId }, select: { orgId: true, textSize: true } })
   const block = acc ? await orgLoginBlock(acc.orgId) : 'suspended'
   if (block) throw new PortalOrgBlockedError(block)
   const token = randomBytes(32).toString('base64url')
@@ -37,6 +38,8 @@ export async function createPortalSession(accountId: string, mfaPassed: boolean)
   })
   const jar = await cookies()
   jar.set(PORTAL_COOKIE, token, { httpOnly: true, secure: env.isProd, sameSite: 'lax', path: PORTAL_COOKIE_PATH, expires: expiresAt })
+  // Schriftgrösse des Kontos auf dieses Gerät übernehmen (Wurzel-Schriftgrösse, src/app/layout.tsx)
+  if (acc?.textSize) jar.set(TEXT_COOKIE, normalizeTextSize(acc.textSize), { sameSite: 'lax', path: '/', secure: env.isProd, maxAge: 365 * 86400 })
   await db.portalAccount.update({ where: { id: accountId }, data: { lastLoginAt: new Date() } })
   return session
 }

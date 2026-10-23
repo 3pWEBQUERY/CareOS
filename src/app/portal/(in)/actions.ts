@@ -16,7 +16,7 @@ import { getPortalCtx, portalAudit, requireGrant } from '@/lib/portal/context'
 import { portalRun } from '@/lib/portal/action'
 import { revokePortalSessions } from '@/lib/portal/auth'
 import { notifyFamilyInbox } from '@/lib/portal/notify'
-import { MESSAGE_MAX, SUBJECT_MAX, portalSettings, threadStatusAfter, visitProblem, visitTransition } from '@/lib/portal/policy'
+import { MESSAGE_MAX, SUBJECT_MAX, VISITOR_NAME_MAX, isSelfAccess, portalSettings, threadStatusAfter, visitProblem, visitTransition } from '@/lib/portal/policy'
 import { PORTAL_RESIDENT_COOKIE } from '@/lib/portal/routing'
 
 const prod = process.env.NODE_ENV === 'production'
@@ -46,7 +46,7 @@ export async function newMessageAction(form: FormData): Promise<ActionResult<{ i
       data: { orgId: p.org.id, residentId: access.residentId, accessId: access.id, subject: v.subject, status: 'open', familyReadAt: new Date(), messages: { create: { side: 'family', accountId: p.account.id, body: v.body } } },
     })
     await portalAudit(p, { action: 'portal.message.create', entityType: 'PortalThread', entityId: th.id, context: { residentId: access.residentId, length: v.body.length } })
-    await notifyFamilyInbox({ orgId: p.org.id, residentId: access.residentId, kind: 'message', itemId: th.id })
+    await notifyFamilyInbox({ orgId: p.org.id, residentId: access.residentId, kind: 'message', itemId: th.id, self: isSelfAccess(access) })
     refresh()
     return { ok: true, data: { id: th.id }, message: 'portal.messages.sent' }
   })
@@ -66,16 +66,19 @@ export async function replyMessageAction(threadId: string, form: FormData): Prom
       db.portalThread.update({ where: { id: th.id }, data: { status: threadStatusAfter('family'), lastMessageAt: now, familyReadAt: now } }),
     ])
     await portalAudit(p, { action: 'portal.message.reply', entityType: 'PortalThread', entityId: th.id, context: { residentId: access.residentId, length: body.length } })
-    await notifyFamilyInbox({ orgId: p.org.id, residentId: access.residentId, kind: 'message', itemId: th.id, assigneeId: th.assigneeId })
+    await notifyFamilyInbox({ orgId: p.org.id, residentId: access.residentId, kind: 'message', itemId: th.id, assigneeId: th.assigneeId, self: isSelfAccess(access) })
     refresh()
     return { ok: true, message: 'portal.messages.sent' }
   })
 }
 
-/** Besuch anmelden. Bestätigt wird er vom Team (Team → Angehörige). */
+/** Besuch anmelden. Bestätigt wird er vom Team (Team → Angehörige). Die Person selbst gibt an, wer kommt. */
 export async function requestVisitAction(form: FormData): Promise<ActionResult> {
   return portalRun(async () => {
     const { p, access } = await requireGrant('visits')
+    const self = isSelfAccess(access)
+    const visitorName = self ? fd(form, 'visitorName').slice(0, VISITOR_NAME_MAX) : ''
+    if (self && visitorName.length < 2) return { ok: false, error: 'residentPortal.errors.visitorName', field: 'visitorName' }
     if (!(await rateLimit('portal-visit:' + p.account.id, prod ? 20 : 500, 24 * 60 * 60_000)).ok) return { ok: false, error: 'portal.errors.rate' }
     const date = fd(form, 'date')
     const from = fd(form, 'from')
@@ -90,9 +93,9 @@ export async function requestVisitAction(form: FormData): Promise<ActionResult> 
     const problem = visitProblem({ start, end, visitors }, portalSettings(p.org.settings))
     if (problem) return { ok: false, error: 'portal.errors.' + problem, field: problem === 'visitors' ? 'visitors' : problem === 'visitEnd' || problem === 'visitLong' ? 'to' : 'date' }
     const note = fd(form, 'note').slice(0, 500) || null
-    const v = await db.visitRequest.create({ data: { orgId: p.org.id, residentId: access.residentId, accessId: access.id, start, end, visitors, note } })
-    await portalAudit(p, { action: 'portal.visit.request', entityType: 'VisitRequest', entityId: v.id, after: { start, end, visitors }, context: { residentId: access.residentId } })
-    await notifyFamilyInbox({ orgId: p.org.id, residentId: access.residentId, kind: 'visit', itemId: v.id })
+    const v = await db.visitRequest.create({ data: { orgId: p.org.id, residentId: access.residentId, accessId: access.id, start, end, visitors, note, visitorName: visitorName || null } })
+    await portalAudit(p, { action: 'portal.visit.request', entityType: 'VisitRequest', entityId: v.id, after: { start, end, visitors, ...(self ? { visitorName } : {}) }, context: { residentId: access.residentId, role: access.role } })
+    await notifyFamilyInbox({ orgId: p.org.id, residentId: access.residentId, kind: 'visit', itemId: v.id, self })
     refresh()
     return { ok: true, message: 'portal.visits.requested' }
   })
@@ -109,7 +112,7 @@ export async function cancelVisitAction(id: string): Promise<ActionResult> {
     if (!done.count) return { ok: false, error: 'portal.errors.visitState' }
     if (v.appointmentId) await db.appointment.deleteMany({ where: { id: v.appointmentId, residentId: v.residentId, kind: 'relatives' } })
     await portalAudit(p, { action: 'portal.visit.cancel', entityType: 'VisitRequest', entityId: v.id, before: { status: v.status }, after: { status: 'cancelled' }, context: { residentId: v.residentId } })
-    if (v.status === 'confirmed') await notifyFamilyInbox({ orgId: p.org.id, residentId: v.residentId, kind: 'visit', itemId: v.id, assigneeId: v.decidedById })
+    if (v.status === 'confirmed') await notifyFamilyInbox({ orgId: p.org.id, residentId: v.residentId, kind: 'visit', itemId: v.id, assigneeId: v.decidedById, self: isSelfAccess(access) })
     refresh()
     return { ok: true, message: 'portal.visits.cancelled' }
   })
@@ -124,13 +127,29 @@ export async function updateProfileAction(form: FormData): Promise<ActionResult>
     const phone = fd(form, 'phone').slice(0, 40) || null
     const loc = fd(form, 'locale')
     const locale = (LOCALES as readonly string[]).includes(loc) ? (loc as (typeof LOCALES)[number]) : p.account.locale
-    await db.portalAccount.update({ where: { id: p.account.id }, data: { name, phone, locale } })
+    // Schriftgrösse gehört zum Konto (gilt auf jedem Gerät nach der Anmeldung), Farbschema bleibt pro Gerät
+    const textSize = normalizeTextSize(fd(form, 'text'))
+    await db.portalAccount.update({ where: { id: p.account.id }, data: { name, phone, locale, textSize } })
     const theme = normalizeTheme(fd(form, 'theme'))
     ;(await cookies()).set(THEME_COOKIE, theme, { sameSite: 'lax', path: '/', secure: prod, maxAge: 365 * 86400 })
-    ;(await cookies()).set(TEXT_COOKIE, normalizeTextSize(fd(form, 'text')), { sameSite: 'lax', path: '/', secure: prod, maxAge: 365 * 86400 })
-    await portalAudit(p, { action: 'portal.account.update', entityType: 'PortalAccount', entityId: p.account.id, before: { name: p.account.name, phone: p.account.phone, locale: p.account.locale }, after: { name, phone, locale } })
+    ;(await cookies()).set(TEXT_COOKIE, textSize, { sameSite: 'lax', path: '/', secure: prod, maxAge: 365 * 86400 })
+    await portalAudit(p, { action: 'portal.account.update', entityType: 'PortalAccount', entityId: p.account.id, before: { name: p.account.name, phone: p.account.phone, locale: p.account.locale, textSize: p.account.textSize }, after: { name, phone, locale, textSize } })
     refresh()
     return { ok: true, message: 'common.saved' }
+  })
+}
+
+/** Schriftgrösse direkt umschalten (Bewohnerportal, Kopfzeile). Gespeichert am Konto und auf dem Gerät. */
+export async function setTextSizeAction(size: string): Promise<ActionResult> {
+  return portalRun(async () => {
+    const p = await getPortalCtx()
+    const textSize = normalizeTextSize(size)
+    if (textSize !== p.account.textSize) {
+      await db.portalAccount.update({ where: { id: p.account.id }, data: { textSize } })
+      await portalAudit(p, { action: 'portal.account.update', entityType: 'PortalAccount', entityId: p.account.id, before: { textSize: p.account.textSize }, after: { textSize } })
+    }
+    ;(await cookies()).set(TEXT_COOKIE, textSize, { sameSite: 'lax', path: '/', secure: prod, maxAge: 365 * 86400 })
+    refresh()
   })
 }
 

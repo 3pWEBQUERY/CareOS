@@ -270,6 +270,8 @@ model Unit {
   name       String
   shortName  String?
   kind       String   @default("ward")
+  /// Telefon des Bereichs (Stationszimmer); im Bewohnerportal unter «Hilfe und Kontakt», sonst Telefon des Standorts
+  phone      String?
   createdAt  DateTime @default(now())
 
   org        Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -2050,6 +2052,8 @@ model PortalAccount {
   lockedAt     DateTime?
   lockedById   String?
   lastLoginAt  DateTime?
+  /// Schriftgrösse des Kontos (m | l | xl, src/lib/theme.ts); wird bei der Anmeldung auf das Gerät übernommen
+  textSize     String?
   createdAt    DateTime  @default(now())
 
   org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -2085,7 +2089,7 @@ model PortalAccess {
   /// gesetzt, sobald die Einladung angenommen ist
   accountId       String?
   contactId       String?
-  /// relative | legal_rep | self (Bewohnerportal, vorbereitet)
+  /// relative | legal_rep | self (Bewohnerportal: die Person selbst, ohne Kontakt)
   role            String    @default("relative")
   /// Freigaben: appointments | updates | messages | visits | files (nie klinische Daten)
   grants          String[]  @default([])
@@ -2171,6 +2175,8 @@ model PortalUpdate {
   title       String
   body        String
   fileIds     String[]  @default([])
+  /// Für wen: family (Angehörige) | residents (Bewohnende selbst) | all
+  audience    String    @default("family")
   authorId    String
   publishedAt DateTime  @default(now())
   expiresAt   DateTime?
@@ -2190,6 +2196,8 @@ model VisitRequest {
   start         DateTime
   end           DateTime
   visitors      Int       @default(1)
+  /// Name der Besuchenden, wenn die Person selbst einen Besuch anmeldet (Bewohnerportal)
+  visitorName   String?
   note          String?
   /// requested | confirmed | declined | cancelled
   status        String    @default("requested")

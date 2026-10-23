@@ -8,7 +8,8 @@ import { fmtShortDate, PortalHead, portalPage } from '../ui'
 import { MfaSection, PasswordForm, ProfileForm, SignOutOthers } from './AccountForms'
 
 export async function generateMetadata() {
-  return { title: (await getPortalCtx()).t('portal.account.title') }
+  const p = await getPortalCtx()
+  return { title: p.t(p.self ? 'residentPortal.nav.account' : 'portal.account.title') }
 }
 
 export default async function PortalAccount() {
@@ -24,12 +25,12 @@ export default async function PortalAccount() {
   const effective = new Map(p.accesses.map((a) => [a.id, a.grants]))
   return (
     <>
-      <PortalHead title={t('portal.account.title')} sub={account.email} />
+      <PortalHead title={t(p.self ? 'residentPortal.nav.account' : 'portal.account.title')} sub={account.email} />
 
       <section className="card" aria-labelledby="pa-profile">
         <div className="card-head"><h2 id="pa-profile">{t('portal.account.profile')}</h2></div>
         <div className="card-body">
-          <ProfileForm name={account.name} phone={account.phone ?? ''} locale={account.locale} theme={normalizeTheme(jar.get(THEME_COOKIE)?.value)} text={normalizeTextSize(jar.get(TEXT_COOKIE)?.value)} />
+          <ProfileForm name={account.name} phone={account.phone ?? ''} locale={account.locale} theme={normalizeTheme(jar.get(THEME_COOKIE)?.value)} text={normalizeTextSize(account.textSize ?? jar.get(TEXT_COOKIE)?.value)} />
         </div>
       </section>
 

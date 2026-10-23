@@ -5,6 +5,7 @@ import { getCtx } from '@/lib/context'
 import { audit } from '@/lib/audit'
 import { fmtRel } from '@/lib/time'
 import { portalEnabled } from '@/lib/portal/module'
+import { isSelfAccess } from '@/lib/portal/policy'
 import { ModuleOff } from '../../Head'
 import { assignees, staffName, threadInScope } from '../../lib'
 import { AssignForm, ThreadReply, ThreadStatus, ToChart } from '../../ItemActions'
@@ -42,6 +43,7 @@ export default async function FamilyThread({ params }: { params: Promise<{ id: s
           <p className="sub">
             <Link href={`/residents/${r.id}/contacts`}>{context}</Link> · {t('portal.team.from', { name: who })}
             {th.access?.role === 'legal_rep' && <> · {t('portal.roles.legal_rep')}</>}
+            {isSelfAccess(th.access) && <> · {t('residentPortal.team.self')}</>}
           </p>
         </div>
         <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
@@ -60,7 +62,7 @@ export default async function FamilyThread({ params }: { params: Promise<{ id: s
                     <time dateTime={m.createdAt.toISOString()}>{rel(m.createdAt)}</time>
                     {m.side === 'family' && (m.observationId
                       ? <span className="tag ok">✓ {t('portal.team.inChartTag')}</span>
-                      : canChart && <ToChart threadId={th.id} messageId={m.id} text={m.body} context={context} />)}
+                      : canChart && <ToChart threadId={th.id} messageId={m.id} text={m.body} context={context} category={isSelfAccess(th.access) ? t('residentPortal.team.toChartCat') : undefined} />)}
                   </div>
                   <p>{m.body}</p>
                 </li>

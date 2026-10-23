@@ -18,13 +18,13 @@ export default async function PortalMessages({ searchParams }: { searchParams: P
   const open = (await searchParams).new === '1' || threads.length === 0
   return (
     <>
-      <PortalHead label={`${current.resident.firstName} ${current.resident.lastName}`} title={t('portal.messages.title')} sub={t('portal.messages.sub')}>
+      <PortalHead label={p.self ? undefined : `${current.resident.firstName} ${current.resident.lastName}`} title={t('portal.messages.title')} sub={t(p.self ? 'residentPortal.messages.sub' : 'portal.messages.sub')}>
         {!open && <Link className="btn primary" href="/portal/messages?new=1">{t('portal.messages.new')}</Link>}
       </PortalHead>
       {open && (
         <section className="card" aria-labelledby="pm-new">
           <div className="card-head"><h2 id="pm-new">{t('portal.messages.new')}</h2></div>
-          <div className="card-body"><NewMessage cancelHref={threads.length ? '/portal/messages' : null} /></div>
+          <div className="card-body"><NewMessage cancelHref={threads.length ? '/portal/messages' : null} self={p.self} /></div>
         </section>
       )}
       {threads.length ? (
