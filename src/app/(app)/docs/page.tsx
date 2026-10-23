@@ -9,6 +9,7 @@ import { AssistantAi, NewDocButton } from './DocsClient'
 import { inAudience, roleOptions } from '@/lib/audience'
 import { myRoleKeys } from '@/app/(app)/team/lib'
 import { TextField } from '@/components/ui/fields'
+import { reviewOverdue } from '@/lib/docs-review'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -30,7 +31,7 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
 
   const docs = await db.document.findMany({
     where: { orgId: ctx.org.id, status: manage ? undefined : 'approved' },
-    include: { versions: { select: { id: true, version: true, body: true, approvedAt: true, submittedAt: true, critical: true, createdAt: true, changeNote: true } } },
+    include: { versions: { select: { id: true, version: true, body: true, approvedAt: true, submittedAt: true, critical: true, createdAt: true, changeNote: true, reviewerId: true, reviewDueAt: true } } },
     orderBy: { title: 'asc' },
   })
   const [acks, myKeys, roles] = await Promise.all([
@@ -39,7 +40,7 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
     manage ? roleOptions(ctx.org.id) : Promise.resolve([]),
   ])
   const acked = new Set(acks.map((a) => a.subjectId + ':' + a.version))
-  const owners = await userNames(ctx.org.id, docs.map((d) => d.ownerId))
+  const owners = await userNames(ctx.org.id, docs.flatMap((d) => [d.ownerId, ...d.versions.map((v) => v.reviewerId)]))
   const terms = queryTerms(q)
 
   const rows = docs.map((d) => {
@@ -178,6 +179,12 @@ export default async function DocsPage({ searchParams }: { searchParams: Promise
                       <td>
                         <span className={'tag ' + ({ approved: 'ok', review: 'violet', draft: '', archived: 'outline' }[d.status])}>{t('docs.status.' + d.status)}</span>
                         {pending && manage && d.status === 'approved' && <div className="small muted nowrap">{t('docs.pendingVersion', { v: pending.version, state: t('docs.vstate.' + versionState(pending)) })}</div>}
+                        {pending?.submittedAt && manage && (
+                          <div className={'small nowrap ' + (reviewOverdue(pending, now) ? 'crit-text' : 'muted')}>
+                            {t('docs.review.assigned', { who: pending.reviewerId ? owners.get(pending.reviewerId) ?? '–' : t('docs.review.anyApprover') })}
+                            {pending.reviewDueAt && <> · {t(reviewOverdue(pending, now) ? 'docs.review.overdue' : 'docs.review.dueOn', { date: fmtDate(pending.reviewDueAt, locale) })}</>}
+                          </div>
+                        )}
                       </td>
                       <td className="nowrap" data-label={t('docs.col.validUntil')}>
                         {d.validUntil ? (

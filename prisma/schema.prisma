@@ -489,6 +489,20 @@ model ApiToken {
   @@index([createdById])
 }
 
+/// Kalender-Abo (PRD §19): geheime Adresse /api/ical/<token> mit den eigenen Diensten. Gespeichert nur als SHA-256-Hash;
+/// höchstens ein aktives Token je Person (neu erzeugen widerruft das bisherige).
+model CalendarToken {
+  id         String    @id @default(cuid())
+  orgId      String
+  userId     String
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  @@index([userId])
+}
+
 // ───────────────────────── Workforce ─────────────────────────
 
 model ShiftType {
@@ -777,6 +791,14 @@ model ResidentFile {
   portalShared     Boolean   @default(false)
   portalSharedAt   DateTime?
   portalSharedById String?
+  /// Externer Bericht (PRD §41): Austrittsbericht oder Bericht einer Klinik, eingegangen über eine Schnittstelle.
+  external   Boolean    @default(false)
+  /// Eingang: fhir (POST /api/fhir/DocumentReference); null = in der App hochgeladen
+  receivedVia String?
+  /// Art des externen Berichts: discharge | clinic
+  reportKind String?
+  /// Datum des Berichts laut Absender (DocumentReference.date)
+  reportDate DateTime?
   resident   Resident   @relation(fields: [residentId], references: [id], onDelete: Cascade)
   file       FileObject @relation(fields: [fileId], references: [id], onDelete: Cascade)
 }
@@ -1417,6 +1439,11 @@ model DocumentVersion {
   approvedAt   DateTime?
   /// Zur Freigabe eingereicht (Docs). Ohne approvedAt und ohne submittedAt = Entwurf.
   submittedAt  DateTime?
+  /// Assign (PRD §49): gewählte Person für die Freigabe (docs.approve). null = alle mit docs.approve.
+  reviewerId   String?
+  /// Frist der Freigabe; danach eskaliert der Job «escalations» einmal (reviewEscalatedAt).
+  reviewDueAt  DateTime?
+  reviewEscalatedAt DateTime?
   createdAt    DateTime  @default(now())
   document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
@@ -1757,6 +1784,8 @@ model VisitQuestion {
   createdAt   DateTime            @default(now())
   closedById  String?
   closedAt    DateTime?
+  /// Escalate (PRD §49): offen über die Frist (Organization.settings.escalation.visitQuestionHours) – einmal gemeldet.
+  escalatedAt DateTime?
 
   resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
   visit    Visit?   @relation(fields: [visitId], references: [id], onDelete: SetNull)

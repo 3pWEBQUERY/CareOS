@@ -14,7 +14,9 @@ import { notifyT } from '@/lib/notify-t'
 import { aiDraft, AiUnavailable } from '@/lib/ai'
 import { aiConfigured } from '@/lib/env'
 import { ackAudience, DOC_CATEGORIES, loadDoc, queryTerms, scoreDoc } from '@/lib/docs'
-import { parseDateKey } from '@/lib/time'
+import { fmtDate, parseDateKey } from '@/lib/time'
+import { usersWithPermission } from '@/lib/notify'
+import { defaultReviewDue, parseReviewDue } from '@/lib/docs-review'
 import { ackSettings } from '@/lib/acks'
 import { parseAudience } from '@/lib/audience'
 
@@ -151,16 +153,29 @@ async function versionFor(versionId: string) {
   return { ctx, v }
 }
 
-export async function submitVersion(versionId: string) {
+/**
+ * Zur Freigabe einreichen. Assign (PRD §49): optional eine Person mit docs.approve wählen – nur sie wird benachrichtigt,
+ * sonst alle mit docs.approve. Die Frist eskaliert im Job «escalations» (src/lib/docs-review-server.ts).
+ */
+export async function submitVersion(versionId: string, form?: FormData) {
   return run(async () => {
     const { ctx, v } = await versionFor(versionId)
     assertCan(ctx, 'docs.manage')
     if (!v || v.approvedAt) return { ok: false, error: 'common.notFound' }
-    await db.documentVersion.update({ where: { id: v.id }, data: { submittedAt: new Date() } })
+    const now = new Date()
+    const approvers = (await usersWithPermission(ctx.org.id, 'docs.approve')).filter((id) => id !== ctx.user.id)
+    const reviewerId = form ? fd(form, 'reviewerId') || null : null
+    if (reviewerId && !approvers.includes(reviewerId)) return { ok: false, error: 'docs.errors.reviewer', field: 'reviewerId' }
+    const reviewDueAt = form ? parseReviewDue(fd(form, 'dueDate'), now) : parseReviewDue(defaultReviewDue(now), now)
+    if (!reviewDueAt) return { ok: false, error: 'docs.errors.reviewDue', field: 'dueDate' }
+    await db.documentVersion.update({ where: { id: v.id }, data: { submittedAt: now, reviewerId, reviewDueAt, reviewEscalatedAt: null } })
     if (!v.document.currentVersion) await db.document.update({ where: { id: v.documentId }, data: { status: 'review' } })
-    await audit(ctx, { action: 'document.version.submit', entityType: 'DocumentVersion', entityId: v.id, after: { version: v.version } })
-    const approvers = (await db.roleAssignment.findMany({ where: { role: { orgId: ctx.org.id, permissions: { has: 'docs.approve' } }, user: { active: true } }, select: { userId: true } })).map((r) => r.userId).filter((id) => id !== ctx.user.id)
-    await notifyT({ orgId: ctx.org.id, userIds: approvers, priority: 'action', kind: 'document.review', titleKey: 'docs.notify.reviewTitle', vars: { title: v.document.title, version: v.version }, href: `/docs/${v.documentId}`, groupKey: `doc-review:${v.id}` })
+    await audit(ctx, { action: 'document.version.submit', entityType: 'DocumentVersion', entityId: v.id, after: { version: v.version, reviewerId, reviewDueAt } })
+    await notifyT({
+      orgId: ctx.org.id, userIds: reviewerId ? [reviewerId] : approvers, priority: 'action', kind: 'document.review',
+      titleKey: 'docs.notify.reviewTitle', bodyKey: 'docs.notify.reviewDue', vars: { title: v.document.title, version: v.version, date: fmtDate(reviewDueAt, ctx.locale) },
+      href: `/docs/${v.documentId}`, groupKey: `doc-review:${v.id}`,
+    })
     refresh()
   })
 }
@@ -170,7 +185,7 @@ export async function returnToDraft(versionId: string) {
     const { ctx, v } = await versionFor(versionId)
     assertCan(ctx, 'docs.approve')
     if (!v || v.approvedAt) return { ok: false, error: 'common.notFound' }
-    await db.documentVersion.update({ where: { id: v.id }, data: { submittedAt: null } })
+    await db.documentVersion.update({ where: { id: v.id }, data: { submittedAt: null, reviewerId: null, reviewDueAt: null, reviewEscalatedAt: null } })
     if (!v.document.currentVersion) await db.document.update({ where: { id: v.documentId }, data: { status: 'draft' } })
     await audit(ctx, { action: 'document.version.return', entityType: 'DocumentVersion', entityId: v.id, after: { version: v.version } })
     refresh()

@@ -140,6 +140,18 @@ export const API_OPERATIONS: ApiOperation[] = [
     response: { status: 201, description: 'AllergyIntolerance; bereits erfasst → 200', schema: fhirResource('AllergyIntolerance') },
   },
   { path: '/api/fhir/AllergyIntolerance', method: 'get', tag: 'FHIR', summary: 'Allergien suchen', scope: 'fhir:read', fhir: true, params: [patient, count], response: { status: 200, description: 'Bundle', schema: fhirBundle } },
+  {
+    path: '/api/fhir/DocumentReference', method: 'post', tag: 'FHIR', summary: 'Externen Bericht übernehmen (Austritts- oder Klinikbericht, PDF/Bild base64)', scope: 'documents:write', fhir: true,
+    body: fhirResource('DocumentReference'),
+    bodyExample: {
+      resourceType: 'DocumentReference', status: 'current', subject: { reference: 'Patient/cmv…' }, date: '2026-10-22T14:30:00+02:00',
+      type: { coding: [{ system: 'http://loinc.org', code: '18842-5', display: 'Discharge summary' }] },
+      content: [{ attachment: { contentType: 'application/pdf', title: 'Austrittsbericht Kantonsspital', data: 'JVBERi0xLjcK…' } }],
+    },
+    response: { status: 201, description: 'DocumentReference; Header Location', schema: fhirResource('DocumentReference') },
+  },
+  { path: '/api/fhir/DocumentReference', method: 'get', tag: 'FHIR', summary: 'Dateien und externe Berichte suchen', scope: 'fhir:read', fhir: true, params: [patient, count], response: { status: 200, description: 'Bundle', schema: fhirBundle } },
+  { path: '/api/fhir/DocumentReference/{id}', method: 'get', tag: 'FHIR', summary: 'DocumentReference lesen', scope: 'fhir:read', fhir: true, params: [id], response: { status: 200, description: 'DocumentReference (Metadaten, ohne Inhalt)', schema: fhirResource('DocumentReference') } },
 ]
 
 const SCHEMAS: Record<string, Json> = {

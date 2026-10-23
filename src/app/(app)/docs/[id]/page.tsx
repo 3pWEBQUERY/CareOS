@@ -8,8 +8,11 @@ import { fileUrl } from '@/lib/files'
 import { ackAudience, CATEGORY_TONE, lineDiff, loadDoc, nextVersion, userNames, validity, versionState } from '@/lib/docs'
 import { dateKey, fmtDate, hm } from '@/lib/time'
 import { IconFile } from '@/components/icons'
-import { acknowledgeDocument, approveVersion, archiveDocument, deleteDraft, remindAck, returnToDraft, submitVersion } from '../actions'
-import { ActBtn, MetaButton, PrintButton, VersionButton } from '../DocsClient'
+import { acknowledgeDocument, approveVersion, archiveDocument, deleteDraft, remindAck, returnToDraft } from '../actions'
+import { ActBtn, MetaButton, PrintButton, SubmitButton, VersionButton } from '../DocsClient'
+import { usersWithPermission } from '@/lib/notify'
+import { defaultReviewDue, REVIEW_DAYS_MAX, reviewOverdue } from '@/lib/docs-review'
+import { addDays } from '@/lib/time'
 import { inAudience, roleOptions } from '@/lib/audience'
 import { myRoleKeys } from '@/app/(app)/team/lib'
 
@@ -44,7 +47,7 @@ export default async function DocPage({ params, searchParams }: { params: Promis
 
   const files = await db.fileObject.findMany({ where: { orgId: ctx.org.id, id: { in: versions.map((v) => v.fileId).filter((x): x is string => !!x) } }, select: { id: true, filename: true, size: true } })
   const fileById = new Map(files.map((f) => [f.id, f]))
-  const names = await userNames(ctx.org.id, [doc.ownerId, ...versions.flatMap((v) => [v.authorId, v.approvedById])])
+  const names = await userNames(ctx.org.id, [doc.ownerId, ...versions.flatMap((v) => [v.authorId, v.approvedById, v.reviewerId])])
   const now = new Date()
   const valid = validity(doc.validUntil, now)
 
@@ -73,6 +76,9 @@ export default async function DocPage({ params, searchParams }: { params: Promis
     }
   }
 
+  // Assign (PRD §49): Auswahl für die Freigabe – Personen mit docs.approve ausser der einreichenden
+  const reviewerIds = pending && !pending.submittedAt ? (await usersWithPermission(ctx.org.id, 'docs.approve')).filter((u) => u !== ctx.user.id) : []
+  const reviewers = reviewerIds.length ? (await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: reviewerIds } }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: 'asc' } })).map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName}` })) : []
   const allUsers = manage ? await db.user.findMany({ where: { orgId: ctx.org.id, active: true }, select: { id: true, firstName: true, lastName: true }, orderBy: { lastName: 'asc' } }) : []
   const vstate = (v: (typeof versions)[number]) => versionState(v)
   const vHref = (v: string, diff = false) => `/docs/${doc.id}?v=${encodeURIComponent(v)}${diff ? '&diff=1' : ''}`
@@ -122,6 +128,12 @@ export default async function DocPage({ params, searchParams }: { params: Promis
                   {pending.changeNote ? ' · ' + pending.changeNote : ''}
                   {pending.critical ? ' · ' + t('docs.criticalChange') : ''}
                 </span>
+                {pending.submittedAt && (
+                  <span className={'small ' + (reviewOverdue(pending, now) ? 'crit-text' : 'fg2')} style={{ display: 'block' }}>
+                    {t('docs.review.assigned', { who: pending.reviewerId ? names.get(pending.reviewerId) ?? '–' : t('docs.review.anyApprover') })}
+                    {pending.reviewDueAt && ' · ' + t(reviewOverdue(pending, now) ? 'docs.review.overdue' : 'docs.review.dueOn', { date: fmtDate(pending.reviewDueAt, locale) })}
+                  </span>
+                )}
               </div>
               <div className="row">
                 {shown.id !== pending.id && <Link className="btn sm" href={vHref(pending.version)}>{t('docs.view')}</Link>}
@@ -129,7 +141,7 @@ export default async function DocPage({ params, searchParams }: { params: Promis
                   <>
                     <VersionButton className="btn sm" label={t('common.edit')} documentId={doc.id} draft={{ id: pending.id, version: pending.version, body: pending.body, changeNote: pending.changeNote, critical: pending.critical, fileName: pending.fileId ? fileById.get(pending.fileId)?.filename ?? 'file' : null }} />
                     {doc.currentVersion && <ActBtn className="btn sm ghost" label={t('docs.discard')} confirm={t('docs.discardConfirm')} context={<span><strong>{doc.title}</strong> · v{pending.version}</span>} danger success="docs.discarded" action={deleteDraft.bind(null, pending.id)} />}
-                    <ActBtn className="btn sm primary" label={t('docs.submit')} success="docs.submitted" action={submitVersion.bind(null, pending.id)} />
+                    <SubmitButton versionId={pending.id} reviewers={reviewers} due={defaultReviewDue(now)} min={dateKey(now)} max={dateKey(addDays(now, REVIEW_DAYS_MAX))} />
                   </>
                 )}
                 {pending.submittedAt && approve && (

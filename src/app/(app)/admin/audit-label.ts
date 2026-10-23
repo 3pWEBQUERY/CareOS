@@ -26,6 +26,7 @@ export const LABELLED_ACTIONS = [
   'emergency.start', 'emergency.end', 'emergency.expired', 'emergency.view',
   'platform.operator_assigned', 'platform.org.create', 'platform.org.approve', 'platform.org.suspend', 'platform.org.unsuspend', 'platform.org.modules',
   'task.expire', 'absence.request', 'absence.sick', 'absence.approved', 'absence.rejected', 'absence.withdraw',
+  'api.fhir.document.create', 'document.review.escalate', 'visit.question.escalate', 'profile.calendar.create', 'profile.calendar.revoke', 'schedule.payroll.export',
 ] as const
 
 const SET = new Set<string>(LABELLED_ACTIONS)

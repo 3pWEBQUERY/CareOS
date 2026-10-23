@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     publisher: 'CareOS',
     kind: 'instance',
     software: { name: 'CareOS', version: '1.0' },
-    implementation: { description: 'CareOS FHIR R4 (lesend; Observation Vitalparameter auch schreibend)', url: fhirBase(req) },
+    implementation: { description: 'CareOS FHIR R4 (lesend; Observation, AllergyIntolerance und DocumentReference auch schreibend)', url: fhirBase(req) },
     fhirVersion: '4.0.1',
     format: ['application/fhir+json'],
     rest: [
@@ -38,6 +38,10 @@ export async function GET(req: Request) {
           {
             type: 'AllergyIntolerance', interaction: [{ code: 'search-type' }, { code: 'create', documentation: 'Scope observations:write. Aktive Allergie (code.text); ergänzt die Allergien der Person, bereits erfasste Einträge → 200.' }],
             searchParam: [search('patient', 'reference'), search('_count', 'number')],
+          },
+          {
+            type: 'DocumentReference', interaction: [{ code: 'read' }, { code: 'search-type' }, { code: 'create', documentation: 'Scope documents:write. Externer Bericht (LOINC 18842-5/34105-7/11490-0 Austrittsbericht, sonst Klinikbericht) als PDF, JPEG, PNG, WebP oder HEIC base64 in content[0].attachment.data, max. 12 MB.' }],
+            searchParam: [search('patient', 'reference'), search('subject', 'reference'), search('_count', 'number')],
           },
         ],
       },

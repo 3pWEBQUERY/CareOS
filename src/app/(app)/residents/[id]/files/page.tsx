@@ -54,12 +54,21 @@ export default async function FilesPage({ params, searchParams }: { params: Prom
             <tbody>
               {shown.map((f) => (
                 <tr key={f.id}>
-                  <th><a href={fileUrl(f.fileId)} target="_blank" rel="noopener">{f.title}</a></th>
+                  <th>
+                    <a href={fileUrl(f.fileId)} target="_blank" rel="noopener">{f.title}</a>
+                    {/* Externer Bericht (PRD §41): Austritts- bzw. Klinikbericht über FHIR DocumentReference */}
+                    {f.external && (
+                      <div className="small fg2" style={{ fontWeight: 400 }}>
+                        <span className="tag violet">{t('residents.files.external')}</span>{' '}
+                        {[f.reportKind ? t('residents.files.reportKind.' + f.reportKind) : null, f.reportDate ? t('residents.files.reportDate', { date: fmtDate(f.reportDate, locale) }) : null].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
+                  </th>
                   <td><span className="tag">{catLabel(f.category)}</span></td>
                   <td className="small"><a href={fileUrl(f.fileId, true)} className="fg2">{f.file.filename}</a></td>
                   <td className="num right small">{size(f.file.size)}</td>
                   <td className="num small nowrap">{fmtDate(f.createdAt, locale)}</td>
-                  <td className="small muted">{names.get(f.file.uploadedById)?.short ?? '–'}</td>
+                  <td className="small muted">{f.receivedVia ? t('residents.files.viaInterface') : names.get(f.file.uploadedById)?.short ?? '–'}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { fmtDate, hm } from '@/lib/time'
-import { ESCALATION_LIMITS, escalationPolicy } from '@/lib/escalation-policy'
+import { ESCALATION_LIMITS, VISIT_QUESTION_HOURS, escalationPolicy } from '@/lib/escalation-policy'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { saveEscalationAction } from './escalation-actions'
 import { Checkbox, NumberField, Switch } from '@/components/ui/fields'
@@ -67,6 +67,16 @@ export async function Escalations() {
           {minutes('unackedImportantHandoverMinutes', t('admin.escalation.handoverMinutes'))}
         </div>
       </section>
+
+      {ctx.hasModule('visit') && (
+        <section className="card" aria-labelledby="esc-visit">
+          <div className="card-head"><h2 id="esc-visit">{t('admin.escalation.visit')}</h2></div>
+          <div className="card-body form-grid">
+            <NumberField label={t('admin.escalation.visitHours')} name="visitQuestionHours" min={VISIT_QUESTION_HOURS.min} max={VISIT_QUESTION_HOURS.max} step={1} defaultValue={p.visitQuestionHours} required unit={t('admin.escalation.hours')}
+              hint={t('admin.escalation.visitHint', { min: VISIT_QUESTION_HOURS.min, max: VISIT_QUESTION_HOURS.max })} wrapStyle={{ maxWidth: 260 }} />
+          </div>
+        </section>
+      )}
 
       <div className="grid-2">
         <section className="card" aria-labelledby="esc-vitals">

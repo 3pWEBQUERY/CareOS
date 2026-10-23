@@ -12,6 +12,7 @@ import { Empty } from '@/components/ui/Empty'
 import { MfaSetupBanner } from './MfaSetupBanner'
 import { PushSection } from './PushSection'
 import { NotificationSection } from './NotificationSection'
+import { CalendarSection } from './CalendarSection'
 import { InstallApp } from '@/components/shell/InstallApp'
 import { LocaleChooser, MfaPanel, PasskeyRegister, PasskeyRename, TextSizeChooser, ThemeChooser } from './ProfileClient'
 import { changePasswordAction, deletePasskeyAction, revokeOtherSessionsAction, revokeSessionAction, updateContactAction } from './actions'
@@ -120,6 +121,7 @@ export default async function ProfilePage() {
           <InstallApp />
           <PushSection />
           <NotificationSection />
+          <CalendarSection />
 
           <h2 className="sec">{t('profile.security')}</h2>
           <div className="grid-2">

@@ -83,7 +83,7 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
     <>
       <RosterBoard {...props} />
       <div className="grid-2 no-print">
-        <RulesCard ctx={ctx} rules={data.problem.rules} />
+        <RulesCard ctx={ctx} rules={data.problem.rules} exportHref={`/schedule/export?unitId=${encodeURIComponent(unit.id)}&m=${month}`} />
         <section className="card" aria-labelledby="rst-cov">
           <div className="card-head"><h2 id="rst-cov">{t('schedule.coverage.targets')}</h2></div>
           <div className="card-body stack-sm">
@@ -97,12 +97,12 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
   )
 }
 
-function RulesCard({ ctx, rules }: { ctx: Ctx; rules: RRules }) {
+function RulesCard({ ctx, rules, exportHref }: { ctx: Ctx; rules: RRules; exportHref: string }) {
   const { t } = ctx
   const unit: Partial<Record<keyof RRules, string>> = { weeklyHours: 'h', minRestHours: 'h', maxWeeklyHours: 'h' }
   return (
     <section className="card" aria-labelledby="rst-rules">
-      <div className="card-head"><h2 id="rst-rules">{t('roster.rules.title')}</h2></div>
+      <div className="card-head"><h2 id="rst-rules">{t('roster.rules.title')}</h2><a className="linkbtn small" href={exportHref} download>{t('roster.payroll.link')}</a></div>
       <div className="card-body">
         <ActionForm action={saveRosterRulesAction} success="roster.rules.saved" reset={false}>
           <div className="form-grid">
