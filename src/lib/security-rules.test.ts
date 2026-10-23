@@ -81,3 +81,18 @@ test('Schwellen aus den Einstellungen mit Mindestwerten', () => {
   assert.equal(escalates('critical', 'warning'), false)
   assert.equal(escalates('warning', 'warning'), false)
 })
+
+test('Muster: Fehlanmeldungen im Angehörigenportal (eigene Konten, keine Person der Organisation)', () => {
+  const rows = [
+    ...Array.from({ length: 5 }, (_, i) => row({ action: 'portal.login_failed', at: at(i), entityType: 'PortalAccount', entityId: 'pa1', ip: '203.0.113.9' })),
+    ...Array.from({ length: 5 }, (_, i) => row({ action: 'portal.mfa_failed', at: at(i), entityType: 'PortalAccount', entityId: 'pa2' })),
+  ]
+  const out = evaluateRules(rows, opts)
+  const login = out.find((a) => a.subject === 'portal:pa1')!
+  assert.equal(login.rule, 'login_failures')
+  assert.equal(login.severity, 'warning')
+  assert.equal(login.userId, null)
+  const mfa = out.find((a) => a.subject === 'portal:pa2')!
+  assert.equal(mfa.rule, 'mfa_failures')
+  assert.equal(mfa.userId, null)
+})

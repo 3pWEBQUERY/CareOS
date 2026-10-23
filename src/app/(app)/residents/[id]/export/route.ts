@@ -3,6 +3,25 @@ import { db } from '@/lib/db'
 import { getCtx, residentInScope } from '@/lib/context'
 import { audit } from '@/lib/audit'
 
+/** Portal-Daten einer Person für die Datenauskunft – nur ausdrücklich gewählte Felder (keine Hashes, Tokens, MFA-Geheimnisse). */
+async function portalExport(orgId: string, residentId: string) {
+  const [accesses, threads, visitRequests, updates] = await Promise.all([
+    db.portalAccess.findMany({
+      where: { orgId, residentId },
+      select: {
+        id: true, role: true, grants: true, inviteEmail: true, inviteName: true, invitedById: true, createdAt: true, acceptedAt: true, inviteExpiresAt: true,
+        consentBy: true, consentName: true, consentAt: true, consentScope: true, consentNote: true, consentById: true, revokedAt: true, revokedById: true, revokeReason: true, contactId: true,
+        account: { select: { id: true, name: true, email: true, phone: true, locale: true, mfaEnabled: true, lockedAt: true, lastLoginAt: true, createdAt: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    }),
+    db.portalThread.findMany({ where: { orgId, residentId }, select: { id: true, subject: true, status: true, assigneeId: true, createdAt: true, lastMessageAt: true, accessId: true, messages: { select: { id: true, side: true, accountId: true, userId: true, body: true, observationId: true, createdAt: true }, orderBy: { createdAt: 'asc' } } }, orderBy: { createdAt: 'asc' } }),
+    db.visitRequest.findMany({ where: { orgId, residentId }, select: { id: true, accessId: true, start: true, end: true, visitors: true, note: true, status: true, reply: true, decidedById: true, decidedAt: true, appointmentId: true, assigneeId: true, createdAt: true }, orderBy: { start: 'asc' } }),
+    db.portalUpdate.findMany({ where: { orgId, residentId }, select: { id: true, title: true, body: true, fileIds: true, authorId: true, publishedAt: true, expiresAt: true }, orderBy: { publishedAt: 'asc' } }),
+  ])
+  return { accesses, threads, visitRequests, updates }
+}
+
 /**
  * Datenauskunft pro Person (DSG Art. 25, DSGVO Art. 15): alle gespeicherten Daten einer Person als JSON.
  * Berechtigung: resident.edit im Bereich der Person oder admin.org. Jeder Export wird protokolliert.
@@ -14,7 +33,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!r) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   if (!ctx.can('resident.edit', { unitId: r.unitId, locationId: r.unit.locationId }) && !ctx.can('admin.org')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
 
-  const [resident, incidents, tasks, handoverEntries] = await Promise.all([
+  const [resident, incidents, tasks, handoverEntries, portal] = await Promise.all([
     db.resident.findUniqueOrThrow({
       where: { id: r.id },
       include: {
@@ -40,6 +59,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     db.incident.findMany({ where: { orgId: ctx.org.id, residentId: r.id }, include: { type: { select: { key: true, name: true } }, actions: true }, orderBy: { occurredAt: 'asc' } }),
     db.task.findMany({ where: { orgId: ctx.org.id, residentId: r.id }, orderBy: { dueAt: 'asc' } }),
     db.handoverEntry.findMany({ where: { residentId: r.id }, include: { handover: { select: { shiftCode: true, date: true } } } }),
+    portalExport(ctx.org.id, r.id),
   ])
 
   // Wundfotos und Foto: nur Metadaten (Dateiinhalte sind über die Akte abrufbar).
@@ -54,11 +74,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     if (!o || typeof o !== 'object') return
     if (Array.isArray(o)) return o.forEach(collect)
     for (const [k, v] of Object.entries(o)) {
-      if (typeof v === 'string' && /^(authorId|recordedById|byId|checkedById|createdById|approvedById|reportedById|closedById|primaryNurseId|completedById|assigneeId|stoppedById|voidedById|doneById)$/.test(k)) ids.add(v)
+      if (typeof v === 'string' && /^(authorId|recordedById|byId|checkedById|createdById|approvedById|reportedById|closedById|primaryNurseId|completedById|assigneeId|stoppedById|voidedById|doneById|invitedById|consentById|revokedById|decidedById|userId)$/.test(k)) ids.add(v)
       else if (v && typeof v === 'object' && !(v instanceof Date)) collect(v)
     }
   }
-  collect([resident, incidents, tasks, handoverEntries])
+  collect([resident, incidents, tasks, handoverEntries, portal])
   const staff = await db.user.findMany({ where: { orgId: ctx.org.id, id: { in: [...ids] } }, select: { id: true, firstName: true, lastName: true, jobTitle: true } })
 
   const { files, ...rest } = resident
@@ -75,6 +95,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     incidents,
     tasks,
     handoverEntries,
+    // Angehörigenportal (PRD §60): Zugänge mit Einwilligung, Konten (ohne Passwort/Geheimnisse), Nachrichten, Besuche, Mitteilungen
+    portal,
     staff: staff.map((s) => ({ id: s.id, name: `${s.firstName} ${s.lastName}`, jobTitle: s.jobTitle })),
   }
   await audit(ctx, { action: 'resident.export', entityType: 'Resident', entityId: r.id, context: { residentId: r.id, observations: resident.observations.length, files: files.length } })

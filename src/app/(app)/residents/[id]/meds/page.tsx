@@ -12,6 +12,8 @@ import type { MarRowDto, ResidentCtxDto } from '@/components/meds/types'
 import { residentTitle } from '../../_lib/resident'
 import { checkAllergies } from '@/lib/allergy-check'
 import { checkInteractions, providerFor, SEVERITY_ORDER } from '@/lib/integrations/drug-interactions'
+import { confirmState, needsConfirmation, phoneOrderHours } from '@/lib/phone-orders'
+import { orderingPhysicians } from '@/lib/medication-orders'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return residentTitle((await params).id, 'meds')
@@ -35,6 +37,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
   const isToday = sameDay(day, today)
   const canAdminister = ctx.can('resident.medication.administer', scope)
   const canEdit = ctx.can('resident.medication.edit', scope)
+  const canPhone = ctx.can('resident.medication.phone_order', scope)
   const editable = canAdminister && day <= today && day >= addDays(today, -1)
 
   const [scheduled, dayAdmins, prnMeds, prnAdmins, orders, colleagueIds, interaction] = await Promise.all([
@@ -49,8 +52,12 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
 
   const userIds = new Set<string>([...colleagueIds])
   for (const a of [...dayAdmins, ...prnAdmins]) [a.byId, a.checkedById, a.voidedById].forEach((u) => u && userIds.add(u))
-  for (const o of orders) userIds.add(o.createdById)
-  const users = await db.user.findMany({ where: { id: { in: [...userIds] }, orgId: ctx.org.id }, select: { id: true, initials: true, firstName: true, lastName: true, active: true } })
+  for (const o of orders) [o.createdById, o.confirmedById].forEach((u) => u && userIds.add(u))
+  const [users, physicians] = await Promise.all([
+    db.user.findMany({ where: { id: { in: [...userIds] }, orgId: ctx.org.id }, select: { id: true, initials: true, firstName: true, lastName: true, active: true } }),
+    canPhone ? orderingPhysicians(ctx.org.id, r) : Promise.resolve([]),
+  ])
+  const fullName = (uid: string | null) => { const u = uid ? users.find((x) => x.id === uid) : null; return u ? `${u.firstName} ${u.lastName}` : null }
   const ini = (uid: string | null | undefined) => (uid ? users.find((u) => u.id === uid)?.initials ?? '?' : null)
   const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d, ctx.locale) + ' ' + hm(d))
 
@@ -61,7 +68,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       const cells = cellsFor(m, slotTimes, day, dayAdmins.filter((a) => !a.voidedAt), now)
       return {
         id: m.id, name: m.name, form: m.form, route: m.route, indication: m.indication, notes: m.notes, kind: m.kind, requiresDoubleCheck: m.requiresDoubleCheck,
-        stoppedAt: m.stoppedAt ? stamp(m.stoppedAt) : null, allergy: checkAllergies(r.allergies, [m.name, m.form].filter(Boolean).join(' ')),
+        stoppedAt: m.stoppedAt ? stamp(m.stoppedAt) : null, unconfirmed: needsConfirmation(m.orderSource) && !m.confirmedAt, allergy: checkAllergies(r.allergies, [m.name, m.form].filter(Boolean).join(' ')),
         cells: cells.map((c) => c && {
           time: c.time, dose: c.dose || c.admin?.dose || '', applicable: c.applicable, state: c.state, over: c.over, adminId: c.admin?.id ?? '',
           at: c.admin ? hm(c.admin.at) : null, by: ini(c.admin?.byId), checkedBy: ini(c.admin?.checkedById), note: c.admin?.note ?? null,
@@ -101,10 +108,13 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
     start: fmtDate(m.startDate, ctx.locale), startKey: dateKey(m.startDate), end: m.endDate ? fmtDate(m.endDate, ctx.locale) : null, endKey: m.endDate ? dateKey(m.endDate) : '',
     prescriber: m.prescriber, requiresDoubleCheck: m.requiresDoubleCheck, stock: m.stock, stockUnit: m.stockUnit, stockDays: stockDays(m), low: lowStock(m), notes: m.notes,
     active: m.active, stopped: m.stoppedAt ? fmtDate(m.stoppedAt, ctx.locale) + ' ' + hm(m.stoppedAt) : null, createdBy: ini(m.createdById) ?? '?',
+    atc: m.atc, gtin: m.gtin, source: m.orderSource as OrderDto['source'], confirm: confirmState(m, now),
+    confirmDue: m.confirmDueAt ? stamp(m.confirmDueAt) : null, confirmedBy: fullName(m.confirmedById), confirmedAt: m.confirmedAt ? stamp(m.confirmedAt) : null,
+    mineToConfirm: canEdit && m.createdById !== ctx.user.id && needsConfirmation(m.orderSource) && !m.confirmedAt,
   }))
   const low = orders.filter((m) => m.active && lowStock(m))
   // Interaktionsprüfung über die Schnittstelle (PRD §13.1); ohne Datenquelle ausdrücklich «nicht geprüft»
-  const ia = await checkInteractions(providerFor(interaction), orders.filter((m) => m.active).map((m) => ({ id: m.id, name: m.name })), ctx.locale)
+  const ia = await checkInteractions(providerFor(interaction), orders.filter((m) => m.active).map((m) => ({ id: m.id, name: m.name, atc: m.atc, gtin: m.gtin })), ctx.locale)
   const iaText = ia.status === 'checked'
     ? (ia.interactions.length ? null : t('meds.interactions.none', { name: ia.source, at: hm(new Date(ia.checkedAt)) }))
     : t(ia.reason === 'not_configured' ? 'meds.interactions.notConfigured' : ia.reason === 'no_adapter' ? 'meds.interactions.noAdapter' : 'meds.interactions.error', { name: ia.source ?? '' })
@@ -158,7 +168,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       <EffectChecks items={effects} canRecord={canAdminister} resident={resident} />
       <PrnTable items={prnItems} recent={recent} canGive={canAdminister} resident={resident} colleagues={colleagues} />
 
-      <Orders orders={orderDtos} canEdit={canEdit} resident={resident} defaultSlots={[...new Set([...DEFAULT_SLOTS, ...slotsOf(orders.filter((o) => o.active))])].sort()} defaultPrescriber={r.physician} todayKey={dateKey(today)} interactionNote={iaNote} />
+      <Orders orders={orderDtos} canEdit={canEdit} canPhone={canPhone} physicians={physicians} phoneHours={phoneOrderHours(ctx.org.settings)} resident={resident} defaultSlots={[...new Set([...DEFAULT_SLOTS, ...slotsOf(orders.filter((o) => o.active))])].sort()} defaultPrescriber={r.physician} todayKey={dateKey(today)} interactionNote={iaNote} />
 
       <section className="card" aria-labelledby="ia">
         <div className="card-head">

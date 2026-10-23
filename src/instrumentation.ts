@@ -9,6 +9,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== 'nodejs') return
   // Startzeit und unbehandelte Fehler ausserhalb von Anfragen (Timer, Streams), PRD §66
   ;(await import('./lib/process-hooks')).installProcessHooks()
+  // Plattform-Betrieb aus PLATFORM_ADMIN_EMAILS (PRD §42); Fehler stoppen den Start nicht
+  await import('./lib/platform-sync').then((m) => m.syncPlatformAdmins()).catch((e) => console.error('[platform]', e))
   if (process.env.JOBS_DISABLED === 'true') return
   const { startJobs } = await import('./lib/jobs')
   startJobs()

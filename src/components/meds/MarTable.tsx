@@ -86,6 +86,7 @@ export function MarTable({ rows, slots, day, editable, resident, colleagues }: {
                     <AllergyTags hits={row.allergy ?? []} />
                     {row.kind === 'temporary' && <span className="tag">{t('meds.kind.temporary')}</span>}
                     {row.requiresDoubleCheck && <span className="tag violet">{t('meds.fourEyes.tag')}</span>}
+                    {row.unconfirmed && <span className="tag warn">{t('meds.phone.marTag')}</span>}
                     {row.stoppedAt && <span className="tag outline">{t('meds.mar.stoppedAt', { time: row.stoppedAt })}</span>}
                   </div>
                 </th>

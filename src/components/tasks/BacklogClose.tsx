@@ -39,12 +39,12 @@ export function BacklogClose({ rows, medCount }: { rows: BacklogRow[]; medCount:
           <ul className="list card bulk-list">
             {rows.map((r) => (
               <li key={r.id}>
-                <Checkbox checked={sel.has(r.id)} onChange={() => toggle(r.id)} wrapClassName="li bulk-item" label={<>
+                <Checkbox checked={sel.has(r.id)} onChange={() => toggle(r.id)} wrapClassName="li bulk-item" label={<span className="row" style={{ gap: 8, alignItems: 'baseline', flexWrap: 'wrap', flex: 1 }}>
                   <span className="mono small nowrap">{r.when}</span>
                   {r.room && <span className="roomtag">{r.room}</span>}
-                  <span className="grow">{r.title}{r.resident ? <span className="muted"> · {r.resident}</span> : null}</span>
+                  <span className="grow" style={{ minWidth: "12rem" }}>{r.title}{r.resident ? <span className="muted"> · {r.resident}</span> : null}</span>
                   {r.escalated && <span className="tag crit">{t('tasks.view.escalated')}</span>}
-                </>} />
+                </span>} />
               </li>
             ))}
           </ul>

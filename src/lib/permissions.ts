@@ -82,6 +82,8 @@ const CARE_NURSE: Permission[] = [
   'task.manage', 'handover.write', 'chat.clinical', 'ai.use',
   // Paket Ä: telefonische Verordnung, Bestand/Apotheke, Therapiepläne lesen
   'resident.medication.phone_order', 'resident.medication.stock', 'therapy.read',
+  // Paket A: Angehörigenportal (einladen/Freigaben, Posteingang)
+  'portal.manage', 'portal.respond',
 ]
 const LEAD: Permission[] = [
   ...CARE_NURSE,
@@ -108,7 +110,7 @@ export const DEFAULT_ROLES: { key: string; name: string; permissions: Permission
   { key: 'nursing_director', name: 'Pflegedienstleitung', permissions: [...LEAD, 'team.moderate', 'docs.manage', 'docs.approve', 'learn.manage', 'admin.audit'] },
   { key: 'physician', name: 'Arzt/Ärztin', permissions: [...BASE, 'resident.read', 'resident.chart.write', 'resident.medication.read', 'resident.medication.edit', 'resident.careplan.approve', 'resident.visit.conduct', 'handover.read', 'chat.clinical', 'therapy.read', 'therapy.manage'] },
   { key: 'therapy', name: 'Therapie', permissions: [...BASE, 'resident.read', 'resident.chart.write', 'resident.assessment.write', 'task.read', 'task.complete', 'therapy.read', 'therapy.manage', 'therapy.document'] },
-  { key: 'administration', name: 'Administration', permissions: [...BASE, 'resident.create', 'resident.edit', 'team.post'] },
+  { key: 'administration', name: 'Administration', permissions: [...BASE, 'resident.create', 'resident.edit', 'team.post', 'portal.manage', 'portal.respond'] },
   { key: 'hr', name: 'HR', permissions: [...BASE, 'schedule.manage', 'learn.manage', 'team.post', 'admin.users', 'insights.view'] },
   { key: 'quality', name: 'Qualitätsmanagement', permissions: [...BASE, 'resident.read', 'quality.manage', 'insights.view', 'docs.manage', 'docs.approve', 'admin.audit'] },
   { key: 'sysadmin', name: 'Systemadministration', permissions: SYSADMIN_PERMISSIONS },

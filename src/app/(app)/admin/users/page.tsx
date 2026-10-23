@@ -134,7 +134,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                       <th scope="row">
                         <Link href={`/admin/users/${u.id}`} className="row" style={{ gap: 8, flexWrap: 'nowrap', textDecoration: 'none', color: 'inherit' }}>
                           <span className={'av sm' + (u.active ? '' : ' muted')} aria-hidden="true">{u.initials}</span>
-                          <span style={{ minWidth: 0 }}><span className="linkbtn">{u.lastName} {u.firstName}</span>{!u.active && <> <span className="tag crit">{t('admin.users.inactive')}</span></>}<br /><span className="small muted">{u.email}</span></span>
+                          <span style={{ minWidth: 0 }}><span className="linkbtn">{u.lastName} {u.firstName}</span>{!u.active && <> <span className="tag crit">{t('admin.users.inactive')}</span></>}{u.kind === 'external_physician' && <> <span className="tag accent">{t('md.admin.kind.external')}</span></>}<br /><span className="small muted">{u.email}</span></span>
                         </Link>
                       </th>
                       <td className="hide-sm">{u.jobTitle ?? '–'}</td>

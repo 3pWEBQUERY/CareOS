@@ -4,6 +4,7 @@ import { usersWithPermission } from '@/lib/notify'
 import { dateKey, fmtDate, fromDbDate, hm } from '@/lib/time'
 import { pageResident, userNames, residentTitle } from '../../_lib/resident'
 import { EditMaster } from './EditMaster'
+import { StayActions, type StayProps } from './Stay'
 import { snapshot } from '@/lib/merge-check'
 import { MASTER_FIELDS } from '../../_lib/master'
 import { FormDialog } from '@/components/admin/ui'
@@ -13,12 +14,12 @@ import { Checkbox } from '@/components/ui/fields'
 const ACTIONS = [
   'resident.view', 'resident.create', 'resident.update', 'resident.file.attach', 'observation.create', 'observation.correct', 'vitals.create', 'vitals.thresholds',
   'task.complete', 'task.reopen', 'task.document', 'task.create', 'appointment.create', 'appointment.update', 'contact.create', 'contact.update', 'contact.delete', 'file.upload',
-  'resident.export', 'resident.anonymise', 'task.escalate', 'handover.escalate',
+  'resident.export', 'resident.anonymise', 'task.escalate', 'handover.escalate', 'adt.admit', 'adt.leave', 'adt.return', 'adt.transfer', 'adt.discharge', 'task.expire',
 ]
 const FIELDS = [
   'firstName', 'lastName', 'birthDate', 'sex', 'roomId', 'careLevel', 'physician', 'rea', 'allergies', 'risks', 'diet', 'mobility', 'status', 'importantNotes', 'insuranceNo',
   'primaryNurseId', 'dischargedAt', 'text', 'category', 'important', 'title', 'note', 'done', 'at', 'kind', 'place', 'notes', 'name', 'relation', 'phone', 'email', 'isEmergency', 'isLegalRep',
-  'completedAt', 'completedById', 'authorId', 'recordedById', 'dueAt', 'reason', 'aiAssisted', 'abnormal', 'sys', 'dia', 'pulse', 'temp', 'spo2', 'glucose', 'weight', 'pain', 'respRate', 'priority', 'source',
+  'completedAt', 'completedById', 'authorId', 'recordedById', 'dueAt', 'reason', 'unitId', 'expectedReturn', 'autoClosed', 'aiAssisted', 'abnormal', 'sys', 'dia', 'pulse', 'temp', 'spo2', 'glucose', 'weight', 'pain', 'respRate', 'priority', 'source',
 ]
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
@@ -33,6 +34,7 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
   const withViews = sp.views === '1'
   // Aufenthalte (Pflegeepisoden), z. B. aus ADT-Meldungen (PRD §43)
   const episodes = await db.careEpisode.findMany({ where: { residentId: r.id }, orderBy: { start: 'desc' }, take: 20 })
+  const unitName = new Map((await db.unit.findMany({ where: { orgId: ctx.org.id }, select: { id: true, name: true } })).map((u) => [u.id, u.name]))
   const logs = await db.auditLog.findMany({
     where: {
       orgId: ctx.org.id,
@@ -73,6 +75,8 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
     if (typeof v === 'string') {
       if (USER_KEYS.includes(k)) return names.get(v)?.short ?? '–'
       if (k === 'roomId') return roomNo.get(v) ?? '–'
+      if (k === 'unitId') return unitName.get(v) ?? '–'
+      if (k === 'autoClosed') return t(v === 'absence' ? 'tasks.autoClosed.absence' : 'tasks.autoClosed.shiftEnd')
       const e = ENUMS[k]?.(v)
       if (e) return e
     }
@@ -83,11 +87,28 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
     const a = (after && typeof after === 'object' ? after : {}) as Record<string, unknown>
     const keys = [...new Set([...Object.keys(b), ...Object.keys(a)])]
       .filter((k) => JSON.stringify(b[k]) !== JSON.stringify(a[k]))
-      .filter((k) => !k.endsWith('Id') || USER_KEYS.includes(k) || k === 'roomId')
+      .filter((k) => !k.endsWith('Id') || USER_KEYS.includes(k) || k === 'roomId' || k === 'unitId')
     return keys.map((k) => ({ k, from: k in b ? show(k, b[k]) : null, to: k in a ? show(k, a[k]) : null }))
   }
 
   const canEdit = can('resident.edit')
+  let stay: StayProps | null = null
+  if (canEdit && (r.status === 'active' || r.status === 'absent') && !r.anonymisedAt) {
+    const targetUnits = ctx.units.filter((u) => ctx.can('resident.edit', { unitId: u.id, locationId: u.locationId }))
+    const allRooms = await db.room.findMany({ where: { unitId: { in: targetUnits.map((u) => u.id) } }, include: { residents: { where: { status: { in: ['active', 'absent'] } }, select: { id: true } } }, orderBy: { number: 'asc' } })
+    const rooms: Record<string, { id: string; label: string }[]> = {}
+    for (const x of allRooms) {
+      const others = x.residents.filter((y) => y.id !== r.id).length
+      if (others >= x.beds) continue
+      ;(rooms[x.unitId] ??= []).push({ id: x.id, label: x.number + (x.beds > 1 ? ` (${others}/${x.beds})` : '') })
+    }
+    const now = new Date()
+    stay = {
+      residentId: r.id, who: `${r.lastName} ${r.firstName} · ${t('residents.banner.room')} ${r.room?.number ?? '–'}`, absent: r.status === 'absent',
+      unitId: r.unitId, roomId: r.roomId, units: targetUnits.map((u) => ({ id: u.id, label: u.name })), rooms,
+      now: `${dateKey(now)}T${hm(now)}`, today: dateKey(now),
+    }
+  }
   const canExport = canEdit || ctx.can('admin.org')
   const canAnonymise = ctx.can('admin.org')
   const leaver = r.status === 'discharged' || r.status === 'deceased'
@@ -124,18 +145,31 @@ export default async function HistoryPage({ params, searchParams }: { params: Pr
           {r.dischargedAt && <><dt>{t('residents.history.discharged')}</dt><dd className="mono">{fmtDate(r.dischargedAt, locale)}</dd></>}
           <dt>{t('residents.form.insuranceNo')}</dt><dd className="mono">{r.insuranceNo ?? '–'}</dd>
           <dt>{t('residents.form.sex')}</dt><dd>{r.sex ? t('residents.form.sex' + r.sex.toUpperCase()) : '–'}</dd>
-          {episodes.length > 0 && (
-            <>
-              <dt>{t('residents.history.episodes')}</dt>
-              <dd>
-                <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none" }}>
-                  {episodes.map((e) => <li key={e.id}><span className="mono">{fmtDate(e.start, locale)} – {e.end ? fmtDate(e.end, locale) : t('residents.history.episodeOpen')}</span> · {e.reason}</li>)}
-                </ul>
-              </dd>
-            </>
-          )}
         </dl>
       </div>
+
+      {/* Aufenthalt (PRD §43): Pflegeepisoden, Abwesenheit, Rückkehr, Verlegung */}
+      <div className="sec-head" id="stay">
+        <h2 className="sec">{t('residents.adt.title')}</h2>
+        {stay && <StayActions {...stay} />}
+      </div>
+      {episodes.length ? (
+        <div className="tablewrap">
+          <table className="stable">
+            <thead><tr><th>{t('residents.adt.col.period')}</th><th>{t('residents.adt.col.kind')}</th><th>{t('residents.adt.col.unit')}</th><th>{t('residents.adt.col.reason')}</th></tr></thead>
+            <tbody>
+              {episodes.map((e) => (
+                <tr key={e.id}>
+                  <td className="num small nowrap">{fmtDate(e.start, locale)} {hm(e.start)} – {e.end ? `${fmtDate(e.end, locale)} ${hm(e.end)}` : <span className={'tag ' + (e.kind === 'absence' ? 'accent' : 'ok')}>{t('residents.history.episodeOpen')}</span>}</td>
+                  <td className="small">{t(e.kind === 'absence' ? 'residents.adt.kinds.absence' : 'residents.adt.kinds.stay')}</td>
+                  <td className="small">{e.unitId ? unitName.get(e.unitId) ?? '–' : '–'}</td>
+                  <td className="small">{e.reason === 'transfer' ? t('residents.adt.kinds.transfer') : e.reason}{e.kind === 'absence' && e.expectedEnd && !e.end ? <div className="muted">{t('residents.adt.until', { date: fmtDate(e.expectedEnd, locale) })}</div> : null}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="small muted" style={{ margin: 0 }}>{t('residents.adt.none')}</p>}
 
       {(canExport || canAnonymise) && (
         <>

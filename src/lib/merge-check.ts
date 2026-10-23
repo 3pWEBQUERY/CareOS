@@ -19,3 +19,23 @@ export function threeWay(base: Record<string, unknown>, current: Record<string, 
   for (const k of mineChanged) merged[k] = mine[k]
   return { conflicts, mineChanged, theirsChanged, merged }
 }
+
+/**
+ * Speichern mit Konfliktprüfung: ohne Stand beim Öffnen (base) gilt die eigene Eingabe. Sonst werden nur selbst
+ * geänderte Felder übernommen (andere bleiben auf dem aktuellen Stand); dasselbe Feld unterschiedlich geändert → conflicts.
+ */
+export function mergeEdit(base: Record<string, unknown> | null | undefined, current: Record<string, unknown>, mine: Record<string, unknown>, keys: readonly string[]) {
+  if (!base) return { conflicts: [] as string[], data: Object.fromEntries(keys.map((k) => [k, mine[k]])) as Record<string, unknown>, changed: true }
+  const tw = threeWay(base, snapshot(current, keys), snapshot(mine, keys), keys)
+  const data = Object.fromEntries(keys.map((k) => [k, tw.mineChanged.includes(k) ? mine[k] : current[k]])) as Record<string, unknown>
+  return { conflicts: tw.conflicts, data, changed: tw.mineChanged.length > 0 }
+}
+
+/** «base» aus einem Formularfeld (JSON) lesen; ungültig → null (dann ohne Prüfung). */
+export function parseBase(raw: string | null | undefined): Record<string, unknown> | null {
+  if (!raw) return null
+  try {
+    const v = JSON.parse(raw)
+    return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null
+  } catch { return null }
+}

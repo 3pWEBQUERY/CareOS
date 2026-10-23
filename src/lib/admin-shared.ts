@@ -30,7 +30,8 @@ export const INTEGRATION_KINDS = ['hl7_fhir', 'hl7v2', 'pharmacy', 'lab', 'sched
 /** Hosting- und Datenstandorte (PRD §36). */
 export const DATA_REGIONS = ['ch-zurich', 'ch-geneva', 'eu-central', 'eu-west', 'on-premise'] as const
 
-export const FEATURE_FLAGS = ['ai', 'voice', 'medication'] as const
+/** Kompatibilitäts-Schalter (FeatureFlag), folgen den Modulen ai/dictation (src/lib/platform.ts → setOrgModules). */
+export const FEATURE_FLAGS = ['ai', 'voice'] as const
 
 export const HEX_RE = /^#[0-9a-fA-F]{6}$/
 

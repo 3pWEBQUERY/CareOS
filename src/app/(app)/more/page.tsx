@@ -3,6 +3,8 @@ import { InstallApp } from '@/components/shell/InstallApp'
 import { getCtx } from '@/lib/context'
 import { SignOutForm } from '@/components/shell/SignOutForm'
 import { UnitSwitcher } from '@/components/shell/UnitSwitcher'
+import { isPlatformOperator } from '@/lib/platform-core'
+import type { Permission } from '@/lib/permissions'
 
 /** Mobile "Mehr": alle Bereiche, die nicht in der Bottom-Navigation liegen, und die Bereichswahl (Topbar zeigt sie dort nicht). */
 export async function generateMetadata() {
@@ -16,15 +18,22 @@ export default async function MorePage() {
   const items = [
     ctx.can('handover.read') && ['/handover', t('nav.handover')],
     ctx.can('resident.medication.administer') && ['/tasks/medround', t('nav.medround')],
-    ctx.can('resident.read') && ['/tasks/visit', t('visit.nav')],
+    ctx.can('resident.read') && ctx.hasModule('visit') && ['/tasks/visit', t('visit.nav')],
+    ctx.can('therapy.read' as Permission) && ['/therapy', t('nav.therapy')],
+    any('spitex.') && ['/spitex', t('nav.spitex')],
+    ctx.can('portal.respond' as Permission) && ctx.hasModule('portals') && ['/team/family', t('nav.family')],
     ctx.can('schedule.read') && ['/schedule', t('nav.schedule')],
     ctx.can('chat.use') && ['/chat', t('nav.chat')],
     ctx.can('learn.read') && ['/learn', t('nav.learn')],
     ctx.can('docs.read') && ['/docs', t('nav.docs')],
     ctx.can('quality.report') && ['/quality', t('nav.quality')],
     ctx.can('insights.view') && ['/insights', t('nav.insights')],
+    ctx.can('team.read') && ['/team/people', t('nav.people')],
     any('admin.') && ['/admin', t('nav.admin')],
+    (ctx.can('api.personal') || ctx.can('admin.integrations')) && ['/developer', t('nav.developer')],
+    isPlatformOperator(ctx.user) && ['/platform', t('nav.platform')],
     ['/profile', t('nav.profile')],
+    ['/feedback', t('nav.feedback')],
   ].filter(Boolean) as [string, string][]
   const units = ctx.units.map((u) => ({ id: u.id, name: u.name, location: u.location.name }))
   return (

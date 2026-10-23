@@ -341,7 +341,31 @@ async function Management({ ctx, scope }: { ctx: Ctx; scope: Scope }) {
           <DataTable labels={L} csvName={csvName(ctx, 'abdeckung')} table={{ head: [t('insights.day'), t('insights.shift'), t('insights.management.staffed'), t('insights.management.target'), t('insights.management.open')], rows: d.coverage.flatMap((c) => c.days.map((x) => [fmtDate(x.day, locale), shiftName(t, c), x.staffed, x.target ?? '–', x.open])) }} />
         </div>
       </section>
+      <Billing ctx={ctx} unitId={scope.unitIds.length === 1 ? scope.unitIds[0] : ''} />
     </>
+  )
+}
+
+/** Abrechnungsexport (PRD §40): Monat wählen, CSV mit Pflegestufe, Aufenthalts-/Abwesenheitstagen und Pflegeminuten. */
+function Billing({ ctx, unitId }: { ctx: Ctx; unitId: string }) {
+  const { t, locale } = ctx
+  const now = new Date()
+  const months = Array.from({ length: 12 }, (_, i) => new Date(now.getFullYear(), now.getMonth() - i, 1))
+  const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  return (
+    <section className="card" aria-labelledby="bill-h">
+      <div className="card-head"><h2 id="bill-h">{t('insights.billing.title')}</h2></div>
+      <div className="card-body stack-sm">
+        <p className="small fg2" style={{ margin: 0, maxWidth: '80ch' }}>{t('insights.billing.hint')}</p>
+        <form action="/insights/billing" method="get" className="row" style={{ alignItems: 'end', gap: 12 }}>
+          {unitId && <input type="hidden" name="unit" value={unitId} />}
+          <Select label={t('insights.billing.month')} name="month" defaultValue={key(months[1])} wrapStyle={{ minWidth: 200 }}>
+            {months.map((m) => <option key={key(m)} value={key(m)}>{fmtDate(m, locale, { month: 'long', year: 'numeric' })}{key(m) === key(now) ? ' · ' + t('insights.billing.running') : ''}</option>)}
+          </Select>
+          <button type="submit" className="btn">{t('insights.billing.download')}</button>
+        </form>
+      </div>
+    </section>
   )
 }
 

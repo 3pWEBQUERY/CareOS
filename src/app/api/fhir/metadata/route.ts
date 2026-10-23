@@ -36,7 +36,7 @@ export async function GET(req: Request) {
             searchParam: [search('patient', 'reference'), search('subject', 'reference'), search('status', 'token'), search('_count', 'number')],
           },
           {
-            type: 'AllergyIntolerance', interaction: [{ code: 'search-type' }],
+            type: 'AllergyIntolerance', interaction: [{ code: 'search-type' }, { code: 'create', documentation: 'Scope observations:write. Aktive Allergie (code.text); ergänzt die Allergien der Person, bereits erfasste Einträge → 200.' }],
             searchParam: [search('patient', 'reference'), search('_count', 'number')],
           },
         ],

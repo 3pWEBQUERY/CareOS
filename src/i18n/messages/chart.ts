@@ -132,6 +132,7 @@ export default defineMessages({
       relatives: 'Angehörige',
       incident: 'Ereignis',
       handover: 'Übergabe',
+      therapy: 'Therapie',
     },
     taskCat: {
       basic: 'Grundpflege',
@@ -461,6 +462,7 @@ export default defineMessages({
       relatives: 'Proches',
       incident: 'Événement',
       handover: 'Transmission',
+      therapy: 'Thérapie',
     },
     taskCat: {
       basic: 'Soins de base',
@@ -790,6 +792,7 @@ export default defineMessages({
       relatives: 'Familiari',
       incident: 'Evento',
       handover: 'Consegna',
+      therapy: 'Terapia',
     },
     taskCat: {
       basic: 'Cure di base',
@@ -1119,6 +1122,7 @@ export default defineMessages({
       relatives: 'Relatives',
       incident: 'Incident',
       handover: 'Handover',
+      therapy: 'Therapy',
     },
     taskCat: {
       basic: 'Basic care',

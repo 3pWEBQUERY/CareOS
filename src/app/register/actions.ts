@@ -12,6 +12,7 @@ import { log } from '@/lib/log'
 import { formObject, orgSignupSchema, registrationSchema } from '@/lib/registration-core'
 import { orgByCode, orgSignupEnabled } from '@/lib/registration'
 import { setupOrganization } from '@/lib/org-setup'
+import { notifyOperators } from '@/lib/platform'
 import { uniqueInitials } from '@/lib/generate/people'
 
 export type RegisterState = { done?: 'request' | 'org'; error?: string; field?: string; values?: Record<string, string> } | undefined
@@ -102,8 +103,12 @@ export async function orgSignupAction(_: RegisterState, form: FormData): Promise
   }
   const { locale } = await publicT()
   try {
-    const r = await setupOrganization(db, { source: 'signup', orgName: d.orgName, units: 1, admin: { email: d.email, firstName: d.firstName, lastName: d.lastName, passwordHash, locale } })
-    if (r) await auditSystem({ action: 'auth.org_signup', entityType: 'Organization', entityId: r.orgId, orgId: r.orgId, userId: r.adminId, after: { name: d.orgName }, ...meta })
+    // Plattform (PRD §42): bis zur Freigabe unter /platform → Anträge gesperrt (Anmeldung zeigt «wird geprüft»)
+    const r = await setupOrganization(db, { source: 'signup', pendingApproval: true, orgName: d.orgName, units: 1, admin: { email: d.email, firstName: d.firstName, lastName: d.lastName, passwordHash, locale } })
+    if (r) {
+      await auditSystem({ action: 'auth.org_signup', entityType: 'Organization', entityId: r.orgId, orgId: r.orgId, userId: r.adminId, after: { name: d.orgName }, ...meta })
+      await notifyOperators('tenancy.platform.notify.title', 'tenancy.platform.notify.body', { name: d.orgName }, '/platform?tab=requests', 'org-request:' + r.orgId)
+    }
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') return { done: 'org' }
     log.error('org_signup.failed', { error: e instanceof Error ? e.message : String(e) })

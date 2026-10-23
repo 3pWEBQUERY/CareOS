@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { fmtDate, fmtNum } from '@/lib/time'
-import { MIN_GROUP, usageReport } from '@/lib/usage'
+import { MIN_GROUP, timeReturnedReport, usageReport } from '@/lib/usage'
 import { Forbidden, Empty } from '@/components/ui/Empty'
 import { BarChart } from '@/components/ui/BarChart'
 import { ActBtn } from '@/components/admin/ui'
@@ -18,8 +18,9 @@ export default async function UsagePage() {
   const ctx = await getCtx()
   const { t, locale } = ctx
   if (!ctx.can('admin.org')) return <Forbidden text={t('common.notAllowed')} />
-  const [r, feedback] = await Promise.all([
+  const [r, trc, feedback] = await Promise.all([
     usageReport(ctx.org.id),
+    timeReturnedReport(ctx.org.id),
     db.feedback.findMany({ where: { orgId: ctx.org.id }, orderBy: { createdAt: 'desc' }, take: 50 }),
   ])
   const authors = await db.user.findMany({ where: { id: { in: feedback.map((f) => f.userId).filter((x): x is string => !!x) }, orgId: ctx.org.id }, select: { id: true, firstName: true, lastName: true } })
@@ -78,6 +79,33 @@ export default async function UsagePage() {
               </div>
             </section>
           </div>
+
+          {/* North Star «Time returned to care» (PRD §65): ausdrücklich als Schätzung mit offengelegten Annahmen */}
+          <section className="card" aria-labelledby="u-trc">
+            <div className="card-head"><h2 id="u-trc">{t('insights.trc.title')}</h2><span className="tag outline">{t('insights.trc.estimate')}</span></div>
+            <div className="card-body stack-sm">
+              <div className="metrics">
+                <div className="metric"><span className="lbl">{t('insights.trc.total')}</span><span className="val">{fmtNum(trc.totalMin / 60, 1, locale)} <small>h</small></span></div>
+                <div className="metric"><span className="lbl">{t('insights.trc.perUser')}</span><span className="val">{trc.perUserWeekMin != null ? <>{trc.perUserWeekMin} <small>{t('common.minutes')}</small></> : <span className="muted">{t('platform.usage.few')}</span>}</span></div>
+              </div>
+              <div className="tablewrap">
+                <table className="stable">
+                  <thead><tr><th>{t('insights.trc.col.source')}</th><th className="right">{t('insights.trc.col.count')}</th><th className="right">{t('insights.trc.col.assumption')}</th><th className="right">{t('insights.trc.col.minutes')}</th></tr></thead>
+                  <tbody>
+                    {trc.rows.map((x) => (
+                      <tr key={x.key}>
+                        <th scope="row" style={{ fontWeight: 400 }}>{t('insights.trc.src.' + x.key)}</th>
+                        <td className="num right">{x.n}</td>
+                        <td className="num right">{fmtNum(x.perEvent, 1, locale)} {t('common.minutes')}</td>
+                        <td className="num right">{x.minutes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="small muted" style={{ margin: 0, maxWidth: '80ch' }}>{t('insights.trc.hint')}</p>
+            </div>
+          </section>
 
           <section className="card" aria-labelledby="u-adopt">
             <div className="card-head"><h2 id="u-adopt">{t('platform.usage.adoption')}</h2></div>

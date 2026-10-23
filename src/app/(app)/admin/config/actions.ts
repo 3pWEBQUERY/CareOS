@@ -8,7 +8,7 @@ import { getCtx, assertCan } from '@/lib/context'
 import { run, fd, fdBool, fdNum, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { orgSettings } from '@/lib/admin'
-import { FEATURE_FLAGS, TIME_RE, slugKey } from '@/lib/admin-shared'
+import { TIME_RE, slugKey } from '@/lib/admin-shared'
 import { VITALS, VITAL_KEYS } from '@/lib/vitals'
 import { invalidateTaskGeneration } from '@/lib/tasks'
 
@@ -195,13 +195,3 @@ export async function saveCoverageAction(form: FormData): Promise<ActionResult> 
   })
 }
 
-export async function saveFlagsAction(form: FormData): Promise<ActionResult> {
-  return run(async () => {
-    const ctx = await admin()
-    const before = await db.featureFlag.findMany({ where: { orgId: ctx.org.id } })
-    const after = FEATURE_FLAGS.map((key) => ({ key, enabled: fdBool(form, 'flag:' + key) }))
-    await db.$transaction(after.map((f) => db.featureFlag.upsert({ where: { orgId_key: { orgId: ctx.org.id, key: f.key } }, create: { orgId: ctx.org.id, ...f }, update: { enabled: f.enabled } })))
-    await audit(ctx, { action: 'admin.config.feature_flags', entityType: 'FeatureFlag', before: before.map(({ key, enabled }) => ({ key, enabled })), after })
-    refresh()
-  })
-}

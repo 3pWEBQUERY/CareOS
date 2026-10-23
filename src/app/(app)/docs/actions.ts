@@ -1,6 +1,8 @@
 'use server'
 
 import { refresh } from 'next/cache'
+import { mergeEdit, parseBase } from '@/lib/merge-check'
+import { conflictMessage } from '@/lib/merge-server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import { assertCan, getCtx } from '@/lib/context'
@@ -112,6 +114,8 @@ export async function createVersion(form: FormData) {
   })
 }
 
+const DRAFT_FIELDS = ['version', 'body', 'changeNote', 'critical'] as const
+
 export async function updateDraft(form: FormData) {
   return uploadGuard(async () => {
     const ctx = await getCtx()
@@ -123,10 +127,19 @@ export async function updateDraft(form: FormData) {
     if (v.document.versions.some((x) => x.id !== v.id && x.version === ver.version)) return { ok: false, error: 'docs.errors.versionTaken', field: 'version' }
     const changeNote = fd(form, 'changeNote')
     if (!changeNote && v.document.currentVersion) return { ok: false, error: 'docs.errors.changeNote', field: 'changeNote' }
+    // Konflikterkennung (PRD §32): zwei Personen am selben Entwurf – nur eigene Änderungen übernehmen, gleiches Feld → Hinweis
+    const mine = { version: ver.version, body: ver.body, changeNote: changeNote || null, critical: fdBool(form, 'critical') }
+    const m = mergeEdit(parseBase(fd(form, 'base')), v as unknown as Record<string, unknown>, mine, DRAFT_FIELDS)
+    if (m.conflicts.length) {
+      refresh()
+      return { ok: false, error: await conflictMessage(ctx, { entityType: 'DocumentVersion', entityId: v.id, actions: ['document.version.update', 'document.version.create'], fields: m.conflicts.map((k) => ctx.t('docs.conflict.' + k)) }), field: m.conflicts[0] === 'body' ? 'body' : m.conflicts[0] }
+    }
     const uploaded = await maybeUpload(form)
     const fileId = uploaded ?? (fdBool(form, 'removeFile') ? null : v.fileId)
-    const data = { version: ver.version, body: ver.body, changeNote: changeNote || null, critical: fdBool(form, 'critical'), fileId }
-    await db.documentVersion.update({ where: { id: v.id }, data })
+    const data = { ...(m.data as typeof mine), fileId }
+    // Bedingtes Update: wurde der Entwurf seit dem Laden geändert (gleichzeitig), gewinnt nicht der Letzte stillschweigend
+    const upd = await db.documentVersion.updateMany({ where: { id: v.id, approvedAt: null, version: v.version, body: v.body, changeNote: v.changeNote, critical: v.critical }, data })
+    if (!upd.count) { refresh(); return { ok: false, error: 'docs.conflict.retry' } }
     await audit(ctx, { action: 'document.version.update', entityType: 'DocumentVersion', entityId: v.id, before: { version: v.version, changeNote: v.changeNote, critical: v.critical, bodyLength: v.body.length }, after: { ...data, body: undefined, bodyLength: data.body.length } })
     refresh()
   })

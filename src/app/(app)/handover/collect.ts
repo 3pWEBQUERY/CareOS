@@ -4,7 +4,8 @@ import type { Ctx } from '@/lib/context'
 import { isClosed, taskView } from '@/lib/tasks'
 import { isOverdue } from '@/lib/task-backlog'
 import { taskTitle } from '@/lib/task-title'
-import { addDays, dbDate, fmtDayMonth, fmtNum, hm, sameDay, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
+import { addDays, dbDate, fmtDate, fmtDayMonth, fmtNum, hm, sameDay, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
+import { openAbsences } from '@/lib/adt'
 import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { EFFECT_CHECK_MIN, openDoses } from '@/lib/medication'
 import { doseText } from '@/components/meds/dose'
@@ -15,7 +16,7 @@ export type Tone = 'c' | 'w' | ''
 /** `flag`: Status als Text neben der Farbe (PRD §51 «nie nur über Farbe»), z. B. «überfällig». */
 export type Item = { text: string; time?: string; tone?: Tone; muted?: boolean; flag?: string }
 export type Block = {
-  resident: { id: string; firstName: string; lastName: string; room: string | null; careLevel: number | null; rea: string; allergies: string[]; risks: string[] }
+  resident: { id: string; firstName: string; lastName: string; room: string | null; careLevel: number | null; rea: string; allergies: string[]; risks: string[]; absent: string | null }
   happened: Item[]
   done: Item[]
   watch: Item[]
@@ -90,6 +91,15 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
   // Eigene Instrumente (Admin) tragen ihren Namen in der Definition
   const defNames = new Map((await db.assessmentDefinition.findMany({ where: { orgId: ctx.org.id }, select: { key: true, name: true } })).map((d) => [d.key, d.name]))
   const assessName = (key: string) => assessmentLabel(t, key, defNames.get(key))
+  // Abwesende Personen (Spital, Ferien): Grund und seit wann – Aufgaben sind während der Abwesenheit pausiert (PRD §43)
+  const absences = await openAbsences(residents.filter((r) => r.status === 'absent').map((r) => r.id))
+  const dm = (d: Date) => fmtDate(d, locale, { day: '2-digit', month: '2-digit' })
+  const absentText = (r: { id: string; status: string }) => {
+    if (r.status !== 'absent') return null
+    const a = absences.get(r.id)
+    if (!a) return t('residents.banner.absent')
+    return t(a.expectedEnd ? 'residents.adt.bannerUntil' : 'residents.adt.banner', { date: dm(a.start), reason: a.reason, until: a.expectedEnd ? dm(a.expectedEnd) : '' })
+  }
 
 
   const blocks: Block[] = residents.map((r) => {
@@ -182,7 +192,7 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
 
     const byTime = <T extends { at: number }>(a: T[]) => a.sort((x, y) => x.at - y.at).map(({ at: _at, ...rest }) => { void _at; return rest })
     return {
-      resident: { id: r.id, firstName: r.firstName, lastName: r.lastName, room: r.room?.number ?? null, careLevel: r.careLevel, rea: r.rea, allergies: r.allergies, risks: r.risks },
+      resident: { id: r.id, firstName: r.firstName, lastName: r.lastName, room: r.room?.number ?? null, careLevel: r.careLevel, rea: r.rea, allergies: r.allergies, risks: r.risks, absent: absentText(r) },
       happened: byTime(happened), done: byTime(done), watch, open: byTime(open),
       entry: entry ? { watch: entry.watch, open: entry.open, important: entry.important, author: ini(entry.authorId) } : null,
       counts: { notes: observations.filter((o) => o.residentId === r.id).length, open: openCount, abnormal },

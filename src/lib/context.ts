@@ -31,10 +31,12 @@ async function loadCtx() {
   const roleNames = [...new Set(assignments.map((a) => a.role.name))]
   // Notfallzugriff (PRD §34/§37): befristeter, organisationsweiter Lese-Grant; jeder Seitenaufruf wird protokolliert.
   const eg = emergencyGrant(emergency)
+  /** Grants nur aus Rollen (ohne Notfallzugriff) – z. B. für persönliche API-Tokens */
+  const roleGrants = [...grants]
   if (eg) grants.push({ ...eg, permissions: stripDisabled(eg.permissions, modules) })
   // Externe Ärztinnen und Ärzte (Ärzteportal /md, PRD §60): in der Stationsapp keine Berechtigungen und keine Bereiche,
   // auch wenn versehentlich eine Rolle zugewiesen ist. Zugriff nur über getMdCtx() auf zugeordnete Personen.
-  if (isExternalPhysician(user)) { grants.length = 0; roleNames.length = 0 }
+  if (isExternalPhysician(user)) { grants.length = 0; roleGrants.length = 0; roleNames.length = 0 }
 
   const allUnits = await db.unit.findMany({
     where: { orgId: org.id },
@@ -74,6 +76,7 @@ async function loadCtx() {
     user,
     org,
     grants,
+    roleGrants,
     roleNames,
     units,
     unit,

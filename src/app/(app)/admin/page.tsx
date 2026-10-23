@@ -15,7 +15,7 @@ export default async function AdminHome() {
   const ctx = await getCtx()
   const { t, org } = ctx
   const now = new Date()
-  const sections = ADMIN_SECTIONS.filter((s) => ctx.can(s.perm))
+  const sections = ADMIN_SECTIONS.filter((s) => ctx.can(s.perm) || (!!s.alsoPerm && ctx.can(s.alsoPerm)))
   const [users, inactive, noMfa, roles, units, residents, audit24, tokens, hooks, failed, admins, recent, forms, channels, locations] = await Promise.all([
     db.user.count({ where: { orgId: org.id, active: true } }),
     db.user.count({ where: { orgId: org.id, active: false } }),

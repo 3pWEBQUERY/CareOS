@@ -6,8 +6,8 @@ import { db } from '@/lib/db'
  * Übergaben), keine neue Erfassung von Nutzungsdaten, keine Auswertung einzelner Personen.
  * Kleine Gruppen (< MIN_GROUP Personen) werden ohne Zahl ausgewiesen.
  */
-export { MIN_GROUP, MODULES, adoption, median } from '@/lib/usage-core'
-import { adoption } from '@/lib/usage-core'
+export { MIN_GROUP, MODULES, adoption, median, TIME_RETURNED_ASSUMPTIONS } from '@/lib/usage-core'
+import { adoption, timeReturned } from '@/lib/usage-core'
 
 export async function usageReport(orgId: string, now = new Date()) {
   const day = (n: number) => new Date(now.getTime() - n * 24 * 3600_000)
@@ -55,4 +55,18 @@ export async function usageReport(orgId: string, now = new Date()) {
     handover: { medianMin: ho?.med != null ? Math.round(Number(ho.med)) : null, n: Number(ho?.n ?? 0) },
     rating: { avg: fb?.avg ?? null, n: Number(fb?.n ?? 0) },
   }
+}
+
+/** Daten für die Schätzung «Time returned to care» (30 Tage, nur Zählwerte). */
+export async function timeReturnedReport(orgId: string, now = new Date()) {
+  const from = new Date(now.getTime() - 30 * 24 * 3600_000)
+  const [[bulk], handover, ai, voice, docOnce, [active]] = await Promise.all([
+    db.$queryRaw<{ n: bigint }[]>`SELECT count(*) AS n FROM "AuditLog" WHERE "orgId" = ${orgId} AND action = 'task.complete' AND at >= ${from} AND context ? 'bulk' AND NOT (context ? 'backlog')`,
+    db.handover.count({ where: { unit: { orgId }, submittedAt: { gte: from } } }),
+    db.aiInteraction.count({ where: { orgId, accepted: true, createdAt: { gte: from } } }),
+    db.observation.count({ where: { resident: { orgId }, source: 'voice', at: { gte: from } } }),
+    db.task.count({ where: { orgId, status: 'done', completedById: { not: null }, completedAt: { gte: from }, OR: [{ source: 'medication' }, { source: 'assessment' }, { source: 'careplan', sourceId: { startsWith: 'eval:' } }] } }),
+    db.$queryRaw<{ n: bigint }[]>`SELECT count(DISTINCT "userId") AS n FROM "AuditLog" WHERE "orgId" = ${orgId} AND "userId" IS NOT NULL AND action = 'task.complete' AND at >= ${from}`,
+  ])
+  return timeReturned({ bulk: Number(bulk?.n ?? 0), handover, aiAccepted: ai, voice, documentOnce: docOnce }, Number(active?.n ?? 0))
 }

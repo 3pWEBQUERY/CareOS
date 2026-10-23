@@ -91,6 +91,7 @@ export function RoundBlock({ data, time, slotKey, day, editable, colleagues, nex
                   {row.notes && <div className="small warn-text rl-note"><span className="lbl warn-text">{t('meds.round.notes')}</span> {row.notes}</div>}
                   {!!row.allergy?.length && <div className="row" style={{ gap: 4, marginTop: 3 }}><AllergyTags hits={row.allergy} /></div>}
                   {row.requiresDoubleCheck && <span className="tag violet" style={{ marginTop: 3 }}>{t('meds.fourEyes.tag')}</span>}
+                  {row.unconfirmed && <span className="tag warn" style={{ marginTop: 3 }}>{t('meds.phone.marTag')}</span>}
                 </div>
                 <div className="rl-dose">
                   <span className="dosev">{doseText(c.dose, row.form) || '–'}</span>

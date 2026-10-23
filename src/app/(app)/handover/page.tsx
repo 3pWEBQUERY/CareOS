@@ -67,7 +67,7 @@ export default async function HandoverPage({ searchParams }: { searchParams: Pro
     const ack = myAcks.get(b.resident.id)
     return {
       resident: {
-        id: b.resident.id, name: `${b.resident.lastName} ${b.resident.firstName}`, room: b.resident.room, allergies: b.resident.allergies,
+        id: b.resident.id, name: `${b.resident.lastName} ${b.resident.firstName}`, room: b.resident.room, allergies: b.resident.allergies, absent: b.resident.absent,
         meta: [b.resident.careLevel != null ? t('tasks.handover.careLevel', { n: b.resident.careLevel }) : null, b.resident.rea === 'no' ? t('residents.banner.reaNo') : null].filter(Boolean).join(' · '),
         assigned: ref ? { shift: shiftName(t, ref.def, { short: true }), list: assignedTo(b.resident.id) } : undefined,
       },

@@ -4,14 +4,14 @@ import { db } from '@/lib/db'
 import { emit } from '@/lib/events'
 import type { AuditEntry } from '@/lib/audit'
 import { invalidateTaskGeneration, OPEN_STATUSES } from '@/lib/tasks'
-import { dbDate, parseDateKey } from '@/lib/time'
+import { dbDate, parseDateKey, startOfDay } from '@/lib/time'
 
 /**
  * Patientenadministration (ADT) über die Schnittstelle (PRD §40, §41, §43): Eintritt, Verlegung, Abwesenheit
  * (z. B. Spitalaufenthalt), Rückkehr und Austritt. Jeder Vorgang wird protokolliert, als Domain Event verteilt
  * und als Pflegeepisode (CareEpisode) geführt. Akten werden nie gelöscht.
  */
-export type AdtActor = { orgId: string; actorId: string; audit: (e: AuditEntry) => Promise<unknown> }
+export type AdtActor = { orgId: string; actorId: string | null; audit: (e: AuditEntry) => Promise<unknown>; /** Herkunft für Events und Audit (Standard api) */ via?: 'api' | 'app' | 'hl7' }
 export class AdtError extends Error {
   constructor(public status: number, public code: string, message: string) { super(message) }
 }
@@ -36,7 +36,7 @@ export const AdmitBody = z.object({
 
 export const EventBody = z.discriminatedUnion('event', [
   z.object({ event: z.literal('transfer'), unitId: z.string().min(1), roomId: z.string().min(1).nullish(), at: when, reason: z.string().trim().max(200).optional() }).strict(),
-  z.object({ event: z.literal('leave'), at: when, reason: z.string().trim().min(1).max(200) }).strict(),
+  z.object({ event: z.literal('leave'), at: when, reason: z.string().trim().min(1).max(200), expectedReturn: z.string().regex(dateKeyRe, 'YYYY-MM-DD').optional() }).strict(),
   z.object({ event: z.literal('return'), at: when, roomId: z.string().min(1).nullish() }).strict(),
   z.object({ event: z.literal('discharge'), at: when, deceased: z.boolean().default(false), reason: z.string().trim().max(200).optional() }).strict(),
 ])
@@ -70,19 +70,14 @@ export async function admit(actor: AdtActor, b: z.infer<typeof AdmitBody>) {
     data: {
       orgId: actor.orgId, unitId: b.unitId, roomId: b.roomId ?? null, firstName: b.firstName, lastName: b.lastName, birthDate: dbDate(birth),
       sex: b.sex ?? null, insuranceNo: b.insuranceNo ?? null, physician: b.physician ?? null, allergies: b.allergies, rea: b.rea,
-      status: 'active', admittedAt: at, nutrition: { create: {} }, episodes: { create: { start: at, reason: b.reason } },
+      status: 'active', admittedAt: at, nutrition: { create: {} }, episodes: { create: { start: at, reason: b.reason, kind: 'stay', unitId: b.unitId, createdById: actor.actorId } },
     },
     include: { unit: { select: { id: true, name: true } }, room: { select: { number: true } } },
   })
   await actor.audit({ action: 'adt.admit', entityType: 'Resident', entityId: r.id, after: { unitId: r.unitId, roomId: r.roomId, admittedAt: at, reason: b.reason }, context: { residentId: r.id } })
-  await emit({ orgId: actor.orgId, type: 'resident.updated', unitId: r.unitId, residentId: r.id, actorId: actor.actorId, payload: { adt: 'admit', via: 'api' } })
+  await emit({ orgId: actor.orgId, type: 'resident.updated', unitId: r.unitId, residentId: r.id, actorId: actor.actorId, payload: { adt: 'admit', via: actor.via ?? 'api' } })
   invalidateTaskGeneration(r.unitId)
   return r
-}
-
-/** Offene, künftige Aufgaben einer Person entfernen (Austritt) – erledigte bleiben als Dokumentation erhalten. */
-async function dropFutureTasks(residentId: string, from: Date) {
-  return db.task.deleteMany({ where: { residentId, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: from }, completedAt: null } })
 }
 
 export async function adtEvent(actor: AdtActor, residentId: string, e: AdtEvent) {
@@ -92,16 +87,20 @@ export async function adtEvent(actor: AdtActor, residentId: string, e: AdtEvent)
   const at = atOrNow(e.at)
   const before = { status: r.status, unitId: r.unitId, roomId: r.roomId, dischargedAt: r.dischargedAt }
   let data: Parameters<typeof db.resident.update>[0]['data']
+  let expectedEnd: Date | null = null
   switch (e.event) {
     case 'transfer':
       await unitOf(actor.orgId, e.unitId)
       if (e.roomId) await freeRoom(e.roomId, e.unitId, r.id)
       if (e.unitId === r.unitId && (e.roomId ?? null) === r.roomId) throw new AdtError(422, 'validation_failed', 'No change')
       data = { unitId: e.unitId, roomId: e.roomId ?? null }
-      if (e.unitId !== r.unitId) await dropFutureTasks(r.id, at)
       break
     case 'leave':
       if (r.status === 'absent') throw new AdtError(409, 'conflict', 'Resident is already absent')
+      if (e.expectedReturn) {
+        expectedEnd = parseDateKey(e.expectedReturn)
+        if (Number.isNaN(expectedEnd.getTime()) || expectedEnd < startOfDay(at)) throw new AdtError(422, 'validation_failed', 'expectedReturn must not be before at')
+      }
       data = { status: 'absent' }
       break
     case 'return':
@@ -111,18 +110,59 @@ export async function adtEvent(actor: AdtActor, residentId: string, e: AdtEvent)
       break
     case 'discharge':
       data = { status: e.deceased ? 'deceased' : 'discharged', dischargedAt: at, roomId: null }
-      await dropFutureTasks(r.id, at)
-      await db.careEpisode.updateMany({ where: { residentId: r.id, end: null }, data: { end: at } })
       break
   }
-  // Versionsprüfung: gleichzeitige Änderung in der App gewinnt nicht stillschweigend (PRD §32)
-  const res = await db.resident.updateMany({ where: { id: r.id, updatedAt: r.updatedAt }, data })
-  if (res.count !== 1) throw new AdtError(409, 'conflict', 'Resident was changed concurrently, retry')
+  const tasks = { paused: 0, resumed: 0, moved: 0, removed: 0, expired: 0 }
+  await db.$transaction(async (tx) => {
+    // Versionsprüfung: gleichzeitige Änderung in der App gewinnt nicht stillschweigend (PRD §32)
+    const res = await tx.resident.updateMany({ where: { id: r.id, updatedAt: r.updatedAt }, data })
+    if (res.count !== 1) throw new AdtError(409, 'conflict', 'Resident was changed concurrently, retry')
+    const reason = 'reason' in e && e.reason ? e.reason : null
+    switch (e.event) {
+      case 'transfer':
+        if (e.unitId !== r.unitId) {
+          // Aufenthalt im alten Bereich endet, neuer beginnt; offene Aufgaben und Serien folgen der Person
+          await tx.careEpisode.updateMany({ where: { residentId: r.id, end: null, kind: 'stay' }, data: { end: at } })
+          await tx.careEpisode.create({ data: { residentId: r.id, start: at, kind: 'stay', unitId: e.unitId, reason: reason ?? 'transfer', createdById: actor.actorId } })
+          tasks.moved = (await tx.task.updateMany({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] } }, data: { unitId: e.unitId } })).count
+          await tx.taskTemplate.updateMany({ where: { residentId: r.id }, data: { unitId: e.unitId } })
+        }
+        break
+      case 'leave':
+        await tx.careEpisode.create({ data: { residentId: r.id, start: at, kind: 'absence', reason: e.reason, expectedEnd, createdById: actor.actorId } })
+        // Aufgaben ab Beginn der Abwesenheit pausieren (nicht überfällig, nicht eskaliert); Rückkehr öffnet sie wieder
+        tasks.paused = (await tx.task.updateMany({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: at } }, data: { status: 'skipped', autoClosed: 'absence', completedAt: new Date(), completedById: null } })).count
+        // Zeitgebundene Routine vor der Abwesenheit lässt sich nicht mehr nachholen: «nicht erledigt – übergeben»
+        tasks.expired = (await tx.task.updateMany({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { lt: at }, source: { in: ['careplan', 'medication', 'recurring'] }, NOT: { sourceId: { startsWith: 'eval:' } } }, data: { status: 'skipped', autoClosed: 'shift_end', completedAt: new Date(), completedById: null } })).count
+        break
+      case 'return':
+        await tx.careEpisode.updateMany({ where: { residentId: r.id, end: null, kind: 'absence' }, data: { end: at } })
+        tasks.resumed = (await tx.task.updateMany({ where: { residentId: r.id, autoClosed: 'absence', status: 'skipped', dueAt: { gte: at } }, data: { status: 'planned', autoClosed: null, completedAt: null, completedById: null } })).count
+        break
+      case 'discharge':
+        tasks.removed = (await tx.task.deleteMany({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: at }, completedAt: null } })).count
+        await tx.careEpisode.updateMany({ where: { residentId: r.id, end: null }, data: { end: at } })
+        break
+    }
+  })
   const after = await db.resident.findUniqueOrThrow({ where: { id: r.id }, include: { unit: { select: { id: true, name: true } }, room: { select: { number: true } } } })
-  await actor.audit({ action: 'adt.' + e.event, entityType: 'Resident', entityId: r.id, before, after: { status: after.status, unitId: after.unitId, roomId: after.roomId, dischargedAt: after.dischargedAt, at, reason: 'reason' in e ? e.reason ?? null : null }, context: { residentId: r.id } })
+  await actor.audit({
+    action: 'adt.' + e.event, entityType: 'Resident', entityId: r.id, before,
+    after: { status: after.status, unitId: after.unitId, roomId: after.roomId, dischargedAt: after.dischargedAt, at, ...('reason' in e && e.reason ? { reason: e.reason } : {}), ...(expectedEnd ? { expectedReturn: expectedEnd } : {}) },
+    context: { residentId: r.id, via: actor.via ?? 'api', tasks },
+  })
   for (const unitId of new Set([before.unitId, after.unitId])) {
-    await emit({ orgId: actor.orgId, type: 'resident.updated', unitId, residentId: r.id, actorId: actor.actorId, payload: { adt: e.event, via: 'api' } })
+    await emit({ orgId: actor.orgId, type: 'resident.updated', unitId, residentId: r.id, actorId: actor.actorId, payload: { adt: e.event, via: actor.via ?? 'api' } })
     invalidateTaskGeneration(unitId)
   }
   return after
+}
+
+/** Laufende Abwesenheit (Episode) einer Person, für Banner, Liste, Übergabe. */
+export async function openAbsences(residentIds: string[]) {
+  if (!residentIds.length) return new Map<string, { start: Date; reason: string; expectedEnd: Date | null }>()
+  const rows = await db.careEpisode.findMany({ where: { residentId: { in: residentIds }, kind: 'absence', end: null }, orderBy: { start: 'desc' }, select: { residentId: true, start: true, reason: true, expectedEnd: true } })
+  const m = new Map<string, { start: Date; reason: string; expectedEnd: Date | null }>()
+  for (const x of rows) if (!m.has(x.residentId)) m.set(x.residentId, x)
+  return m
 }

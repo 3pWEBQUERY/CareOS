@@ -3,6 +3,7 @@ import type { Prisma, Task } from '@prisma/client'
 import { db } from '@/lib/db'
 import { addDays, atTime, dateKey, dbDate, fromDbDate, sameDay, startOfDay } from '@/lib/time'
 import { log } from '@/lib/log'
+import { orgHasModule } from '@/lib/modules'
 import { emit } from '@/lib/events'
 import { shiftTypes } from '@/lib/shift'
 import { backlogCutoff, overdueWhere, shouldExpire } from '@/lib/task-backlog'
@@ -92,8 +93,10 @@ export async function ensureTasksForDay(unitId: string, day = new Date()) {
 
 /** Erzeugt die Aufgaben eines Bereichs und Tages (idempotent über @@unique([source, sourceId, dueAt])). */
 async function generateTasks(db: Prisma.TransactionClient, unitId: string, day: Date) {
-  const unit = await db.unit.findUnique({ where: { id: unitId }, select: { orgId: true } })
+  const unit = await db.unit.findUnique({ where: { id: unitId }, select: { orgId: true, org: { select: { modules: true } } } })
   if (!unit) return
+  // Medikamenten-Zeitpunkte nur mit aktivem Modul Medikation (PRD §69, Paket «clinical_plus»)
+  const withMeds = orgHasModule(unit.org, 'clinical_plus')
   const wd = day.getDay()
   const dayStart = startOfDay(day)
   const [residents, defs, domains, templates] = await Promise.all([
@@ -129,7 +132,7 @@ async function generateTasks(db: Prisma.TransactionClient, unitId: string, day: 
       }
     }
     const slots = new Set<string>()
-    for (const m of r.medications) {
+    for (const m of withMeds ? r.medications : []) {
       if (m.endDate && m.endDate < startOfDay(day)) continue
       m.times.forEach((time, i) => {
         // Kein Zeitpunkt vor Beginn der Verordnung (z. B. Verordnung um 23:50 erfasst → kein 21:00-Slot).

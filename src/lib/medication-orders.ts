@@ -143,7 +143,7 @@ export async function saveOrder(ctx: Actor, r: OrderResident, form: FormData, ri
   // Interaktionsprüfung vor dem Speichern (Datenquelle über Adapter); kontraindiziert nur mit Begründung
   const ia = await interactionGate(ctx.org.id, r.id, { name, atc: codes.atc, gtin: codes.gtin }, old?.id ?? null, ctx.locale)
   const iaReason = fd(form, 'interactionReason').slice(0, 500)
-  if (!reasonOk(ia, iaReason)) return err('meds.interactions.reasonRequired', 'interactionReason')
+  if (!reasonOk(ia, iaReason)) return err('meds.ia.reasonRequired', 'interactionReason')
 
   const phone = needsConfirmation(source)
   const data = {
@@ -225,4 +225,25 @@ export async function afterOrderChange(ctx: Actor, r: { id: string; orgId: strin
   await ensureTasksForDay(r.unitId, today)
   for (const day of [today, addDays(today, 1)]) for (const time of new Set(times)) await syncSlotTask(r, day, time, ctx.user.id, ctx.t('meds.orderStoppedNote'))
   await emit({ orgId: ctx.org.id, type: 'medication.changed', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id })
+}
+
+/** Verordnungen als DTO für die Liste (Ärzteportal; die Medikationsseite der Akte baut sie selbst). */
+export async function orderDtosFor(ctx: Actor, residentId: string, opts: { canConfirm: boolean }, now = new Date()) {
+  const { stockDays, lowStock } = await import('@/lib/medication')
+  const { dateKey, fmtDate, fmtDayMonth, hm, sameDay } = await import('@/lib/time')
+  const meds = await db.medication.findMany({ where: { residentId, OR: [{ active: true }, { stoppedAt: { gte: addDays(now, -90) } }] }, orderBy: [{ active: 'desc' }, { kind: 'asc' }, { createdAt: 'asc' }] })
+  const ids = [...new Set(meds.flatMap((m) => [m.createdById, m.confirmedById]).filter((x): x is string => !!x))]
+  const users = await db.user.findMany({ where: { id: { in: ids }, orgId: ctx.org.id }, select: { id: true, initials: true, firstName: true, lastName: true } })
+  const u = (id: string | null) => (id ? users.find((x) => x.id === id) : undefined)
+  const stamp = (d: Date) => (sameDay(d, now) ? hm(d) : fmtDayMonth(d, ctx.locale) + ' ' + hm(d))
+  return meds.map((m) => ({
+    id: m.id, name: m.name, form: m.form, route: m.route, indication: m.indication, kind: m.kind, times: m.times, doses: m.doses,
+    prnDose: m.prnDose, prnMaxPerDay: m.prnMaxPerDay, prnMinIntervalH: m.prnMinIntervalH,
+    start: fmtDate(m.startDate, ctx.locale), startKey: dateKey(m.startDate), end: m.endDate ? fmtDate(m.endDate, ctx.locale) : null, endKey: m.endDate ? dateKey(m.endDate) : '',
+    prescriber: m.prescriber, requiresDoubleCheck: m.requiresDoubleCheck, stock: m.stock, stockUnit: m.stockUnit, stockDays: stockDays(m), low: lowStock(m), notes: m.notes,
+    active: m.active, stopped: m.stoppedAt ? fmtDate(m.stoppedAt, ctx.locale) + ' ' + hm(m.stoppedAt) : null, createdBy: u(m.createdById)?.initials ?? '?',
+    atc: m.atc, gtin: m.gtin, source: m.orderSource as 'written' | 'phone' | 'verbal', confirm: confirmState(m, now),
+    confirmDue: m.confirmDueAt ? stamp(m.confirmDueAt) : null, confirmedBy: (() => { const x = u(m.confirmedById); return x ? `${x.firstName} ${x.lastName}` : null })(), confirmedAt: m.confirmedAt ? stamp(m.confirmedAt) : null,
+    mineToConfirm: opts.canConfirm && m.createdById !== ctx.user.id && needsConfirmation(m.orderSource) && !m.confirmedAt,
+  }))
 }

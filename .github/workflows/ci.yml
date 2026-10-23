@@ -1,4 +1,4 @@
-# CI (PRD §37, §66): Typecheck, Unit-Tests (inkl. Postgres-Test für das Rate-Limit), Migrationen, Build.
+# CI (PRD §37, §66): Typecheck, Unit-Tests, Integrationstests gegen Postgres (tests/integration, Rate-Limit), Migrationen, Build.
 name: CI
 
 on:
@@ -59,7 +59,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit-Tests
+      - name: Unit- und Integrationstests (Postgres)
         run: npm test
 
       - name: Build

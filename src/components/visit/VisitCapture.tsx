@@ -5,7 +5,8 @@ import { useEffect, useId, useRef, useState, useTransition } from 'react'
 import { useLocale, useT } from '@/i18n/client'
 import { splitQuestion, useConfirm } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { completeVisit } from '@/app/(app)/tasks/visit/actions'
+import { completeVisit, type CompleteVisitInput } from '@/app/(app)/tasks/visit/actions'
+import type { ActionResult } from '@/lib/action'
 import { defaultDue, isEmptyVisit, ORDER_KINDS, type OrderKind } from '@/lib/visit'
 import { fmtDayMonth, hm } from '@/lib/time'
 import { setVisitDirty, useGuardedNav } from './VisitList'
@@ -18,7 +19,7 @@ type OrderRow = { key: number; kind: OrderKind; text: string; date: string; time
  * Erfassung während der Visite (rechts bzw. unten): Antwort je vorgemerkter Frage, strukturierte Anordnungen
  * (daraus werden Aufgaben), Notiz. «Visite abschliessen» schreibt alles in einem Schritt und geht zur nächsten Person.
  */
-export function VisitCapture({ residentId, name, who, physician: initialPhysician, appointmentId, questions, readOnly, documented, next, todayKey }: {
+export function VisitCapture({ residentId, name, who, physician: initialPhysician, appointmentId, questions, readOnly, documented, next, todayKey, action = completeVisit, physicianFixed = false }: {
   residentId: string
   name: string
   who: string
@@ -30,6 +31,10 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
   documented: boolean
   next: { href: string; label: string } | null
   todayKey: string
+  /** Abschluss-Action (Ärzteportal: eigene Action mit Zuordnungsprüfung) */
+  action?: (residentId: string, input: CompleteVisitInput) => Promise<ActionResult<{ visitId: string; tasks: number }>>
+  /** Ärztin/Arzt steht fest (Konto im Ärzteportal): kein Freitextfeld */
+  physicianFixed?: boolean
 }) {
   const t = useT()
   const locale = useLocale()
@@ -92,7 +97,7 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
     }
     if (isEmptyVisit({ answers: payload.answers, orders: payload.orders, note }) && !(await ask({ ...splitQuestion(t('visit.capture.emptyConfirm')), context: <span>{who}</span>, confirmLabel: t('visit.capture.complete') }))) return
     start(async () => {
-      const r = await completeVisit(residentId, payload)
+      const r = await action(residentId, payload)
       if (!r.ok) {
         // Feldpfad «orders.<i>.<feld>» auf die Zeile der Anzeige abbilden
         const m = r.field?.match(/^orders\.(\d+)\.(\w+)$/)
@@ -127,7 +132,7 @@ export function VisitCapture({ residentId, name, who, physician: initialPhysicia
         </div>
       )}
       {!collapsed && <>
-      {!readOnly && (
+      {!readOnly && !physicianFixed && (
         <TextField label={t('visit.capture.physician')} id={id + 'p'} value={physician} maxLength={120} autoComplete="off" onChange={(e) => setPhysician(e.target.value)} />
       )}
 

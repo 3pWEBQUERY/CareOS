@@ -2,6 +2,23 @@ import { defineMessages } from '../core'
 
 export default defineMessages({
   de: {
+    billing: {
+      title: 'Abrechnung',
+      hint: 'Export je Person und Monat: Pflegestufe (aktueller Stand), Aufenthaltstage, Abwesenheitstage (Nächte ausserhalb), dokumentierte Pflegeminuten und Leistungen je Kategorie. Grundlage für die Abrechnung nach BESA/RAI; der Export wird protokolliert.',
+      month: 'Monat',
+      running: 'laufend',
+      download: 'CSV herunterladen',
+      cols: { lastName: 'Nachname', firstName: 'Vorname', birthDate: 'Geburtsdatum', insuranceNo: 'Versichertennummer', unit: 'Bereich', careLevel: 'Pflegestufe', stayDays: 'Aufenthaltstage', absenceDays: 'Abwesenheitstage', careMinutes: 'Pflegeminuten', careHours: 'Pflegestunden', services: 'Leistungen', category: 'Minuten {name}' },
+    },
+    trc: {
+      title: 'Time returned to care',
+      estimate: 'Schätzung',
+      total: 'Gewonnene Zeit (30 Tage)',
+      perUser: 'Pro aktive Person und Woche',
+      hint: 'Schätzung aus gezählten Vorgängen mal angenommener Zeitersparnis gegenüber dem Vorgehen ohne CareOS (Annahmen in der Tabelle, vorsichtig gewählt). Kein gemessener Wert und keine Auswertung einzelner Personen.',
+      col: { source: 'Vorgang', count: 'Anzahl', assumption: 'Annahme je Vorgang', minutes: 'Minuten' },
+      src: { bulk: 'Sammelquittierung', handover: 'Automatische Übergabe', aiAccepted: 'KI-Entwurf übernommen', voice: 'Diktierter Verlaufseintrag', documentOnce: 'Aufgabe schliesst sich mit der Dokumentation' },
+    },
     ux: {"count": "Anzahl", "people": "Personen", "wk": "KW"}, // ux-qia
     title: 'Kennzahlen',
     dashboards: 'Dashboards',
@@ -145,6 +162,23 @@ export default defineMessages({
     },
   },
   fr: {
+    billing: {
+      title: 'Facturation',
+      hint: 'Export par personne et par mois : niveau de soins (état actuel), jours de séjour, jours d’absence (nuits à l’extérieur), minutes de soins documentées et prestations par catégorie. Base de la facturation selon BESA/RAI ; l’export est journalisé.',
+      month: 'Mois',
+      running: 'en cours',
+      download: 'Télécharger le CSV',
+      cols: { lastName: 'Nom', firstName: 'Prénom', birthDate: 'Date de naissance', insuranceNo: 'Numéro AVS', unit: 'Unité', careLevel: 'Niveau de soins', stayDays: 'Jours de séjour', absenceDays: 'Jours d’absence', careMinutes: 'Minutes de soins', careHours: 'Heures de soins', services: 'Prestations', category: 'Minutes {name}' },
+    },
+    trc: {
+      title: 'Time returned to care',
+      estimate: 'Estimation',
+      total: 'Temps gagné (30 jours)',
+      perUser: 'Par personne active et par semaine',
+      hint: 'Estimation à partir des opérations comptées multipliées par le gain de temps supposé par rapport à la procédure sans CareOS (hypothèses prudentes dans le tableau). Aucune valeur mesurée ni évaluation de personnes.',
+      col: { source: 'Opération', count: 'Nombre', assumption: 'Hypothèse par opération', minutes: 'Minutes' },
+      src: { bulk: 'Validation groupée', handover: 'Transmission automatique', aiAccepted: 'Brouillon IA repris', voice: 'Entrée dictée', documentOnce: 'Tâche close par la documentation' },
+    },
     ux: {"count": "Nombre", "people": "Personnes", "wk": "S."}, // ux-qia
     title: 'Indicateurs',
     dashboards: 'Tableaux de bord',
@@ -288,6 +322,23 @@ export default defineMessages({
     },
   },
   it: {
+    billing: {
+      title: 'Fatturazione',
+      hint: 'Esportazione per persona e mese: livello di cura (stato attuale), giorni di soggiorno, giorni di assenza (notti fuori), minuti di cura documentati e prestazioni per categoria. Base per la fatturazione secondo BESA/RAI; l’esportazione viene registrata.',
+      month: 'Mese',
+      running: 'in corso',
+      download: 'Scaricare il CSV',
+      cols: { lastName: 'Cognome', firstName: 'Nome', birthDate: 'Data di nascita', insuranceNo: 'Numero AVS', unit: 'Reparto', careLevel: 'Livello di cura', stayDays: 'Giorni di soggiorno', absenceDays: 'Giorni di assenza', careMinutes: 'Minuti di cura', careHours: 'Ore di cura', services: 'Prestazioni', category: 'Minuti {name}' },
+    },
+    trc: {
+      title: 'Time returned to care',
+      estimate: 'Stima',
+      total: 'Tempo guadagnato (30 giorni)',
+      perUser: 'Per persona attiva e settimana',
+      hint: 'Stima da operazioni contate moltiplicate per il risparmio di tempo ipotizzato rispetto alla procedura senza CareOS (ipotesi prudenti nella tabella). Nessun valore misurato e nessuna valutazione di singole persone.',
+      col: { source: 'Operazione', count: 'Numero', assumption: 'Ipotesi per operazione', minutes: 'Minuti' },
+      src: { bulk: 'Conferma collettiva', handover: 'Consegna automatica', aiAccepted: 'Bozza IA ripresa', voice: 'Annotazione dettata', documentOnce: 'Compito chiuso dalla documentazione' },
+    },
     ux: {"count": "Numero", "people": "Persone", "wk": "Sett."}, // ux-qia
     title: 'Indicatori',
     dashboards: 'Dashboard',
@@ -431,6 +482,23 @@ export default defineMessages({
     },
   },
   en: {
+    billing: {
+      title: 'Billing',
+      hint: 'Export per person and month: care level (current), days of stay, days of absence (nights away), documented care minutes and services per category. Basis for billing according to BESA/RAI; the export is logged.',
+      month: 'Month',
+      running: 'current',
+      download: 'Download CSV',
+      cols: { lastName: 'Last name', firstName: 'First name', birthDate: 'Date of birth', insuranceNo: 'Insurance number', unit: 'Unit', careLevel: 'Care level', stayDays: 'Days of stay', absenceDays: 'Days of absence', careMinutes: 'Care minutes', careHours: 'Care hours', services: 'Services', category: 'Minutes {name}' },
+    },
+    trc: {
+      title: 'Time returned to care',
+      estimate: 'Estimate',
+      total: 'Time gained (30 days)',
+      perUser: 'Per active person and week',
+      hint: 'Estimate from counted events multiplied by the assumed time saved compared with working without CareOS (cautious assumptions in the table). Not a measured value and no evaluation of individual people.',
+      col: { source: 'Event', count: 'Count', assumption: 'Assumption per event', minutes: 'Minutes' },
+      src: { bulk: 'Bulk completion', handover: 'Automatic handover', aiAccepted: 'AI draft accepted', voice: 'Dictated note', documentOnce: 'Task closed by documentation' },
+    },
     ux: {"count": "Count", "people": "People", "wk": "Wk"}, // ux-qia
     title: 'Insights',
     dashboards: 'Dashboards',

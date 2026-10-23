@@ -29,7 +29,7 @@ export async function admitResident(form: FormData): Promise<ActionResult<{ id: 
     if (!p.ok) return p
     if (p.data.roomId && !(await roomFree(p.data.roomId, unit.id))) return { ok: false, error: 'residents.form.errors.roomTaken', field: 'roomId' }
     const r = await db.resident.create({
-      data: { ...p.data, orgId: ctx.org.id, unitId: unit.id, status: 'active', nutrition: { create: {} }, episodes: { create: { start: new Date(), reason: ctx.t('residents.history.admitted') } } },
+      data: { ...p.data, orgId: ctx.org.id, unitId: unit.id, status: 'active', nutrition: { create: {} }, episodes: { create: { start: new Date(), reason: ctx.t('residents.history.admitted'), kind: 'stay', unitId: unit.id, createdById: ctx.user.id } } },
     })
     await audit(ctx, { action: 'resident.create', entityType: 'Resident', entityId: r.id, after: { ...p.data, unitId: unit.id }, context: { residentId: r.id } })
     await emit({ orgId: ctx.org.id, type: 'resident.updated', unitId: unit.id, residentId: r.id, actorId: ctx.user.id, payload: { created: true } })
@@ -55,6 +55,8 @@ export async function updateResident(residentId: string, form: FormData): Promis
     const p = parseMaster(form)
     if (!p.ok) return p
     const x = extra.parse({ status: fd(form, 'status') || r.status, importantNotes: fd(form, 'importantNotes'), insuranceNo: fd(form, 'insuranceNo'), primaryNurseId: fd(form, 'primaryNurseId') })
+    // Abwesenheit und Rückkehr nur über «Aufenthalt» (Pflegeepisode mit Grund, Aufgaben pausieren; PRD §43)
+    if (x.status !== r.status && (x.status === 'absent' || r.status === 'absent')) return { ok: false, error: 'residents.adt.errors.useStay', field: 'status' }
     if (p.data.roomId && p.data.roomId !== r.roomId && !(await roomFree(p.data.roomId, r.unitId, r.id))) return { ok: false, error: 'residents.form.errors.roomTaken', field: 'roomId' }
     if (x.primaryNurseId && !(await db.user.findFirst({ where: { id: x.primaryNurseId, orgId: ctx.org.id }, select: { id: true } }))) return { ok: false, error: 'common.notFound', field: 'primaryNurseId' }
     const mine: Record<string, unknown> = { ...p.data, status: x.status, importantNotes: x.importantNotes || null, insuranceNo: x.insuranceNo || null, primaryNurseId: x.primaryNurseId || null }

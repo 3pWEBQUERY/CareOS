@@ -144,6 +144,8 @@ export function VersionButton({ documentId, draft, suggest, suggestCritical, bas
       <Dialog open={open} onClose={() => setOpen(false)} title={draft ? t('docs.version.editDraft', { v: draft.version }) : t('docs.version.new')} wide>
         <ActionForm action={draft ? updateDraft : createVersion} success={draft ? 'common.saved' : 'docs.version.created'} reset={false} onDone={(r) => r.ok && setOpen(false)}>
           <input type="hidden" name={draft ? 'versionId' : 'documentId'} value={draft ? draft.id : documentId} />
+          {/* Stand beim Öffnen für die Konflikterkennung (PRD §32) */}
+          {draft && <input type="hidden" name="base" value={JSON.stringify({ version: draft.version, body: draft.body, changeNote: draft.changeNote, critical: draft.critical })} />}
           <div className="form-grid">
             <TextField label={t('docs.f.version')} ref={verRef} name="version" defaultValue={draft?.version ?? suggest} required className="mono" />
             <Checkbox name="critical" defaultChecked={draft?.critical} onChange={(e) => { if (!draft && verRef.current && suggest && suggestCritical) verRef.current.value = e.target.checked ? suggestCritical : suggest }} label={t('docs.f.critical')} wrapStyle={{ alignSelf: 'end' }} />

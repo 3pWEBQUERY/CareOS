@@ -12,6 +12,7 @@ import { hashToken } from '@/lib/auth/session'
 import { signPayload } from '@/lib/events'
 import { API_SCOPES, EVENT_TYPES, INTEGRATION_KINDS } from '@/lib/admin-shared'
 import { maskConfig, unmask } from './mask'
+import { TOKEN_DAYS, tokenExpiry } from '@/lib/api-tokens'
 
 async function admin() {
   const ctx = await getCtx()
@@ -28,9 +29,12 @@ export async function createTokenAction(form: FormData): Promise<ActionResult<{ 
     if (name.length < 2) return { ok: false, error: 'admin.errors.name', field: 'name' }
     const scopes = API_SCOPES.filter((s) => form.getAll('scopes').includes(s))
     if (!scopes.length) return { ok: false, error: 'admin.api.pickScope' }
+    // Optional befristet (Developer-Portal: persönliche Tokens immer befristet)
+    const days = Number(fd(form, 'days') || 0)
+    const expiresAt = days > 0 && (TOKEN_DAYS as readonly number[]).includes(days) ? tokenExpiry(days) : null
     const token = 'cos_' + randomToken(32)
-    const row = await db.apiToken.create({ data: { orgId: ctx.org.id, name, scopes, tokenHash: hashToken(token), createdById: ctx.user.id } })
-    await audit(ctx, { action: 'admin.api_token.create', entityType: 'ApiToken', entityId: row.id, after: { name, scopes, prefix: token.slice(0, 8) } })
+    const row = await db.apiToken.create({ data: { orgId: ctx.org.id, name, scopes, tokenHash: hashToken(token), createdById: ctx.user.id, expiresAt } })
+    await audit(ctx, { action: 'admin.api_token.create', entityType: 'ApiToken', entityId: row.id, after: { name, scopes, prefix: token.slice(0, 8), expiresAt: expiresAt?.toISOString() ?? null } })
     refresh()
     return { ok: true, data: { secret: token }, message: 'admin.api.tokenCreated' }
   })

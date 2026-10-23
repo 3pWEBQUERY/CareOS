@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { log } from '@/lib/log'
 import { count } from '@/lib/metrics'
 import { LabPayload, labFlag, numericValue } from '@/lib/integrations/lab'
+import { processHl7 } from '@/lib/integrations/hl7v2-run'
 
 /**
  * Integration Layer (PRD §40/§41): ein Adapter je Integrationsart (Integration.kind).
@@ -90,9 +91,24 @@ const lab: Adapter = {
   },
 }
 
+/**
+ * HL7 v2 ADT-Empfang (A01, A02, A03, A21, A22) über POST /api/v1/hl7 (Scope residents:adt). Eingehend, daher ohne
+ * Endpunkt; «Verbindung prüfen» meldet bereit. Payload: { text, actor } (src/lib/integrations/hl7v2-run.ts).
+ */
+const hl7v2: Adapter = {
+  status: 'ready',
+  async test() { return { ok: true, message: 'inbound' } },
+  async import(it, orgId, payload) {
+    const p = payload as { text?: unknown; actor?: Parameters<typeof processHl7>[1] } | null
+    if (!p || typeof p.text !== 'string' || !p.actor) return { ok: false, message: 'payload' }
+    const r = await processHl7(orgId, p.actor, p.text, it?.id ?? null)
+    return { ok: r.ack === 'AA', records: r.ack === 'AA' && !r.duplicate ? 1 : 0, skipped: r.duplicate ? 1 : 0, message: r.code, summary: { controlId: r.controlId, event: r.event, ack: r.ack, code: r.code } }
+  },
+}
+
 export const ADAPTERS: Record<string, Adapter> = {
   hl7_fhir: fhir,
-  hl7v2: prepared(['endpoint']),
+  hl7v2,
   pharmacy: prepared(['endpoint']),
   lab,
   scheduling: prepared(['endpoint']),

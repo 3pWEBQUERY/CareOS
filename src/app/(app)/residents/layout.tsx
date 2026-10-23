@@ -5,7 +5,8 @@ import { Forbidden } from '@/components/ui/Empty'
 import { ResidentList, Workspace, type ResRow } from '@/components/residents/ResidentList'
 import { ensureTasksForDay, OPEN_STATUSES, overdueFilter } from '@/lib/tasks'
 import { lastShiftEnd } from '@/lib/shift'
-import { addDays, addMinutes, age, startOfDay } from '@/lib/time'
+import { addDays, addMinutes, age, fmtDate, startOfDay } from '@/lib/time'
+import { openAbsences } from '@/lib/adt'
 import { ShiftSnapshot } from '@/components/offline/ShiftSnapshot'
 
 export default async function ResidentsLayout({ children }: { children: React.ReactNode }) {
@@ -28,12 +29,13 @@ export default async function ResidentsLayout({ children }: { children: React.Re
     db.observation.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, at: { gte: last.at }, authorId: { not: ctx.user.id } }, _count: true }),
     db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, _count: true }),
   ])
+  const absences = await openAbsences(residents.filter((r) => r.status === 'absent').map((r) => r.id))
   const cnt = (rows: { residentId: string | null; _count: number }[], id: string) => rows.find((r) => r.residentId === id)?._count ?? 0
   const rows: ResRow[] = residents.map((r) => ({
     id: r.id,
     room: r.room?.number ?? '–',
     name: `${r.lastName} ${r.firstName}`,
-    meta: [`${age(r.birthDate)} ${t('common.years')}`, r.careLevel != null && `${t('residents.banner.careLevel')} ${r.careLevel}`, r.allergies.length && t('residents.list.allergy'), r.rea === 'no' && t('residents.list.reaNo'), r.status === 'absent' && t('residents.banner.absent')].filter(Boolean).join(' · '),
+    meta: [`${age(r.birthDate)} ${t('common.years')}`, r.careLevel != null && `${t('residents.banner.careLevel')} ${r.careLevel}`, r.allergies.length && t('residents.list.allergy'), r.rea === 'no' && t('residents.list.reaNo'), r.status === 'absent' && (absences.get(r.id) ? t('residents.adt.listSince', { date: fmtDate(absences.get(r.id)!.start, ctx.locale, { day: '2-digit', month: '2-digit' }) }) + ' · ' + absences.get(r.id)!.reason : t('residents.banner.absent'))].filter(Boolean).join(' · '),
     over: cnt(over, r.id),
     open: cnt(open, r.id),
     today: cnt(today, r.id),

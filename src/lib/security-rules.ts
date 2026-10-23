@@ -129,6 +129,14 @@ export function evaluateRules(
         if (r.entityId) add('login_failures', org, 'user:' + r.entityId, r.entityId, SHORT_WINDOW, r)
         if (r.ip) add('login_failures', org, 'ip:' + opts.ipKey(r.ip), null, SHORT_WINDOW, r)
         break
+      // Angehörigenportal (eigene Konten): gleiche Regeln, Gegenstand «portal:<Konto>», keine Person der Organisation
+      case r.action === 'portal.login_failed':
+        if (r.entityId) add('login_failures', org, 'portal:' + r.entityId, null, SHORT_WINDOW, r)
+        if (r.ip) add('login_failures', org, 'ip:' + opts.ipKey(r.ip), null, SHORT_WINDOW, r)
+        break
+      case r.action === 'portal.mfa_failed':
+        if (r.entityId) add('mfa_failures', org, 'portal:' + r.entityId, null, SHORT_WINDOW, r)
+        break
       case r.action === 'auth.mfa_failed' || r.action === 'profile.mfa_code_failed':
         if (r.userId || r.entityId) add('mfa_failures', org, 'user:' + (r.userId ?? r.entityId), r.userId ?? r.entityId, SHORT_WINDOW, r)
         break

@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { orgSettings } from '@/lib/admin'
-import { FEATURE_FLAGS } from '@/lib/admin-shared'
+import { MODULES, MODULE_PACKAGES } from '@/lib/modules'
+import { saveModulesAction } from './module-actions'
 import { VITALS, VITAL_KEYS } from '@/lib/vitals'
 import type { AssessmentDef, WorkflowStep } from '@/lib/clinical-config'
 import { Forbidden, Empty } from '@/components/ui/Empty'
@@ -21,7 +22,7 @@ import { AssessmentBuilderButton, type BuilderValue } from './AssessmentBuilder'
 import { ASSESSMENTS } from '@/lib/clinical-config'
 import {
   deleteShiftTypeAction, resetThresholdAction, saveAssessmentAction, saveCoverageAction, saveDomainsAction,
-  saveFlagsAction, saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
+  saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
 } from './actions'
 import { Checkbox, NumberField, Switch, TextField, TimeField } from '@/components/ui/fields'
 
@@ -32,7 +33,7 @@ export async function generateMetadata() {
 
 const TABS = ['domains', 'assessments', 'vitals', 'customVitals', 'incidents', 'focus', 'workflows', 'recurring', 'shifts', 'features', 'escalations', 'acks'] as const
 /** Reiter aus Paket «Aufgaben/Workflows»: Beschriftung im Namespace tasks. */
-const TAB_KEYS: Partial<Record<(typeof TABS)[number], string>> = { workflows: 'tasks.rules.tab', recurring: 'tasks.recur.admin.tab' }
+const TAB_KEYS: Partial<Record<(typeof TABS)[number], string>> = { workflows: 'tasks.rules.tab', recurring: 'tasks.recur.admin.tab', features: 'tenancy.modules.tab' }
 type Tab = (typeof TABS)[number]
 
 export default async function ConfigPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -312,20 +313,25 @@ async function Shifts() {
 async function Features() {
   const ctx = await getCtx()
   const { t } = ctx
-  const flags = await db.featureFlag.findMany({ where: { orgId: ctx.org.id } })
+  // Module je Organisation (PRD §69): wirken zentral über die Berechtigungen (src/lib/modules.ts, getCtx)
   return (
-    <ActionForm action={saveFlagsAction} reset={false} success="common.saved">
-      <p className="fg2" style={{ margin: 0 }}>{t('admin.config.featuresHint')}</p>
-      <ul className="list" style={{ border: '1px solid var(--line)', borderRadius: 'var(--r)' }}>
-        {FEATURE_FLAGS.map((k) => (
-          <li key={k}>
-            <div className="li">
-              <Switch name={'flag:' + k} defaultChecked={flags.find((f) => f.key === k)?.enabled ?? false} label={t('admin.config.flags.' + k)} hint={t('admin.config.flags.' + k + 'Hint')} wrapClassName="grow" />
-              <code className="mono small muted">{k}</code>
-            </div>
-          </li>
-        ))}
-      </ul>
+    <ActionForm action={saveModulesAction} reset={false} success="tenancy.modules.saved">
+      <p className="fg2" style={{ margin: 0, maxWidth: '80ch' }}>{t('tenancy.modules.hint')}</p>
+      <p className="small muted" style={{ margin: 0, maxWidth: '80ch' }}>{t('tenancy.modules.core')}</p>
+      {MODULE_PACKAGES.map((pkg) => (
+        <section key={pkg} aria-labelledby={'mod-' + pkg}>
+          <h2 className="sec" id={'mod-' + pkg}>{t('tenancy.modules.pkg.' + pkg)}</h2>
+          <ul className="list" style={{ border: '1px solid var(--line)', borderRadius: 'var(--r)' }}>
+            {MODULES.filter((m) => m.pkg === pkg).map((m) => (
+              <li key={m.key}>
+                <div className="li">
+                  <Switch name={'module:' + m.key} defaultChecked={ctx.modules.includes(m.key)} label={t('tenancy.modules.items.' + m.key + '.name')} hint={t('tenancy.modules.items.' + m.key + '.hint')} wrapClassName="grow" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
       <div className="form-actions"><Submit>{t('common.save')}</Submit></div>
     </ActionForm>
   )

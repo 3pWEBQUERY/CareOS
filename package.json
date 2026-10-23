@@ -10,7 +10,7 @@
     "build": "prisma generate && next build",
     "start": "node scripts/start.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test": "node --import tsx --require ./tests/server-only-stub.cjs --test \"src/**/*.test.ts\" \"tests/**/*.test.ts\"",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",

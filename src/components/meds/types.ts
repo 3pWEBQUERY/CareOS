@@ -31,6 +31,8 @@ export type MarRowDto = {
   stoppedAt: string | null
   /** Allergie-Treffer aus dem lokalen Abgleich (PRD §13.1) */
   allergy?: AllergyMatch[]
+  /** Telefonische/mündliche Verordnung noch nicht ärztlich gegengezeichnet */
+  unconfirmed?: boolean
   cells: (CellDto | null)[]
 }
 

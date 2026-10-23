@@ -9,6 +9,7 @@ export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; b
 const ICONS = {
   home: I.IconHome, residents: I.IconResidents, tasks: I.IconTasks, handover: I.IconHandover, schedule: I.IconSchedule,
   team: I.IconTeam, chat: I.IconChat, learn: I.IconLearn, docs: I.IconDocs, insights: I.IconInsights, quality: I.IconQuality, admin: I.IconAdmin,
+  therapy: I.IconTherapy, family: I.IconFamily, homecare: I.IconHomecare, developer: I.IconCode,
 }
 
 export const isActive = (path: string, href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'))
