@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCtx, residentInScope } from '@/lib/context'
 import { audit } from '@/lib/audit'
+import { exportRateLimit } from '@/lib/rate-limit'
 
 /** Portal-Daten einer Person für die Datenauskunft – nur ausdrücklich gewählte Felder (keine Hashes, Tokens, MFA-Geheimnisse). */
 async function portalExport(orgId: string, residentId: string) {
@@ -32,6 +33,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const r = await residentInScope(ctx, id)
   if (!r) return NextResponse.json({ error: 'not_found' }, { status: 404 })
   if (!ctx.can('resident.edit', { unitId: r.unitId, locationId: r.unit.locationId }) && !ctx.can('admin.org')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  const rl = await exportRateLimit('resident', ctx.user.id)
+  if (!rl.ok) return NextResponse.json({ error: 'rate' }, { status: 429, headers: { 'retry-after': String(rl.retryAfter) } })
 
   const [resident, incidents, tasks, handoverEntries, portal] = await Promise.all([
     db.resident.findUniqueOrThrow({

@@ -49,6 +49,29 @@ describe('Kernabläufe (Postgres)', dbOpts, () => {
     assert.equal(await count(), 3)
   })
 
+  test('Therapie: Pflege-Anleitung erzeugt über ensureTasksForDay tägliche Aufgaben bis zum Planende', async () => {
+    const { ensureTasksForDay } = await import('../../src/lib/tasks')
+    const { addDays, startOfDay, dbDate } = await import('../../src/lib/time')
+    const { careRecurrence } = await import('../../src/lib/therapy')
+    const start = addDays(startOfDay(new Date()), 1)
+    const care = careRecurrence(start, '10:00', addDays(start, 1))
+    // Gleiche Vorlage wie createPlanAction (src/app/(app)/therapy/actions.ts)
+    const tpl = await f.db.taskTemplate.create({
+      data: {
+        orgId: f.org.id, unitId: f.unitB.id, residentId: f.resB.id, title: 'Transfer Bett–Rollstuhl mit Drehscheibe', category: 'Mobilität',
+        rhythm: care.rhythm, every: care.every, weekdays: care.weekdays, times: care.times, startDate: dbDate(care.startDate), endDate: dbDate(care.endDate!), durationMin: 10, priority: 'routine', createdById: f.lead.id,
+      },
+    })
+    const tasks = (day: Date) => f.db.task.findMany({ where: { source: 'recurring', sourceId: tpl.id, dueAt: { gte: day, lt: addDays(day, 1) } } })
+    for (const day of [start, addDays(start, 1), addDays(start, 2)]) await ensureTasksForDay(f.unitB.id, day)
+    const first = await tasks(start)
+    assert.equal(first.length, 1)
+    assert.equal(first[0].residentId, f.resB.id)
+    assert.equal(first[0].dueAt.getHours(), 10)
+    assert.equal((await tasks(addDays(start, 1))).length, 1)
+    assert.equal((await tasks(addDays(start, 2))).length, 0)
+  })
+
   test('Rückstand: eine Zahl für überfällig, Routine früherer Schichten wird übergeben', async () => {
     const { overdueCount, expireBacklog } = await import('../../src/lib/tasks')
     const now = new Date()

@@ -23,6 +23,14 @@ export type PortalRole = (typeof PORTAL_ROLES)[number]
 /** Rollen, die heute eingeladen werden können. */
 export const INVITABLE_ROLES: PortalRole[] = ['relative', 'legal_rep']
 
+/** Ärztliche Kontaktpersonen (Beziehung frei erfasst, DE/FR/IT/EN). Ärztinnen und Ärzte arbeiten im Ärzteportal (/md), nicht im Angehörigenportal. */
+const PHYSICIAN_RELATION = /(a|ae)rzt|medecin|docteur|\bmedic[oa]\b|dottor|physician|doctor|\bgp\b|general practitioner|\bdr\.?\s?med\b/
+
+export function isPhysicianContact(relation: string | null | undefined) {
+  const s = (relation ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return PHYSICIAN_RELATION.test(s)
+}
+
 /** Wer eingewilligt hat. */
 export const CONSENT_BY = ['resident', 'legal_rep'] as const
 export type ConsentBy = (typeof CONSENT_BY)[number]

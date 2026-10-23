@@ -8,7 +8,7 @@ import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { CheckboxGroup, DateField, RadioGroup, TextField, Textarea } from '@/components/ui/fields'
 import { INTL_LOCALE } from '@/i18n/core'
-import { PORTAL_GRANTS } from '@/lib/portal/policy'
+import { PORTAL_GRANTS, isPhysicianContact } from '@/lib/portal/policy'
 import { invitePortalAction, reissuePortalInviteAction, revokePortalAccessAction, type InviteResult } from './portal-actions'
 
 export type AccessRow = {
@@ -39,7 +39,7 @@ const STATE_TONE: Record<AccessRow['state'], string> = { invited: 'accent', expi
 export function ContactPortal({ residentId, who, contact, accesses, portal }: {
   residentId: string
   who: string
-  contact: { id: string; name: string; email: string | null; isLegalRep: boolean }
+  contact: { id: string; name: string; relation: string; email: string | null; isLegalRep: boolean }
   accesses: AccessRow[]
   portal: PortalProps
 }) {
@@ -54,6 +54,8 @@ export function ContactPortal({ residentId, who, contact, accesses, portal }: {
   const grantLabel = (g: string) => t('portal.grants.' + g)
 
   if (!portal.moduleOn && !accesses.length) return null
+  // Ärztliche Kontakte: kein Angehörigenzugang (Ärzteportal); bestehende Zugänge bleiben sicht- und widerrufbar
+  const physician = isPhysicianContact(contact.relation)
   const reissue = (a: AccessRow) => start(async () => {
     const r = await reissuePortalInviteAction(residentId, a.id)
     if (!r.ok) return void toast(t(r.error), { kind: 'crit' })
@@ -89,10 +91,11 @@ export function ContactPortal({ residentId, who, contact, accesses, portal }: {
           )}
         </div>
       ))}
-      {!open.length && portal.canManage && portal.moduleOn && (
+      {!open.length && physician && <span className="small muted">{t('portal.contact.physician')}</span>}
+      {!open.length && !physician && portal.canManage && portal.moduleOn && (
         <button type="button" className="btn sm" onClick={() => setInvite(true)}>{t('portal.contact.invite')}</button>
       )}
-      {!open.length && (!portal.canManage || !portal.moduleOn) && <span className="small muted">{t('portal.contact.none')}</span>}
+      {!open.length && !physician && (!portal.canManage || !portal.moduleOn) && <span className="small muted">{t('portal.contact.none')}</span>}
 
       <Dialog open={invite} onClose={() => setInvite(false)} title={t('portal.invite.title')} context={<span><strong>{who}</strong> · {contact.name}</span>}>
         {invite && (

@@ -5,7 +5,8 @@ CareOS ist API-first (PRD §40/§41). Es gibt drei Schnittstellen:
 | Schnittstelle | Basis-URL | Zweck |
 |---|---|---|
 | REST API v1 | `/api/v1` | Lesen und Schreiben ausgewählter Daten (JSON), Patientenadministration (ADT) |
-| HL7 FHIR R4 | `/api/fhir` | Gesundheitsdaten im FHIR-Format: lesend; `Observation` (Vitalwerte) auch schreibend |
+| HL7 FHIR R4 | `/api/fhir` | Gesundheitsdaten im FHIR-Format: lesend; `Observation` (Vitalwerte) und `AllergyIntolerance` auch schreibend |
+| HL7 v2 | `/api/v1/hl7` | Patientenadministration (ADT A01/A02/A03/A21/A22) aus Spital- und Klinikinformationssystemen |
 | Webhooks | Ziel-URL des Empfängers | Domain Events in Echtzeit (HTTP POST, signiert) |
 
 **Maschinenlesbar:** `GET /api/v1/openapi.json` (OpenAPI 3.1, ohne Anmeldung, Quelle `src/lib/api-spec.ts`). Ein Test
@@ -123,7 +124,39 @@ Antwort `201` mit der Person. Zimmer ohne freies Bett → `409 room_occupied`; B
 
 Antwort `200` mit der aktualisierten Person. Offene Aufgaben ziehen bei der Verlegung mit, werden während einer Abwesenheit als «nicht durchgeführt (abwesend)» abgeschlossen und nach dem Austritt entfernt.
 
-`POST /api/v1/hl7` – dieselben Vorgänge als HL7-v2-Nachricht (ER7, `Content-Type: x-application/hl7-v2+er7` oder `text/plain`; A01, A02, A03, A21, A22). Antwort immer `200` mit einer ACK-Nachricht (`MSA-1` AA/AE/AR).
+### HL7 v2 ADT
+
+`POST /api/v1/hl7` (Scope `residents:adt`) – dieselben Vorgänge als HL7-v2-Nachricht, z. B. direkt aus dem KIS des Spitals.
+Body: genau eine Nachricht im ER7-Format (Segmente durch CR oder LF getrennt, höchstens 256 KB), `Content-Type: x-application/hl7-v2+er7`
+oder `text/plain`. Ausgeführt wird über dieselbe Logik wie in der Akte (Pflegeepisoden, Aufgabenregeln, Event `resident.updated`).
+
+| Ereignis | Vorgang | Zuordnung |
+|---|---|---|
+| `A01` | Eintritt | Bereich `PV1-3.1` (Name oder Kurzname), Zimmer `PV1-3.2`, Eintritt `PV1-44` |
+| `A02` | Verlegung | neuer Bereich/Zimmer aus `PV1-3` |
+| `A03` | Austritt | Zeitpunkt `PV1-45`; verstorben bei `PID-30 = Y` oder `PV1-36 = 20` |
+| `A21` | Abwesenheit (Beurlaubung) | – |
+| `A22` | Rückkehr | – |
+
+Die Person wird über die AHV-Nummer gefunden (`PID-3` mit Typ `SS` oder Assigning Authority `2.16.756.5.32`, sonst `PID-19`),
+ersatzweise über Name (`PID-5`) und Geburtsdatum (`PID-7`). Zeitpunkt des Vorgangs aus `EVN-6`, sonst `EVN-2`.
+
+```
+MSH|^~\&|KIS|SPITAL|CAREOS|LINDENHOF|20261023101500||ADT^A01^ADT_A01|MSG00001|P|2.5
+EVN|A01|20261023101000
+PID|1||7561234567897^^^&2.16.756.5.32&ISO^SS||Muster^Erika||19380314|F
+PV1|1|I|WG 1^101
+```
+
+Antwort immer HTTP `200` mit einer ACK-Nachricht (`x-application/hl7-v2+er7`); das Ergebnis steht in `MSA-1` und als Code in `MSA-3`:
+
+| `MSA-1` | Bedeutung | Codes (Auswahl) |
+|---|---|---|
+| `AA` | verarbeitet | `admitted`, `admitted_without_room`, `transferred`, `discharged`, `leave`, `returned`, `duplicate` (gleiche Kontroll-ID `MSH-10` bereits verarbeitet, nichts doppelt ausgeführt) |
+| `AE` | inhaltlich abgewiesen | `resident_unknown`, `unit_unknown`, `already_admitted`, `pid_name`, `pid_birth`, `no_pid` sowie die Codes der ADT-Endpunkte (z. B. `room_occupied`) |
+| `AR` | nicht verarbeitbar | `unsupported_type` (kein ADT), `unsupported_event`, `no_msh`, `message too large` |
+
+Jede Nachricht wird als Integrationslauf (Admin → Integrationen und API) und im Audit-Protokoll (`api.hl7.adt`, ohne Nachrichteninhalt) festgehalten.
 
 ### Aufgaben
 
@@ -210,7 +243,7 @@ Event-Payloads enthalten nur Referenzen (IDs), keine Gesundheitsdaten. Details w
 
 ## HL7 FHIR R4
 
-Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `searchset`. Lesen mit Scope `fhir:read`, Schreiben (`POST /api/fhir/Observation`) mit Scope `observations:write`.
+Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `searchset`. Lesen mit Scope `fhir:read`, Schreiben (`POST /api/fhir/Observation`, `POST /api/fhir/AllergyIntolerance`) mit Scope `observations:write`.
 
 | Ressource | Interaktionen | Suchparameter |
 |---|---|---|
@@ -263,6 +296,27 @@ Events `vitals.recorded` und ggf. `vitals.abnormal`.
 }
 ```
 
+### AllergyIntolerance schreiben
+
+`POST /api/fhir/AllergyIntolerance` (Scope `observations:write`) – Allergie aus einem Umsystem übernehmen, z. B. aus dem
+Austrittsbericht des Spitals. Die Allergie wird den Allergien der Person hinzugefügt (nie überschrieben) und wirkt sofort im
+Allergie-Abgleich beim Verordnen und in der Medikamentenrunde. Pflichtfelder: `patient.reference` (`Patient/{id}`, Person aktiv
+oder abwesend) und `code.text` oder `code.coding[].display` (höchstens 80 Zeichen). `clinicalStatus` nur `active`;
+`verificationStatus` `refuted` und `entered-in-error` werden abgewiesen (`422`) – Allergien entfernt die Pflege in der Akte.
+
+```json
+{
+  "resourceType": "AllergyIntolerance",
+  "patient": { "reference": "Patient/cmv…" },
+  "clinicalStatus": { "coding": [{ "system": "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical", "code": "active" }] },
+  "code": { "text": "Penicillin" }
+}
+```
+
+Antwort `201` mit der AllergyIntolerance und Header `Location`; ist dieselbe Allergie bereits erfasst (ohne Gross-/Kleinschreibung
+und Akzente), `200` mit dem bestehenden Eintrag. Gleichzeitige Änderung der Akte → `409 conflict` (erneut senden). Event
+`resident.updated`, Audit `api.fhir.allergy.create`.
+
 ## Webhooks
 
 Webhooks werden in **Admin → Integrationen und API → Webhooks** angelegt: Ziel-URL (HTTPS), Ereignisse (oder «Alle»). Das Signatur-Secret wird nur bei der Erstellung bzw. Erneuerung angezeigt. «Test senden» (dort oder im Developer-Portal → Webhooks) stellt ein Ereignis `webhook.test` zu; die letzten Zustellungen mit HTTP-Status sind je Webhook sichtbar.
@@ -313,6 +367,10 @@ def verify(raw_body: bytes, header: str, secret: str) -> bool:
 ## Datenexport
 
 **Admin → Integrationen und API → Datenexport** (Berechtigung `admin.org`) lädt die gesamte Organisation als JSON herunter (`/admin/export`, Format `careos-export` v1): Struktur, Konfiguration, Mitarbeitende ohne Zugangsdaten und alle Daten der Bewohnenden (PRD §36, Datenportabilität). Nicht enthalten sind Passwort-Hashes, MFA-Geheimnisse, Passkeys, Sitzungen, Token-Hashes und Webhook-Secrets. Jeder Export wird im Audit-Protokoll vermerkt. Das Audit-Protokoll selbst ist als CSV unter **Admin → Audit-Protokoll** exportierbar.
+
+**Kennzahlen → Abrechnung** (Modul «Kennzahlen», Berechtigung `insights.view` im Bereich) liefert je Monat eine CSV mit Pflegestufe, Aufenthalts- und Abwesenheitstagen, dokumentierten Pflegeminuten und Leistungen je Kategorie (`/insights/billing?month=YYYY-MM[&unit=]`, Audit `billing.export`). Die Datenauskunft pro Person liegt in der Akte unter **Historie → Datenschutz** (JSON, Audit `resident.export`).
+
+Exporte sind je Person und Stunde begrenzt (Organisation 5, Audit-Protokoll 20, Abrechnung 30, Datenauskunft 60); darüber `429` mit `Retry-After`.
 
 ## Betrieb: Health Check und Metriken
 

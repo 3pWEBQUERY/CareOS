@@ -49,7 +49,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
           <div style={{ minWidth: 0 }}>
             <Link href="/team/people" className="lbl" style={{ textDecoration: 'none' }}>← {t('people.profile.back')}</Link>
             <h1>{p.firstName} {p.lastName}</h1>
-            <p className="sub">{[p.jobTitle, p.primaryUnit].filter(Boolean).join(' · ')}</p>
+            <p className="sub">{[p.jobTitle, p.orgWide ? t('people.orgWide') : p.primaryUnit].filter(Boolean).join(' · ')}</p>
           </div>
         </div>
         <div className="row">

@@ -1,6 +1,30 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { planSchema, reviewDue, sessionSchema, weekProgress, weekStart } from './therapy'
+import { careRecurrence, planSchema, reviewDue, sessionSchema, weekProgress, weekStart } from './therapy'
+import { occursOn } from './recurrence'
+
+test('Therapie: Pflege-Anleitung wiederholt sich täglich bis zum Planende (Grundlage für ensureTasksForDay)', () => {
+  const start = new Date('2026-10-23T00:00:00')
+  const end = new Date('2026-10-30T00:00:00')
+  const day = (d: number) => new Date(2026, 9, d)
+  // Vor der Uhrzeit angelegt: erste Aufgabe heute
+  const early = careRecurrence(start, '10:00', end, new Date('2026-10-23T08:00:00'))
+  assert.deepEqual(early.times, ['10:00'])
+  assert.equal(occursOn(early, day(23)), true)
+  assert.equal(occursOn(early, day(27)), true)
+  assert.equal(occursOn(early, day(30)), true)
+  assert.equal(occursOn(early, day(31)), false)
+  assert.equal(occursOn(early, day(22)), false)
+  // Nach der Uhrzeit angelegt: keine sofort überfällige Aufgabe, Beginn am Folgetag
+  const late = careRecurrence(start, '10:00', null, new Date('2026-10-23T11:30:00'))
+  assert.equal(occursOn(late, day(23)), false)
+  assert.equal(occursOn(late, day(24)), true)
+  assert.equal(occursOn(late, new Date(2027, 2, 1)), true)
+  // Start in der Zukunft bleibt unverändert
+  const future = careRecurrence(new Date('2026-11-02T00:00:00'), '07:30', null, new Date('2026-10-23T11:30:00'))
+  assert.equal(future.startDate.getDate(), 2)
+  assert.equal(occursOn(future, day(31)), false)
+})
 
 test('Therapie: Woche beginnt am Montag, Rückstand erst wenn Soll unerreichbar', () => {
   const thu = new Date('2026-10-22T10:00:00')

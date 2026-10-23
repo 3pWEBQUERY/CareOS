@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { audit } from '@/lib/audit'
+import { exportRateLimit } from '@/lib/rate-limit'
 import { auditWhere } from '../filter'
 
 const MAX = 20000
@@ -17,6 +18,8 @@ const cell = (v: unknown) => {
 export async function GET(req: NextRequest) {
   const ctx = await getCtx()
   if (!ctx.can('admin.audit')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  const rl = await exportRateLimit('audit', ctx.user.id)
+  if (!rl.ok) return NextResponse.json({ error: 'rate' }, { status: 429, headers: { 'retry-after': String(rl.retryAfter) } })
   const sp = req.nextUrl.searchParams
   const f = { user: sp.get('user') ?? undefined, action: sp.get('action') ?? undefined, entity: sp.get('entity') ?? undefined, from: sp.get('from') ?? undefined, to: sp.get('to') ?? undefined }
   const rows = await db.auditLog.findMany({ where: auditWhere(ctx.org.id, f), orderBy: { at: 'desc' }, take: MAX })
