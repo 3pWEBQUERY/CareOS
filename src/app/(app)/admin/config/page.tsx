@@ -24,7 +24,8 @@ import {
   deleteShiftTypeAction, resetThresholdAction, saveAssessmentAction, saveCoverageAction, saveDomainsAction,
   saveIncidentTypeAction, saveShiftTypeAction, saveThresholdsAction,
 } from './actions'
-import { Checkbox, NumberField, Switch, TextField, TimeField } from '@/components/ui/fields'
+import { Checkbox, NumberField, Select, Switch, TextField, TimeField } from '@/components/ui/fields'
+import { SHIFT_COLORS } from '@/lib/shift-types'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -266,6 +267,9 @@ async function Shifts() {
       <TimeField label={t('admin.config.start')} name="start" defaultValue={st?.start ?? '07:00'} required />
       <TimeField label={t('admin.config.end')} name="end" defaultValue={st?.end ?? '15:30'} required />
       <NumberField label={t('admin.config.breakMinutes')} name="breakMinutes" unit="min" min={0} max={240} step={5} defaultValue={st?.breakMinutes ?? 0} />
+      <Select label={t('roster.types.color')} name="color" defaultValue={st?.color ?? 'accent'}>
+        {SHIFT_COLORS.map((c) => <option key={c} value={c}>{t('roster.types.colors.' + c)}</option>)}
+      </Select>
     </div>
   )
   return (

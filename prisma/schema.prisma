@@ -372,6 +372,8 @@ model User {
   shiftAssignments  ShiftAssignment[]
   /// Dienstplanung: Beschäftigungsgrad in Prozent (Soll-Stunden = Wochenstunden × Pensum).
   employmentPct     Int                @default(100)
+  /// Dienstplanung: dauerhafte Vorgaben { allowed: [Codes], preferred: [Codes], maxNights } (src/lib/roster/model.ts)
+  shiftPrefs        Json               @default("{}")
   shiftWishes       ShiftWish[]
   /// Benachrichtigungen je Art (PRD §25, src/lib/notify-prefs.ts): { kinds: { <art>: { app, push } }, offDutyPush }.
   notificationPrefs Json              @default("{}")

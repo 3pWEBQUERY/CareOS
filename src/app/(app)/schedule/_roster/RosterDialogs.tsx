@@ -5,18 +5,19 @@ import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { Dialog } from '@/components/ui/Dialog'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
-import { Combobox, DateField, NumberField, RadioGroup, TextField, Textarea } from '@/components/ui/fields'
-import { savePensumAction, startProposalAction } from '../roster-actions'
+import { CheckboxGroup, Combobox, DateField, NumberField, RadioGroup, Select, TextField, Textarea, TimeField } from '@/components/ui/fields'
+import { SHIFT_COLORS } from '@/lib/shift-types'
+import { ActButton } from '../../team/_ui/ActButton'
+import { deleteRosterShiftTypeAction, savePersonPlanAction, saveRosterShiftTypeAction, startProposalAction } from '../roster-actions'
 import type { RDay, RPersonRow, RTypeOpt } from './types'
 
 /** Vorschlag erstellen: mit KI (Anweisungen), automatisch oder aus dem Vormonat. */
-export function PlanDialog({ source, onClose, unitId, month, defaultMode, model }: {
+export function PlanDialog({ source, onClose, unitId, month, defaultMode }: {
   source: 'ai' | 'auto' | 'copy'
   onClose: () => void
   unitId: string
   month: string
   defaultMode: 'fill' | 'replace'
-  model: string
 }) {
   const t = useT()
   return (
@@ -33,7 +34,7 @@ export function PlanDialog({ source, onClose, unitId, month, defaultMode, model 
         {source === 'ai' && (
           <>
             <Textarea label={t('roster.dialog.instructions')} name="instructions" optional rows={4} maxLength={2000} counter hint={t('roster.dialog.instructionsHint')} />
-            <p className="small muted" style={{ margin: 0 }}>{t('roster.dialog.privacy')} {t('roster.dialog.model', { model })}</p>
+            <p className="small muted" style={{ margin: 0 }}>{t('roster.dialog.privacy')}</p>
           </>
         )}
         <p className="small muted" style={{ margin: 0 }}>{t('roster.dialog.result')}</p>
@@ -100,18 +101,83 @@ export function PatternDialog({ onClose, onApply, people, days, types, monthLabe
   )
 }
 
-/** Pensum einer Person (Grundlage der Soll-Stunden). */
-export function PersonDialog({ person, unitId, onClose }: { person: RPersonRow; unitId: string; onClose: () => void }) {
+/** Pensum und dauerhafte Vorgaben einer Person (Grundlage für Soll-Stunden und Planung). */
+export function PersonDialog({ person, unitId, types, onClose }: { person: RPersonRow; unitId: string; types: RTypeOpt[]; onClose: () => void }) {
   const t = useT()
+  const opts = types.map((x) => ({ value: x.code, label: `${x.code} · ${x.name}` }))
   return (
     <Dialog open onClose={onClose} title={person.name}>
-      <ActionForm action={(f) => savePensumAction(unitId, person.id, Number(String(f.get('pct') ?? '').replace(',', '.')))} onDone={(r) => r.ok && onClose()} reset={false}>
-        <NumberField label={t('roster.person.pensum')} name="pct" unit="%" min={5} max={100} step={5} defaultValue={person.pct} required hint={t('roster.person.pensumHint')} />
+      <ActionForm action={(f) => savePersonPlanAction(unitId, person.id, f)} onDone={(r) => r.ok && onClose()} reset={false}>
+        <div className="form-grid">
+          <NumberField label={t('roster.person.pensum')} name="pct" unit="%" min={5} max={100} step={5} defaultValue={person.pct} required hint={t('roster.person.pensumHint')} />
+          <NumberField label={t('roster.person.maxNights')} name="maxNights" min={0} max={31} step={1} defaultValue={person.maxNights ?? ''} hint={t('roster.person.maxNightsHint')} />
+        </div>
+        <CheckboxGroup label={t('roster.person.allowed')} name="allowed" options={opts} defaultValue={person.allowed} hint={t('roster.person.allowedHint')} inline optional />
+        <CheckboxGroup label={t('roster.person.preferred')} name="preferred" options={opts} defaultValue={person.preferred} hint={t('roster.person.preferredHint')} inline optional />
         <div className="form-actions">
           <Submit>{t('common.save')}</Submit>
           <button type="button" className="btn ghost" onClick={onClose}>{t('common.cancel')}</button>
         </div>
       </ActionForm>
+    </Dialog>
+  )
+}
+
+/** Dienstarten verwalten: eigene Dienste (z. B. «Stübli») mit Zeit, Pause, Farbe, Soll-Besetzung und Wochentagen. */
+export function ShiftTypesDialog({ onClose, types, weekdays }: { onClose: () => void; types: RTypeOpt[]; weekdays: { n: number; label: string }[] }) {
+  const t = useT()
+  const [edit, setEdit] = useState<RTypeOpt | 'new' | null>(null)
+  const daysLabel = (d: number[]) => (d.length === 7 ? t('roster.types.everyDay') : weekdays.filter((w) => d.includes(w.n)).map((w) => w.label).join(', '))
+  if (edit) {
+    const x = edit === 'new' ? null : edit
+    return (
+      <Dialog open onClose={() => setEdit(null)} title={t(x ? 'roster.types.edit' : 'roster.types.add')}>
+        <ActionForm action={saveRosterShiftTypeAction} onDone={(r) => r.ok && setEdit(null)} reset={false}>
+          {x && <input type="hidden" name="id" value={x.id} />}
+          <div className="form-grid">
+            <TextField label={t('roster.types.code')} name="code" defaultValue={x?.code} required maxLength={4} className="mono" placeholder="ST" />
+            <TextField label={t('roster.types.name')} name="name" defaultValue={x?.rawName} required maxLength={60} placeholder="Stübli" />
+            <TimeField label={t('roster.types.start')} name="start" defaultValue={x?.start ?? '09:00'} required />
+            <TimeField label={t('roster.types.end')} name="end" defaultValue={x?.end ?? '17:00'} required />
+            <NumberField label={t('roster.types.breakMinutes')} name="breakMinutes" unit="min" min={0} max={240} step={5} defaultValue={x?.breakMinutes ?? 0} />
+            <Select label={t('roster.types.color')} name="color" defaultValue={x?.color ?? 'ok'}>
+              {SHIFT_COLORS.map((c) => <option key={c} value={c}>{t('roster.types.colors.' + c)}</option>)}
+            </Select>
+            <NumberField label={t('roster.types.target')} name="target" min={0} max={50} step={1} defaultValue={x?.target ?? 1} required hint={t('roster.types.targetHint')} />
+          </div>
+          <CheckboxGroup label={t('roster.types.days')} name="days" inline options={weekdays.map((w) => ({ value: String(w.n), label: w.label }))} defaultValue={(x?.days ?? [1, 2, 3, 4, 5]).map(String)} />
+          <div className="form-actions">
+            <Submit>{t('common.save')}</Submit>
+            <button type="button" className="btn ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</button>
+            <span className="spacer" />
+            {x && !x.inUse && (
+              <ActButton action={async () => { const r = await deleteRosterShiftTypeAction(x.id); if (r.ok) setEdit(null); return r }} className="btn ghost danger" confirm="admin.common.deleteConfirm">{t('common.delete')}</ActButton>
+            )}
+          </div>
+          {x?.inUse && <p className="small muted" style={{ margin: 0 }}>{t('roster.types.inUse')}</p>}
+        </ActionForm>
+      </Dialog>
+    )
+  }
+  return (
+    <Dialog open onClose={onClose} title={t('roster.types.title')} wide>
+      <p className="small fg2" style={{ marginTop: 0 }}>{t('roster.types.hint')}</p>
+      <ul className="rst-types">
+        {types.map((x) => (
+          <li key={x.id}>
+            <span className={'sh ' + (['F', 'S', 'N'].includes(x.code) ? x.code : 'col-' + x.color)}>{x.code}</span>
+            <span className="grow">
+              <strong>{x.name}</strong>
+              <span className="small muted"> · {x.start}–{x.end} · {x.hours} h · {t('roster.types.perDay', { n: x.target })} · {daysLabel(x.days)}</span>
+            </span>
+            <button type="button" className="btn sm ghost" onClick={() => setEdit(x)}>{t('common.edit')}</button>
+          </li>
+        ))}
+      </ul>
+      <div className="form-actions">
+        <button type="button" className="btn primary" onClick={() => setEdit('new')}>{t('roster.types.add')}</button>
+        <button type="button" className="btn ghost" onClick={onClose}>{t('common.close')}</button>
+      </div>
     </Dialog>
   )
 }

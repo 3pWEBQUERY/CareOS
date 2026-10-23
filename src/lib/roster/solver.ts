@@ -1,4 +1,4 @@
-import { cellKey, dailySoll, isNight, isWeekend, isoMonday, restHours, shiftDay, shiftHours, sollHours, weekday, type Cell, type Grid, type RProblem, type RType } from './model'
+import { cellKey, targetOn, dailySoll, isNight, isWeekend, isoMonday, restHours, shiftDay, shiftHours, sollHours, weekday, type Cell, type Grid, type RProblem, type RType } from './model'
 import { cellOf, freeWeekends, hoursTolerance, typeMap, weekHours } from './evaluate'
 
 /**
@@ -17,7 +17,7 @@ export type PlanOptions = {
   /** Für reproduzierbare Varianten */
   salt?: number
 }
-export type Repair = { user: string; day: string; from: Cell; to: Cell; reason: 'invalid' | 'absent' | 'constraint' | 'rule' | 'over' | 'fill' }
+export type Repair = { user: string; day: string; from: Cell; to: Cell; reason: 'invalid' | 'absent' | 'constraint' | 'rule' | 'over' | 'fill' | 'wish' }
 export type PlanResult = { grid: Grid; repairs: Repair[] }
 
 /** Zellen, die die Planung ändern darf. */
@@ -47,6 +47,13 @@ export function feasible(p: RProblem, g: Grid, types: Map<string, RType>, userId
   if (p.absent[k]) return false
   if (constraint?.allowed?.length && !constraint.allowed.includes(code)) return false
   if (constraint?.offDays?.includes(day)) return false
+  const person = p.people.find((x) => x.id === userId)
+  if (person?.allowed?.length && !person.allowed.includes(code)) return false
+  if (person?.maxNights != null && isNight(t)) {
+    let n = 0
+    for (const d of p.days) if (d !== day) { const c = cellOf(p, g, userId, d); if (c && types.get(c) && isNight(types.get(c)!)) n++ }
+    if (n + 1 > person.maxNights) return false
+  }
   const r = p.rules
   const prev = cellOf(p, g, userId, shiftDay(day, -1))
   const next = cellOf(p, g, userId, shiftDay(day, 1))
@@ -89,7 +96,10 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
       if (!types.has(v)) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'invalid' }); continue }
       if (p.absent[k]) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'absent' }); continue }
       const c = cons[person.id]
-      if ((c?.allowed?.length && !c.allowed.includes(v)) || c?.offDays?.includes(d)) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'constraint' }); continue }
+      if ((c?.allowed?.length && !c.allowed.includes(v)) || c?.offDays?.includes(d) || (person.allowed?.length && !person.allowed.includes(v))) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'constraint' }); continue }
+      // Wünsche haben Vorrang vor dem Startplan: Frei-Wunsch nicht belegen, Dienst-Wunsch übernehmen
+      const w = p.wishes[k]
+      if (w?.kind === 'off') { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'wish' }); continue }
       g[k] = v
     }
 
@@ -132,12 +142,13 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
   // 3. Überbesetzung aus änderbaren Einträgen abbauen (wer am meisten über Soll liegt, zuerst)
   for (const d of p.days)
     for (const t of p.types) {
-      const target = p.targets[t.code] ?? 0
+      const target = targetOn(p, d, t.code)
       let on = countOn(d, t.code)
       while (on.length > target) {
         const removable = on.filter((x) => editable.has(cellKey(x.id, d)))
         if (!removable.length) break
-        removable.sort((a, b) => (ist.get(b.id)! - soll.get(b.id)!) - (ist.get(a.id)! - soll.get(a.id)!))
+        const wants = (x: { id: string }) => { const w = p.wishes[cellKey(x.id, d)]; return w?.kind === 'shift' && w.code === t.code ? 1 : 0 }
+        removable.sort((a, b) => wants(a) - wants(b) || (ist.get(b.id)! - soll.get(b.id)!) - (ist.get(a.id)! - soll.get(a.id)!))
         const x = removable[0]
         delete g[cellKey(x.id, d)]
         ist.set(x.id, ist.get(x.id)! - shiftHours(t))
@@ -151,7 +162,7 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
   const keyNeeded = p.people.some((x) => x.key)
   for (const d of p.days)
     for (const t of order) {
-      const target = p.targets[t.code] ?? 0
+      const target = targetOn(p, d, t.code)
       const h = shiftHours(t)
       for (let guard = 0; guard < 50; guard++) {
         const on = countOn(d, t.code)
@@ -159,17 +170,21 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
         const hasKey = on.some((x) => x.key)
         const left = target - on.length
         let best: { id: string; score: number } | null = null
+        // Frei-Wünsche nur verletzen, wenn sonst niemand den Dienst übernehmen kann
+        const anyOther = p.people.some((x) => { const k = cellKey(x.id, d); return editable.has(k) && !g[k] && p.wishes[k]?.kind !== 'off' && feasible(p, g, types, x.id, d, t.code, cons[x.id]) })
         for (const person of p.people) {
           const k = cellKey(person.id, d)
           if (!editable.has(k) || g[k]) continue
+          if (anyOther && p.wishes[k]?.kind === 'off') continue
           if (!feasible(p, g, types, person.id, d, t.code, cons[person.id])) continue
           const s = soll.get(person.id)!
           const cur = ist.get(person.id)!
           let score = s > 0 ? (2 * (s - cur)) / s : -1
           if (cur + h > s + hoursTolerance(s) / 2) score -= 2
           const w = p.wishes[k]
-          if (w?.kind === 'shift') score += w.code === t.code ? 3 : -1
-          if (w?.kind === 'off') score -= 5
+          if (w?.kind === 'shift') score += w.code === t.code ? 6 : -1.5
+          if (w?.kind === 'off') score -= 8
+          if (person.preferred?.length) score += person.preferred.includes(t.code) ? 1 : -0.6
           if (keyNeeded && !hasKey) score += person.key ? 2.5 : left === 1 ? -3 : 0
           const prev = cellOf(p, g, person.id, shiftDay(d, -1))
           if (prev === t.code) score += isNight(t) ? 0.6 : 0.15
@@ -194,6 +209,45 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
         repairs.push({ user: best.id, day: d, from: null, to: t.code, reason: 'fill' })
       }
     }
+
+  // 5. Wünsche nachbessern: offene Wünsche durch Tausch mit Personen ohne Wunsch erfüllen (Regeln bleiben gewahrt)
+  const swapOk = (a: string, b: string, d: string, va: Cell, vb: Cell) => {
+    const ka = cellKey(a, d)
+    const kb = cellKey(b, d)
+    const oa = g[ka] ?? null
+    const ob = g[kb] ?? null
+    delete g[ka]; delete g[kb]
+    const ok = (!va || feasible(p, g, types, a, d, va, cons[a])) && (!vb || feasible(p, g, types, b, d, vb, cons[b]))
+    if (oa) g[ka] = oa
+    if (ob) g[kb] = ob
+    return ok
+  }
+  const setCell = (u: string, d: string, v: Cell, reason: Repair['reason']) => {
+    const k = cellKey(u, d)
+    const from = g[k] ?? null
+    if (from === v) return
+    if (v) g[k] = v
+    else delete g[k]
+    const ft = from ? types.get(from) : undefined
+    const vt = v ? types.get(v) : undefined
+    ist.set(u, ist.get(u)! - (ft ? shiftHours(ft) : 0) + (vt ? shiftHours(vt) : 0))
+    repairs.push({ user: u, day: d, from, to: v, reason })
+  }
+  for (const [k, w] of Object.entries(p.wishes)) {
+    const [u, d] = k.split('|')
+    if (!editable.has(k) || !p.days.includes(d)) continue
+    const cur = g[k] ?? null
+    if (w.kind === 'off' && cur) {
+      // Dienst an jemanden ohne Frei-Wunsch abgeben
+      const q = p.people.find((x) => { const kq = cellKey(x.id, d); return x.id !== u && editable.has(kq) && !g[kq] && !p.wishes[kq] && swapOk(u, x.id, d, null, cur) })
+      if (q) { setCell(u, d, null, 'wish'); setCell(q.id, d, cur, 'wish') }
+    } else if (w.kind === 'shift' && cur !== w.code) {
+      if (!cur && countOn(d, w.code).length < targetOn(p, d, w.code) && swapOk(u, u, d, w.code, w.code)) { setCell(u, d, w.code, 'wish'); continue }
+      // Mit jemandem tauschen, der den gewünschten Dienst ohne eigenen Wunsch hat
+      const q = p.people.find((x) => { const kq = cellKey(x.id, d); return x.id !== u && editable.has(kq) && g[kq] === w.code && !p.wishes[kq] && swapOk(u, x.id, d, w.code, cur) })
+      if (q) { setCell(u, d, w.code, 'wish'); setCell(q.id, d, cur, 'wish') }
+    }
+  }
 
   return { grid: g, repairs }
 }

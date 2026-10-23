@@ -1,7 +1,7 @@
 'use server'
 import { refresh } from 'next/cache'
 import { z } from 'zod'
-import { durationMin } from '@/lib/roster/model'
+import { parseShiftTypeForm } from '@/lib/shift-types'
 import { Prisma } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getCtx, assertCan } from '@/lib/context'
@@ -140,20 +140,15 @@ export async function saveShiftTypeAction(form: FormData): Promise<ActionResult>
   return run(async () => {
     const ctx = await admin()
     const id = fd(form, 'id')
-    const code = fd(form, 'code').toUpperCase()
-    const breakMinutes = Number(fd(form, 'breakMinutes') || 0)
-    const data = { code, name: fd(form, 'name').slice(0, 60), start: fd(form, 'start'), end: fd(form, 'end'), breakMinutes }
-    if (!/^[A-Z0-9]{1,4}$/.test(code)) return { ok: false, error: 'admin.config.badCode', field: 'code' }
-    if (data.name.length < 2) return { ok: false, error: 'admin.errors.name', field: 'name' }
-    if (!TIME_RE.test(data.start)) return { ok: false, error: 'admin.config.badTime', field: 'start' }
-    if (!TIME_RE.test(data.end)) return { ok: false, error: 'admin.config.badTime', field: 'end' }
-    if (!Number.isInteger(breakMinutes) || breakMinutes < 0 || breakMinutes > 240 || breakMinutes >= durationMin(data)) return { ok: false, error: 'admin.config.badBreak', field: 'breakMinutes' }
+    const parsed = parseShiftTypeForm(form)
+    if (!parsed.ok) return parsed
+    const { data } = parsed
     try {
       if (id) {
         const before = await db.shiftType.findFirst({ where: { id, orgId: ctx.org.id } })
         if (!before) return { ok: false, error: 'common.notFound' }
         await db.shiftType.update({ where: { id }, data })
-        await audit(ctx, { action: 'admin.config.shift_type', entityType: 'ShiftType', entityId: id, before: { code: before.code, name: before.name, start: before.start, end: before.end, breakMinutes: before.breakMinutes }, after: data })
+        await audit(ctx, { action: 'admin.config.shift_type', entityType: 'ShiftType', entityId: id, before: { code: before.code, name: before.name, start: before.start, end: before.end, breakMinutes: before.breakMinutes, color: before.color }, after: data })
       } else {
         const st = await db.shiftType.create({ data: { ...data, orgId: ctx.org.id } })
         await audit(ctx, { action: 'admin.config.shift_type_create', entityType: 'ShiftType', entityId: st.id, after: data })

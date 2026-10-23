@@ -32,7 +32,11 @@ export function buildPrompt(p: RProblem, current: Grid, mode: 'fill' | 'replace'
   lines.push('Wochentage: ' + p.days.map((d, i) => `${i + 1} ${WD[weekday(d)]}`).join(', '))
   lines.push('', 'Dienste (Code, Zeit, bezahlte Stunden):')
   for (const t of p.types) lines.push(`${t.code} ${t.start}–${t.end} ${round1(shiftHours(t))} h${isNight(t) ? ' (Nacht)' : ''}`)
-  lines.push('', 'Soll-Besetzung pro Tag: ' + p.types.map((t) => `${t.code} ${p.targets[t.code] ?? 0}`).join(', '))
+  const only = (code: string) => {
+    const days = p.targetDays?.[code]
+    return days?.length && days.length < 7 ? ` (nur ${days.map((d) => WD[d]).join(', ')})` : ''
+  }
+  lines.push('', 'Soll-Besetzung pro Tag: ' + p.types.map((t) => `${t.code} ${p.targets[t.code] ?? 0}${only(t.code)}`).join(', '))
   lines.push('', 'Personen (Kürzel | Name | Pensum | Soll-Stunden im Monat | Schlüsselqualifikation *):')
   for (const x of p.people) {
     lines.push(`${alias.get(x.id)} | ${x.name} | ${x.pct} % | ${round1(sollHours(r, x.pct, p.days))} h${x.key ? ' | *' : ''}`)
@@ -57,6 +61,8 @@ export function buildPrompt(p: RProblem, current: Grid, mode: 'fill' | 'replace'
     if (locked.length) lines.push(`  fix frei: ${ranges(locked)}`)
     if (away.length) lines.push(`  abwesend: ${ranges(away)}`)
     if (off.length || want.length) lines.push(`  Wünsche: ${[off.length ? 'frei ' + ranges(off) : '', want.length ? 'Dienst ' + want.join(', ') : ''].filter(Boolean).join(' · ')}`)
+    const prefs = [x.allowed?.length ? `nur ${x.allowed.join(', ')}` : '', x.preferred?.length ? `bevorzugt ${x.preferred.join(', ')}` : '', x.maxNights != null ? `max. ${x.maxNights} Nachtdienste im Monat` : ''].filter(Boolean)
+    if (prefs.length) lines.push(`  Vorgaben: ${prefs.join(' · ')}`)
     const prev = p.before.slice(-4).map((d, i, arr) => {
       const v = p.locked[cellKey(x.id, d)]
       return v ? `${i - arr.length} ${v}` : ''
@@ -72,13 +78,14 @@ Harte Regeln, nie verletzen:
 - Kein Dienst an Abwesenheitstagen. Fixe Einträge («fix», «fix frei») unverändert übernehmen.
 - Ruhezeit zwischen zwei Diensten mindestens ${r.minRestHours} Stunden: also nie Spätdienst und am Folgetag Frühdienst, nie Nachtdienst und am Folgetag ein Tagdienst. Das gilt auch für die Tage aus dem Vormonat.
 - Höchstens ${r.maxConsecutiveDays} Arbeitstage am Stück, höchstens ${r.maxConsecutiveNights} Nachtdienste am Stück, höchstens ${r.maxWeeklyHours} Stunden pro Kalenderwoche (Mo–So).
+- «Vorgaben» je Person einhalten: «nur …» = keine anderen Dienste, «max. … Nachtdienste» nicht überschreiten.
 - Einschränkungen aus den Anweisungen der Leitung gehen Wünschen vor.
 
 Ziele, in dieser Reihenfolge:
-1. Soll-Besetzung jedes Dienstes an jedem Tag genau erreichen, nicht überschreiten.
-2. In jedem besetzten Dienst mindestens eine Person mit Schlüsselqualifikation (*), falls möglich.
-3. Geplante Stunden je Person nahe an ihren Soll-Stunden (Pensum). Teilzeit nicht überplanen.
-4. Wünsche erfüllen.
+1. Soll-Besetzung jedes Dienstes an jedem Tag genau erreichen, nicht überschreiten. Dienste mit «nur Mo, Di …» nur an diesen Wochentagen besetzen.
+2. Wünsche erfüllen. Ein Frei-Wunsch wird nur verletzt, wenn die Soll-Besetzung sonst nicht erreichbar ist; ein Dienst-Wunsch geht Stundenausgleich, Rhythmus und Fairness vor. Bevorzugte Dienste («bevorzugt …») möglichst oft vergeben.
+3. In jedem besetzten Dienst mindestens eine Person mit Schlüsselqualifikation (*), falls möglich.
+4. Geplante Stunden je Person nahe an ihren Soll-Stunden (Pensum). Teilzeit nicht überplanen.
 5. Gesunde Rhythmen: Nachtdienste in Blöcken von 2–4 Nächten, danach mindestens 2 freie Tage; Wechsel vorwärts (Früh → Spät → Nacht); keine einzelnen Arbeitstage zwischen freien Tagen, wo vermeidbar.
 6. Wochenenden fair verteilen, jede Person mindestens ${r.minFreeWeekends} freies Wochenende (Samstag und Sonntag).
 

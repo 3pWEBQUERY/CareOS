@@ -1,4 +1,4 @@
-import { cellKey, dailySoll, isNight, isWeekend, isoMonday, restHours, round1, shiftDay, shiftHours, sollHours, weekday, type Grid, type RProblem, type RType } from './model'
+import { cellKey, targetOn, dailySoll, isNight, isWeekend, isoMonday, restHours, round1, shiftDay, shiftHours, sollHours, weekday, type Grid, type RProblem, type RType } from './model'
 
 /**
  * Regelprüfung eines Plans. Fehler (`error`) verletzen eine harte Regel und werden von der automatischen Planung
@@ -126,7 +126,7 @@ export function coverage(p: RProblem, g: Grid): Coverage {
   const out: Coverage = {}
   for (const d of p.days) {
     const row: Coverage[string] = {}
-    for (const t of p.types) row[t.code] = { n: 0, target: p.targets[t.code] ?? 0, key: false }
+    for (const t of p.types) row[t.code] = { n: 0, target: targetOn(p, d, t.code), key: false }
     for (const person of p.people) {
       const k = cellKey(person.id, d)
       if (p.foreign[k] || p.absent[k] === 'approved') continue

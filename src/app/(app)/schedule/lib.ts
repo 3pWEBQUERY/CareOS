@@ -17,6 +17,20 @@ export function coverageTargets(settings: unknown, codes: string[]) {
   return out
 }
 
+/** Wochentage je Dienstart, an denen die Soll-Besetzung gilt (Organization.settings.coverageDays), sonst täglich. */
+export function coverageDays(settings: unknown, codes: string[]) {
+  const raw = ((settings ?? {}) as { coverageDays?: Record<string, unknown> }).coverageDays ?? {}
+  const out: Record<string, number[]> = {}
+  for (const c of codes) {
+    const v = raw[c]
+    if (Array.isArray(v)) {
+      const days = [...new Set(v.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6))].sort()
+      if (days.length && days.length < 7) out[c] = days
+    }
+  }
+  return out
+}
+
 export function weekStart(d: Date) {
   const x = startOfDay(d)
   return addDays(x, -((x.getDay() + 6) % 7))
@@ -86,6 +100,8 @@ export async function planWeek(orgId: string, settings: unknown, unitId: string,
     unitStaff(orgId, unitId, from, to),
   ])
   const targets = coverageTargets(settings, types.map((t) => t.code))
+  const cdays = coverageDays(settings, types.map((t) => t.code))
+  const targetOn = (code: string, day: Date) => (cdays[code] && !cdays[code].includes(day.getDay()) ? 0 : targets[code] ?? 0)
   const userIds = [...new Set([...staff.map((s) => s.id), ...shifts.map((s) => s.userId).filter((x): x is string => !!x)])]
   const [absences, quals] = await Promise.all([absencesIn(userIds, from, to), qualifiedUserIds(key?.id, userIds)])
   const dayKeys = Array.from({ length: days }, (_, i) => addDays(from, i))
@@ -103,7 +119,7 @@ export async function planWeek(orgId: string, settings: unknown, unitId: string,
         const present = assigned.filter((s) => !absentOn(s.userId!, day, 'approved'))
         const conflicts = assigned.filter((s) => absentOn(s.userId!, day)).map((s) => ({ userId: s.userId!, shiftId: s.id }))
         const open = shifts.filter((s) => s.shiftTypeId === t.id && dbKey(s.date) === k && !s.userId).length
-        return { typeId: t.id, code: t.code, name: t.name, n: present.length, target: targets[t.code] ?? 0, hf: present.some((s) => hasQualOn(quals, s.userId!, day)), open, conflicts }
+        return { typeId: t.id, code: t.code, name: t.name, n: present.length, target: targetOn(t.code, day), hf: present.some((s) => hasQualOn(quals, s.userId!, day)), open, conflicts }
       }),
     }
   })

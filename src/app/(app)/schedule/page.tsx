@@ -9,6 +9,7 @@ import { AbsencesView } from './_views/Absences'
 import { SwapsView } from './_views/Swaps'
 import { PlanView, CoverageView } from './_views/Plan'
 import { RosterView } from './_views/Roster'
+import { PeriodPicker } from './_ui/PeriodPicker'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -74,9 +75,10 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
             )}
             <div className="seg" role="group" aria-label={t('schedule.nav')}>
               <Link href={monthBased ? q(view, mk(prevMonth)) : q(view, wk(addDays(week, -7)))} aria-label={t('schedule.prev')}>←</Link>
-              <Link href={q(view)}>{t('schedule.today')}</Link>
+              <PeriodPicker view={view} month={dateKey(monthBased ? month : week).slice(0, 7)} weekBased={!monthBased} />
               <Link href={monthBased ? q(view, mk(nextMonth)) : q(view, wk(addDays(week, 7)))} aria-label={t('schedule.next')}>→</Link>
             </div>
+            <Link className="btn ghost" href={q(view)}>{t('schedule.today')}</Link>
           </div>
         )}
       </div>

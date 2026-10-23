@@ -1,8 +1,8 @@
 import 'server-only'
 import { db } from '@/lib/db'
 import { addDays, dateKey, dbDate, parseDateKey } from '@/lib/time'
-import { absencesIn, coverageTargets, dbKey, hasQualOn, keyQualification, qualifiedUserIds, unitStaff } from '@/app/(app)/schedule/lib'
-import { cellKey, monthDays, rosterRules, shiftDay, type Grid, type RProblem, type Wish } from './model'
+import { absencesIn, coverageDays, coverageTargets, dbKey, hasQualOn, keyQualification, qualifiedUserIds, unitStaff } from '@/app/(app)/schedule/lib'
+import { cellKey, monthDays, readShiftPrefs, rosterRules, shiftDay, type Grid, type RProblem, type Wish } from './model'
 
 /** Abwesenheiten, die als Arbeitszeit gutgeschrieben werden. */
 const CREDITED = new Set(['vacation', 'sick', 'training'])
@@ -31,7 +31,7 @@ export async function loadRoster(orgId: string, settings: unknown, unitId: strin
   const today = dateKey(now)
 
   const [types, staffRaw, key, period, units] = await Promise.all([
-    db.shiftType.findMany({ where: { orgId }, orderBy: { start: 'asc' } }),
+    db.shiftType.findMany({ where: { orgId }, orderBy: { start: 'asc' }, include: { _count: { select: { shifts: true } } } }),
     unitStaff(orgId, unitId, parseDateKey(first), parseDateKey(last)),
     keyQualification(orgId),
     periodStatus(unitId, month),
@@ -39,7 +39,7 @@ export async function loadRoster(orgId: string, settings: unknown, unitId: strin
   ])
   const ids = staffRaw.map((s) => s.id)
   const [pct, shifts, absences, wishes, quals, openShifts] = await Promise.all([
-    db.user.findMany({ where: { id: { in: ids } }, select: { id: true, employmentPct: true } }),
+    db.user.findMany({ where: { id: { in: ids } }, select: { id: true, employmentPct: true, shiftPrefs: true } }),
     db.shift.findMany({ where: { userId: { in: ids }, date: { gte: dbDate(from), lte: dbDate(to) }, status: { not: 'cancelled' } }, include: { shiftType: true }, orderBy: { createdAt: 'asc' } }),
     absencesIn(ids, from, to),
     db.shiftWish.findMany({ where: { userId: { in: ids }, date: { gte: dbDate(parseDateKey(first)), lte: dbDate(parseDateKey(last)) } }, include: { shiftType: true } }),
@@ -47,8 +47,10 @@ export async function loadRoster(orgId: string, settings: unknown, unitId: strin
     db.shift.findMany({ where: { unitId, userId: null, status: 'open', date: { gte: dbDate(parseDateKey(first)), lte: dbDate(parseDateKey(last)) } }, include: { shiftType: true } }),
   ])
   const pctOf = new Map(pct.map((x) => [x.id, x.employmentPct]))
+  const codes = types.map((t) => t.code)
+  const prefsOf = new Map(pct.map((x) => [x.id, readShiftPrefs(x.shiftPrefs, codes)]))
   const unitName = new Map(units.map((u) => [u.id, u.shortName || u.name]))
-  const people = staffRaw.map((s) => ({ ...s, pct: pctOf.get(s.id) ?? 100, key: hasQualOn(quals, s.id, parseDateKey(first)) }))
+  const people = staffRaw.map((s) => ({ ...s, pct: pctOf.get(s.id) ?? 100, key: hasQualOn(quals, s.id, parseDateKey(first)), prefs: prefsOf.get(s.id) ?? {} }))
 
   const current: Grid = {}
   const locked: RProblem['locked'] = {}
@@ -95,8 +97,9 @@ export async function loadRoster(orgId: string, settings: unknown, unitId: strin
   const problem: RProblem = {
     days, before, after,
     types: types.map((t) => ({ code: t.code, start: t.start, end: t.end, breakMinutes: t.breakMinutes })),
-    targets: coverageTargets(settings, types.map((t) => t.code)),
-    people: people.map((x) => ({ id: x.id, name: x.name, pct: x.pct, level: x.level, key: x.key })),
+    targets: coverageTargets(settings, codes),
+    targetDays: coverageDays(settings, codes),
+    people: people.map((x) => ({ id: x.id, name: x.name, pct: x.pct, level: x.level, key: x.key, ...x.prefs })),
     absent, credit, wishes: wishMap, locked, foreign,
     rules: rosterRules(settings),
   }
