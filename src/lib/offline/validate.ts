@@ -38,6 +38,16 @@ export const opSchema = z.discriminatedUnion('kind', [
       z.object({ type: z.literal('fluid'), fluid: z.enum(FLUID_KINDS), ml: z.number().int().min(FLUID_LIMITS.min).max(FLUID_LIMITS.max), item: z.string().max(120).optional() }),
     ]),
   }),
+  // Spitex: Einsatz beginnen, abschliessen (Leistungen, Notiz) oder «nicht angetroffen» (Grund)
+  z.object({
+    ...base, kind: z.literal('visit'),
+    data: z.object({
+      visitId: z.string().min(1).max(40),
+      step: z.enum(['start', 'finish', 'missed']),
+      services: z.array(z.object({ id: z.string().min(1).max(40), done: z.boolean(), minutes: z.number().int().min(0).max(240).nullable() })).max(12).optional(),
+      note: z.string().max(2000).optional(),
+    }),
+  }),
 ])
 
 export const syncSchema = z.object({ ops: z.array(z.unknown()).max(50) })

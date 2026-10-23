@@ -34,6 +34,8 @@ export const MODULES = [
   { key: 'visit', pkg: 'clinical_plus', perms: ['resident.visit.'], paths: ['/tasks/visit'] },
   // Paket Ä: Therapie (Physio/Ergo/Logo, PRD §60) – bestehende Organisationen per Datenmigration aktiv
   { key: 'therapy', pkg: 'clinical_plus', perms: ['therapy.'], paths: ['/therapy'] },
+  // Paket K: Spitex (ambulante Pflege, PRD §60) – Zusatzmodul, für bestehende und neue Organisationen aus (OPT_IN_MODULES)
+  { key: 'spitex', pkg: 'clinical_plus', perms: ['spitex.'], paths: ['/spitex'] },
   { key: 'quality', pkg: 'quality', perms: ['quality.'], paths: ['/quality'] },
   { key: 'insights', pkg: 'quality', perms: ['insights.'], paths: ['/insights'] },
   { key: 'ai', pkg: 'intelligence', perms: ['ai.'], paths: [] },
@@ -43,6 +45,14 @@ export const MODULES = [
 
 export type ModuleKey = (typeof MODULES)[number]['key']
 export const MODULE_KEYS = MODULES.map((m) => m.key) as ModuleKey[]
+
+/**
+ * Zusatzmodule, die nur auf ausdrücklichen Wunsch aktiv sind: nicht im Standard von Organization.modules (Schema),
+ * nicht in DEFAULT_MODULES für neue Organisationen und in der Plattform-Verwaltung nicht vorausgewählt.
+ */
+export const OPT_IN_MODULES: readonly ModuleKey[] = ['spitex']
+/** Standard für neue Organisationen (Erststart, Registrierung, Plattform). */
+export const DEFAULT_MODULES = MODULE_KEYS.filter((k) => !OPT_IN_MODULES.includes(k))
 
 /**
  * Paketnamen aus §69 als Alias (Vertrag mit anderen Paketen, z. B. `orgHasModule(org, 'clinical_plus')` für
@@ -58,9 +68,9 @@ export function normalizeModules(list: readonly string[] | null | undefined): Mo
 
 type OrgLike = { modules?: readonly string[] | null } | readonly string[] | null | undefined
 
-const listOf = (org: OrgLike): readonly string[] => (Array.isArray(org) ? org : ((org as { modules?: readonly string[] | null } | null)?.modules ?? MODULE_KEYS))
+const listOf = (org: OrgLike): readonly string[] => (Array.isArray(org) ? org : ((org as { modules?: readonly string[] | null } | null)?.modules ?? DEFAULT_MODULES))
 
-/** Ist das Modul (oder der §69-Paketname) für die Organisation aktiv? Ohne Angabe gilt: alle aktiv. */
+/** Ist das Modul (oder der §69-Paketname) für die Organisation aktiv? Ohne Angabe gilt der Standard (DEFAULT_MODULES). */
 export function orgHasModule(org: OrgLike, key: ModuleKey | 'core' | 'nursing' | 'clinical_plus' | 'intelligence' | 'workforce' | 'portals'): boolean {
   if (key === 'workforce') return MODULES.some((m) => m.pkg === 'workforce' && listOf(org).includes(m.key))
   const k = ALIASES[key] ?? key

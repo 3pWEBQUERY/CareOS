@@ -7,11 +7,14 @@ export const metadata: Metadata = { title: 'Offline' }
 
 /** Nur die Texte, die die Offline-Ansicht braucht – in allen Sprachen (Sprache folgt dem Lesestand). */
 function messages(locale: Locale): Tree {
-  const d = dictionary(locale) as { common: Tree; chart: Tree }
+  const d = dictionary(locale) as { common: Tree; chart: Tree; spitex: Tree }
   const c = d.common
+  const s = d.spitex as Record<string, Tree>
   return {
-    common: { offlineSync: c.offlineSync, offline: c.offline, offlineQueued: c.offlineQueued, cancel: c.cancel, close: c.close, now: c.now, today: c.today, undo: c.undo, loading: c.loading },
+    common: { offlineSync: c.offlineSync, offline: c.offline, offlineQueued: c.offlineQueued, cancel: c.cancel, close: c.close, now: c.now, today: c.today, undo: c.undo, loading: c.loading, genericError: c.genericError, optional: c.optional, field: c.field },
     chart: { cat: (d.chart as { cat: Tree }).cat },
+    // Spitex: «Meine Tour» offline (TourCard)
+    spitex: { tour: s.tour, status: s.status, access: s.access, errors: s.errors, toast: s.toast, min: s.min, minutes: s.minutes, noAddress: s.noAddress, doneAt: s.doneAt },
   }
 }
 

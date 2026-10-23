@@ -362,7 +362,7 @@ def verify(raw_body: bytes, header: str, secret: str) -> bool:
 
 ### Ereignisse
 
-`task.created`, `task.completed`, `task.reopened`, `task.escalated`, `observation.created`, `observation.corrected`, `vitals.recorded`, `vitals.abnormal`, `vitals.corrected`, `vitals.reviewed`, `medication.administered`, `medication.changed`, `handover.updated`, `handover.acknowledged`, `incident.reported`, `incident.updated`, `careplan.updated`, `assessment.recorded`, `assessment.corrected`, `wound.updated`, `nutrition.recorded`, `resident.updated`, `visit.updated`, `assignment.updated`, `post.published`, `message.created`, `document.published`, `schedule.changed`, `notification.created` (Liste: `EVENT_TYPES` in `src/lib/admin-shared.ts`, auch in `openapi.json` unter `x-webhooks-events`).
+`task.created`, `task.completed`, `task.reopened`, `task.escalated`, `observation.created`, `observation.corrected`, `vitals.recorded`, `vitals.abnormal`, `vitals.corrected`, `vitals.reviewed`, `medication.administered`, `medication.changed`, `handover.updated`, `handover.acknowledged`, `incident.reported`, `incident.updated`, `careplan.updated`, `assessment.recorded`, `assessment.corrected`, `wound.updated`, `nutrition.recorded`, `resident.updated`, `visit.updated`, `assignment.updated`, `post.published`, `message.created`, `document.published`, `schedule.changed`, `notification.created`, `homecare.updated` (Liste: `EVENT_TYPES` in `src/lib/admin-shared.ts`, auch in `openapi.json` unter `x-webhooks-events`).
 
 ## Datenexport
 

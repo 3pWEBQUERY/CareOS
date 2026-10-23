@@ -25,6 +25,9 @@ export const PERMISSIONS = {
   'therapy.read': 'Therapiepläne einsehen',
   'therapy.manage': 'Therapiepläne erstellen, evaluieren und abschliessen',
   'therapy.document': 'Therapieeinheiten dokumentieren',
+  'spitex.read': 'Spitex: Einsätze und Leistungsnachweis einsehen',
+  'spitex.plan': 'Spitex: Einsätze disponieren, Wochenvorlagen und Einsatzorte pflegen',
+  'spitex.document': 'Spitex: eigene Tour durchführen und Einsätze dokumentieren',
   'task.read': 'Aufgaben sehen',
   'task.complete': 'Aufgaben quittieren',
   'task.manage': 'Aufgaben erstellen und zuweisen',
@@ -62,7 +65,7 @@ export type Permission = keyof typeof PERMISSIONS
 export const ALL_PERMISSIONS = Object.keys(PERMISSIONS) as Permission[]
 
 export const PERMISSION_GROUPS: { key: string; prefix: string[] }[] = [
-  { key: 'clinical', prefix: ['resident.', 'therapy.'] },
+  { key: 'clinical', prefix: ['resident.', 'therapy.', 'spitex.'] },
   { key: 'operations', prefix: ['task.', 'handover.', 'schedule.'] },
   { key: 'workforce', prefix: ['team.', 'chat.', 'docs.', 'learn.', 'portal.'] },
   { key: 'management', prefix: ['quality.', 'insights.'] },
@@ -74,6 +77,8 @@ const CARE_ASSIST: Permission[] = [
   ...BASE,
   'resident.read', 'resident.chart.write', 'resident.vitals.write', 'resident.nutrition.write',
   'task.read', 'task.complete', 'handover.read',
+  // Paket K: Spitex – eigene Tour und Einsätze (wirkt nur mit aktivem Modul «spitex»)
+  'spitex.read', 'spitex.document',
 ]
 const CARE_NURSE: Permission[] = [
   ...CARE_ASSIST,
@@ -89,6 +94,8 @@ const LEAD: Permission[] = [
   ...CARE_NURSE,
   'resident.create', 'resident.edit', 'resident.chart.correct', 'resident.careplan.approve',
   'schedule.manage', 'team.post', 'quality.manage', 'insights.view',
+  // Paket K: Spitex-Disposition (Einsätze, Wochenvorlagen, Einsatzorte)
+  'spitex.plan',
 ]
 
 /**

@@ -12,6 +12,7 @@ import { abnormalKeys, mergeLimits, VITALS } from '@/lib/vitals'
 import { OPEN_STATUSES } from '@/lib/tasks'
 import { taskTitle } from '@/lib/task-title'
 import { residentName, userNames } from '@/app/(app)/residents/_lib/resident'
+import { applyVisitStep } from '@/lib/spitex-visit'
 import { parseOp, residentConflict, taskConflict, validateVitals } from './validate'
 import type { OfflineKind, OfflineOp, OpResult } from './types'
 
@@ -26,6 +27,7 @@ const PERM: Record<OfflineKind, Permission> = {
   vitals: 'resident.vitals.write',
   task: 'task.complete',
   intake: 'resident.nutrition.write',
+  visit: 'spitex.document',
 }
 
 export async function applyOps(ctx: Ctx, raws: unknown[], now = new Date()): Promise<OpResult[]> {
@@ -182,6 +184,15 @@ async function applyOne(ctx: Ctx, op: OfflineOp, at: Date, now: Date): Promise<O
       }
       await emit({ orgId: ctx.org.id, type: 'task.completed', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { taskId: t.id, status: d.status, offline: true } })
       return { id: op.id, status: 'applied' }
+    }
+
+    case 'visit': {
+      // Gleiche Regeln wie online (Meine Tour); Zeitpunkt vom Gerät = erfasster Beginn bzw. Abschluss
+      if (!(await db.homeCareVisit.findFirst({ where: { id: op.data.visitId, orgId: ctx.org.id, residentId: r.id }, select: { id: true } }))) return { id: op.id, status: 'conflict', reason: 'visitNotFound' }
+      const res = await applyVisitStep(ctx, op.data, at, offline)
+      if (res.ok) return { id: op.id, status: res.duplicate ? 'duplicate' : 'applied' }
+      if (res.reason === 'forbidden') return { id: op.id, status: 'rejected', reason: 'forbidden' }
+      return { id: op.id, status: 'conflict', reason: res.reason, detail: res.detail }
     }
 
     case 'intake': {

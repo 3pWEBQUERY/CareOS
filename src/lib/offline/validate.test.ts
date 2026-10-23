@@ -63,3 +63,12 @@ test('Offline: Konflikte bei Aufgaben', () => {
   assert.deepEqual(taskConflict(open, me, { by: 'u2', at: new Date(ago(5)) }), { status: 'conflict', reason: 'taskChanged' })
   assert.equal(taskConflict(open, me, { by: 'u2', at: new Date(ago(60)) }), null)
 })
+
+test('Offline: Spitex-Einsatz (Beginn, Abschluss mit Leistungen) als Vorgang', () => {
+  const start = parseOp({ id, kind: 'visit', residentId: 'r1', at: ago(20), data: { visitId: 'v1', step: 'start' } }, now)
+  assert.ok('op' in start && start.op.kind === 'visit')
+  const finish = parseOp({ id, kind: 'visit', residentId: 'r1', at: ago(1), data: { visitId: 'v1', step: 'finish', services: [{ id: 's1', done: true, minutes: 25 }, { id: 's2', done: false, minutes: null }], note: 'Gut gelaunt.' } }, now)
+  assert.ok('op' in finish)
+  assert.deepEqual(parseOp({ id, kind: 'visit', residentId: 'r1', at: ago(1), data: { visitId: 'v1', step: 'finish', services: [{ id: 's1', done: true, minutes: 999 }] } }, now), { id, reason: 'invalid' })
+  assert.deepEqual(parseOp({ id, kind: 'visit', residentId: 'r1', at: ago(1), data: { visitId: 'v1', step: 'teleport' } }, now), { id, reason: 'invalid' })
+})

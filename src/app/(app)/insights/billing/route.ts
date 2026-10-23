@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const unitIds = unit ? [unit.id] : units.map((u) => u.id)
   const rows = await billingRows(ctx.org.id, unitIds, month)
   const base = ['lastName', 'firstName', 'birthDate', 'insuranceNo', 'unit', 'careLevel', 'stayDays', 'absenceDays', 'careMinutes', 'careHours', 'services'].map((k) => t('insights.billing.cols.' + k))
-  const csv = toCsv(billingCsvRows(rows, { base, category: (c) => t('insights.billing.cols.category', { name: categoryLabel(t, c) }) }))
+  const csv = toCsv(billingCsvRows(rows, { base, category: (c) => t('insights.billing.cols.category', { name: categoryLabel(t, c) }), klv: (k) => t('spitex.proof.csv.klv', { k }) }))
   await audit(ctx, { action: 'billing.export', entityType: 'Organization', entityId: ctx.org.id, after: { month, rows: rows.length }, context: { unitIds } })
   return new NextResponse(csv, {
     headers: {

@@ -26,6 +26,8 @@ export const LABELLED_ACTIONS = [
   'emergency.start', 'emergency.end', 'emergency.expired', 'emergency.view',
   'platform.operator_assigned', 'platform.org.create', 'platform.org.approve', 'platform.org.suspend', 'platform.org.unsuspend', 'platform.org.modules',
   'task.expire', 'absence.request', 'absence.sick', 'absence.approved', 'absence.rejected', 'absence.withdraw',
+  'spitex.visit.create', 'spitex.visit.update', 'spitex.visit.assign', 'spitex.visit.cancel', 'spitex.visit.start', 'spitex.visit.finish', 'spitex.visit.missed',
+  'spitex.template.create', 'spitex.template.update', 'spitex.template.end', 'spitex.client.update', 'spitex.access.view', 'spitex.proof.export',
 ] as const
 
 const SET = new Set<string>(LABELLED_ACTIONS)
