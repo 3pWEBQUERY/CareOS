@@ -22,6 +22,7 @@ export default defineMessages({
       title: 'Angehörigenportal',
       invite: 'Zum Portal einladen',
       none: 'Kein Portalzugang',
+      physician: 'Ärztinnen und Ärzte erhalten keinen Zugang zum Angehörigenportal; sie arbeiten im Ärzteportal.',
       consent: 'Einwilligung durch {by} ({name}) am {date}',
       until: 'Link gültig bis {date}',
       lastLogin: 'zuletzt angemeldet {date}',
@@ -250,6 +251,7 @@ export default defineMessages({
       assignedVisit: 'Besuchsanfrage zugewiesen',
     },
     errors: {
+      physician: 'Ärztinnen und Ärzte können nicht ins Angehörigenportal eingeladen werden. Externe Arztkonten werden unter Admin → Ärztinnen und Ärzte angelegt.',
       module: 'Das Angehörigenportal ist für Ihre Organisation nicht aktiv.',
       residentInactive: 'Für ausgetretene oder anonymisierte Personen ist keine Einladung möglich.',
       name: 'Bitte geben Sie einen Namen ein.',
@@ -415,6 +417,7 @@ export default defineMessages({
       title: 'Portail des proches',
       invite: 'Inviter au portail',
       none: 'Pas d’accès au portail',
+      physician: 'Les médecins n’ont pas accès au portail des proches ; ils travaillent dans le portail médecins.',
       consent: 'Consentement de {by} ({name}) le {date}',
       until: 'Lien valable jusqu’au {date}',
       lastLogin: 'dernière connexion {date}',
@@ -643,6 +646,7 @@ export default defineMessages({
       assignedVisit: 'Demande de visite attribuée',
     },
     errors: {
+      physician: 'Les médecins ne peuvent pas être invités au portail des proches. Les comptes médecins externes se créent sous Admin → Médecins.',
       module: 'Le portail des proches n’est pas actif pour votre organisation.',
       residentInactive: 'Aucune invitation n’est possible pour des personnes sorties ou anonymisées.',
       name: 'Veuillez saisir un nom.',
@@ -808,6 +812,7 @@ export default defineMessages({
       title: 'Portale dei familiari',
       invite: 'Invitare al portale',
       none: 'Nessun accesso al portale',
+      physician: 'I medici non hanno accesso al portale dei familiari; lavorano nel portale medici.',
       consent: 'Consenso di {by} ({name}) il {date}',
       until: 'Link valido fino al {date}',
       lastLogin: 'ultimo accesso {date}',
@@ -1036,6 +1041,7 @@ export default defineMessages({
       assignedVisit: 'Richiesta di visita assegnata',
     },
     errors: {
+      physician: 'I medici non possono essere invitati al portale dei familiari. Gli account medici esterni si creano in Admin → Medici.',
       module: 'Il portale dei familiari non è attivo per la sua organizzazione.',
       residentInactive: 'Per persone uscite o anonimizzate non è possibile un invito.',
       name: 'Inserisca un nome.',
@@ -1201,6 +1207,7 @@ export default defineMessages({
       title: 'Family portal',
       invite: 'Invite to portal',
       none: 'No portal access',
+      physician: 'Physicians do not get family portal access; they work in the physician portal.',
       consent: 'Consent by {by} ({name}) on {date}',
       until: 'Link valid until {date}',
       lastLogin: 'last signed in {date}',
@@ -1429,6 +1436,7 @@ export default defineMessages({
       assignedVisit: 'Visit request assigned',
     },
     errors: {
+      physician: 'Physicians cannot be invited to the family portal. External physician accounts are created under Admin → Physicians.',
       module: 'The family portal is not active for your organisation.',
       residentInactive: 'Invitations are not possible for discharged or anonymised people.',
       name: 'Please enter a name.',
