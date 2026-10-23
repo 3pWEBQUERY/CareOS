@@ -8,13 +8,14 @@ import { OpenView } from './_views/Open'
 import { AbsencesView } from './_views/Absences'
 import { SwapsView } from './_views/Swaps'
 import { PlanView, CoverageView } from './_views/Plan'
+import { RosterView } from './_views/Roster'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
   return { title: t('nav.schedule') }
 }
 
-const VIEWS = ['week', 'month', 'open', 'absences', 'swaps', 'team', 'coverage'] as const
+const VIEWS = ['week', 'month', 'open', 'absences', 'swaps', 'roster', 'team', 'coverage'] as const
 type View = (typeof VIEWS)[number]
 
 export default async function SchedulePage({ searchParams }: { searchParams: Promise<{ view?: string; w?: string; m?: string }> }) {
@@ -24,7 +25,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
   const sp = await searchParams
   const canManage = !!unit && ctx.canHere('schedule.manage')
   let view = (VIEWS as readonly string[]).includes(sp.view ?? '') ? (sp.view as View) : 'week'
-  if ((view === 'team' || view === 'coverage') && !canManage) view = 'week'
+  if ((view === 'team' || view === 'coverage' || view === 'roster') && !canManage) view = 'week'
 
   const now = new Date()
   const wParsed = sp.w && /^\d{4}-\d{2}-\d{2}$/.test(sp.w) ? parseDateKey(sp.w) : now
@@ -48,9 +49,10 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
     { v: 'open', label: t('schedule.tabs.open') },
     { v: 'absences', label: t('schedule.tabs.absences') },
     { v: 'swaps', label: t('schedule.tabs.swaps') },
-    ...(canManage ? [{ v: 'team' as View, label: t('schedule.tabs.team') }, { v: 'coverage' as View, label: t('schedule.tabs.coverage') }] : []),
+    ...(canManage ? [{ v: 'roster' as View, label: t('roster.tab') }, { v: 'team' as View, label: t('schedule.tabs.team') }, { v: 'coverage' as View, label: t('schedule.tabs.coverage') }] : []),
   ]
-  const period = view === 'month'
+  const monthBased = view === 'month' || view === 'roster'
+  const period = monthBased
     ? fmtDate(month, locale, { month: 'long', year: 'numeric' })
     : `${t('schedule.kw', { n: isoWeek(week) })} · ${fmtDate(week, locale, { day: '2-digit', month: '2-digit' })}–${fmtDate(addDays(week, 6), locale)}`
 
@@ -60,9 +62,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
         <div>
           <span className="lbl">{unit ? `${unit.location.name} · ${unit.name}` : t('schedule.title')}</span>
           <h1>{t('schedule.title')}</h1>
-          {(weekBased || view === 'month') && <p className="sub">{period}</p>}
+          {(weekBased || monthBased) && <p className="sub">{period}</p>}
         </div>
-        {(weekBased || view === 'month') && (
+        {(weekBased || monthBased) && (
           <div className="row">
             {(view === 'week' || view === 'month') && (
               <div className="seg" role="group" aria-label={t('schedule.range')}>
@@ -71,9 +73,9 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
               </div>
             )}
             <div className="seg" role="group" aria-label={t('schedule.nav')}>
-              <Link href={view === 'month' ? q('month', mk(prevMonth)) : q(view, wk(addDays(week, -7)))} aria-label={t('schedule.prev')}>←</Link>
-              <Link href={view === 'month' ? q('month') : q(view)}>{t('schedule.today')}</Link>
-              <Link href={view === 'month' ? q('month', mk(nextMonth)) : q(view, wk(addDays(week, 7)))} aria-label={t('schedule.next')}>→</Link>
+              <Link href={monthBased ? q(view, mk(prevMonth)) : q(view, wk(addDays(week, -7)))} aria-label={t('schedule.prev')}>←</Link>
+              <Link href={q(view)}>{t('schedule.today')}</Link>
+              <Link href={monthBased ? q(view, mk(nextMonth)) : q(view, wk(addDays(week, 7)))} aria-label={t('schedule.next')}>→</Link>
             </div>
           </div>
         )}
@@ -92,6 +94,7 @@ export default async function SchedulePage({ searchParams }: { searchParams: Pro
           {view === 'open' && <OpenView ctx={ctx} now={now} canManage={canManage} />}
           {view === 'absences' && <AbsencesView ctx={ctx} now={now} canManage={canManage} />}
           {view === 'swaps' && <SwapsView ctx={ctx} now={now} canManage={canManage} />}
+          {view === 'roster' && <RosterView ctx={ctx} month={dateKey(month).slice(0, 7)} />}
           {view === 'team' && <PlanView ctx={ctx} week={week} now={now} />}
           {view === 'coverage' && <CoverageView ctx={ctx} week={week} now={now} />}
         </div>

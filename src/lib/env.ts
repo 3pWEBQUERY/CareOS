@@ -24,7 +24,7 @@ export const env = {
   webauthnRpId: str('WEBAUTHN_RP_ID'),
   ai: {
     apiKey: str('ANTHROPIC_API_KEY'),
-    model: str('AI_MODEL', 'claude-opus-5-5'),
+    model: str('AI_MODEL', 'claude-haiku-5-5'),
   },
   /** Web Push (PRD §25): VAPID-Schlüsselpaar, erzeugen mit `npx web-push generate-vapid-keys`. */
   push: {

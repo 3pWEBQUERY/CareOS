@@ -1,8 +1,8 @@
 import type { TFn } from '@/i18n/core'
 import { LOCALES, LOCALE_NAMES } from '@/i18n/core'
-import { Select, TextField } from '@/components/ui/fields'
+import { NumberField, Select, TextField } from '@/components/ui/fields'
 
-type U = { email: string; firstName: string; lastName: string; initials: string; jobTitle: string | null; employeeNo: string | null; phone: string | null; workPhone?: string | null; primaryUnitId: string | null; locale: string }
+type U = { email: string; firstName: string; lastName: string; initials: string; jobTitle: string | null; employeeNo: string | null; phone: string | null; workPhone?: string | null; primaryUnitId: string | null; locale: string; employmentPct?: number }
 
 /** Stammdatenfelder eines Benutzers (Anlegen und Bearbeiten). */
 export function UserFields({ t, units, user, defaultLocale }: { t: TFn; units: { id: string; name: string; location: { name: string } }[]; user?: U; defaultLocale: string }) {
@@ -13,6 +13,7 @@ export function UserFields({ t, units, user, defaultLocale }: { t: TFn; units: {
       <TextField label={t('admin.users.initials')} name="initials" defaultValue={user?.initials} maxLength={4} placeholder={t('admin.users.initialsAuto')} className="mono" />
       <TextField label={t('admin.users.email')} wrapClassName="span-all" name="email" type="email" defaultValue={user?.email} required maxLength={160} autoComplete="off" />
       <TextField label={t('admin.users.jobTitle')} name="jobTitle" defaultValue={user?.jobTitle ?? ''} maxLength={80} />
+      <NumberField label={t('admin.users.employmentPct')} name="employmentPct" unit="%" min={5} max={100} step={5} defaultValue={user?.employmentPct ?? 100} />
       <TextField label={t('admin.users.employeeNo')} name="employeeNo" defaultValue={user?.employeeNo ?? ''} maxLength={30} className="mono" />
       <TextField label={t('people.contact.workPhone')} name="workPhone" type="tel" defaultValue={user?.workPhone ?? ''} maxLength={40} />
       <TextField label={t('people.contact.privatePhone')} name="phone" type="tel" defaultValue={user?.phone ?? ''} maxLength={40} />

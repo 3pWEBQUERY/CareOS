@@ -28,8 +28,9 @@ import developer from './messages/developer'
 import md from './messages/md'
 import therapy from './messages/therapy'
 import portal from './messages/portal'
+import roster from './messages/roster'
 
-const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms, visit, people, platform, imports, design, register, tenancy, md, developer, therapy, portal }
+const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms, visit, people, platform, imports, design, register, tenancy, md, developer, therapy, portal, roster }
 
 export type Namespace = keyof typeof NAMESPACES
 

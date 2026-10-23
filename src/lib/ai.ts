@@ -16,29 +16,39 @@ Regeln, die immer gelten:
 - Schreibe sachlich, knapp, in der Fachsprache der Pflegedokumentation, Schweizer Rechtschreibung (ss statt ß).
 - Keine Einleitung, keine Grussformel, kein Markdown ausser einfachen Aufzählungen mit "- ".`
 
-export type AiKind = 'documentation' | 'handover' | 'resident_summary' | 'careplan' | 'search' | 'quality'
+export type AiKind = 'documentation' | 'handover' | 'resident_summary' | 'careplan' | 'search' | 'quality' | 'schedule'
 
 let client: Anthropic | null = null
 
 export class AiUnavailable extends Error {}
 
-export async function aiDraft(ctx: Ctx, kind: AiKind, instruction: string, input: string, maxTokens = 2000) {
+/** Verfügbarkeit prüfen (Schlüssel, Funktion der Organisation, Berechtigung) und Client liefern. */
+export async function aiClient(ctx: Ctx) {
   if (!aiConfigured()) throw new AiUnavailable('not_configured')
   const flag = await db.featureFlag.findUnique({ where: { orgId_key: { orgId: ctx.org.id, key: 'ai' } } })
   if (flag && !flag.enabled) throw new AiUnavailable('disabled')
   if (!ctx.can('ai.use')) throw new AiUnavailable('forbidden')
   client ??= new Anthropic({ apiKey: env.ai.apiKey })
-  const lang = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englisch' }[ctx.locale]
-  const response = await client.beta.messages.create({
+  return client
+}
+
+export const AI_LANG = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englisch' } as const
+
+/** Haiku hat keinen serverseitigen Fallback bei Ablehnung; Opus/Sonnet erhalten ihn. */
+const withFallback = () => !env.ai.model.startsWith('claude-haiku')
+
+export async function aiDraft(ctx: Ctx, kind: AiKind, instruction: string, input: string, maxTokens = 2000) {
+  const c = await aiClient(ctx)
+  const params = {
     model: env.ai.model,
     max_tokens: maxTokens,
-    betas: ['server-side-fallback-2026-07-01'],
-    fallbacks: 'default',
-    output_config: { effort: 'low' },
-    system: `${SAFETY}\nAntworte auf ${lang}.\n\n${instruction}`,
-    messages: [{ role: 'user', content: input }],
-  } as Parameters<typeof client.beta.messages.create>[0] & { stream?: false })
-  const msg = response as Anthropic.Beta.BetaMessage
+    output_config: { effort: 'low' as const },
+    system: `${SAFETY}\nAntworte auf ${AI_LANG[ctx.locale]}.\n\n${instruction}`,
+    messages: [{ role: 'user' as const, content: input }],
+  }
+  const msg = withFallback()
+    ? ((await c.beta.messages.create({ ...params, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' } as Parameters<typeof c.beta.messages.create>[0] & { stream?: false })) as Anthropic.Beta.BetaMessage)
+    : await c.messages.create(params)
   if (msg.stop_reason === 'refusal') throw new AiUnavailable('refused')
   const text = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('').trim()
   const row = await db.aiInteraction.create({ data: { orgId: ctx.org.id, userId: ctx.user.id, kind, input: input.slice(0, 20000), output: text, model: msg.model } })
