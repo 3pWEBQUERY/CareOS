@@ -2,17 +2,18 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
-import { OPEN_STATUSES, overdueFilter } from '@/lib/tasks'
-import { addDays, addMinutes, age, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
-import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
-import { ReviewTag } from '@/components/residents/ReviewTag'
+import { fmtDate, fmtNum, fmtRel, hm } from '@/lib/time'
 import { Admit } from './Admit'
+import { floorOverview } from './_lib/floor'
 
 export async function generateMetadata() {
   return { title: (await getCtx()).t('nav.residents') }
 }
 
-/** Einheitenübersicht, wenn keine Person gewählt ist. */
+/**
+ * Stockwerksübersicht, wenn keine Person gewählt ist: was auf dem Bereich jetzt wichtig ist (kritische Punkte,
+ * Belegung, Dienst, Termine, Abwesende, Hinweise). Die Personen selbst stehen in der Liste links.
+ */
 export default async function ResidentsPage({ searchParams }: { searchParams: Promise<{ pick?: string }> }) {
   const ctx = await getCtx()
   const { t, unit, locale } = ctx
@@ -22,29 +23,27 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
   const unitIds = unit ? [unit.id] : ctx.unitIds
   const now = new Date()
   const rel = (d: Date) => fmtRel(d, { today: t('common.today'), yesterday: t('common.yesterday') }, now, locale)
+  const dm = (d: Date) => fmtDate(d, locale, { day: '2-digit', month: '2-digit' })
 
-  const residents = await db.resident.findMany({
-    where: { orgId: ctx.org.id, unitId: { in: unitIds }, status: { in: ['active', 'absent'] } },
-    include: { room: true },
-    orderBy: [{ room: { number: 'asc' } }, { lastName: 'asc' }],
-  })
-  const ids = residents.map((r) => r.id)
-  const [open, over, vitals, limitRows, lastNotes, rooms] = await Promise.all([
-    db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, _count: true }),
-    db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, ...(await overdueFilter(ctx.org.id, now)) }, _count: true }),
-    db.vitalSign.findMany({ where: { residentId: { in: ids }, ...LIVE, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
-    db.vitalThreshold.findMany({ where: { orgId: ctx.org.id } }),
-    db.observation.groupBy({ by: ['residentId'], where: { residentId: { in: ids } }, _max: { at: true } }),
-    unit ? db.room.findMany({ where: { unitId: unit.id }, include: { residents: { where: { status: { in: ['active', 'absent'] } }, select: { id: true } } }, orderBy: { number: 'asc' } }) : [],
-  ])
-  const cnt = (rows: { residentId: string | null; _count: number }[], id: string) => rows.find((r) => r.residentId === id)?._count ?? 0
-  const latest = new Map<string, (typeof vitals)[number]>()
-  for (const v of vitals) if (!latest.has(v.residentId)) latest.set(v.residentId, v)
-  // Bearbeitungsstand auffälliger Werte (gesehen / Massnahme) mit Kürzel der Person
-  const reviewerIds = [...new Set([...latest.values()].map((v) => v.reviewedById).filter((x): x is string => !!x))]
-  const reviewers = new Map((reviewerIds.length ? await db.user.findMany({ where: { id: { in: reviewerIds }, orgId: ctx.org.id }, select: { id: true, initials: true } }) : []).map((u) => [u.id, u.initials]))
-  const freeRooms = rooms.filter((r) => r.residents.length < r.beds).map((r) => ({ id: r.id, label: `${r.number}${r.beds > 1 ? ` (${r.residents.length}/${r.beds})` : ''}` }))
+  const f = await floorOverview(ctx, unitIds, now)
+  const freeRooms = unit
+    ? (await db.room.findMany({ where: { unitId: unit.id }, include: { residents: { where: { status: { in: ['active', 'absent'] } }, select: { id: true } } }, orderBy: { number: 'asc' } }))
+        .filter((r) => r.residents.length < r.beds)
+        .map((r) => ({ id: r.id, label: `${r.number}${r.beds > 1 ? ` (${r.residents.length}/${r.beds})` : ''}` }))
+    : []
   const canAdmit = !!unit && ctx.canHere('resident.create')
+  const href = (id: string) => `/residents/${id}${pick ? '/' + pick : ''}`
+  const n = f.notes
+  const hasNotes = n.reaNo.length + n.allergies.length + n.risks.length + n.wounds.length + n.recent.length > 0
+
+  // kritische Punkte pro Person gebündelt
+  const groups: { key: string; who: string; href: string; lines: { text: string; tone: string; href: string }[] }[] = []
+  for (const i of f.items) {
+    const key = i.rid ?? i.who
+    const g = groups.find((x) => x.key === key)
+    if (g) g.lines.push({ text: i.text, tone: i.tone, href: i.href })
+    else groups.push({ key, who: i.who, href: i.href, lines: [{ text: i.text, tone: i.tone, href: i.href }] })
+  }
 
   return (
     <main className="panel main">
@@ -52,7 +51,11 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
         <div>
           <span className="lbl">{unit ? unit.location.name : ctx.org.name}</span>
           <h1>{unit ? unit.name : t('residents.list.title')}</h1>
-          <p className="sub">{t('residents.unit.count', { n: residents.length })}{unit && rooms.length ? ' · ' + t('residents.unit.freeRooms', { n: freeRooms.length }) : ''}</p>
+          <p className="sub">
+            {t('residents.unit.count', { n: f.counts.residents })}
+            {f.counts.beds > 0 && ' · ' + t('residents.unit.freeRooms', { n: f.counts.roomsFree })}
+            {unit?.phone && <> · <a href={`tel:${unit.phone.replace(/\s/g, '')}`}>{unit.phone}</a></>}
+          </p>
         </div>
         {canAdmit && <Admit rooms={freeRooms} unitName={unit!.name} />}
       </div>
@@ -63,67 +66,208 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
               <span className="grow">{t(pick === 'vitals' ? 'residents.unit.pickVitals' : 'residents.unit.pickNotes')}</span>
             </div>
           )}
-          {residents.length ? (
-            <div className="tablewrap res-unit-table">
-              <table className="stable">
-                <thead>
-                  <tr>
-                    <th>{t('residents.banner.room')}</th>
-                    <th>{t('residents.unit.name')}</th>
-                    <th className="right">{t('residents.unit.age')}</th>
-                    <th className="right">{t('residents.banner.careLevel')}</th>
-                    <th>{t('residents.unit.tasks')}</th>
-                    <th>{t('residents.unit.vitals')}</th>
-                    <th>{t('residents.unit.lastNote')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {residents.map((r) => {
-                    const v = latest.get(r.id)
-                    const lim = mergeLimits(limitRows.filter((l) => !l.residentId || l.residentId === r.id), r.id)
-                    const ab = abnormalKeys(v, lim)
-                    const o = cnt(open, r.id)
-                    const ov = cnt(over, r.id)
-                    const ln = lastNotes.find((n) => n.residentId === r.id)?._max.at
-                    const href = `/residents/${r.id}${pick ? '/' + pick : ''}`
-                    return (
-                      <tr key={r.id} className={'clickable' + (ov ? ' over' : '')}>
-                        <td className="num">{r.room?.number ?? '–'}</td>
-                        <td>
-                          <Link href={href} style={{ color: 'inherit', fontWeight: 500 }}>{r.lastName} {r.firstName}</Link>
-                          <div className="row" style={{ gap: 4, marginTop: 2 }}>
-                            {r.status === 'absent' && <span className="tag accent">{t('residents.banner.absent')}</span>}
-                            {r.allergies.length > 0 && <span className="tag crit">{t('residents.list.allergy')}</span>}
-                            {r.rea === 'no' && <span className="tag outline">{t('residents.list.reaNo')}</span>}
-                            {r.risks.slice(0, 2).map((x) => <span key={x} className="tag warn">{x}</span>)}
-                          </div>
-                        </td>
-                        <td className="num right">{age(r.birthDate)}</td>
-                        <td className="num right">{r.careLevel ?? '–'}</td>
-                        <td className="nowrap">
-                          {ov > 0 && <span className="pill crit" style={{ marginRight: 4 }}>{t('residents.unit.overdueN', { n: ov })}</span>}
-                          <span className={'pill' + (o ? '' : ' ok')}>{o ? t('residents.unit.openN', { n: o }) : '✓ ' + t('residents.unit.allDone')}</span>
-                        </td>
-                        <td className="small">
-                          {ab.length ? (
-                            <>
-                              <span className={v!.reviewedAt ? undefined : 'crit-text'}>
-                                {ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(v![k] as number, VITALS[k].dec, locale)}${flag(k, v![k], lim) === 'hi' ? ' ▲' : ' ▼'}`).join(' · ')}
-                              </span>
-                              {v!.reviewedAt && <> <ReviewTag kind={v!.reviewKind} label={t(v!.reviewKind === 'action' ? 'home.review.action' : 'home.review.seen')} time={hm(v!.reviewedAt)} by={reviewers.get(v!.reviewedById ?? '') ?? '?'} note={v!.reviewNote} /></>}
-                            </>
-                          ) : v ? <span className="muted">{t('residents.unit.vitalsOk')}</span> : <span className="muted">{t('residents.unit.noVitals')}</span>}
-                        </td>
-                        <td className="num small nowrap">{ln ? rel(ln) : '–'}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+
+          <div className="metrics" aria-label={t('residents.floor.title')}>
+            <div className="metric">
+              <span className="lbl">{t('home.residentsLabel')}</span>
+              <span className="val">{f.counts.active}{f.counts.absent > 0 && <small> · {t('residents.floor.absentN', { n: f.counts.absent })}</small>}</span>
             </div>
-          ) : (
-            <p className="empty">{t('residents.unit.empty')}</p>
-          )}
+            <div className="metric">
+              <span className="lbl">{t('residents.floor.beds')}</span>
+              <span className="val">{f.counts.beds ? <>{f.counts.occupied}<small>/{f.counts.beds}</small></> : '–'}{f.counts.freeBeds > 0 && <small> · {t('residents.floor.freeN', { n: f.counts.freeBeds })}</small>}</span>
+            </div>
+            {f.tasks ? (
+              <Link className="metric" href="/tasks">
+                <span className="lbl">{t('residents.unit.tasks')}</span>
+                <span className={'val' + (f.tasks.total && f.tasks.done === f.tasks.total ? ' ok' : '')}>{f.tasks.done}<small>/{f.tasks.total} {t('residents.floor.done')}</small></span>
+              </Link>
+            ) : null}
+            {f.tasks ? (
+              <Link className="metric" href="/tasks?f=over">
+                <span className="lbl">{t('home.overdue')}</span>
+                <span className={'val' + (f.tasks.overdue ? ' crit' : '')}>{f.tasks.overdue}</span>
+              </Link>
+            ) : null}
+            <a className="metric" href="#floor-crit">
+              <span className="lbl">{t('residents.floor.alerts')}</span>
+              <span className={'val' + (f.alerts ? ' crit' : '')}>{f.alerts}</span>
+            </a>
+            <div className="metric">
+              <span className="lbl">{t('residents.floor.careLevel')}</span>
+              <span className="val">{f.careLevel != null ? fmtNum(f.careLevel, 1, locale) : '–'}</span>
+            </div>
+          </div>
+
+          <div className="grid-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))' }}>
+            <div className="stack">
+              <section className={'card' + (groups.length ? ' crit' : '')} aria-labelledby="floor-crit">
+                <div className="card-head">
+                  <h2 id="floor-crit">{t('residents.floor.now')}</h2>
+                  <span className={'pill' + (groups.length ? ' crit' : ' ok')}>{groups.length ? groups.length : '✓'}</span>
+                </div>
+                {groups.length ? (
+                  <ul className="list">
+                    {groups.slice(0, 12).map((g) => (
+                      <li key={g.key}>
+                        <Link className="li" href={g.href}>
+                          <div className="grow">
+                            <div>{g.who}</div>
+                            {g.lines.map((l, i) => <div key={i} className={'small ' + (l.tone === 'crit' ? 'crit-text' : 'warn-text')}>{l.text}</div>)}
+                          </div>
+                          <span className="muted" aria-hidden="true">→</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <div className="card-body small muted">{t('residents.floor.nowNone')}</div>}
+                {groups.length > 12 && <div className="card-body small muted">{t('residents.floor.more', { n: groups.length - 12 })}</div>}
+              </section>
+
+              {(f.rooms.length > 0 || f.withoutRoom.length > 0) && (
+                <section className="card" aria-labelledby="floor-rooms">
+                  <div className="card-head">
+                    <h2 id="floor-rooms">{t('residents.floor.rooms')}</h2>
+                    <span className="small muted floor-legend"><span className="dot" aria-hidden="true" />{t('residents.floor.roomsLegend')}</span>
+                  </div>
+                  <ul className="floor-rooms">
+                    {f.rooms.map((r) => (
+                      <li key={r.id} className={'floor-room' + (r.people.length ? '' : ' free')}>
+                        <span className="num">{r.number}{r.beds > 1 && <span className="muted"> · {r.people.length}/{r.beds}</span>}</span>
+                        {r.people.length ? r.people.map((p) => (
+                          <Link key={p.id} href={href(p.id)} className={'floor-person' + (p.absent ? ' absent' : '')}>
+                            {(p.alert || p.overdue > 0) && <span className="dot crit" aria-hidden="true" />}
+                            <span className="grow">{p.name}</span>
+                            {p.absent && <span className="tag accent">{t('residents.banner.absent')}</span>}
+                            {(p.alert || p.overdue > 0) && <span className="sr-only">{t('residents.floor.attention')}</span>}
+                          </Link>
+                        )) : <span className="small">{t('residents.floor.free')}</span>}
+                      </li>
+                    ))}
+                    {f.withoutRoom.map((p) => (
+                      <li key={p.id} className="floor-room">
+                        <span className="num">{t('residents.floor.noRoom')}</span>
+                        <Link href={href(p.id)} className={'floor-person' + (p.absent ? ' absent' : '')}><span className="grow">{p.name}</span></Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+            </div>
+
+            <div className="stack">
+              {f.shifts && (
+                <section className="card" aria-labelledby="floor-duty">
+                  <div className="card-head">
+                    <h2 id="floor-duty">{t('residents.floor.duty')}</h2>
+                    <Link className="linkbtn small" href="/schedule">{t('nav.schedule')} →</Link>
+                  </div>
+                  {f.shifts.length ? (
+                    <ul className="list">
+                      {f.shifts.map((s) => (
+                        <li key={s.code} className="li">
+                          <span className="tag mono" style={{ minWidth: 34, justifyContent: 'center' }}>{s.code}</span>
+                          <div className="grow">
+                            <div>
+                              {s.name} <span className="small muted mono">{s.time}</span>
+                              {s.running && <> <span className="pill ok">{t('residents.floor.running')}</span></>}
+                            </div>
+                            <div className="small">
+                              {s.staff.length ? s.staff.map((p, i) => (
+                                <span key={i} className="nowrap">{i > 0 && ', '}{p.name} <span className="muted">({t('residents.floor.group.' + p.group)})</span></span>
+                              )) : <span className="muted">{t('residents.floor.nobody')}</span>}
+                            </div>
+                          </div>
+                          {s.open > 0 && <span className="tag warn nowrap">{t('residents.floor.openShifts', { n: s.open })}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : <div className="card-body small muted">{t('residents.floor.noShifts')}</div>}
+                  {f.handover && (
+                    <div className="card-body small" style={{ borderTop: '1px solid var(--line)' }}>
+                      {t('residents.floor.handover', { shift: f.handover.shift })}:{' '}
+                      {f.handover.submitted >= f.handover.units && f.handover.at
+                        ? <span>✓ {t('home.lead.handoverDone', { at: rel(f.handover.at) })}</span>
+                        : <Link href="/handover" className="tag warn">{t('home.lead.handoverOpen')}</Link>}
+                    </div>
+                  )}
+                </section>
+              )}
+
+              <section className="card" aria-labelledby="floor-today">
+                <div className="card-head"><h2 id="floor-today">{t('residents.floor.today')}</h2><span className="small muted">{f.agenda.length}</span></div>
+                {f.agenda.length ? (
+                  <ul className="list">
+                    {f.agenda.map((a) => (
+                      <li key={a.key}>
+                        <Link className="li" href={a.href}>
+                          <span className="mono small" style={{ minWidth: 42 }}>{hm(a.at)}</span>
+                          <div className={'grow' + (a.done ? ' muted' : '')}>
+                            <div>{a.who}</div>
+                            <div className="small">{a.done && '✓ '}{a.text}</div>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : <div className="card-body small muted">{t('residents.floor.todayNone')}</div>}
+              </section>
+
+              {f.absent.length > 0 && (
+                <section className="card" aria-labelledby="floor-absent">
+                  <div className="card-head"><h2 id="floor-absent">{t('residents.floor.absent')}</h2><span className="small muted">{f.absent.length}</span></div>
+                  <ul className="list">
+                    {f.absent.map((a) => (
+                      <li key={a.id}>
+                        <Link className="li" href={href(a.id)}>
+                          <div className="grow">
+                            <div>{a.who}</div>
+                            <div className="small muted">
+                              {[a.reason, a.since && t('residents.floor.since', { date: dm(a.since) }), a.back && t('residents.floor.back', { date: dm(a.back) })].filter(Boolean).join(' · ')}
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              {hasNotes && (
+                <section className="card" aria-labelledby="floor-notes">
+                  <div className="card-head"><h2 id="floor-notes">{t('residents.floor.notes')}</h2></div>
+                  <dl className="floor-notes">
+                    {n.reaNo.length > 0 && (
+                      <div><dt><span className="tag outline">{t('residents.list.reaNo')}</span></dt>
+                        <dd>{n.reaNo.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link href={href(p.id)}>{p.who}</Link></span>)}</dd></div>
+                    )}
+                    {n.allergies.length > 0 && (
+                      <div><dt><span className="tag crit">{t('residents.list.allergy')}</span></dt>
+                        <dd>{n.allergies.map((p, i) => <span key={p.id}>{i > 0 && '; '}<Link href={href(p.id)}>{p.who}</Link> <span className="muted">({p.text})</span></span>)}</dd></div>
+                    )}
+                    {n.wounds.length > 0 && (
+                      <div><dt><span className="tag warn">{t('residents.floor.wounds')}</span></dt>
+                        <dd>{n.wounds.map((p, i) => <span key={p.id}>{i > 0 && '; '}<Link href={`/residents/${p.id}/wounds`}>{p.who}</Link> <span className="muted">({p.text})</span></span>)}</dd></div>
+                    )}
+                    {n.risks.map((r) => (
+                      <div key={r.name}><dt><span className="tag warn">{r.name}</span> <span className="small muted">{r.people.length}</span></dt>
+                        <dd>{r.people.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link href={href(p.id)}>{p.who}</Link></span>)}</dd></div>
+                    ))}
+                    {n.recent.length > 0 && (
+                      <div><dt><span className="tag accent">{t('residents.floor.recent')}</span></dt>
+                        <dd>{n.recent.map((p, i) => <span key={p.id}>{i > 0 && ', '}<Link href={href(p.id)}>{p.who}</Link> <span className="muted">({dm(p.at)})</span></span>)}</dd></div>
+                    )}
+                  </dl>
+                </section>
+              )}
+
+              {f.incidentsOpen > 0 && ctx.can('quality.report') && (
+                <Link className="alert warn" href="/quality">
+                  <span className="grow">{t('residents.floor.incidentsOpen', { n: f.incidentsOpen })}</span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </main>
