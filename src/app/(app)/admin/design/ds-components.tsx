@@ -48,9 +48,21 @@ export function FieldGallery() {
           <SearchField label={t('design.fields.search')} name="q" placeholder={t('design.fields.searchPh')} />
           <NumberField label={t('design.fields.temp')} name="temp" unit="°C" min={30} max={45} step={0.1} warn={{ lo: 35.5, hi: 38 }} hint={t('design.fields.tempHint')} />
           <NumberField label={t('design.fields.dose')} name="dose" unit="mg" min={0} max={2000} step={1} />
-          <Select label={t('design.fields.unit')} name="unit" placeholder={t('design.fields.choose')}>
+          <Select label={t('design.fields.unit')} name="unit" required placeholder={t('design.fields.choose')}>
             <option value="wg1">Wohngruppe 1</option>
             <option value="wg2">Wohngruppe 2</option>
+          </Select>
+          <Select label={t('design.fields.scope')} name="scope" defaultValue="unit:wg1" hint={t('design.fields.scopeHint')}>
+            <option value="org">{t('design.fields.scopeOrg')}</option>
+            <optgroup label={t('design.fields.locations')}>
+              <option value="loc:a">Lindenhof</option>
+              <option value="loc:b">Seeblick</option>
+            </optgroup>
+            <optgroup label={t('design.fields.units')}>
+              <option value="unit:wg1">Wohngruppe 1</option>
+              <option value="unit:wg2">Wohngruppe 2</option>
+              <option value="unit:wg3" disabled>{t('design.fields.closed', { name: 'Wohngruppe 3' })}</option>
+            </optgroup>
           </Select>
           <Combobox label={t('design.fields.person')} name="person" options={people} placeholder={t('design.fields.personPh')} clearable hint={t('design.fields.personHint')} />
           <DateField label={t('design.fields.date')} name="date" />

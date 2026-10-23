@@ -95,7 +95,7 @@ export function labelSourceId(input: HTMLInputElement | null): string | null {
  * ist er ungültig, bleibt das Formular stehen (auch bei noValidate, z. B. ActionForm), die Meldung
  * erscheint am Feld und das erste ungültige Feld erhält den Fokus. `reset` setzt auf den Startwert zurück.
  */
-export function useFormBinding(input: RefObject<HTMLInputElement | null>, api: RefObject<{ submit: () => string | null; reset: () => void }>) {
+export function useFormBinding(input: RefObject<HTMLInputElement | HTMLButtonElement | null>, api: RefObject<{ submit: () => string | null; reset: () => void }>) {
   useEffect(() => {
     const form = input.current?.form
     if (!form) return
@@ -108,7 +108,7 @@ export function useFormBinding(input: RefObject<HTMLInputElement | null>, api: R
       if (!msg) return
       e.preventDefault()
       e.stopPropagation() // React-onSubmit (am Dokument) nicht auslösen; andere Felder prüfen trotzdem
-      const first = form.querySelector<HTMLInputElement>('.dtf-in:invalid, .nf-in:invalid, .cb-in:invalid')
+      const first = form.querySelector<HTMLElement>('.dtf-in:invalid, .nf-in:invalid, .cb-in:invalid, .sel-btn[aria-invalid="true"]')
       if (!first || first === el) el.focus()
     }
     const onReset = () => setTimeout(() => api.current.reset())

@@ -92,13 +92,12 @@ export function VisitList({ rows, currentId, residents, nav }: {
         <p className="small muted visit-list-empty">{t('visit.list.empty')}</p>
       )}
       {others.length > 0 && (
-        <label className="visit-list-add">
-          <span className="sr-only">{t('visit.list.add')}</span>
-          <Select value="" onChange={(e) => { if (e.target.value) void go(`/tasks/visit?r=${e.target.value}`) }}>
+        <div className="visit-list-add">
+          <Select value="" aria-label={t('visit.list.add')} onChange={(e) => { if (e.target.value) void go(`/tasks/visit?r=${e.target.value}`) }}>
             <option value="">{t('visit.list.add')}</option>
             {others.map((r) => <option key={r.id} value={r.id}>{[r.room, r.name].filter(Boolean).join(' ')}</option>)}
           </Select>
-        </label>
+        </div>
       )}
       <p className="small muted visit-keys">{t('visit.keys')}</p>
       {dialog}

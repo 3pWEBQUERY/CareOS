@@ -173,9 +173,9 @@ export function FieldStates() {
       render: (s) => na(s) ? null : <TextField label={lbl} hideLabel disabled={s === 'disabled'} error={s === 'error' ? err : undefined} defaultValue={s === 'active' ? 'Keller' : undefined} placeholder={t('design.fields.namePh')} />,
     },
     {
-      key: 'select', title: 'Select', target: 'select',
-      render: (s) => na(s) ? null : (
-        <Select label={t('design.fields.unit')} hideLabel disabled={s === 'disabled'} error={s === 'error' ? err : undefined} defaultValue={s === 'active' ? 'wg2' : ''} placeholder={t('design.fields.choose')}>
+      key: 'select', title: 'Select', target: '.sel-btn',
+      render: (s) => s === 'success' ? null : (
+        <Select label={t('design.fields.unit')} hideLabel loading={s === 'loading'} disabled={s === 'disabled'} error={s === 'error' ? err : undefined} defaultValue={s === 'active' || s === 'loading' ? 'wg2' : ''} placeholder={t('design.fields.choose')}>
           {units.map((u) => <option key={u.v} value={u.v}>{u.l}</option>)}
         </Select>
       ),
