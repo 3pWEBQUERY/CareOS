@@ -6,7 +6,7 @@
  * ist nicht exportierbar (WebCrypto) und liegt als CryptoKey-Objekt ebenfalls in IndexedDB.
  * Gelöscht beim Abmelden (clearOfflineData) sowie nach 24 h (Outbox) bzw. 12 h (Lesestand).
  */
-import { OUTBOX_MAX_AGE_MS, SNAPSHOT_MAX_AGE_MS, type OfflineKind, type OfflineOpInput, type OpMeta, type OpResult, type ShiftSnapshot } from './types'
+import { OUTBOX_MAX_AGE_MS, SNAPSHOT_MAX_AGE_MS, type OfflineKind, type OfflineOpInput, type OpMeta, type OpResult, type ShiftSnapshot, type TourSnapshot } from './types'
 
 const DB_NAME = 'careos-offline'
 const VERSION = 1
@@ -191,6 +191,28 @@ export async function loadSnapshot(): Promise<ShiftSnapshot | null> {
 export async function clearSnapshot() {
   if (!offlineSupported()) return
   await tx('snapshot', 'readwrite', (s) => s.delete('shift')).catch(() => {})
+  await tx('snapshot', 'readwrite', (s) => s.delete('tour')).catch(() => {})
+}
+
+/* ───────── Lesestand «Meine Tour» (Spitex) ───────── */
+
+/** Tour des Tages verschlüsselt speichern (eigener Schlüssel neben dem Schicht-Lesestand). */
+export async function saveTour(snap: TourSnapshot) {
+  if (!offlineSupported()) return
+  const sealed = await seal(snap)
+  await tx('snapshot', 'readwrite', (s) => s.put({ savedAt: snap.savedAt, sealed }, 'tour'))
+}
+
+/** Tour, höchstens 12 h alt – sonst gelöscht. */
+export async function loadTour(): Promise<TourSnapshot | null> {
+  if (!offlineSupported()) return null
+  const row = await tx<{ savedAt: string; sealed: Sealed | null } | undefined>('snapshot', 'readonly', (s) => s.get('tour')).catch(() => undefined)
+  if (!row?.sealed) return null
+  if (Date.now() - new Date(row.savedAt).getTime() > SNAPSHOT_MAX_AGE_MS) {
+    await tx('snapshot', 'readwrite', (s) => s.delete('tour')).catch(() => {})
+    return null
+  }
+  return unseal<TourSnapshot>(row.sealed)
 }
 
 /* ───────── Abmelden ───────── */

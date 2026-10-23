@@ -115,6 +115,7 @@ export async function anonymiseResident(residentId: string) {
       data: {
         firstName: '#' + r.id.slice(-6), lastName: ANONYMISED_NAME, birthDate: anonymisedBirthDate(r.birthDate),
         insuranceNo: null, photoFileId: null, physician: null, importantNotes: null, primaryNurseId: null, roomId: null,
+        street: null, postalCode: null, city: null, phone: null, accessNote: null,
       },
     })
     await tx.contact.deleteMany({ where: { residentId: r.id } })
@@ -130,6 +131,9 @@ export async function anonymiseResident(residentId: string) {
     await tx.assessment.updateMany({ where: { residentId: r.id }, data: { answers: {} } })
     await tx.task.updateMany({ where: { residentId: r.id }, data: { description: null, note: null } })
     await tx.handoverEntry.updateMany({ where: { residentId: r.id }, data: { watch: null, open: null } })
+    // Spitex: Einsätze bleiben für Statistik und Leistungsnachweis, Notizen und Vorlagen-Notizen werden entfernt
+    await tx.homeCareVisit.updateMany({ where: { residentId: r.id }, data: { note: null } })
+    await tx.homeCareTemplate.updateMany({ where: { residentId: r.id }, data: { note: null, active: false } })
     const plans = await tx.carePlan.findMany({ where: { residentId: r.id }, select: { id: true } })
     const areas = await tx.carePlanArea.findMany({ where: { carePlanId: { in: plans.map((p) => p.id) } } })
     for (const a of areas) {

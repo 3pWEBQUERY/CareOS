@@ -1,7 +1,8 @@
 import 'server-only'
 import { db } from '@/lib/db'
-import { dateKey, fromDbDate } from '@/lib/time'
+import { dateKey, dbDate, fromDbDate } from '@/lib/time'
 import { absenceNights, daysWithin, monthRange, type BillingRow } from '@/lib/billing-core'
+import { klvTotals } from '@/lib/spitex'
 
 export { monthRange, billingCsvRows, type BillingRow } from '@/lib/billing-core'
 
@@ -25,6 +26,10 @@ export async function billingRows(orgId: string, unitIds: string[], month: strin
   const tasks = ids.length
     ? await db.task.groupBy({ by: ['residentId', 'category'], where: { residentId: { in: ids }, status: { in: ['done', 'partial'] }, completedAt: { gte: start, lt: end } }, _sum: { durationMin: true }, _count: true })
     : []
+  // Spitex: abgeschlossene Einsätze des Monats (Leistungsnachweis, KLV a/b/c)
+  const visits = ids.length
+    ? await db.homeCareVisit.findMany({ where: { residentId: { in: ids }, status: 'done', date: { gte: dbDate(start), lt: dbDate(end) } }, select: { residentId: true, status: true, services: { select: { klv: true, plannedMin: true, actualMin: true, done: true } } } })
+    : []
   return residents.map((r) => {
     const own = tasks.filter((x) => x.residentId === r.id)
     const byCategory: Record<string, number> = {}
@@ -36,6 +41,7 @@ export async function billingRows(orgId: string, unitIds: string[], month: strin
       careMinutes: own.reduce((s, x) => s + (x._sum.durationMin ?? 0), 0),
       services: own.reduce((s, x) => s + x._count, 0),
       byCategory,
+      ...(visits.some((v) => v.residentId === r.id) ? { klv: (({ a, b, c }) => ({ a, b, c }))(klvTotals(visits.filter((v) => v.residentId === r.id))) } : {}),
     }
   })
 }

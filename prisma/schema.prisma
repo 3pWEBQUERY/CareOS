@@ -726,6 +726,16 @@ model Resident {
   /// Zugeordnete Ärztinnen und Ärzte mit Konto (Freitext `physician` bleibt für Personen ohne Konto)
   physicians      ResidentPhysician[]
   therapyPlans    TherapyPlan[]
+  /// Spitex (PRD §60): Einsatzort zu Hause und Telefon der Person
+  street          String?
+  postalCode      String?
+  city            String?
+  phone           String?
+  /// Spitex: Zugang (Türcode, Schlüsselbox) – verschlüsselt gespeichert (src/lib/crypto.ts); Anzeige nur mit Spitex-Recht
+  /// im Bereich, jede Anzeige wird protokolliert (Audit spitex.access.view)
+  accessNote      String?
+  homeCareVisits    HomeCareVisit[]
+  homeCareTemplates HomeCareTemplate[]
 
   @@index([orgId, unitId])
 }
@@ -2262,4 +2272,107 @@ model EmergencyAccess {
 
   @@index([orgId, startedAt])
   @@index([userId, expiresAt])
+}
+
+// ───────────────────────── Spitex (ambulante Pflege) ─────────────────────────
+
+enum HomeCareVisitStatus {
+  planned
+  started
+  done
+  missed
+  cancelled
+}
+
+/// Spitex-Einsatz (PRD §60): ein Besuch bei der Person zu Hause, geplant (Disposition) und durchgeführt (Meine Tour).
+/// Aus einer Wochenvorlage erzeugt (templateId + date eindeutig, ensureVisitsForDay) oder einzeln geplant.
+model HomeCareVisit {
+  id           String              @id @default(cuid())
+  orgId        String
+  /// Einsatzgebiet (Unit.kind = homecare) zum Zeitpunkt der Planung
+  unitId       String
+  residentId   String
+  /// Zugewiesene Person; null = noch nicht disponiert
+  assigneeId   String?
+  templateId   String?
+  /// Kalendertag des Einsatzes
+  date         DateTime            @db.Date
+  plannedStart DateTime
+  plannedEnd   DateTime
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  status       HomeCareVisitStatus @default(planned)
+  /// Kurznotiz zum Einsatz; beim Abschluss als Verlaufseintrag übernommen (observationId)
+  note         String?
+  /// Reihenfolge in der Tour der zugewiesenen Person (aufsteigend)
+  sequence     Int                 @default(0)
+  observationId String?
+  startedById  String?
+  doneById     String?
+  createdById  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @default(now()) @updatedAt
+
+  resident Resident          @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  services HomeCareService[]
+
+  @@unique([templateId, date])
+  @@index([unitId, date])
+  @@index([assigneeId, date])
+  @@index([residentId, date])
+}
+
+/// Leistung eines Einsatzes nach KLV Art. 7 Abs. 2 (a Abklärung/Beratung, b Untersuchung/Behandlung, c Grundpflege).
+model HomeCareService {
+  id         String  @id @default(cuid())
+  visitId    String
+  /// a | b | c
+  klv        String
+  label      String
+  plannedMin Int
+  /// Erfasste Minuten; null = nicht erbracht bzw. noch offen
+  actualMin  Int?
+  done       Boolean @default(false)
+  order      Int     @default(0)
+
+  visit HomeCareVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([visitId])
+}
+
+/// Wochenvorlage je Person: Wochentage, Zeitfenster, Leistungen und bevorzugte Person. Erzeugt Einsätze je Tag.
+model HomeCareTemplate {
+  id              String    @id @default(cuid())
+  orgId           String
+  residentId      String
+  /// Wochentage 0 = So … 6 = Sa
+  weekdays        Int[]
+  /// Zeitfenster HH:MM
+  start           String
+  end             String
+  /// Leistungen [{ klv, label, minutes }]
+  services        Json      @default("[]")
+  preferredUserId String?
+  startDate       DateTime  @db.Date
+  endDate         DateTime? @db.Date
+  active          Boolean   @default(true)
+  note            String?
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, active])
+  @@index([residentId])
+}
+
+/// Merker der Einsatzerzeugung je Einsatzgebiet und Tag (wie TaskGeneration): gilt über alle Instanzen,
+/// gleichzeitige Erzeugung wird mit pg_advisory_xact_lock serialisiert, Duplikate verhindert @@unique([templateId, date]).
+model HomeCareGeneration {
+  unitId String
+  day    DateTime @db.Date
+  at     DateTime @default(now())
+
+  @@id([unitId, day])
 }

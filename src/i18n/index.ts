@@ -30,8 +30,9 @@ import therapy from './messages/therapy'
 import portal from './messages/portal'
 import residentPortal from './messages/resident-portal'
 import roster from './messages/roster'
+import spitex from './messages/spitex'
 
-const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms, visit, people, platform, imports, design, register, tenancy, md, developer, therapy, portal, residentPortal, roster }
+const NAMESPACES = { common, nav, auth, home, residents, care, chart, meds, tasks, schedule, team, docs, learn, quality, insights, admin, profile, forms, visit, people, platform, imports, design, register, tenancy, md, developer, therapy, portal, residentPortal, roster, spitex }
 
 export type Namespace = keyof typeof NAMESPACES
 

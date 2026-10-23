@@ -27,7 +27,7 @@ function actionKeys() {
 }
 
 /** Bereiche, deren Aktionen im Audit-Protokoll lesbar erscheinen müssen (Portal, Arztportal, Therapie, ADT, Schnittstellen, Notfallzugriff …). */
-const MUST_LABEL = ['portal.', 'md.', 'therapy.', 'adt.', 'api.hl7.', 'api.fhir.allergy.', 'billing.', 'emergency.', 'platform.', 'admin.physician.', 'medication.stock.', 'medication.order.confirm']
+const MUST_LABEL = ['portal.', 'md.', 'therapy.', 'adt.', 'api.hl7.', 'api.fhir.allergy.', 'billing.', 'emergency.', 'platform.', 'admin.physician.', 'medication.stock.', 'medication.order.confirm', 'spitex.']
 
 test('Audit: neue Aktionsbereiche haben eine lesbare Bezeichnung', () => {
   const labelled = new Set<string>(LABELLED_ACTIONS)

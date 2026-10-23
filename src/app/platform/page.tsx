@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import { fmtDate } from '@/lib/time'
 import { DATA_REGIONS } from '@/lib/admin-shared'
-import { MODULES } from '@/lib/modules'
+import { MODULES, OPT_IN_MODULES } from '@/lib/modules'
 import { fmtBytes } from '@/lib/platform-core'
 import { orgStats } from '@/lib/platform'
 import { orgSignupEnabled } from '@/lib/registration'
@@ -116,7 +116,7 @@ export default async function PlatformPage({ searchParams }: { searchParams: Pro
                   <fieldset>
                     <legend className="lbl">{t('tenancy.platform.modules')}</legend>
                     <div className="grid-3" style={{ gap: 4 }}>
-                      {MODULES.map((m) => <Checkbox key={m.key} name={'module:' + m.key} defaultChecked label={t('tenancy.modules.items.' + m.key + '.name')} />)}
+                      {MODULES.map((m) => <Checkbox key={m.key} name={'module:' + m.key} defaultChecked={!OPT_IN_MODULES.includes(m.key)} label={t('tenancy.modules.items.' + m.key + '.name')} />)}
                     </div>
                   </fieldset>
                 </SecretForm>

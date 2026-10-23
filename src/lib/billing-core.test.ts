@@ -16,6 +16,15 @@ test('Abrechnung: Aufenthalts- und Abwesenheitstage im Monat', () => {
   const rows = billingCsvRows([{ lastName: 'A', firstName: 'B', birthDate: '1940-01-01', insuranceNo: null, unit: 'WG 1', careLevel: 6, stayDays: 31, absenceDays: 0, careMinutes: 90, services: 9, byCategory: { Grundpflege: 60, Medikation: 30 } }], { base: Array(11).fill('x'), category: (c) => 'Min ' + c })
   assert.deepEqual(rows[0].slice(11), ['Min Grundpflege', 'Min Medikation'])
   assert.deepEqual(rows[1].slice(8, 13), ['90', '1.50', '9', '60', '30'])
+  // Spitex: KLV-Spalten nur, wenn Einsätze vorkommen
+  assert.equal(rows[0].length, 13)
+  const spitex = billingCsvRows([
+    { lastName: 'A', firstName: 'B', birthDate: '1940-01-01', insuranceNo: null, unit: 'Spitex', careLevel: null, stayDays: 31, absenceDays: 0, careMinutes: 0, services: 0, byCategory: {}, klv: { a: 15, b: 40, c: 300 } },
+    { lastName: 'C', firstName: 'D', birthDate: '1941-01-01', insuranceNo: null, unit: 'WG 1', careLevel: 4, stayDays: 31, absenceDays: 0, careMinutes: 0, services: 0, byCategory: {} },
+  ], { base: Array(11).fill('x'), category: (c) => c, klv: (k) => 'KLV ' + k })
+  assert.deepEqual(spitex[0].slice(11), ['KLV a', 'KLV b', 'KLV c'])
+  assert.deepEqual(spitex[1].slice(11), ['15', '40', '300'])
+  assert.deepEqual(spitex[2].slice(11), ['0', '0', '0'])
 })
 
 test('Time returned to care: Schätzung aus Zählwerten, kleine Gruppen ohne Zahl', () => {

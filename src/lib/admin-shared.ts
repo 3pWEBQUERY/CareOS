@@ -15,6 +15,7 @@ export const EVENT_TYPES = [
   'resident.updated', 'visit.updated', 'assignment.updated',
   'post.published', 'message.created',
   'document.published', 'schedule.changed', 'notification.created',
+  'homecare.updated',
 ] as const satisfies readonly EventType[]
 // Compile-Zeit-Prüfung: fehlt ein Typ in der Liste, schlägt der Typecheck fehl.
 type MissingEvent = Exclude<EventType, (typeof EVENT_TYPES)[number]>
@@ -86,6 +87,6 @@ export function slugKey(name: string) {
     .slice(0, 40)
 }
 
-export const UNIT_KINDS = ['ward', 'group', 'dementia', 'day', 'other'] as const
+export const UNIT_KINDS = ['ward', 'group', 'dementia', 'day', 'homecare', 'other'] as const
 
 export const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/

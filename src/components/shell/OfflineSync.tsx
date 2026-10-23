@@ -12,9 +12,9 @@ import { VITALS, type VitalKey } from '@/lib/vitals'
 import { portionLabel } from '@/lib/care'
 import { isOffline, offlineSupported, setOfflineUser, syncOutbox, useOutbox } from '@/lib/offline/client'
 import { getOfflineUser, listEntries, loadSnapshot, removeOps, type OutboxEntry } from '@/lib/offline/store'
-import type { IntakeData, NoteData, TaskData, VitalsData } from '@/lib/offline/types'
+import type { IntakeData, NoteData, TaskData, VisitStepData, VitalsData } from '@/lib/offline/types'
 
-const TAB = { note: 'notes', vitals: 'vitals', task: 'day', intake: 'nutrition' } as const
+const TAB = { note: 'notes', vitals: 'vitals', task: 'day', intake: 'nutrition', visit: 'notes' } as const
 
 /**
  * Offline-Status in der Shell (PRD §39): Hinweisleiste mit Anzahl wartender Einträge, automatische
@@ -162,7 +162,7 @@ function EntryRow({ e, foreign, onDiscard, onNavigate }: { e: OutboxEntry; forei
         </div>
         <div className="row" style={{ gap: 6 }}>
           {conflict && !foreign && reason !== 'discharged' && reason !== 'forbidden' && (
-            <Link className="btn sm" href={`/residents/${e.residentId}/${TAB[e.kind]}`} onClick={onNavigate}>{t('common.offlineSync.reenter')}</Link>
+            <Link className="btn sm" href={e.kind === 'visit' ? '/spitex/tour' : `/residents/${e.residentId}/${TAB[e.kind]}`} onClick={onNavigate}>{t('common.offlineSync.reenter')}</Link>
           )}
           <button type="button" className="btn sm danger" onClick={onDiscard}>{t('common.offlineSync.discard')}</button>
         </div>
@@ -193,6 +193,11 @@ function summary(t: (k: string, v?: Record<string, string | number>) => string, 
     case 'task': {
       const d = e.data as TaskData
       return [e.meta.label, t('chart.day.statusText.' + d.status), d.reason, d.note].filter(Boolean).join(' – ')
+    }
+    case 'visit': {
+      // Spitex-Einsatz: Schritt, Zeitfenster (meta.label) und Notiz bzw. Grund
+      const d = e.data as VisitStepData
+      return [e.meta.label, t('spitex.offline.step.' + d.step), d.note].filter(Boolean).join(' – ')
     }
     case 'intake': {
       const d = e.data as IntakeData
