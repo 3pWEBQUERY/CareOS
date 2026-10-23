@@ -13,6 +13,7 @@ import { db } from '@/lib/db'
 export const PORTAL_ORPHAN_DAYS = 90
 
 export type PortalRetentionCounts = { portalMessages: number; portalThreads: number; portalVisits: number; portalUpdates: number; portalAccounts: number; portalInvites: number; portalSessions: number }
+export const PORTAL_RETENTION_KEYS = ['portalMessages', 'portalThreads', 'portalVisits', 'portalUpdates', 'portalSessions', 'portalInvites', 'portalAccounts'] as const satisfies readonly (keyof PortalRetentionCounts)[]
 
 export function portalWhere(orgId: string, cut: { chat: Date; sessions: Date }, now: Date) {
   const orphan = new Date(now.getTime() - PORTAL_ORPHAN_DAYS * 86400_000)
