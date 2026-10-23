@@ -8,6 +8,7 @@ import { shiftName } from '@/lib/shift-name'
 import { addDays, dateKey, dbDate, fmtDayMonth, fmtNum, fmtRel, fromDbDate, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { taskTitle } from '@/lib/task-title'
+import { isOverdue } from '@/lib/task-backlog'
 import { observationsToAck } from '@/lib/acks-server'
 import { assignmentBoard, assignmentShift } from '@/lib/assignment'
 import { roomRanges } from '@/lib/assignment-plan'
@@ -95,7 +96,8 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
   for (const k of tasks) {
     if (!isOpen(k)) continue
     const v = taskView(k, now)
-    if (v === 'over') critical.push({ rid: k.residentId, text: t('home.overdueTask', { title: taskTitle(t, k), time: hm(k.dueAt) }), href: taskHref(k) })
+    // «überfällig» nach einer Regel für alle Zähler (offen inkl. eskaliert, > 15 Min. nach Fälligkeit)
+    if (isOverdue(k, now)) critical.push({ rid: k.residentId, text: t('home.overdueTask', { title: taskTitle(t, k), time: hm(k.dueAt) }), href: taskHref(k) })
     else if (v === 'due' && (k.priority === 'critical' || k.priority === 'important')) important.push({ rid: k.residentId, text: t('home.dueSoon', { title: taskTitle(t, k), time: hm(k.dueAt) }), href: taskHref(k) })
   }
   const vitalText = (v: (typeof vitals)[number], ab: ReturnType<typeof abnormalKeys>) => ab.map((k) => `${t('common.vitals.' + k)} ${fmtNum(v[k] as number, VITALS[k].dec, locale)} ${VITALS[k].unit}`).join(', ')
@@ -220,7 +222,7 @@ export async function CareHome({ ctx, now, greet, view, views, scopeParam }: { c
   let doneLead = 0
   while (doneLead < timeline.length && timeline[doneLead].open === 0 && timeline[doneLead].due <= now) doneLead++
   const openTasks = scopedTasks.filter(isOpen).length
-  const overdueCount = scopedTasks.filter((k) => isOpen(k) && taskView(k, now) === 'over').length
+  const overdueCount = scopedTasks.filter((k) => isOverdue(k, now)).length
   const nextGroup = timeline.find((g) => g.open > 0 && g.due > now && !g.href?.startsWith('/handover')) ?? timeline.find((g) => g.open > 0 && !g.href?.startsWith('/handover'))
   const canRound = ctx.canHere('resident.medication.administer')
 

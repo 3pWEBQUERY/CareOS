@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
+import type { Permission } from '@/lib/permissions'
 import { dictionary } from '@/i18n'
 import { I18nProvider } from '@/i18n/client'
 import { Brand } from '@/components/Brand'
@@ -19,11 +20,20 @@ import { ScrollRegions } from '@/components/shell/ScrollRegions'
 import { currentShiftLabel } from '@/lib/shift'
 import { overdueCount } from '@/lib/tasks'
 import { enforceMfaSetup } from '@/lib/auth/mfa-gate'
+import { externalToPortal } from '@/lib/md/gate'
 import { approvalUnitIds } from '@/lib/careplan-review'
+import { hm } from '@/lib/time'
+import { emergencyRemaining } from '@/lib/emergency-core'
+import { isPlatformOperator } from '@/lib/platform-core'
+import { MODULE_KEYS } from '@/lib/modules'
+import { ModuleGate } from '@/components/shell/ModuleGate'
+import { EmergencyBanner } from '@/components/shell/EmergencyBanner'
+import { endEmergencyAction } from './admin/emergency/actions'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getCtx()
   await enforceMfaSetup(ctx) // MFA-Pflicht der Organisation: bis zur Einrichtung nur Profil (PRD §33)
+  await externalToPortal(ctx) // Paket Ä: externe Ärztinnen/Ärzte → Ärzteportal /md (nur Profil bleibt)
   const { t, user, org } = ctx
   const any = (prefix: string) => ctx.grants.some((g) => g.permissions.some((p) => p.startsWith(prefix)))
 
@@ -49,8 +59,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ...(ctx.can('resident.read') ? [{ href: '/residents', label: t('nav.residents'), icon: 'residents', group: 0 } as NavItem] : []),
     ...(ctx.can('task.read') ? [{ href: '/tasks', label: t('nav.tasks'), icon: 'tasks', group: 0, badge: overdue, badgeLabel: t('tasks.view.over') } as NavItem] : []),
     ...(ctx.can('handover.read') ? [{ href: '/handover', label: t('nav.handover'), icon: 'handover', group: 0 } as NavItem] : []),
+    // Neue Module anderer Pakete (Therapie, Spitex, Angehörige): nur mit deren Berechtigung sichtbar
+    ...(ctx.can('therapy.read' as Permission) ? [{ href: '/therapy', label: t('nav.therapy'), icon: 'therapy', group: 0 } as NavItem] : []),
+    ...(any('spitex.') ? [{ href: '/spitex', label: t('nav.spitex'), icon: 'homecare', group: 0 } as NavItem] : []),
     ...(ctx.can('schedule.read') ? [{ href: '/schedule', label: t('nav.schedule'), icon: 'schedule', group: 0 } as NavItem] : []),
     ...(ctx.can('team.read') ? [{ href: '/team', label: t('nav.team'), icon: 'team', group: 1 } as NavItem] : []),
+    ...(ctx.can('portal.respond' as Permission) && ctx.hasModule('portals') ? [{ href: '/team/family', label: t('nav.family'), icon: 'family', group: 1 } as NavItem] : []),
     ...(ctx.can('chat.use') ? [{ href: '/chat', label: t('nav.chat'), icon: 'chat', group: 1, badge: unreadChats, badgeLabel: t('common.notifications.unread').toLowerCase() } as NavItem] : []),
     ...(ctx.can('learn.read') ? [{ href: '/learn', label: t('nav.learn'), icon: 'learn', group: 1 } as NavItem] : []),
     ...(ctx.can('docs.read') ? [{ href: '/docs', label: t('nav.docs'), icon: 'docs', group: 1 } as NavItem] : []),
@@ -70,7 +84,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     })),
     ...nav.map((n) => ({ group: t('common.palette.groupView'), label: n.label, href: n.href })),
     ...(ctx.can('resident.medication.administer') ? [{ group: t('common.palette.groupAction'), label: t('nav.medround'), href: '/tasks/medround' }] : []),
-    ...(ctx.can('resident.read') ? [{ group: t('common.palette.groupAction'), label: t('visit.title'), href: '/tasks/visit' }] : []),
+    ...(ctx.can('resident.read') && ctx.hasModule('visit') ? [{ group: t('common.palette.groupAction'), label: t('visit.title'), href: '/tasks/visit' }] : []),
+    ...(ctx.can('api.personal') || ctx.can('admin.integrations') ? [{ group: t('common.palette.groupView'), label: t('nav.developer'), href: '/developer' }] : []),
+    ...(isPlatformOperator(user) ? [{ group: t('common.palette.groupView'), label: t('nav.platform'), href: '/platform' }] : []),
+    ...(ctx.can('admin.emergency') ? [{ group: t('common.palette.groupView'), label: t('tenancy.emergency.title'), href: '/admin/emergency' }] : []),
+    ...(ctx.can('team.read') ? [{ group: t('common.palette.groupView'), label: t('nav.people'), href: '/team/people' }] : []),
     ...(approvalUnitIds(ctx).length ? [{ group: t('common.palette.groupView'), label: t('care.approvals.title'), href: '/tasks/approvals' }] : []),
     ...(ctx.can('admin.config') ? [{ group: t('common.palette.groupView'), label: t('design.title'), href: '/admin/design' }] : []),
     ...(ctx.can('quality.report') ? [{ group: t('common.palette.groupAction'), label: t('common.quick.incident'), href: '/quality/new' }] : []),
@@ -116,7 +134,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
         </header>
         <RailNav items={nav} label={t('nav.mainNav')} />
-        <div className="content" id="main">{children}</div>
+        <div className="content" id="main">
+          {ctx.emergency && <EmergencyBanner until={hm(ctx.emergency.expiresAt)} minutes={emergencyRemaining({ ...ctx.emergency, endedAt: null })} end={endEmergencyAction.bind(null, undefined)} />}
+          <ModuleGate off={MODULE_KEYS.filter((k) => !ctx.modules.includes(k))} isAdmin={ctx.can('admin.config')}>{children}</ModuleGate>
+        </div>
       </div>
       <BottomNav items={nav} more={more} moreLabel={t('nav.more')} label={t('nav.mainNav')} quick={<QuickActions canIncident={ctx.can('quality.report')} canTask={ctx.can('task.manage')} />} />
       <Toaster />

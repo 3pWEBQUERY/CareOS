@@ -38,3 +38,8 @@ export const IconCamera = (p: P) => <S {...p}><path d="M3 6.5h3l1.5-2h5L14 6.5h3
 export const IconFile = (p: P) => <S {...p}><path d="M5 2.75h6.5L15 6.25V17.25H5z" /><path d="M11.5 2.75v3.5H15" /></S>
 export const IconUpload = (p: P) => <S {...p}><path d="M10 13V3.5M6.5 7 10 3.5 13.5 7M3.5 13.5v3h13v-3" /></S>
 export const IconExternal = (p: P) => <S {...p}><path d="M11 3.5h5.5V9M16.5 3.5 9 11M14 12v4.5H3.5V6H8" /></S>
+// Navigation Therapie, Angehörige, Spitex, Developer-Portal (Paket P)
+export const IconTherapy = (p: P) => <S {...p}><circle cx="10" cy="3.75" r="1.75" /><path d="M10 6.5v5l-3 5.5M10 11.5l3 5.5M6 9h8" /></S>
+export const IconFamily = (p: P) => <S {...p}><path d="M10 16.5s-6-3.6-6-8A3.2 3.2 0 0 1 10 6.6 3.2 3.2 0 0 1 16 8.5c0 4.4-6 8-6 8z" /></S>
+export const IconHomecare = (p: P) => <S {...p}><path d="M3 9.5 10 3.5l7 6V17H3z" /><path d="M10 9v5M7.5 11.5h5" /></S>
+export const IconCode = (p: P) => <S {...p}><path d="M7 6 3 10l4 4M13 6l4 4-4 4M11 4.5l-2 11" /></S>

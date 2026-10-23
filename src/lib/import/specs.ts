@@ -1,5 +1,5 @@
 /**
- * Spalten und Prüfregeln der CSV-Importe (PRD §41): Bewohnende, Personal, Dienste.
+ * Spalten und Prüfregeln der CSV-Importe (PRD §41): Bewohnende, Personal, Dienste, Medikationspläne, Kontakte.
  * Rein (ohne Datenbank) und testbar – Abgleich mit Stammdaten (Bereiche, Zimmer, Rollen, Personen) folgt in run.ts.
  *
  * Spaltennamen werden ohne Gross-/Kleinschreibung, Akzente und Satzzeichen verglichen und in allen
@@ -7,11 +7,11 @@
  */
 import { headerKey } from './csv'
 
-export const IMPORT_KINDS = ['residents', 'staff', 'shifts'] as const
+export const IMPORT_KINDS = ['residents', 'staff', 'shifts', 'medications', 'contacts'] as const
 export type ImportKind = (typeof IMPORT_KINDS)[number]
 type Lang = 'de' | 'fr' | 'it' | 'en'
 
-export type FieldType = 'text' | 'date' | 'email' | 'int' | 'list' | 'phone' | 'sex' | 'rea' | 'locale' | 'scope'
+export type FieldType = 'text' | 'date' | 'email' | 'int' | 'list' | 'phone' | 'sex' | 'rea' | 'locale' | 'scope' | 'bool' | 'dose' | 'medkind'
 export type FieldSpec = {
   key: string
   type: FieldType
@@ -30,6 +30,16 @@ const n = (de: string[], fr: string[], it: string[], en: string[]) => ({ de, fr,
 const LAST = n(['Nachname', 'Name', 'Familienname'], ['Nom', 'Nom de famille'], ['Cognome'], ['Last name', 'Surname', 'Family name'])
 const FIRST = n(['Vorname'], ['Prénom'], ['Nome'], ['First name', 'Given name'])
 const UNIT = n(['Bereich', 'Wohngruppe', 'Station', 'Abteilung'], ['Unité', 'Secteur'], ['Reparto', 'Unità'], ['Unit', 'Ward'])
+const BIRTH = n(['Geburtsdatum', 'Geburtstag'], ['Date de naissance'], ['Data di nascita'], ['Date of birth', 'Birth date', 'DOB'])
+const INSURANCE = n(['Versichertennummer', 'AHV-Nr', 'AHV'], ['Numéro AVS', 'AVS'], ['Numero AVS', 'AVS'], ['Insurance number', 'Insurance no', 'AHV number'])
+/** Zuordnung zur Person (Medikation, Kontakte): Name + Geburtsdatum, optional Versichertennummer. */
+const PERSON: FieldSpec[] = [
+  { key: 'lastName', type: 'text', required: true, max: 80, names: LAST },
+  { key: 'firstName', type: 'text', required: true, max: 80, names: FIRST },
+  { key: 'birthDate', type: 'date', required: true, past: true, names: BIRTH },
+  { key: 'insuranceNo', type: 'text', max: 40, names: INSURANCE },
+]
+const dose = (key: string, de: string[], fr: string[], it: string[], en: string[]): FieldSpec => ({ key, type: 'dose', names: n(de, fr, it, en) })
 
 export const SPECS: Record<ImportKind, FieldSpec[]> = {
   residents: [
@@ -62,6 +72,36 @@ export const SPECS: Record<ImportKind, FieldSpec[]> = {
     { key: 'roleScope', type: 'scope', names: n(['Geltungsbereich', 'Rollenbereich'], ['Portée du rôle', 'Portée'], ['Ambito del ruolo', 'Ambito'], ['Role scope', 'Scope']) },
     { key: 'qualifications', type: 'list', max: 80, names: n(['Qualifikationen', 'Qualifikation'], ['Qualifications'], ['Qualifiche'], ['Qualifications']) },
     { key: 'locale', type: 'locale', names: n(['Sprache'], ['Langue'], ['Lingua'], ['Language']) },
+  ],
+  medications: [
+    ...PERSON,
+    { key: 'name', type: 'text', required: true, max: 200, names: n(['Medikament', 'Präparat', 'Arzneimittel'], ['Médicament', 'Préparation'], ['Farmaco', 'Medicamento', 'Preparato'], ['Medication', 'Drug', 'Product']) },
+    { key: 'form', type: 'text', max: 60, names: n(['Darreichungsform', 'Form'], ['Forme galénique', 'Forme'], ['Forma farmaceutica', 'Forma'], ['Dosage form', 'Form']) },
+    { key: 'route', type: 'text', max: 40, names: n(['Applikation', 'Verabreichung', 'Weg'], ['Voie', 'Administration'], ['Via', 'Somministrazione'], ['Route']) },
+    { key: 'kind', type: 'medkind', names: n(['Art', 'Verordnungsart'], ['Type', 'Type de prescription'], ['Tipo', 'Tipo di prescrizione'], ['Type', 'Order type']) },
+    dose('morning', ['Morgen', 'Früh'], ['Matin'], ['Mattina'], ['Morning']),
+    dose('noon', ['Mittag'], ['Midi'], ['Mezzogiorno'], ['Noon', 'Midday']),
+    dose('evening', ['Abend'], ['Soir'], ['Sera'], ['Evening']),
+    dose('night', ['Nacht', 'Zur Nacht'], ['Nuit', 'Coucher'], ['Notte'], ['Night', 'Bedtime']),
+    { key: 'prnDose', type: 'text', max: 40, names: n(['Reservedosis', 'Einzeldosis Reserve'], ['Dose de réserve'], ['Dose di riserva'], ['PRN dose', 'As-needed dose']) },
+    { key: 'prnMaxPerDay', type: 'int', range: [1, 24], names: n(['Reserve max. pro Tag', 'Max. pro Tag'], ['Réserve max. par jour', 'Max. par jour'], ['Riserva max. al giorno', 'Max. al giorno'], ['PRN max per day', 'Max per day']) },
+    { key: 'indication', type: 'text', max: 200, names: n(['Indikation', 'Grund'], ['Indication'], ['Indicazione'], ['Indication']) },
+    { key: 'startDate', type: 'date', names: n(['Beginn', 'Ab', 'Startdatum'], ['Début', 'Dès le'], ['Inizio', 'Dal'], ['Start', 'Start date']) },
+    { key: 'endDate', type: 'date', names: n(['Ende', 'Bis', 'Enddatum'], ['Fin', 'Jusqu’au'], ['Fine', 'Fino al'], ['End', 'End date']) },
+    { key: 'prescriber', type: 'text', max: 120, names: n(['Verordnet von', 'Arzt', 'Ärztin'], ['Prescrit par', 'Médecin'], ['Prescritto da', 'Medico'], ['Prescriber', 'Prescribed by']) },
+    { key: 'atc', type: 'text', max: 7, names: n(['ATC', 'ATC-Code'], ['ATC', 'Code ATC'], ['ATC', 'Codice ATC'], ['ATC', 'ATC code']) },
+    { key: 'gtin', type: 'text', max: 14, names: n(['GTIN', 'Pharmacode'], ['GTIN'], ['GTIN'], ['GTIN']) },
+    { key: 'notes', type: 'text', max: 500, names: n(['Bemerkung', 'Hinweis'], ['Remarque'], ['Osservazione', 'Nota'], ['Note', 'Comment']) },
+  ],
+  contacts: [
+    ...PERSON,
+    { key: 'contactName', type: 'text', required: true, max: 120, names: n(['Kontakt', 'Name Kontakt', 'Kontaktperson', 'Angehörige'], ['Contact', 'Personne de contact', 'Proche'], ['Contatto', 'Persona di contatto', 'Familiare'], ['Contact', 'Contact name', 'Relative']) },
+    { key: 'relation', type: 'text', required: true, max: 60, names: n(['Beziehung', 'Verhältnis'], ['Relation', 'Lien'], ['Relazione', 'Parentela'], ['Relationship', 'Relation']) },
+    { key: 'phone', type: 'phone', names: n(['Telefon', 'Natel', 'Mobile'], ['Téléphone', 'Portable'], ['Telefono', 'Cellulare'], ['Phone', 'Mobile']) },
+    { key: 'email', type: 'email', max: 160, names: n(['E-Mail', 'Mail'], ['E-mail', 'Courriel'], ['E-mail'], ['Email', 'E-mail']) },
+    { key: 'isEmergency', type: 'bool', names: n(['Notfallkontakt', 'Notfall'], ['Contact d’urgence', 'Urgence'], ['Contatto d’emergenza', 'Emergenza'], ['Emergency contact', 'Emergency']) },
+    { key: 'isLegalRep', type: 'bool', names: n(['Gesetzliche Vertretung', 'Vertretung', 'Beistand'], ['Représentant légal', 'Représentation'], ['Rappresentante legale', 'Rappresentanza'], ['Legal representative', 'Legal rep']) },
+    { key: 'notes', type: 'text', max: 500, names: n(['Bemerkung', 'Notiz'], ['Remarque', 'Note'], ['Nota', 'Osservazione'], ['Note', 'Comment']) },
   ],
   shifts: [
     { key: 'date', type: 'date', required: true, names: n(['Datum'], ['Date'], ['Data'], ['Date']) },
@@ -137,6 +177,18 @@ const LOCALE: Record<string, Lang> = {
   it: 'it', italienisch: 'it', italiano: 'it', italian: 'it', italien: 'it',
   en: 'en', englisch: 'en', english: 'en', anglais: 'en', inglese: 'en',
 }
+const BOOL: Record<string, boolean> = {
+  ja: true, j: true, yes: true, y: true, oui: true, si: true, '1': true, true: true, x: true, wahr: true, vrai: true, vero: true,
+  nein: false, n: false, no: false, non: false, '0': false, false: false, falsch: false, faux: false, falso: false,
+}
+const MEDKIND: Record<string, 'regular' | 'prn' | 'temporary'> = {
+  dauer: 'regular', dauermedikation: 'regular', fix: 'regular', regular: 'regular', regelmassig: 'regular', fixe: 'regular', permanent: 'regular', continu: 'regular', fisso: 'regular', continuo: 'regular',
+  reserve: 'prn', reservemedikation: 'prn', prn: 'prn', bedarf: 'prn', beibedarf: 'prn', sinecessaire: 'prn', riserva: 'prn', albisogno: 'prn', asneeded: 'prn',
+  befristet: 'temporary', temporar: 'temporary', temporaer: 'temporary', kur: 'temporary', temporary: 'temporary', temporaire: 'temporary', temporaneo: 'temporary',
+}
+/** Dosis je Zeitpunkt: 1, 0.5, ½, 1/2, «2 Hub», «10 ml», leer oder 0 = keine Gabe. */
+const DOSE = /^(\d+([.,]\d+)?|½|¼|¾|\d+\/\d+)(\s*[\p{L}µ%]+\.?)?$/u
+
 const SCOPE: Record<string, 'unit' | 'location' | 'org'> = {
   bereich: 'unit', unit: 'unit', wohngruppe: 'unit', station: 'unit', unite: 'unit', reparto: 'unit',
   standort: 'location', location: 'location', site: 'location', sede: 'location',
@@ -216,6 +268,18 @@ export function validateRow(kind: ImportKind, map: HeaderMap, cells: string[], t
         if (!SCOPE[word(raw)]) issues.push({ code: 'scope', col: s.key, vars: { value: raw } })
         values[s.key] = SCOPE[word(raw)] ?? null
         break
+      case 'bool':
+        if (!(word(raw) in BOOL)) issues.push({ code: 'bool', col: s.key, vars: { value: raw } })
+        values[s.key] = BOOL[word(raw)] ? 'yes' : 'no'
+        break
+      case 'dose':
+        if (!DOSE.test(raw) || raw.length > 20) issues.push({ code: 'dose', col: s.key, vars: { value: raw } })
+        values[s.key] = raw.replace(',', '.').slice(0, 20)
+        break
+      case 'medkind':
+        if (!MEDKIND[word(raw)]) issues.push({ code: 'medkind', col: s.key, vars: { value: raw } })
+        values[s.key] = MEDKIND[word(raw)] ?? null
+        break
     }
   }
   return { values, issues }
@@ -239,4 +303,6 @@ export const TEMPLATE_EXAMPLE: Record<ImportKind, Record<string, string>> = {
   residents: { lastName: 'Muster', firstName: 'Erika', birthDate: '14.03.1938', sex: 'f', unit: 'Wohngruppe 1', room: '101', admittedAt: '01.10.2026', careLevel: '6', insuranceNo: '', physician: 'Dr. med. B. Beispiel', rea: 'nein', allergies: 'Penicillin | Nüsse', diet: 'Diabetiker', mobility: 'Rollator' },
   staff: { email: 'vorname.nachname@example.ch', lastName: 'Nachname', firstName: 'Vorname', initials: 'VN', jobTitle: 'Pflegefachperson HF', employeeNo: '10234', workPhone: '044 000 00 21', phone: '', unit: 'Wohngruppe 1', role: 'nurse', roleScope: 'Bereich', qualifications: 'Pflegefachperson HF', locale: 'de' },
   shifts: { date: '02.11.2026', unit: 'Wohngruppe 1', shift: 'F', person: 'vorname.nachname@example.ch', qualification: '', note: '' },
+  medications: { lastName: 'Muster', firstName: 'Erika', birthDate: '14.03.1938', insuranceNo: '', name: 'Metformin 500 mg', form: 'Tablette', route: 'p.o.', kind: 'Dauer', morning: '1', noon: '0', evening: '1', night: '0', prnDose: '', prnMaxPerDay: '', indication: 'Diabetes mellitus Typ 2', startDate: '', endDate: '', prescriber: 'Dr. med. B. Beispiel', atc: 'A10BA02', gtin: '', notes: '' },
+  contacts: { lastName: 'Muster', firstName: 'Erika', birthDate: '14.03.1938', insuranceNo: '', contactName: 'Hans Muster', relation: 'Sohn', phone: '079 000 00 00', email: '', isEmergency: 'ja', isLegalRep: 'nein', notes: '' },
 }

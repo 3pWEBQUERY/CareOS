@@ -15,6 +15,8 @@ import { aiConfigured } from '@/lib/env'
 import { addDays, atTime, dateKey, fmtDate, hm, parseDateKey, startOfDay } from '@/lib/time'
 import { IV_CATEGORIES, parseTimes, SUGGESTION_RULES, domainLabel } from '@/lib/care'
 import { CARE_DOMAINS } from '@/lib/clinical-config'
+import { mergeEdit } from '@/lib/merge-check'
+import { conflictMessage } from '@/lib/merge-server'
 
 type Resident = NonNullable<Awaited<ReturnType<typeof residentInScope>>>
 
@@ -223,7 +225,11 @@ export type AreaInput = {
   evaluateBy: string
   interventions: IvInput[]
   aiInteractionId?: string | null
+  /** Stand beim Öffnen (Felder wie AreaSnapshot) für die Konflikterkennung (PRD §32) */
+  base?: Record<string, string> | null
 }
+
+const AREA_FIELDS = ['situation', 'resources', 'needs', 'risks', 'goal', 'evaluateBy'] as const
 
 function cleanIv(iv: IvInput) {
   const title = iv.title.trim().slice(0, 200)
@@ -257,8 +263,20 @@ export async function saveAreaAction(residentId: string, input: AreaInput): Prom
     const draft = await ensureDraft(ctx, r)
     const area = await ensureArea(ctx, r, draft.id, input.domain)
     const ai = Boolean(input.aiInteractionId)
+    // Konflikterkennung (PRD §32): Bereich zwischenzeitlich von anderer Person geändert → nur eigene Felder übernehmen
+    const str = (v: string | null | undefined) => (v ?? '').trim()
+    const current = { situation: str(area.situation), resources: str(area.resources), needs: str(area.needs), risks: str(area.risks), goal: str(area.goal), evaluateBy: area.evaluateBy ? dateKey(area.evaluateBy) : '' }
+    const mine = { situation: str(input.situation), resources: str(input.resources), needs: str(input.needs), risks: str(input.risks), goal: str(input.goal), evaluateBy: input.evaluateBy || '' }
+    const base = input.base ? Object.fromEntries(AREA_FIELDS.map((k) => [k, str(input.base?.[k])])) : null
+    const m = mergeEdit(base, current, mine, AREA_FIELDS)
+    if (m.conflicts.length) {
+      refresh()
+      return { ok: false, error: await conflictMessage(ctx, { entityType: 'CarePlanArea', entityId: area.id, actions: ['careplan.area.save'], fields: m.conflicts.map((k) => ctx.t(k === 'evaluateBy' ? 'care.plan.evaluateBy' : 'care.plan.fields.' + k)) }), field: m.conflicts[0] }
+    }
+    const v = m.data as typeof mine
+    if (v.evaluateBy !== mine.evaluateBy) evaluateBy = v.evaluateBy ? parseDateKey(v.evaluateBy) : null
     const data = {
-      situation: txt(input.situation), resources: txt(input.resources), needs: txt(input.needs), risks: txt(input.risks), goal: txt(input.goal),
+      situation: txt(v.situation), resources: txt(v.resources), needs: txt(v.needs), risks: txt(v.risks), goal: txt(v.goal),
       evaluateBy, ...(ai ? { aiSuggested: true } : {}),
     }
     const before = { situation: area.situation, resources: area.resources, needs: area.needs, risks: area.risks, goal: area.goal, evaluateBy: area.evaluateBy, aiSuggested: area.aiSuggested }

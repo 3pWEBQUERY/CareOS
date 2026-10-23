@@ -7,6 +7,10 @@ import { isAdminGrant, mfaPolicy, mfaSetupAllowedPath, mfaSetupRequired, MFA_SET
 
 /** Muss die angemeldete Person noch einen zweiten Faktor einrichten? (Organisationsrichtlinie, PRD §33) */
 export async function needsMfaSetup(ctx: Ctx) {
+  // Externe Ärztinnen und Ärzte (Ärzteportal): zweiter Faktor immer Pflicht, unabhängig von der Organisationsrichtlinie
+  if (ctx.user.kind === 'external_physician' && !ctx.user.mfaEnabled && ctx.session.method !== 'sso') {
+    return (await db.passkey.count({ where: { userId: ctx.user.id } })) < 1
+  }
   const p = mfaPolicy(ctx.org.settings)
   if (!p.forAll && !p.forAdmins) return false
   const isAdmin = ctx.grants.some((g) => isAdminGrant(g.permissions))

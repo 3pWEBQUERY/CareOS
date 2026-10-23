@@ -39,6 +39,12 @@ export type TaskRowDto = {
   link: { href: string; label: string } | null
   /** Wiederkehrende Aufgabe: Vorlage und Rhythmus */
   series?: { id: string; label: string } | null
+  /** Überfällig nach der gemeinsamen Regel (auch eskalierte, src/lib/task-backlog.ts) */
+  overdue?: boolean
+  /** Aus einer früheren Schicht übernommen (Rückstand) */
+  carried?: boolean
+  /** Vom System geschlossen: Text statt «übersprungen» (z. B. «nicht erledigt – übergeben») */
+  autoClosed?: string | null
 }
 /** Daten für «Serie bearbeiten» (Vorlagen des Bereichs). */
 export type SeriesDto = { templates: TemplateDto[]; residents: SeriesPerson[]; categories: string[]; unitId: string; unitName: string; todayKey: string }
@@ -167,11 +173,11 @@ export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meI
                     </td>
                   </tr>
                 )}
-                <tr className={row.view === 'over' ? 'over' : ''}>
+                <tr className={row.view === 'over' || (row.overdue && !closed) ? 'over' : ''}>
                   <td className="mono nowrap tt-time">
                     {row.time}
                     {row.day && <div className="small muted">{row.day}</div>}
-                    {row.view === 'over' && <div className="small">{t('tasks.view.over')}</div>}
+                    {(row.view === 'over' || (row.overdue && !closed)) && <div className="small">{t('tasks.view.over')}</div>}
                     {row.view === 'due' && <div className="small warn-text">{t('tasks.view.due')}</div>}
                   </td>
                   <td className="tt-res">
@@ -189,8 +195,9 @@ export function TaskTable({ rows: serverRows, staff, canManage, canComplete, meI
                       {row.priority !== 'routine' && <span className={'tag ' + (row.priority === 'critical' ? 'crit' : 'warn')}>{t('common.priority.' + row.priority)}</span>}
                       {row.view === 'in_progress' && <span className="tag accent">{t('tasks.view.in_progress')}</span>}
                       {row.view === 'escalated' && <span className="tag crit">{t('tasks.view.escalated')}</span>}
+                      {row.carried && !closed && <span className="tag outline">{t('tasks.backlog.carried')}</span>}
                       {queued[row.id] && <span className="tag outline">{t('common.offlineSync.tag')}</span>}
-                      {(row.view === 'partial' || row.view === 'skipped') && <span className="tag warn">{t('tasks.view.' + row.view)}</span>}
+                      {(row.view === 'partial' || row.view === 'skipped') && <span className="tag warn">{row.view === 'skipped' && row.autoClosed ? row.autoClosed : t('tasks.view.' + row.view)}</span>}
                     </div>
                     {row.description && !closed && <div className="small fg2" style={{ maxWidth: '60ch' }}>{row.description}</div>}
                     {row.note && <div className="small fg2">{t('tasks.noteLabel')}: {row.note}</div>}

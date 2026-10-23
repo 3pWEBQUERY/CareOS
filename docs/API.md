@@ -4,15 +4,25 @@ CareOS ist API-first (PRD §40/§41). Es gibt drei Schnittstellen:
 
 | Schnittstelle | Basis-URL | Zweck |
 |---|---|---|
-| REST API v1 | `/api/v1` | Lesen und Schreiben ausgewählter Daten (JSON) |
-| HL7 FHIR R4 | `/api/fhir` | Lesender Zugriff auf Gesundheitsdaten im FHIR-Format |
+| REST API v1 | `/api/v1` | Lesen und Schreiben ausgewählter Daten (JSON), Patientenadministration (ADT) |
+| HL7 FHIR R4 | `/api/fhir` | Gesundheitsdaten im FHIR-Format: lesend; `Observation` (Vitalwerte) auch schreibend |
 | Webhooks | Ziel-URL des Empfängers | Domain Events in Echtzeit (HTTP POST, signiert) |
+
+**Maschinenlesbar:** `GET /api/v1/openapi.json` (OpenAPI 3.1, ohne Anmeldung, Quelle `src/lib/api-spec.ts`). Ein Test
+(`src/lib/api-spec.test.ts`) prüft, dass jede Route unter `src/app/api/v1` und `src/app/api/fhir` mit allen HTTP-Methoden und Scopes beschrieben ist.
+**In der App:** Developer-Portal unter **Mehr → Developer-Portal** (`/developer`, Berechtigung `api.personal` oder `admin.integrations`):
+Referenz mit Beispielen, Scopes, Signaturprüfung, persönliche Tokens, Testzustellung an Webhooks.
 
 Alle Daten sind auf die Organisation des Tokens beschränkt. Zeiten sind ISO 8601 in UTC (`2026-10-21T08:00:00.000Z`), Datumswerte `YYYY-MM-DD`.
 
 ## Authentifizierung
 
-API-Tokens werden in **Admin → Integrationen und API → API-Tokens** erstellt (Berechtigung `admin.integrations`).
+Zwei Arten von API-Tokens:
+
+| Art | Erstellt unter | Berechtigung | Ablauf | Scopes |
+|---|---|---|---|---|
+| Integrations-Token | Admin → Integrationen und API → API-Tokens | `admin.integrations` | optional (7, 30, 90, 365 Tage oder unbefristet) | frei wählbar |
+| Persönliches Token | Developer-Portal → Meine Tokens | `api.personal` | Pflicht, höchstens 365 Tage | nur, wenn die Person die zugehörigen Berechtigungen **organisationsweit** hat (siehe unten); bei jedem Aufruf erneut geprüft |
 
 ```
 Authorization: Bearer cos_…
@@ -20,19 +30,27 @@ Authorization: Bearer cos_…
 
 - Das Token wird **nur einmal** angezeigt. Gespeichert wird ausschliesslich ein SHA-256-Hash; verlorene Tokens können nicht wiederhergestellt, nur widerrufen und neu erstellt werden.
 - Ein Token ist an die Person gebunden, die es erstellt hat. Schreibende Aufrufe werden ihr zugeordnet (z. B. `Observation.authorId`) und im Audit-Protokoll mit `context.via = "api"` und der Token-ID vermerkt. Wird die Person deaktiviert, ist das Token ungültig.
-- Widerrufene Tokens werden sofort abgewiesen.
+- Widerrufene und abgelaufene Tokens werden sofort abgewiesen (`401`).
+- Persönliche Tokens erweitern keine Rechte: Die API liefert organisationsweit, deshalb erhält ein persönliches Token einen Scope nur, wenn die Person alle Berechtigungen der Tabelle unten in einer **organisationsweiten** Rolle hat (Bereichsrollen genügen nicht). Wird eine Rolle entzogen oder ein Modul abgeschaltet, antwortet der nächste Aufruf mit `403 insufficient_permission`. Ein laufender Notfallzugriff zählt nie.
+- Ist die Organisation gesperrt (Plattform-Betrieb), werden alle Tokens mit `403 org_suspended` abgewiesen.
 
 ### Scopes
 
-| Scope | Erlaubt |
-|---|---|
-| `residents:read` | `GET /api/v1/residents`, `GET /api/v1/residents/{id}` |
-| `tasks:read` | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}` |
-| `tasks:write` | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}` |
-| `observations:write` | `POST /api/v1/observations` |
-| `events:read` | `GET /api/v1/events` |
-| `fhir:read` | alle Ressourcen unter `/api/fhir` |
-| `labs:write` | `POST /api/v1/labs` (Laborbefunde, Schnittstelle vorbereitet) |
+| Scope | Erlaubt | Persönliches Token: nötige Berechtigungen (organisationsweit) |
+|---|---|---|
+| `residents:read` | `GET /api/v1/residents`, `GET /api/v1/residents/{id}` | `resident.read` |
+| `residents:adt` | `POST /api/v1/residents` (Eintritt), `POST /api/v1/residents/{id}/adt` (Verlegung, Abwesenheit, Rückkehr, Austritt), `POST /api/v1/hl7` (HL7 v2 ADT) | `resident.edit` |
+| `tasks:read` | `GET /api/v1/tasks`, `GET /api/v1/tasks/{id}` | `task.read` |
+| `tasks:write` | `POST /api/v1/tasks`, `PATCH /api/v1/tasks/{id}` | `task.manage`, `task.complete` |
+| `observations:write` | `POST /api/v1/observations`, `POST /api/fhir/Observation`, `POST /api/fhir/AllergyIntolerance` | `resident.chart.write` |
+| `events:read` | `GET /api/v1/events` | `resident.read`, `task.read` |
+| `fhir:read` | alle lesenden Ressourcen unter `/api/fhir` | `resident.read` |
+| `labs:write` | `POST /api/v1/labs` (Laborbefunde, Schnittstelle vorbereitet) | `admin.integrations` |
+
+### Module
+
+Endpunkte abgeschalteter Module (Admin → Klinische Konfiguration → Module, PRD §69) antworten mit `403 module_inactive`,
+z. B. `GET /api/fhir/MedicationStatement` ohne Modul «Medikation».
 
 ### Rate Limits und Fehler
 
@@ -43,8 +61,11 @@ Authorization: Bearer cos_…
 | Status | code | Bedeutung |
 |---|---|---|
 | 400 | `bad_request` | ungültiger Parameter |
-| 401 | `unauthorized` | Token fehlt, ist ungültig oder widerrufen |
+| 401 | `unauthorized` | Token fehlt, ist ungültig, abgelaufen oder widerrufen |
 | 403 | `insufficient_scope` | Token hat den nötigen Scope nicht (`WWW-Authenticate` nennt ihn) |
+| 403 | `insufficient_permission` | persönliches Token: der Person fehlen die Berechtigungen für den Scope (nicht mehr organisationsweit) |
+| 403 | `module_inactive` | Modul der Organisation abgeschaltet |
+| 403 | `org_suspended` | Organisation durch den Plattform-Betrieb gesperrt |
 | 404 | `not_found` | Datensatz nicht vorhanden oder nicht in der Organisation |
 | 409 | `conflict` | Zustand erlaubt die Änderung nicht (z. B. Aufgabe bereits quittiert) |
 | 422 | `validation_failed` | Body ungültig, `message` nennt die Felder |
@@ -73,6 +94,36 @@ FHIR-Endpunkte liefern Fehler als `OperationOutcome`.
 ```
 
 `GET /api/v1/residents/{id}` – zusätzlich `physician`, `risks`, `diet`, `mobility`, `importantNotes`, `primaryNurseId`, `contacts[]`.
+
+### Patientenadministration (ADT)
+
+Scope `residents:adt`. Jeder Vorgang wird als Pflegeepisode (`CareEpisode`) geführt, im Audit-Protokoll vermerkt und als Event
+`resident.updated` verteilt. Akten werden nie gelöscht. Zeitpunkte `at` mit Zeitzone, nicht in der Zukunft (5 Min. Toleranz).
+
+`POST /api/v1/residents` – Eintritt (HL7 ADT A01):
+
+```json
+{
+  "unitId": "cmv…", "roomId": "cmv…", "firstName": "Ruth", "lastName": "Brunner", "birthDate": "1938-03-14", "sex": "f",
+  "insuranceNo": "756.1234.5678.97", "physician": "Dr. med. P. Keller", "allergies": ["Penicillin"], "rea": "no",
+  "admittedAt": "2026-10-22T10:00:00+02:00", "reason": "Eintritt"
+}
+```
+
+Antwort `201` mit der Person. Zimmer ohne freies Bett → `409 room_occupied`; Bereich/Zimmer nicht in der Organisation → `422`.
+
+`POST /api/v1/residents/{id}/adt` – Verlegung (A02), Abwesenheit (A21), Rückkehr (A22), Austritt (A03):
+
+```json
+{ "event": "transfer", "unitId": "cmv…", "roomId": "cmv…", "reason": "Wechsel Demenzabteilung" }
+{ "event": "leave", "reason": "Spitalaufenthalt", "expectedReturn": "2026-10-30" }
+{ "event": "return", "roomId": "cmv…" }
+{ "event": "discharge", "deceased": false, "reason": "Austritt nach Hause" }
+```
+
+Antwort `200` mit der aktualisierten Person. Offene Aufgaben ziehen bei der Verlegung mit, werden während einer Abwesenheit als «nicht durchgeführt (abwesend)» abgeschlossen und nach dem Austritt entfernt.
+
+`POST /api/v1/hl7` – dieselben Vorgänge als HL7-v2-Nachricht (ER7, `Content-Type: x-application/hl7-v2+er7` oder `text/plain`; A01, A02, A03, A21, A22). Antwort immer `200` mit einer ACK-Nachricht (`MSA-1` AA/AE/AR).
 
 ### Aufgaben
 
@@ -157,17 +208,17 @@ Events in zeitlicher Reihenfolge, älteste zuerst. Ohne `since` die letzten 24 S
 
 Event-Payloads enthalten nur Referenzen (IDs), keine Gesundheitsdaten. Details werden über die REST- oder FHIR-Endpunkte geladen.
 
-## HL7 FHIR R4 (lesend)
+## HL7 FHIR R4
 
-Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `searchset`. Scope `fhir:read`.
+Content-Type `application/fhir+json`. Suchergebnisse sind `Bundle` vom Typ `searchset`. Lesen mit Scope `fhir:read`, Schreiben (`POST /api/fhir/Observation`) mit Scope `observations:write`.
 
 | Ressource | Interaktionen | Suchparameter |
 |---|---|---|
 | `GET /api/fhir/metadata` | CapabilityStatement (ohne Anmeldung) | – |
 | `Patient` | read, search | `_id`, `name`, `family`, `given`, `birthdate`, `gender`, `identifier`, `active`, `_count` |
-| `Observation` | read, search | `patient`/`subject`, `code`, `category=vital-signs`, `date` (`eq`/`ge`/`gt`/`le`/`lt`), `_count` |
-| `MedicationStatement` | search | `patient`/`subject`, `status` (`active`, `stopped`, `completed`), `_count` |
-| `AllergyIntolerance` | search | `patient`, `_count` |
+| `Observation` | read, search, **create** | `patient`/`subject`, `code`, `category=vital-signs`, `date` (`eq`/`ge`/`gt`/`le`/`lt`), `_count` |
+| `MedicationStatement` | search (nur mit Modul «Medikation») | `patient`/`subject`, `status` (`active`, `stopped`, `completed`), `_count` |
+| `AllergyIntolerance` | search, **create** (ergänzt die Allergien der Person, nie überschreiben; bereits erfasst → `200`) | `patient`, `_count` |
 
 ### Abbildung
 
@@ -195,9 +246,26 @@ GET /api/fhir/Observation?patient=Patient/cmv…&code=http://loinc.org|8480-6&da
 Authorization: Bearer cos_…
 ```
 
+### Observation schreiben
+
+`POST /api/fhir/Observation` (Scope `observations:write`) – Vitalwert aus Messgeräten oder dem Spital. Einzelwert mit LOINC-Code der
+Tabelle oben (zusätzlich Schmerz `72514-3`, Einheit `{score}`) oder Blutdruck-Panel `85354-9` mit den Komponenten 8480-6/8462-4.
+Einheiten nach UCUM (z. B. `mm[Hg]`, `/min`, `Cel`, `%`, `mmol/L`, `kg`). Es entsteht immer eine neue Messung (nie überschrieben),
+Plausibilitätsgrenzen wie in der App (`422` ausserhalb). Antwort `201` mit der Observation bzw. einem Bundle, Header `Location`;
+Events `vitals.recorded` und ggf. `vitals.abnormal`.
+
+```json
+{
+  "resourceType": "Observation", "status": "final",
+  "subject": { "reference": "Patient/cmv…" }, "effectiveDateTime": "2026-10-22T08:15:00+02:00",
+  "code": { "coding": [{ "system": "http://loinc.org", "code": "8867-4" }] },
+  "valueQuantity": { "value": 76, "unit": "/min", "system": "http://unitsofmeasure.org", "code": "/min" }
+}
+```
+
 ## Webhooks
 
-Webhooks werden in **Admin → Integrationen und API → Webhooks** angelegt: Ziel-URL (HTTPS), Ereignisse (oder «Alle»). Das Signatur-Secret wird nur bei der Erstellung bzw. Erneuerung angezeigt. «Test senden» stellt ein Ereignis `webhook.test` zu; die letzten Zustellungen mit HTTP-Status sind je Webhook sichtbar.
+Webhooks werden in **Admin → Integrationen und API → Webhooks** angelegt: Ziel-URL (HTTPS), Ereignisse (oder «Alle»). Das Signatur-Secret wird nur bei der Erstellung bzw. Erneuerung angezeigt. «Test senden» (dort oder im Developer-Portal → Webhooks) stellt ein Ereignis `webhook.test` zu; die letzten Zustellungen mit HTTP-Status sind je Webhook sichtbar.
 
 Jede Zustellung ist ein `POST` mit JSON-Body:
 
@@ -240,7 +308,7 @@ def verify(raw_body: bytes, header: str, secret: str) -> bool:
 
 ### Ereignisse
 
-`task.created`, `task.completed`, `task.reopened`, `task.escalated`, `observation.created`, `observation.corrected`, `vitals.recorded`, `vitals.abnormal`, `medication.administered`, `medication.changed`, `handover.updated`, `handover.acknowledged`, `incident.reported`, `incident.updated`, `careplan.updated`, `assessment.recorded`, `wound.updated`, `nutrition.recorded`, `resident.updated`, `post.published`, `message.created`, `document.published`, `schedule.changed`, `notification.created`.
+`task.created`, `task.completed`, `task.reopened`, `task.escalated`, `observation.created`, `observation.corrected`, `vitals.recorded`, `vitals.abnormal`, `vitals.corrected`, `vitals.reviewed`, `medication.administered`, `medication.changed`, `handover.updated`, `handover.acknowledged`, `incident.reported`, `incident.updated`, `careplan.updated`, `assessment.recorded`, `assessment.corrected`, `wound.updated`, `nutrition.recorded`, `resident.updated`, `visit.updated`, `assignment.updated`, `post.published`, `message.created`, `document.published`, `schedule.changed`, `notification.created` (Liste: `EVENT_TYPES` in `src/lib/admin-shared.ts`, auch in `openapi.json` unter `x-webhooks-events`).
 
 ## Datenexport
 

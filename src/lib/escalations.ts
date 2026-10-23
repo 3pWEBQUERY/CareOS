@@ -185,5 +185,7 @@ export async function runEscalations(now = new Date(), cursor?: Date | null) {
   s.workflowTasks = wf.created
   s.workflowClosed = wf.closed
   s.incidentActions = await reconcileIncidentActions()
-  return { ...s, cursor: next.toISOString() }
+  // Paket Ä: telefonische/mündliche Verordnungen ohne Gegenzeichnung nach Fristablauf (src/lib/phone-orders-server.ts)
+  const phoneOrders = await import('@/lib/phone-orders-server').then((m) => m.escalatePhoneOrders(now))
+  return { ...s, phoneOrders, cursor: next.toISOString() }
 }

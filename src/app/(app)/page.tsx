@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation'
 import { getCtx } from '@/lib/context'
+import { isExternalPhysician } from '@/lib/permissions'
 import { myShiftNow } from '@/lib/shift'
 import { pickHomeView } from '@/lib/home-view'
 import { AutoRefresh } from './_home/AutoRefresh'
@@ -6,6 +8,8 @@ import { CareHome } from './_home/CareHome'
 import { LeadHome } from './_home/LeadHome'
 import { QualityHome } from './_home/QualityHome'
 import { OfficeHome } from './_home/OfficeHome'
+import { PhysicianHome } from './_home/PhysicianHome'
+import { TherapyHome } from './_home/TherapyHome'
 
 export async function generateMetadata() {
   return { title: (await getCtx()).t('nav.home') }
@@ -19,6 +23,8 @@ export async function generateMetadata() {
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ view?: string; scope?: string }> }) {
   const sp = await searchParams
   const ctx = await getCtx()
+  // Externe Ärztinnen und Ärzte arbeiten im Ärzteportal (PRD §60)
+  if (isExternalPhysician(ctx.user)) redirect('/md')
   const { t, user, unit } = ctx
   const now = new Date()
   const h = now.getHours()
@@ -33,6 +39,9 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     leadPerms: ctx.can('schedule.manage') || ctx.can('insights.view'),
     quality: ctx.can('quality.manage'),
     office: ctx.can('admin.users') || ctx.can('admin.org'),
+    // Ärztlich: Visite dokumentieren ohne Pflegeaufgaben (Pflegefachpersonen haben beides)
+    physician: ctx.can('resident.visit.conduct') && !ctx.can('task.complete'),
+    therapy: ctx.can('therapy.document') && !ctx.can('resident.medication.administer'),
   }, sp.view)
 
   const props = { ctx, now, greet, view, views }
@@ -40,6 +49,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     <>
       <AutoRefresh />
       {view === 'care' ? <CareHome {...props} scopeParam={sp.scope} />
+        : view === 'physician' ? <PhysicianHome {...props} />
+        : view === 'therapy' ? <TherapyHome {...props} />
         : view === 'lead' ? <LeadHome {...props} />
         : view === 'quality' ? <QualityHome {...props} />
         : <OfficeHome {...props} />}

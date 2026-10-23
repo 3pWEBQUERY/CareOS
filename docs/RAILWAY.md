@@ -112,7 +112,31 @@ INIT_RESIDENTS=100
 
 `ORG_SIGNUP=true` zeigt auf `/register` zusätzlich «Neue Organisation»: Name der Organisation und Daten der
 Systemadministration; angelegt wird die Standardkonfiguration mit einer Wohngruppe, ohne Personen. Gedacht für
-Mehrmandanten-Instanzen; Standard ist aus. Je IP höchstens 3 pro Tag.
+Mehrmandanten-Instanzen; Standard ist aus. Je IP höchstens 3 pro Tag. Die Organisation bleibt **gesperrt, bis der
+Plattform-Betrieb sie freigibt** (`/platform` → Anträge; Anmeldung zeigt bis dahin «Ihre Organisation wird geprüft»).
+
+### Plattform-Betrieb (PRD §42)
+
+| Variable | Wirkung |
+|---|---|
+| `PLATFORM_ADMIN_EMAILS` | Kommagetrennte E-Mail-Adressen **bestehender** Konten, die Zugang zu `/platform` erhalten (`User.platformRole = 'operator'`). Zugewiesen beim Start und beim ersten Aufruf von `/platform`, im Audit als `platform.operator_assigned`. Entzug: Adresse entfernen und `UPDATE "User" SET "platformRole" = NULL WHERE email = '…'`. |
+
+`/platform` (zweiter Faktor Pflicht, eigener Bereich ohne klinische Navigation): Organisationen mit Zählwerten (Konten,
+Bewohnende, aktive Konten 7/30 Tage, Speicher, Module), neue Organisation anlegen (Einladungslink für die
+Systemadministration), Anträge aus `ORG_SIGNUP` freigeben oder ablehnen, Organisationen sperren/entsperren
+(Anmeldung, laufende Sitzungen und API-Tokens werden sofort abgewiesen, Daten bleiben), Module setzen. Kein Zugriff auf
+Personen- oder Gesundheitsdaten; jede Aktion steht im Audit-Protokoll der Zielorganisation (`platform.*`).
+Die eigene Organisation lässt sich nicht sperren.
+
+### Systemadministration und Notfallzugriff (PRD §34/§37)
+
+Neue Organisationen erhalten die Rolle «Systemadministration» **ohne klinische Rechte** (keine Akte, Medikation,
+Aufgaben, Übergaben, klinische Kommunikation, KI, Kennzahlen). Bestehende Organisationen behalten ihre Rolle unverändert;
+die Migration gibt allen Personen mit Systemadministration zusätzlich die Pflegedienstleitung organisationsweit, damit
+später verschlankt werden kann, ohne Zugang zu verlieren (**Admin → Rollen → Systemadministration → «Auf Standard ohne
+klinische Rechte setzen»**). Klinischer Zugriff ohne klinische Rolle nur über **Admin → Notfallzugriff**: Begründung,
+30 Min. bis 4 Std., nur lesend, jeder Seitenaufruf protokolliert, Sicherheitsalarm und sofortige Benachrichtigung an
+Pflegedienstleitung und Personen mit Audit-Zugriff.
 
 ## 5. Betrieb
 

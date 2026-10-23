@@ -22,7 +22,7 @@ export async function run<T>(fn: () => Promise<ActionResult<T> | void>, opts: { 
     }
     return (await fn()) ?? { ok: true }
   } catch (e) {
-    if (e instanceof ForbiddenError) return { ok: false, error: 'common.notAllowed' }
+    if (e instanceof ForbiddenError) return { ok: false, error: e.moduleOff ? 'common.moduleOff' : 'common.notAllowed' }
     if (e instanceof z.ZodError) {
       const issue = e.issues[0]
       return { ok: false, error: issue?.message || 'common.genericError', field: issue?.path.join('.') }

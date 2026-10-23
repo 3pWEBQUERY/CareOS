@@ -45,7 +45,8 @@ export function ResidentFields({ d = {}, rooms, nurses, edit }: {
       )}
       {edit && (
         <Select label={t('residents.form.status')} name="status" defaultValue={d.status ?? 'active'}>
-            {['active', 'absent', 'discharged', 'deceased'].map((s) => <option key={s} value={s}>{t('residents.status.' + s)}</option>)}
+            {/* Abwesenheit/Rückkehr über «Aufenthalt» (Grund, Pflegeepisode); hier nur der aktuelle Status und Austritt */}
+            {[d.status === 'absent' ? 'absent' : 'active', 'discharged', 'deceased'].map((s) => <option key={s} value={s}>{t('residents.status.' + s)}</option>)}
           </Select>
       )}
       <TextField label={t('residents.form.allergies')} optional wrapClassName="span-all" name="allergies" defaultValue={d.allergies?.join(', ')} placeholder={t('residents.form.listHint')} />

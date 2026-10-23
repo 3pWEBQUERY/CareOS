@@ -2,8 +2,10 @@ import 'server-only'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { isClosed, taskView } from '@/lib/tasks'
+import { isOverdue } from '@/lib/task-backlog'
 import { taskTitle } from '@/lib/task-title'
-import { addDays, dbDate, fmtDayMonth, fmtNum, hm, sameDay, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
+import { addDays, dbDate, fmtDate, fmtDayMonth, fmtNum, hm, sameDay, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
+import { openAbsences } from '@/lib/adt'
 import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { EFFECT_CHECK_MIN, openDoses } from '@/lib/medication'
 import { doseText } from '@/components/meds/dose'
@@ -14,7 +16,7 @@ export type Tone = 'c' | 'w' | ''
 /** `flag`: Status als Text neben der Farbe (PRD §51 «nie nur über Farbe»), z. B. «überfällig». */
 export type Item = { text: string; time?: string; tone?: Tone; muted?: boolean; flag?: string }
 export type Block = {
-  resident: { id: string; firstName: string; lastName: string; room: string | null; careLevel: number | null; rea: string; allergies: string[]; risks: string[] }
+  resident: { id: string; firstName: string; lastName: string; room: string | null; careLevel: number | null; rea: string; allergies: string[]; risks: string[]; absent: string | null }
   happened: Item[]
   done: Item[]
   watch: Item[]
@@ -89,6 +91,15 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
   // Eigene Instrumente (Admin) tragen ihren Namen in der Definition
   const defNames = new Map((await db.assessmentDefinition.findMany({ where: { orgId: ctx.org.id }, select: { key: true, name: true } })).map((d) => [d.key, d.name]))
   const assessName = (key: string) => assessmentLabel(t, key, defNames.get(key))
+  // Abwesende Personen (Spital, Ferien): Grund und seit wann – Aufgaben sind während der Abwesenheit pausiert (PRD §43)
+  const absences = await openAbsences(residents.filter((r) => r.status === 'absent').map((r) => r.id))
+  const dm = (d: Date) => fmtDate(d, locale, { day: '2-digit', month: '2-digit' })
+  const absentText = (r: { id: string; status: string }) => {
+    if (r.status !== 'absent') return null
+    const a = absences.get(r.id)
+    if (!a) return t('residents.banner.absent')
+    return t(a.expectedEnd ? 'residents.adt.bannerUntil' : 'residents.adt.banner', { date: dm(a.start), reason: a.reason, until: a.expectedEnd ? dm(a.expectedEnd) : '' })
+  }
 
 
   const blocks: Block[] = residents.map((r) => {
@@ -135,6 +146,10 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
     // Was wurde getan?
     for (const k of tasks.filter((k) => k.residentId === r.id && isClosed(k.status))) {
       if (k.source === 'medication' && k.title === 'medication.slot') continue
+      // Pausiert während Abwesenheit: weder getan noch offen
+      if (k.autoClosed === 'absence') continue
+      // Vom System nach der Folgeschicht geschlossen: bleibt als «nicht erledigt – übergeben» unter «Was ist noch offen?»
+      if (k.autoClosed) { open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k), tone: 'c', flag: t('tasks.autoClosed.shiftEnd') }); continue }
       done.push({ at: (k.completedAt ?? k.dueAt).getTime(), time: hm(k.dueAt), tone: k.status === 'done' ? '' : 'w', text: taskTitle(t, k) + (k.status === 'done' ? '' : ` (${t('tasks.view.' + k.status)}${k.note ? ': ' + short(k.note, 60) : ''})`) })
     }
     for (const a of prnGiven.filter((a) => a.residentId === r.id && a.at >= from)) {
@@ -167,7 +182,8 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
       openCount++
       if (k.source === 'medication' && k.title === 'medication.slot') continue
       const v = taskView(k, now)
-      open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k), tone: v === 'over' || v === 'escalated' ? 'c' : '', flag: v === 'over' || v === 'escalated' ? t('tasks.view.' + v) : undefined })
+      const late = isOverdue(k, now)
+      open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k), tone: late ? 'c' : '', flag: v === 'escalated' ? t('tasks.view.escalated') : late ? t('tasks.view.over') : undefined })
     }
     for (const d of doses.filter((d) => d.residentId === r.id)) {
       open.push({ at: d.at.getTime(), time: d.time, text: t(d.over ? 'tasks.handover.auto.doseOver' : 'tasks.handover.auto.dosePlanned', { drug: d.medication.name, dose: doseText(d.dose, d.medication.form) }), tone: d.over ? 'c' : '', flag: d.over ? t('tasks.view.over') : undefined })
@@ -176,7 +192,7 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
 
     const byTime = <T extends { at: number }>(a: T[]) => a.sort((x, y) => x.at - y.at).map(({ at: _at, ...rest }) => { void _at; return rest })
     return {
-      resident: { id: r.id, firstName: r.firstName, lastName: r.lastName, room: r.room?.number ?? null, careLevel: r.careLevel, rea: r.rea, allergies: r.allergies, risks: r.risks },
+      resident: { id: r.id, firstName: r.firstName, lastName: r.lastName, room: r.room?.number ?? null, careLevel: r.careLevel, rea: r.rea, allergies: r.allergies, risks: r.risks, absent: absentText(r) },
       happened: byTime(happened), done: byTime(done), watch, open: byTime(open),
       entry: entry ? { watch: entry.watch, open: entry.open, important: entry.important, author: ini(entry.authorId) } : null,
       counts: { notes: observations.filter((o) => o.residentId === r.id).length, open: openCount, abnormal },

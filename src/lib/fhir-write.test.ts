@@ -30,3 +30,12 @@ test('FHIR schreibend: verständliche Fehler', () => {
   assert.match(e({ ...base, code: { coding: [{ code: '8480-6' }] }, valueQuantity: { value: 120, code: 'mm[Hg]' } }), /panel/)
   assert.match(e({ ...base, effectiveDateTime: '2026-10-23T10:15:00+02:00', code: { coding: [{ code: '8310-5' }] }, valueQuantity: { value: 37, code: 'Cel' } }), /future/)
 })
+
+test('FHIR AllergyIntolerance schreibend: Prüfung', async () => {
+  const { parseFhirAllergy } = await import('./fhir-write')
+  const ok = parseFhirAllergy({ resourceType: 'AllergyIntolerance', patient: { reference: 'Patient/abc1' }, code: { coding: [{ system: 'http://snomed.info/sct', code: '91936005', display: 'Penicillin' }] } })
+  assert.deepEqual(ok, { residentId: 'abc1', text: 'Penicillin' })
+  assert.match((parseFhirAllergy({ resourceType: 'AllergyIntolerance', patient: { reference: 'Patient/a' }, code: { text: 'Latex' }, clinicalStatus: { coding: [{ code: 'resolved' }] } }) as { error: string }).error, /only clinicalStatus active/)
+  assert.match((parseFhirAllergy({ resourceType: 'AllergyIntolerance', patient: { reference: 'x' }, code: { text: 'Latex' } }) as { error: string }).error, /patient.reference/)
+  assert.match((parseFhirAllergy({ resourceType: 'Observation' }) as { error: string }).error, /resourceType/)
+})

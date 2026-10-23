@@ -3,7 +3,11 @@ import { getCtx } from '@/lib/context'
 import { db } from '@/lib/db'
 import { searchFunctions } from '@/lib/search-functions'
 import { snippet } from '@/lib/search-snippet'
-import { fmtDate } from '@/lib/time'
+import { fmtDate, fmtDayMonth, hm, sameDay } from '@/lib/time'
+import { taskTitle } from '@/lib/task-title'
+import { dedupeTaskHits, systemTaskMatches } from '@/lib/task-search'
+import { backlogCutoff, backlogWhere } from '@/lib/task-backlog'
+import { shiftTypes } from '@/lib/shift'
 import { canModerate, liveFilter, myRoleKeys, postAudienceWhere, visibleChannels } from '@/app/(app)/team/lib'
 
 /** Globale Suche, berechtigungsabhängig (PRD §24). Jede Quelle ist begrenzt, Suche ohne Gross-/Kleinschreibung. */
@@ -29,7 +33,30 @@ export async function GET(req: NextRequest) {
       : [],
     db.user.findMany({ where: { orgId: ctx.org.id, active: true, OR: [{ lastName: like }, { firstName: like }] }, take: 6 }),
     ctx.can('task.read')
-      ? db.task.findMany({ where: { unitId: { in: ctx.unitIds }, title: like, dueAt: { gte: new Date(Date.now() - 864e5) } }, include: { resident: true }, take: 6, orderBy: { dueAt: 'asc' } })
+      ? (() => {
+          // Systemaufgaben über ihren übersetzten Titel bzw. ihre Kategorie finden (Titel sind Schlüssel, siehe taskTitle)
+          const sys = systemTaskMatches(t, q)
+          const now = new Date()
+          // Offene Aufgaben nach der Rückstandsregel (keine abgelaufenen Routine-Zeitpunkte früherer Schichten), bis morgen
+          return shiftTypes(ctx.org.id).then((types) => db.task.findMany({
+            where: {
+              unitId: { in: ctx.unitIds },
+              AND: [backlogWhere(backlogCutoff(types, now), new Date(now.getTime() + 864e5), now)],
+              // Medikamentenaufgaben nur für Personen, die abgeben dürfen (wie in der Aufgabenliste)
+              ...(ctx.can('resident.medication.administer') ? {} : { source: { not: 'medication' as const } }),
+              OR: [
+                { title: like },
+                ...(sys.titles.length ? [{ title: { in: sys.titles } }] : []),
+                ...sys.titles.map((x) => ({ title: { startsWith: x + ':' } })),
+                ...sys.prefixes.map((x) => ({ title: { startsWith: x } })),
+                ...(sys.categories.length ? [{ category: { in: sys.categories } }] : []),
+              ],
+            },
+            include: { resident: { select: { firstName: true, lastName: true } } },
+            take: 60,
+            orderBy: { dueAt: 'asc' },
+          }))
+        })()
       : [],
     // Mitteilungen nur aus Kanälen, die die Person sehen darf
     ctx.can('team.read')
@@ -83,7 +110,16 @@ export async function GET(req: NextRequest) {
   for (const d of docs) items.push({ group: t('common.palette.groupDocument'), label: d.title, hint: d.currentVersion ? 'v' + d.currentVersion : undefined, href: `/docs/${d.id}` })
   for (const f of forms) items.push({ group: t('common.palette.groupForm'), label: f.name, hint: f.active ? undefined : t('admin.config.inactive'), href: ctx.can('admin.config') ? `/admin/forms/${f.id}` : '/residents?pick=notes' })
   for (const p of people) items.push({ group: t('common.palette.groupPerson'), label: `${p.firstName} ${p.lastName}`, hint: p.jobTitle ?? undefined, href: ctx.can('team.read') ? `/team/people/${p.id}` : `/chat?with=${p.id}` })
-  for (const k of tasks) items.push({ group: t('common.palette.groupTask'), label: k.title, hint: k.resident ? `${k.resident.lastName}` : undefined, href: k.residentId ? `/residents/${k.residentId}` : '/tasks' })
+  // Gleiche Aufgabe je Person nur einmal (z. B. Medikamente 08:00, 12:00, 17:00 → ein Treffer mit nächster Zeit)
+  const taskHits = dedupeTaskHits(tasks.map((k) => ({ ...k, label: taskTitle(t, k) })), 6)
+  for (const { row: k, n } of taskHits) {
+    const when = sameDay(k.dueAt, new Date()) ? hm(k.dueAt) : `${fmtDayMonth(k.dueAt, ctx.locale)} ${hm(k.dueAt)}`
+    items.push({
+      group: t('common.palette.groupTask'), label: k.label,
+      hint: [k.resident ? `${k.resident.lastName} ${k.resident.firstName}` : t('tasks.noResident'), when, n > 1 ? t('tasks.search.times', { n }) : null].filter(Boolean).join(' · '),
+      href: !k.residentId ? '/tasks' : k.title === 'medication.slot' ? `/residents/${k.residentId}/meds` : `/residents/${k.residentId}/day`,
+    })
+  }
   const seenIv = new Set<string>()
   for (const i of interventions) if (seenIv.size < 5 && !seenIv.has(i.resident.id + i.title) && seenIv.add(i.resident.id + i.title)) items.push({ group: t('common.palette.groupIntervention'), label: i.title, hint: `${i.resident.lastName} ${i.resident.firstName}`, href: `/residents/${i.resident.id}/careplan` })
   for (const p of posts) items.push({ group: t('common.palette.groupPost'), label: p.title, hint: p.title.toLowerCase().includes(q.toLowerCase()) ? p.channel.name : snippet(p.body, q, 60), href: `/team/post/${p.id}` })

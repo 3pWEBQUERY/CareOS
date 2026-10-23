@@ -10,6 +10,7 @@ import { INTL_LOCALE } from '@/i18n/core'
 import { REACTIONS } from './reactions'
 import { addMemberAction, deleteMessageAction, editMessageAction, leaveConversationAction, markReadAction, muteAction, reactAction, sendMessageAction } from './actions'
 import { Select, Textarea } from '@/components/ui/fields'
+import { Tooltip } from '@/components/ui/Tooltip'
 
 export type ChatMsg = {
   id: string
@@ -292,7 +293,9 @@ function Message({ m, renderBody, onRun, onAsk }: { m: ChatMsg; renderBody: (s: 
           {!m.deleted && (
             <span className="mact">
               {reactions.filter((r) => r.n === 0).map((r) => (
-                <button key={r.key} type="button" className="react-add" title={t('team.chat.reactions.' + r.key)} aria-label={t('team.chat.react', { r: t('team.chat.reactions.' + r.key) })} onClick={() => onRun(() => reactAction(m.id, r.key))}>{r.symbol}</button>
+                <Tooltip key={r.key} content={t('team.chat.reactions.' + r.key)}>
+                  <button type="button" className="react-add" aria-label={t('team.chat.react', { r: t('team.chat.reactions.' + r.key) })} onClick={() => onRun(() => reactAction(m.id, r.key))}>{r.symbol}</button>
+                </Tooltip>
               ))}
               {m.mine && !editing && <button type="button" className="linkbtn small" onClick={() => { setDraft(m.body); setEditing(true) }}>{t('team.chat.edit')}</button>}
               {m.mine && !editing && <button type="button" className="linkbtn small crit-text" onClick={async () => { if (await onAsk({ title: t('team.chat.deleteConfirm'), context: <span><span className="mono">{m.time}</span> · {m.body.length > 120 ? m.body.slice(0, 120) + ' …' : m.body}</span>, confirmLabel: t('team.chat.delete'), danger: true })) onRun(() => deleteMessageAction(m.id)) }}>{t('team.chat.delete')}</button>}
@@ -333,9 +336,11 @@ function Message({ m, renderBody, onRun, onAsk }: { m: ChatMsg; renderBody: (s: 
         {reactions.some((r) => r.n > 0) && (
           <div className="reacts">
             {reactions.filter((r) => r.n > 0).map((r) => (
-              <button key={r.key} type="button" aria-pressed={r.mine} title={t('team.chat.reactions.' + r.key)} aria-label={t('team.chat.react', { r: t('team.chat.reactions.' + r.key) }) + ` (${r.n})`} onClick={() => onRun(() => reactAction(m.id, r.key))}>
-                {r.symbol} <span className="mono">{r.n}</span>
-              </button>
+              <Tooltip key={r.key} content={`${t('team.chat.reactions.' + r.key)} · ${r.n}`}>
+                <button type="button" aria-pressed={r.mine} aria-label={t('team.chat.react', { r: t('team.chat.reactions.' + r.key) }) + ` (${r.n})`} onClick={() => onRun(() => reactAction(m.id, r.key))}>
+                  {r.symbol} <span className="mono">{r.n}</span>
+                </button>
+              </Tooltip>
             ))}
           </div>
         )}
@@ -467,7 +472,7 @@ function Composer({ members, onSend }: { members: Member[]; onSend: (body: strin
       )}
       {/* raw-field-ok: verborgene Dateiauswahl hinter der Anhang-Schaltfläche (Vorschau im Verfasser) */}
       <input ref={fileRef} type="file" multiple hidden onChange={(e) => setFiles(Array.from(e.target.files ?? []))} />
-      <button type="button" className="icon-btn composer-attach" onClick={() => fileRef.current?.click()} aria-label={t('team.chat.attach')} title={t('team.chat.attach')}><IconUpload size={18} /></button>
+      <Tooltip content={t('team.chat.attach')}><button type="button" className="icon-btn composer-attach" onClick={() => fileRef.current?.click()} aria-label={t('team.chat.attach')}><IconUpload size={18} /></button></Tooltip>
       <Textarea
         ref={ta}
 

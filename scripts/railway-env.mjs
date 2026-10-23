@@ -63,6 +63,10 @@ if (args.demo) {
   )
 }
 lines.push(
+  '# Plattform-Betrieb (PRD §42): Konten mit Zugang zu /platform (Organisationen, Module, Sperren, Anträge), kommagetrennt.',
+  '# Wirkt beim Start und beim Aufruf von /platform; zweiter Faktor Pflicht.',
+  `PLATFORM_ADMIN_EMAILS=${args.admin && args.admin !== true ? args.admin : ''}`,
+  '',
   '# Betrieb (PRD §38, §66): Metrik-Endpunkt /api/metrics (Bearer-Token); leer = abgeschaltet',
   `METRICS_TOKEN=${randomBytes(24).toString('base64url')}`,
   '# Optional: Serverfehler zusätzlich als JSON an einen Webhook (Slack, Teams, Incident-Tool)',

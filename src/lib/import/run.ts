@@ -11,6 +11,8 @@ import { dateKey, dbDate, fmtDate, parseDateKey } from '@/lib/time'
 import { LOCALES } from '@/i18n/core'
 import { MAX_IMPORT_ROWS, headerKey, type CsvTable } from './csv'
 import { SPECS, mapHeader, parseQualificationCell, validateRow, type ImportKind, type Issue, type RowValues } from './specs'
+import { DEFAULT_SLOTS, hasDose } from '@/lib/medication'
+import { blocking, checkAllergies } from '@/lib/allergy-check'
 
 /**
  * Abgleich mit den Stammdaten und Ausführung der CSV-Importe (Admin → Datenimport).
@@ -42,6 +44,8 @@ export function allowedKinds(ctx: Ctx): ImportKind[] {
   if (ctx.can('resident.create')) out.push('residents')
   if (ctx.can('admin.users')) out.push('staff')
   if (ctx.can('schedule.manage')) out.push('shifts')
+  if (ctx.can('resident.medication.edit')) out.push('medications')
+  if (ctx.can('resident.edit')) out.push('contacts')
   return out
 }
 
@@ -72,7 +76,8 @@ export async function prepare(ctx: Ctx, kind: ImportKind, table: CsvTable, diges
   if (!fileIssues.length) {
     const today = todayIso()
     const parsed = table.rows.map((r) => ({ line: r.line, ...validateRow(kind, map, r.cells, today) }))
-    plan = kind === 'residents' ? await planResidents(ctx, parsed) : kind === 'staff' ? await planStaff(ctx, parsed) : await planShifts(ctx, parsed)
+    plan = kind === 'residents' ? await planResidents(ctx, parsed) : kind === 'staff' ? await planStaff(ctx, parsed) : kind === 'shifts' ? await planShifts(ctx, parsed)
+      : kind === 'medications' ? await planMedications(ctx, parsed) : await planContacts(ctx, parsed)
   }
   const rows = plan.map((p) => p.row)
   const counts: Record<RowStatus, number> = { create: 0, update: 0, skip: 0, error: 0 }
@@ -360,6 +365,151 @@ async function planShifts(ctx: Ctx, rows: Parsed[]): Promise<Planned[]> {
   })
 }
 
+// ───────── Zuordnung zur Person (Medikation, Kontakte) ─────────
+
+/** Laufende Personen der Organisation (aktiv/abwesend), gefunden über Versichertennummer oder Name + Geburtsdatum. */
+async function residentMatcher(ctx: Ctx) {
+  const rs = await db.resident.findMany({
+    where: { orgId: ctx.org.id, status: { in: ['active', 'absent'] }, anonymisedAt: null },
+    select: { id: true, firstName: true, lastName: true, birthDate: true, insuranceNo: true, unitId: true, allergies: true, unit: { select: { locationId: true, name: true, shortName: true } }, room: { select: { number: true } } },
+  })
+  const key = (last: string, first: string, birth: string) => headerKey(last) + '|' + headerKey(first) + '|' + birth
+  const byKey = new Map(rs.map((r) => [key(r.lastName, r.firstName, r.birthDate.toISOString().slice(0, 10)), r]))
+  const byIns = new Map(rs.filter((r) => r.insuranceNo).map((r) => [headerKey(r.insuranceNo!), r]))
+  return (v: RowValues) => {
+    const ins = str(v.insuranceNo)
+    const birth = str(v.birthDate)
+    const hit = (ins ? byIns.get(headerKey(ins)) : undefined) ?? (birth ? byKey.get(key(str(v.lastName) ?? '', str(v.firstName) ?? '', birth)) : undefined)
+    return hit ?? null
+  }
+}
+const personLabel = (ctx: Ctx, v: RowValues, r: { unit: { name: string; shortName: string | null }; room: { number: string } | null } | null) =>
+  [`${str(v.lastName) ?? ''} ${str(v.firstName) ?? ''}`.trim(), str(v.birthDate) ? fmtDate(parseDateKey(str(v.birthDate)!), ctx.locale) : null, r ? [r.unit.shortName ?? r.unit.name, r.room?.number].filter(Boolean).join(' / ') : null].filter(Boolean).join(' · ')
+
+// ───────── Medikationspläne ─────────
+
+/** Zeitpunkte der Spalten Morgen/Mittag/Abend/Nacht (wie in der Abgabeliste, src/lib/medication.ts DEFAULT_SLOTS). */
+const DOSE_COLS = [['morning', DEFAULT_SLOTS[0]], ['noon', DEFAULT_SLOTS[1]], ['evening', DEFAULT_SLOTS[2]], ['night', DEFAULT_SLOTS[3]]] as const
+
+async function planMedications(ctx: Ctx, rows: Parsed[]): Promise<Planned[]> {
+  const find = await residentMatcher(ctx)
+  const active = await db.medication.findMany({ where: { active: true, resident: { orgId: ctx.org.id } }, select: { residentId: true, name: true } })
+  const has = new Set(active.map((m) => m.residentId + '|' + headerKey(m.name)))
+  const seen = new Map<string, number>()
+  const today = todayIso()
+  return rows.map((p): Planned => {
+    const v = p.values
+    const extra: Issue[] = []
+    const warnings: Issue[] = []
+    const r = p.issues.some((i) => ['lastName', 'firstName', 'birthDate'].includes(i.col ?? '')) ? null : find(v)
+    if (!r && !p.issues.length) extra.push({ code: 'residentUnknown' })
+    if (r && !ctx.can('resident.medication.edit', { unitId: r.unitId, locationId: r.unit.locationId })) extra.push({ code: 'notAllowedUnit', vars: { value: r.unit.name } })
+    const name = str(v.name) ?? ''
+    const kind = (str(v.kind) ?? 'regular') as 'regular' | 'prn' | 'temporary'
+    const times: string[] = []
+    const doses: string[] = []
+    for (const [col, time] of DOSE_COLS) {
+      const d = str(v[col])
+      if (d && hasDose(d)) { times.push(time); doses.push(d) }
+    }
+    if (kind !== 'prn' && !times.length) extra.push({ code: 'doseMissing', col: 'morning' })
+    if (kind === 'prn' && !str(v.prnDose)) extra.push({ code: 'prnDoseMissing', col: 'prnDose' })
+    if (kind === 'prn' && typeof v.prnMaxPerDay !== 'number') extra.push({ code: 'prnMaxMissing', col: 'prnMaxPerDay' })
+    if (kind === 'temporary' && !str(v.endDate)) extra.push({ code: 'endMissing', col: 'endDate' })
+    const start = str(v.startDate)
+    const end = str(v.endDate)
+    if (start && end && end < start) extra.push({ code: 'endBeforeStart', col: 'endDate' })
+    if (end && end < today) extra.push({ code: 'endPast', col: 'endDate' })
+    const atc = str(v.atc)
+    if (atc && !/^[A-Z]\d{2}([A-Z]([A-Z](\d{2})?)?)?$/i.test(atc)) extra.push({ code: 'atc', col: 'atc', vars: { value: atc } })
+    const gtin = str(v.gtin)
+    if (gtin && !/^\d{7,14}$/.test(gtin)) extra.push({ code: 'gtin', col: 'gtin', vars: { value: gtin } })
+    // Allergie-Abgleich wie beim Verordnen (PRD §13.1): Treffer nicht importieren – einzeln mit Begründung erfassen
+    if (r && name && blocking(checkAllergies(r.allergies, [name, str(v.form) ?? ''].join(' ')))) extra.push({ code: 'allergy', col: 'name', vars: { value: r.allergies.join(', ') } })
+    if (r && name) {
+      const k = r.id + '|' + headerKey(name)
+      if (seen.has(k)) extra.push({ code: 'duplicateInFile', vars: { line: seen.get(k)! } })
+      seen.set(k, p.line)
+    }
+    const label = [personLabel(ctx, v, r), [name, kind === 'prn' ? str(v.prnDose) : doses.join('-')].filter(Boolean).join(' ')].filter(Boolean).join(' · ')
+    if (r && name && has.has(r.id + '|' + headerKey(name)) && !extra.length && !p.issues.length) return { row: { line: p.line, status: 'skip', label, issues: [], warnings: [{ code: 'medicationExists' }] } }
+    if (start && start < today) warnings.push({ code: 'startPast', col: 'startDate' })
+    const row = result(p, label, extra, warnings)
+    if (row.status === 'error' || !r) return { row }
+    const now = new Date()
+    const data = {
+      residentId: r.id, name, kind, form: str(v.form), route: str(v.route) ?? 'p.o.', indication: str(v.indication),
+      times: kind === 'prn' ? [] : times, doses: kind === 'prn' ? [] : doses,
+      prnDose: kind === 'prn' ? str(v.prnDose) : null, prnMaxPerDay: kind === 'prn' && typeof v.prnMaxPerDay === 'number' ? v.prnMaxPerDay : null,
+      // Beginn in der Vergangenheit: ab jetzt (keine nachträglich offenen Dosen)
+      startDate: start && start > today ? parseDateKey(start) : now, endDate: end ? parseDateKey(end) : null,
+      prescriber: str(v.prescriber), notes: str(v.notes), atc: atc ? atc.toUpperCase() : null, gtin, createdById: ctx.user.id,
+    }
+    return {
+      row,
+      op: async (tx) => {
+        const m = await tx.medication.create({ data })
+        await audit(ctx, { action: 'medication.order.create', entityType: 'Medication', entityId: m.id, after: m, context: { residentId: r.id, import: true, line: p.line } }, tx)
+        return { unitId: r.unitId }
+      },
+    }
+  })
+}
+
+// ───────── Kontakte und Angehörige ─────────
+
+async function planContacts(ctx: Ctx, rows: Parsed[]): Promise<Planned[]> {
+  const find = await residentMatcher(ctx)
+  const existing = await db.contact.findMany({ where: { resident: { orgId: ctx.org.id } }, select: { id: true, residentId: true, name: true, relation: true, phone: true, email: true, isEmergency: true, isLegalRep: true, notes: true } })
+  const seen = new Map<string, number>()
+  return rows.map((p): Planned => {
+    const v = p.values
+    const extra: Issue[] = []
+    const r = p.issues.some((i) => ['lastName', 'firstName', 'birthDate'].includes(i.col ?? '')) ? null : find(v)
+    if (!r && !p.issues.length) extra.push({ code: 'residentUnknown' })
+    if (r && !ctx.can('resident.edit', { unitId: r.unitId, locationId: r.unit.locationId })) extra.push({ code: 'notAllowedUnit', vars: { value: r.unit.name } })
+    const name = str(v.contactName) ?? ''
+    if (!str(v.phone) && !str(v.email)) extra.push({ code: 'contactReach', col: 'phone' })
+    if (r && name) {
+      const k = r.id + '|' + headerKey(name)
+      if (seen.has(k)) extra.push({ code: 'duplicateInFile', vars: { line: seen.get(k)! } })
+      seen.set(k, p.line)
+    }
+    const label = [personLabel(ctx, v, r), [name, str(v.relation) ? `(${str(v.relation)})` : null].filter(Boolean).join(' ')].filter(Boolean).join(' · ')
+    const row = result(p, label, extra)
+    if (row.status === 'error' || !r) return { row }
+    const data = {
+      name, relation: str(v.relation) ?? '', phone: str(v.phone), email: str(v.email),
+      isEmergency: v.isEmergency === 'yes', isLegalRep: v.isLegalRep === 'yes', notes: str(v.notes),
+    }
+    const dup = existing.find((c) => c.residentId === r.id && headerKey(c.name) === headerKey(name))
+    if (dup) {
+      // Vorhandener Kontakt: nur ausgefüllte Zellen übernehmen
+      const changes: Record<string, unknown> = {}
+      const before: Record<string, unknown> = {}
+      for (const k of ['relation', 'phone', 'email', 'notes'] as const) if (data[k] && data[k] !== dup[k]) { changes[k] = data[k]; before[k] = dup[k] }
+      for (const k of ['isEmergency', 'isLegalRep'] as const) if (v[k] != null && data[k] !== dup[k]) { changes[k] = data[k]; before[k] = dup[k] }
+      if (!Object.keys(changes).length) return { row: { ...row, status: 'skip', warnings: [{ code: 'unchanged' }] } }
+      return {
+        row: { ...row, status: 'update' },
+        op: async (tx) => {
+          await tx.contact.update({ where: { id: dup.id }, data: changes })
+          await audit(ctx, { action: 'contact.update', entityType: 'Contact', entityId: dup.id, before, after: changes, context: { residentId: r.id, import: true, line: p.line } }, tx)
+          return { unitId: r.unitId }
+        },
+      }
+    }
+    return {
+      row,
+      op: async (tx) => {
+        const c = await tx.contact.create({ data: { ...data, residentId: r.id } })
+        await audit(ctx, { action: 'contact.create', entityType: 'Contact', entityId: c.id, after: data, context: { residentId: r.id, import: true, line: p.line } }, tx)
+        return { unitId: r.unitId }
+      },
+    }
+  })
+}
+
 // ───────── Ausführen ─────────
 
 /**
@@ -379,7 +529,7 @@ export async function commit(ctx: Ctx, kind: ImportKind, plan: Planned[], meta: 
     { timeout: 120_000, maxWait: 10_000 },
   )
   const unitIds = [...new Set(touched.map((x) => x.unitId).filter((x): x is string => !!x))]
-  if (kind === 'residents') {
+  if (kind === 'residents' || kind === 'medications' || kind === 'contacts') {
     for (const unitId of unitIds) {
       invalidateTaskGeneration(unitId)
       await emit({ orgId: ctx.org.id, type: 'resident.updated', unitId, actorId: ctx.user.id, payload: { imported: touched.filter((x) => x.unitId === unitId).length } })

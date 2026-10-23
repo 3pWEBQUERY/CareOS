@@ -86,6 +86,8 @@ enum ObservationCategory {
   relatives
   incident
   handover
+  /// Therapiebericht (Physio, Ergo, Logo, Aktivierung)
+  therapy
 }
 
 enum EntrySource {
@@ -204,6 +206,12 @@ model Organization {
   logoFileId    String?
   settings      Json        @default("{}")
   createdAt     DateTime    @default(now())
+  /// Aktive Module (PRD §69, src/lib/modules.ts). Bestehende Organisationen: alle an. «core» ist immer aktiv und wird nicht gespeichert.
+  modules         String[]  @default(["schedule", "chat", "docs", "learn", "medication", "visit", "therapy", "dictation", "quality", "insights", "ai", "portals"])
+  /// Plattform (PRD §42): gesetzt = Anmeldung, Sitzungen und API-Tokens der Organisation werden abgewiesen.
+  suspendedAt     DateTime?
+  /// «pending» = Registrierung wartet auf Freigabe (ORG_SIGNUP), sonst Grund der Sperre (nur Plattform sichtbar)
+  suspendedReason String?
 
   locations      Location[]
   units          Unit[]
@@ -231,6 +239,7 @@ model Organization {
   events         DomainEvent[]
   formDefinitions FormDefinition[]
   taskTemplates  TaskTemplate[]
+  portalAccounts PortalAccount[]
 }
 
 model Location {
@@ -362,6 +371,12 @@ model User {
   pendingSince     DateTime?
   /// Angaben der Registrierung: { note, consentAt, approvedAt?, approvedById? } – nur Admin → Benutzer → Anfragen.
   registration     Json?
+  /// Plattform-Betrieb (PRD §42): «operator» = Zugang zu /platform (Organisationen, Module, Sperren). Keine klinischen Rechte.
+  platformRole        String?
+  /// Kontoart (PRD §60 Ärzteportal): staff | external_physician. Externe Konten haben in der Stationsapp keine
+  /// Berechtigungen (getCtx ohne Grants) und sehen im Ärzteportal /md nur zugeordnete Personen (ResidentPhysician).
+  kind             String             @default("staff")
+  physicianOf      ResidentPhysician[]
 
   @@index([orgId])
 }
@@ -452,8 +467,14 @@ model ApiToken {
   createdAt   DateTime  @default(now())
   lastUsedAt  DateTime?
   revokedAt   DateTime?
+  /// Ablaufdatum (Developer-Portal: Pflicht für persönliche Tokens). null = unbefristet (Integrations-Tokens).
+  expiresAt   DateTime?
+  /// Persönliches Token (Developer-Portal): Scopes nur innerhalb der eigenen Berechtigungen, bei jedem Aufruf geprüft.
+  personal    Boolean   @default(false)
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
 }
 
 // ───────────────────────── Workforce ─────────────────────────
@@ -601,6 +622,13 @@ model Resident {
   visits          Visit[]
   visitQuestions  VisitQuestion[]
   shiftAssignments ShiftAssignment[]
+  portalAccesses  PortalAccess[]
+  portalThreads   PortalThread[]
+  portalUpdates   PortalUpdate[]
+  visitRequests   VisitRequest[]
+  /// Zugeordnete Ärztinnen und Ärzte mit Konto (Freitext `physician` bleibt für Personen ohne Konto)
+  physicians      ResidentPhysician[]
+  therapyPlans    TherapyPlan[]
 
   @@index([orgId, unitId])
 }
@@ -616,15 +644,25 @@ model Contact {
   isLegalRep  Boolean  @default(false)
   notes       String?
   resident    Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  portalAccesses PortalAccess[]
 }
 
 model CareEpisode {
-  id         String    @id @default(cuid())
-  residentId String
-  start      DateTime
-  end        DateTime?
-  reason     String
-  resident   Resident  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  residentId  String
+  start       DateTime
+  end         DateTime?
+  reason      String
+  /// stay = Aufenthalt in einem Bereich (Eintritt, nach Verlegung neu), absence = Abwesenheit (Spital, Ferien …) bis zur Rückkehr
+  kind        String    @default("stay")
+  /// Bereich des Aufenthalts (stay); bei älteren Einträgen leer
+  unitId      String?
+  /// Geplante Rückkehr (absence), optional
+  expectedEnd DateTime?
+  createdById String?
+  resident    Resident  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  @@index([residentId, end])
 }
 
 model Appointment {
@@ -638,6 +676,8 @@ model Appointment {
   done        Boolean  @default(false)
   createdById String
   createdAt   DateTime @default(now())
+  /// Therapieeinheit eines Therapieplans (kind = therapy)
+  therapyPlanId String?
   resident    Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
 
   @@index([residentId, at])
@@ -650,6 +690,10 @@ model ResidentFile {
   title      String
   category   String     @default("other")
   createdAt  DateTime   @default(now())
+  /// Angehörigenportal (PRD §60): einzeln für Angehörige freigegeben (nur nicht klinische Kategorien, src/lib/portal/policy.ts).
+  portalShared     Boolean   @default(false)
+  portalSharedAt   DateTime?
+  portalSharedById String?
   resident   Resident   @relation(fields: [residentId], references: [id], onDelete: Cascade)
   file       FileObject @relation(fields: [fileId], references: [id], onDelete: Cascade)
 }
@@ -921,9 +965,23 @@ model Medication {
   createdAt           DateTime       @default(now())
   stoppedAt           DateTime?
   stoppedById         String?
+  /// Codes für Interaktionsprüfung und Katalog (PRD §13.1, §58): ATC (WHO, z. B. B01AA04), GTIN (GS1, Schweiz 7680…)
+  atc                 String?
+  gtin                String?
+  /// Herkunft: written (ärztlich erfasst) | phone | verbal (telefonisch/mündlich angeordnet, Gegenzeichnung nötig)
+  orderSource         String         @default("written")
+  /// Anordnende Ärztin/anordnender Arzt mit Konto (bei telefonischer/mündlicher Anordnung)
+  orderedById         String?
+  /// Frist für die ärztliche Gegenzeichnung; gesetzt bei phone/verbal
+  confirmDueAt        DateTime?
+  confirmedById       String?
+  confirmedAt         DateTime?
+  /// Eskalation nach Fristablauf (einmalig)
+  confirmEscalatedAt  DateTime?
 
   resident        Resident                   @relation(fields: [residentId], references: [id], onDelete: Cascade)
   administrations MedicationAdministration[]
+  stockEntries    MedicationStockEntry[]
 
   @@index([residentId])
 }
@@ -974,6 +1032,9 @@ model Task {
   completedAt    DateTime?
   note           String?
   createdAt      DateTime   @default(now())
+  /// Systemabschluss ohne Quittung (PRD §12, §43): shift_end = zeitgebundene Routineaufgabe nach Ende der Folgeschicht
+  /// nicht erledigt und übergeben; absence = während einer Abwesenheit pausiert (wird bei der Rückkehr wieder geöffnet).
+  autoClosed     String?
 
   org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   unit     Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
@@ -1022,6 +1083,17 @@ model TaskTemplate {
   unit Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
 
   @@index([unitId, active])
+}
+
+/// Merker der Aufgabenerzeugung je Bereich und Tag (PRD §66 Skalierbarkeit): gilt über alle Instanzen.
+/// ensureTasksForDay erzeugt neu, wenn kein Eintrag besteht oder er älter als 10 Minuten ist; invalidateTaskGeneration löscht ihn.
+/// Gleichzeitige Erzeugung wird mit pg_advisory_xact_lock serialisiert; Duplikate verhindert @@unique([source, sourceId, dueAt]) an Task.
+model TaskGeneration {
+  unitId String
+  day    DateTime @db.Date
+  at     DateTime @default(now())
+
+  @@id([unitId, day])
 }
 
 model Handover {
@@ -1567,6 +1639,8 @@ model Visit {
   /// Termin der Visite (wird beim Abschluss als erledigt markiert)
   appointmentId String?
   physician     String?
+  /// Konto der Ärztin/des Arztes (internes Konto oder Ärzteportal), sonst nur Freitext `physician`
+  physicianId   String?
   at            DateTime @default(now())
   note          String?
   /// Automatisch geschriebener Verlaufseintrag (Kategorie physician)
@@ -1625,6 +1699,94 @@ model VisitOrder {
 
   @@index([visitId])
   @@index([residentId])
+}
+
+/// Ärztliche Zuständigkeit (PRD §60 Ärzteportal): Konto ↔ Person, befristet. Quelle für «meine Patient/innen»
+/// und für den Zugriff externer Ärztinnen und Ärzte (src/lib/md/scope.ts).
+model ResidentPhysician {
+  id          String    @id @default(cuid())
+  orgId       String
+  residentId  String
+  userId      String
+  /// primary (Haus-/Heimärztin) | consultant (Fach-/Konsiliarärztin)
+  role        String    @default("primary")
+  from        DateTime  @default(now())
+  until       DateTime?
+  createdById String?
+  createdAt   DateTime  @default(now())
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([residentId, userId])
+  @@index([userId])
+  @@index([orgId])
+}
+
+/// Therapieplan (PRD §60 Therapie): Physio-, Ergo-, Logotherapie, Aktivierung mit Ziel, Frequenz und Anleitung für die Pflege.
+model TherapyPlan {
+  id               String    @id @default(cuid())
+  orgId            String
+  unitId           String
+  residentId       String
+  /// physio | ergo | speech | activation
+  discipline       String
+  goal             String
+  /// Einheiten pro Woche und Dauer je Einheit (Minuten)
+  perWeek          Int       @default(1)
+  sessionMin       Int       @default(30)
+  /// Auftrag aus der Visite (VisitOrder.id), falls vorhanden
+  orderId          String?
+  therapistId      String?
+  /// Anleitung für die Pflege (z. B. «Gehtraining mit Rollator»); erzeugt eine wiederkehrende Aufgabe (TaskTemplate)
+  careInstructions String?
+  careTemplateId   String?
+  /// active | completed | stopped
+  status           String    @default("active")
+  startDate        DateTime  @default(now()) @db.Date
+  endDate          DateTime? @db.Date
+  /// Nächste Zielevaluation
+  reviewAt         DateTime? @db.Date
+  outcome          String?
+  closedAt         DateTime?
+  closedById       String?
+  createdById      String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, unitId, status])
+  @@index([residentId])
+}
+
+/// Apotheke (PRD §13.1 Bestandsmanagement, §40): Bestellung, Wareneingang mit Charge/Verfall und Korrektur je Verordnung.
+model MedicationStockEntry {
+  id           String     @id @default(cuid())
+  orgId        String
+  unitId       String
+  medicationId String
+  residentId   String
+  /// order (bestellt) | receipt (Wareneingang) | correction (Bestandskorrektur)
+  kind         String
+  /// Menge in der Bestandseinheit der Verordnung (order/receipt > 0, correction ±)
+  quantity     Int
+  /// nur order: open | received | cancelled
+  status       String?
+  /// Wareneingang zu einer Bestellung
+  orderId      String?
+  batch        String?
+  expiry       DateTime?  @db.Date
+  note         String?
+  /// Bestand nach der Buchung (receipt/correction)
+  stockAfter   Int?
+  byId         String
+  at           DateTime   @default(now())
+
+  medication Medication @relation(fields: [medicationId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, unitId, kind, status])
+  @@index([medicationId, at])
 }
 
 // ───────────────────────── Plattform und Sicherheit ─────────────────────────
@@ -1785,4 +1947,201 @@ model ErrorEvent {
 
   @@unique([day, fingerprint])
   @@index([lastAt])
+}
+
+// ───────────────────────── Angehörigenportal (PRD §60, §36) ─────────────────────────
+// Eigene Konten und Sitzungen, getrennt von User/Session: keine Rollen, kein Zugang zur Stationsapp.
+// Der Bewohnerbezug entsteht nur über PortalAccess (src/lib/portal/context.ts); was sichtbar ist, regelt src/lib/portal/policy.ts.
+
+/// Konto im Angehörigenportal (/portal). E-Mail je Organisation eindeutig.
+model PortalAccount {
+  id           String    @id @default(cuid())
+  orgId        String
+  email        String
+  name         String
+  phone        String?
+  passwordHash String?
+  locale       Locale    @default(de)
+  /// Zweiter Faktor (TOTP) optional, Geheimnis verschlüsselt (src/lib/crypto.ts)
+  mfaSecret    String?
+  mfaEnabled   Boolean   @default(false)
+  /// Durch die Organisation gesperrt (Team → Angehörige); Sitzungen werden dabei widerrufen.
+  lockedAt     DateTime?
+  lockedById   String?
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sessions PortalSession[]
+  accesses PortalAccess[]
+
+  @@unique([orgId, email])
+}
+
+/// Sitzung im Portal (Cookie careos_portal, Pfad /portal). Nie mit Session der Mitarbeitenden austauschbar.
+model PortalSession {
+  id         String    @id @default(cuid())
+  accountId  String
+  tokenHash  String    @unique
+  mfaPassed  Boolean   @default(false)
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  account PortalAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+}
+
+/// Zugang einer Person zu einer/einem Bewohnenden: Einladung, Einwilligung, Freigaben, Widerruf.
+model PortalAccess {
+  id              String    @id @default(cuid())
+  orgId           String
+  residentId      String
+  /// gesetzt, sobald die Einladung angenommen ist
+  accountId       String?
+  contactId       String?
+  /// relative | legal_rep | self (Bewohnerportal, vorbereitet)
+  role            String    @default("relative")
+  /// Freigaben: appointments | updates | messages | visits | files (nie klinische Daten)
+  grants          String[]  @default([])
+  inviteEmail     String
+  inviteName      String
+  /// SHA-256 des Einmal-Links; nach Annahme null
+  inviteTokenHash String?   @unique
+  inviteExpiresAt DateTime?
+  invitedById     String
+  acceptedAt      DateTime?
+  /// Einwilligung: resident (die Person selbst) | legal_rep (gesetzliche Vertretung)
+  consentBy       String
+  consentName     String
+  consentAt       DateTime
+  /// Umfang der Einwilligung; Freigaben liegen immer innerhalb
+  consentScope    String[]  @default([])
+  consentNote     String?
+  /// Mitarbeitende/r, die/der die Einwilligung erfasst hat
+  consentById     String
+  revokedAt       DateTime?
+  revokedById     String?
+  revokeReason    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  resident Resident       @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  account  PortalAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  contact  Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  threads  PortalThread[]
+  visits   VisitRequest[]
+
+  @@index([orgId, residentId])
+  @@index([accountId])
+}
+
+/// Nachricht von Angehörigen an das Team (Posteingang Team → Angehörige).
+model PortalThread {
+  id            String    @id @default(cuid())
+  orgId         String
+  residentId    String
+  accessId      String?
+  subject       String
+  /// open | answered | closed
+  status        String    @default("open")
+  assigneeId    String?
+  lastMessageAt DateTime  @default(now())
+  staffReadAt   DateTime?
+  familyReadAt  DateTime?
+  createdAt     DateTime  @default(now())
+
+  resident Resident        @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  access   PortalAccess?   @relation(fields: [accessId], references: [id], onDelete: SetNull)
+  messages PortalMessage[]
+
+  @@index([orgId, status, lastMessageAt])
+  @@index([residentId])
+}
+
+model PortalMessage {
+  id            String   @id @default(cuid())
+  threadId      String
+  /// family | staff
+  side          String
+  accountId     String?
+  userId        String?
+  body          String
+  /// in den Verlauf übernommen (Observation, Kategorie relatives)
+  observationId String?
+  createdAt     DateTime @default(now())
+
+  thread PortalThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+}
+
+/// Mitteilung der Station für Angehörige (eigene Kategorie, nie aus Verlauf oder Team-Mitteilungen abgeleitet).
+/// residentId null = an alle Angehörigen des Bereichs (unitId) bzw. der Organisation (beide null).
+model PortalUpdate {
+  id          String    @id @default(cuid())
+  orgId       String
+  unitId      String?
+  residentId  String?
+  title       String
+  body        String
+  fileIds     String[]  @default([])
+  authorId    String
+  publishedAt DateTime  @default(now())
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  resident Resident? @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, publishedAt])
+}
+
+/// Besuchsanfrage aus dem Portal; bestätigt → Appointment kind relatives.
+model VisitRequest {
+  id            String    @id @default(cuid())
+  orgId         String
+  residentId    String
+  accessId      String?
+  start         DateTime
+  end           DateTime
+  visitors      Int       @default(1)
+  note          String?
+  /// requested | confirmed | declined | cancelled
+  status        String    @default("requested")
+  assigneeId    String?
+  reply         String?
+  decidedById   String?
+  decidedAt     DateTime?
+  appointmentId String?
+  staffReadAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  resident Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  access   PortalAccess? @relation(fields: [accessId], references: [id], onDelete: SetNull)
+
+  @@index([orgId, status, start])
+  @@index([residentId])
+}
+
+/// Notfallzugriff (PRD §34/§37, «Break Glass»): befristeter Lesezugriff auf klinische Daten für Personen ohne klinische Rolle.
+/// Begründung Pflicht, jeder Zugriff im Audit-Protokoll, Benachrichtigung an Pflegedienstleitung und Datenschutz.
+model EmergencyAccess {
+  id         String    @id @default(cuid())
+  orgId      String
+  userId     String
+  reason     String
+  startedAt  DateTime  @default(now())
+  expiresAt  DateTime
+  endedAt    DateTime?
+  endedById  String?
+  sessionId  String?
+  /// Anzahl protokollierter Seitenaufrufe während des Zugriffs
+  views      Int       @default(0)
+
+  @@index([orgId, startedAt])
+  @@index([userId, expiresAt])
 }

@@ -8,13 +8,14 @@ import {
   ANONYMISED_NAME, DELETED_TEXT, DEFAULT_RETENTION, RETENTION_CATEGORIES, anonymisedBirthDate, retentionCutoffs, retentionPolicy,
   type RetentionCategory, type RetentionPolicy,
 } from '@/lib/retention-policy'
+import { cleanupPortalSessions, portalRetentionPreview, purgePortalForResident, runPortalRetention, type PortalRetentionCounts } from '@/lib/portal/retention'
 
 /**
  * Löschkonzept (PRD §36). Bewohnerakten werden nach Ablauf der Frist anonymisiert (nicht gelöscht),
  * damit aggregierte Kennzahlen erhalten bleiben. Alle übrigen Kategorien werden gelöscht.
  * Jeder Lauf schreibt einen Audit-Eintrag "retention.run" mit den Anzahlen (Löschprotokoll).
  */
-export type RetentionCounts = Record<RetentionCategory, number> & { files: number; filesFailed: number; missingDischarge: number }
+export type RetentionCounts = Record<RetentionCategory, number> & { files: number; filesFailed: number; missingDischarge: number } & Partial<PortalRetentionCounts>
 
 const empty = (): RetentionCounts => ({ ...(Object.fromEntries(RETENTION_CATEGORIES.map((c) => [c, 0])) as Record<RetentionCategory, number>), files: 0, filesFailed: 0, missingDischarge: 0 })
 
@@ -57,7 +58,9 @@ export async function retentionPreview(orgId: string, policy?: RetentionPolicy, 
     db.session.count({ where: w.sessions }),
     db.auditLog.count({ where: w.audit }),
   ])
-  const counts: RetentionCounts = { ...empty(), clinical, missingDischarge, chat, notifications, events, webhooks, ai, sessions, audit }
+  // Angehörigenportal: Nachrichten/Besuche/Mitteilungen nach Frist «chat», Sitzungen nach «sessions»
+  const portal = await portalRetentionPreview(orgId, w.cut, now)
+  const counts: RetentionCounts = { ...empty(), clinical, missingDischarge, chat, notifications, events, webhooks, ai, sessions, audit, ...portal }
   return { policy: p, cutoffs: w.cut, counts }
 }
 
@@ -147,6 +150,8 @@ export async function anonymiseResident(residentId: string) {
       })
     }
     await tx.residentFile.updateMany({ where: { residentId: r.id }, data: { title: T } })
+    // Angehörigenportal: Zugänge, Gespräche, Besuche und persönliche Mitteilungen entfernen
+    await purgePortalForResident(tx, r.id)
   })
 
   const files = await deleteFiles(r.orgId, fileIds)
@@ -192,6 +197,15 @@ export async function runRetention(orgId: string, opts: { now?: Date; actorId?: 
   counts.ai = (await db.aiInteraction.deleteMany({ where: w.ai })).count
   counts.sessions = (await db.session.deleteMany({ where: w.sessions })).count
 
+  // 3b. Angehörigenportal (Kommunikation nach Frist «chat», Sitzungen nach «sessions», verwaiste Konten)
+  const { fileIds: portalFiles, ...portal } = await runPortalRetention(orgId, w.cut, now)
+  Object.assign(counts, portal)
+  if (portalFiles.length) {
+    const f = await deleteFiles(orgId, portalFiles)
+    counts.files += f.deleted
+    counts.filesFailed += f.failed
+  }
+
   // 4. Audit-Protokoll: nur mit Freigabe des Triggers und nur älter als 10 Jahre (siehe Migration audit_retention).
   counts.audit = await deleteAuditBefore(orgId, w.audit.at.lt)
 
@@ -233,6 +247,7 @@ export async function runCleanup(now = new Date()) {
   for (const o of orgs) {
     const cut = retentionCutoffs(retentionPolicy(o.settings), now).sessions
     sessions += (await db.session.deleteMany({ where: { user: { orgId: o.id }, OR: [{ expiresAt: { lt: cut } }, { revokedAt: { lt: cut } }] } })).count
+    sessions += await cleanupPortalSessions(o.id, cut)
   }
   // Protokoll der häufigen Jobs nach 30 Tagen kürzen; Retention-Läufe bleiben als Löschprotokoll erhalten.
   const jobRuns = (await db.jobRun.deleteMany({ where: { name: { in: ['escalations', 'cleanup'] }, startedAt: { lt: new Date(now.getTime() - 30 * 86400_000) } } })).count

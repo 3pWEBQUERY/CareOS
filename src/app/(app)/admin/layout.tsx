@@ -9,7 +9,7 @@ import { ADMIN_SECTIONS } from './sections'
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const ctx = await getCtx()
   const { t } = ctx
-  const sections = ADMIN_SECTIONS.filter((s) => ctx.can(s.perm))
+  const sections = ADMIN_SECTIONS.filter((s) => ctx.can(s.perm) || (!!s.alsoPerm && ctx.can(s.alsoPerm)))
   if (!sections.length) return <Forbidden text={t('common.notAllowed')} />
   // Organisationseinstellung: Admin-Bereich nur mit zweitem Faktor (TOTP oder Passkey).
   if (orgSettings(ctx.org.settings).requireMfaForAdmins && !ctx.user.mfaEnabled && !(await db.passkey.count({ where: { userId: ctx.user.id } })))

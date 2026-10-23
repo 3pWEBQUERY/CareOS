@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
-import { OPEN_STATUSES } from '@/lib/tasks'
+import { OPEN_STATUSES, overdueFilter } from '@/lib/tasks'
 import { addDays, addMinutes, age, fmtNum, fmtRel, hm, startOfDay } from '@/lib/time'
 import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
 import { ReviewTag } from '@/components/residents/ReviewTag'
@@ -31,7 +31,7 @@ export default async function ResidentsPage({ searchParams }: { searchParams: Pr
   const ids = residents.map((r) => r.id)
   const [open, over, vitals, limitRows, lastNotes, rooms] = await Promise.all([
     db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addDays(startOfDay(now), 1) } }, _count: true }),
-    db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addMinutes(now, -15) } }, _count: true }),
+    db.task.groupBy({ by: ['residentId'], where: { residentId: { in: ids }, ...(await overdueFilter(ctx.org.id, now)) }, _count: true }),
     db.vitalSign.findMany({ where: { residentId: { in: ids }, ...LIVE, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id } }),
     db.observation.groupBy({ by: ['residentId'], where: { residentId: { in: ids } }, _max: { at: true } }),

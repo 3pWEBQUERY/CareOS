@@ -3,7 +3,7 @@
  * Reine Logik ohne Datenbank (Server und Tests). Entscheidend sind Berechtigungen und Dienst, nicht Rollennamen,
  * damit eigene Rollen der Organisation ebenfalls passen.
  */
-export const HOME_VIEWS = ['care', 'lead', 'quality', 'office'] as const
+export const HOME_VIEWS = ['care', 'physician', 'therapy', 'lead', 'quality', 'office'] as const
 export type HomeView = (typeof HOME_VIEWS)[number]
 
 export type HomeViewInput = {
@@ -19,12 +19,19 @@ export type HomeViewInput = {
   quality: boolean
   /** Personal- oder Plattformverwaltung (Benutzer, Organisation) */
   office: boolean
+  /** Ärztliche Arbeit: Verordnungen und Visite, ohne Pflegeaufgaben zu quittieren (eigene Startseite statt Station) */
+  physician?: boolean
+  /** Therapie: Therapieeinheiten dokumentieren, ohne Medikamente abzugeben */
+  therapy?: boolean
 }
 
 export function homeViews(i: HomeViewInput): HomeView[] {
   const lead = i.clinicalUnits >= 2 && i.leadPerms
   const out: HomeView[] = []
-  if (i.careHere) out.push('care')
+  // Ärztinnen/Ärzte und Therapie erhalten ihre eigene Ansicht statt der Pflegeansicht (Zuteilung, Übergabe, Schicht)
+  if (i.physician) out.push('physician')
+  else if (i.therapy) out.push('therapy')
+  else if (i.careHere) out.push('care')
   if (lead) out.push('lead')
   // Die Leitungsübersicht enthält die Ereignisse bereits; eigene Qualitätsansicht nur ohne sie
   if (i.quality && !lead) out.push('quality')
@@ -35,6 +42,8 @@ export function homeViews(i: HomeViewInput): HomeView[] {
 /** Erste Ansicht: im Dienst die Station, sonst nach Funktion (Verwaltung, Leitung, Station, Qualität). */
 export function defaultHomeView(i: HomeViewInput): HomeView {
   const views = homeViews(i)
+  if (views.includes('physician')) return 'physician'
+  if (views.includes('therapy')) return 'therapy'
   if (i.careHere && i.onDutyHere) return 'care'
   for (const v of ['office', 'lead', 'care', 'quality'] as const) {
     if (v === 'office' && !i.office) continue

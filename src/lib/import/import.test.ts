@@ -100,3 +100,28 @@ test('Listen und Qualifikationen mit Gültigkeit', () => {
   assert.deepEqual(parseQualificationCell('Pflegefachperson HF'), { name: 'Pflegefachperson HF', validUntil: null })
   assert.equal(parseQualificationCell('Wundexpertin: 31.02.2027').bad, true)
 })
+
+test('Import Medikation: Spalten in allen Sprachen, Dosen je Zeitpunkt, Art', async () => {
+  const { mapHeader, validateRow } = await import('./specs')
+  const map = mapHeader('medications', ['Nom', 'Prénom', 'Date de naissance', 'Médicament', 'Matin', 'Midi', 'Soir', 'Nuit', 'Type'])
+  assert.deepEqual(map.missing, [])
+  const ok = validateRow('medications', map, ['Muster', 'Erika', '14.03.1938', 'Metformin 500 mg', '1', '0', '½', '', 'Dauer'], '2026-10-23')
+  assert.deepEqual(ok.issues, [])
+  assert.equal(ok.values.morning, '1')
+  assert.equal(ok.values.evening, '½')
+  assert.equal(ok.values.kind, 'regular')
+  const bad = validateRow('medications', map, ['Muster', 'Erika', '14.03.1938', 'X', 'eine', '', '', '', 'täglich'], '2026-10-23')
+  assert.deepEqual(bad.issues.map((i) => i.code).sort(), ['dose', 'medkind'])
+  assert.equal(validateRow('medications', map, ['M', 'E', '14.03.1938', 'X', '10 ml', '', '', '', 'Reserve'], '2026-10-23').values.kind, 'prn')
+})
+
+test('Import Kontakte: Pflichtspalten und Ja/Nein', async () => {
+  const { mapHeader, validateRow } = await import('./specs')
+  const map = mapHeader('contacts', ['Nachname', 'Vorname', 'Geburtsdatum', 'Kontakt', 'Beziehung', 'Telefon', 'Notfallkontakt'])
+  assert.deepEqual(map.missing, [])
+  const r = validateRow('contacts', map, ['Muster', 'Erika', '14.03.1938', 'Hans Muster', 'Sohn', '079 000 00 00', 'ja'], '2026-10-23')
+  assert.deepEqual(r.issues, [])
+  assert.equal(r.values.isEmergency, 'yes')
+  assert.equal(validateRow('contacts', map, ['Muster', 'Erika', '14.03.1938', 'Hans', 'Sohn', '', 'vielleicht'], '2026-10-23').issues[0].code, 'bool')
+  assert.deepEqual(mapHeader('contacts', ['Nachname', 'Vorname']).missing, ['birthDate', 'contactName', 'relation'])
+})

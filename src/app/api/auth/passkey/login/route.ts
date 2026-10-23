@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server'
 import { db } from '@/lib/db'
 import { CHALLENGE_COOKIE, rp } from '@/lib/auth/passkey'
-import { createSession, requestMeta } from '@/lib/auth/session'
+import { createSession, orgLoginBlock, requestMeta } from '@/lib/auth/session'
 import { auditSystem } from '@/lib/audit'
 import { rateLimit } from '@/lib/rate-limit'
 
@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
     await auditSystem({ action: 'auth.login_failed', entityType: 'User', entityId: pk.userId, orgId: pk.user.orgId, context: { method: 'passkey' }, ...meta })
     return NextResponse.json({ error: 'verify' }, { status: 401 })
   }
+  // Organisation gesperrt / Registrierung nicht freigegeben (PRD §42)
+  const block = await orgLoginBlock(pk.user.orgId)
+  if (block) return NextResponse.json({ error: block === 'pending' ? 'orgPending' : 'suspended' }, { status: 403 })
   // Passkey mit Benutzerverifikation gilt als starker zweiter Faktor.
   await createSession(pk.userId, true, 'passkey')
   await auditSystem({ action: 'auth.login', entityType: 'User', entityId: pk.userId, orgId: pk.user.orgId, userId: pk.userId, context: { method: 'passkey' }, ...meta })

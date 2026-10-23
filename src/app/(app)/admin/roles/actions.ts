@@ -9,6 +9,7 @@ import { audit } from '@/lib/audit'
 import { ALL_PERMISSIONS } from '@/lib/permissions'
 import { guardLastAdmin, LastAdminError } from '@/lib/admin'
 import { slugKey } from '@/lib/admin-shared'
+import { slimSysadmin } from '@/lib/least-privilege'
 
 async function admin() {
   const ctx = await getCtx()
@@ -110,5 +111,24 @@ export async function saveRoleMatrixAction(changes: { id: string; permissions: s
       })
     }
     refresh()
+  })
+}
+
+/** Systemadministration auf den Standard ohne klinische Rechte setzen (PRD §34/§37). Übrige Anpassungen bleiben. */
+export async function slimSysadminAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await admin()
+    const before = await db.role.findFirst({ where: { id, orgId: ctx.org.id, key: 'sysadmin' } })
+    if (!before) return { ok: false, error: 'common.notFound' }
+    const permissions = slimSysadmin(before.permissions).filter((p) => (ALL_PERMISSIONS as readonly string[]).includes(p))
+    try {
+      await guardLastAdmin(ctx.org.id, (tx) => tx.role.update({ where: { id }, data: { permissions } }))
+    } catch (e) {
+      if (e instanceof LastAdminError) return { ok: false, error: 'admin.errors.lastAdmin' }
+      throw e
+    }
+    await audit(ctx, { action: 'admin.role.update', entityType: 'Role', entityId: id, before: { permissions: before.permissions }, after: { permissions }, context: { leastPrivilege: true } })
+    refresh()
+    return { ok: true, message: 'tenancy.roles.sysadminResetDone' }
   })
 }

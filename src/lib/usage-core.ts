@@ -37,3 +37,24 @@ export function median(xs: number[]) {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
 }
 
+
+/**
+ * «Time returned to care» (PRD §65, North Star) – ausdrücklich eine Schätzung: gezählte Vorgänge × angenommene
+ * Zeitersparnis gegenüber dem Vorgehen ohne CareOS. Annahmen bewusst vorsichtig; keine Zeitmessung, keine Personen.
+ * - bulk: je Aufgabe der Sammelquittierung statt einzeln quittieren
+ * - handover: je abgeschlossene, automatisch zusammengestellte Übergabe statt schriftlicher Rapport
+ * - aiAccepted: je übernommener KI-Entwurf (Zusammenfassung, Pflegeplanung, Dokumentation)
+ * - voice: je diktierter Verlaufseintrag statt getippt
+ * - documentOnce: je Aufgabe, die sich mit der Dokumentation selbst schliesst (Abgabe, Assessment, Evaluation)
+ */
+export const TIME_RETURNED_ASSUMPTIONS = { bulk: 0.5, handover: 10, aiAccepted: 3, voice: 1.5, documentOnce: 0.5 } as const
+export type TimeReturnedKey = keyof typeof TIME_RETURNED_ASSUMPTIONS
+
+export function timeReturned(counts: Record<TimeReturnedKey, number>, activeUsers: number, days = 30) {
+  const rows = (Object.keys(TIME_RETURNED_ASSUMPTIONS) as TimeReturnedKey[]).map((key) => ({
+    key, n: counts[key] ?? 0, perEvent: TIME_RETURNED_ASSUMPTIONS[key], minutes: Math.round((counts[key] ?? 0) * TIME_RETURNED_ASSUMPTIONS[key]),
+  }))
+  const total = rows.reduce((s, r) => s + r.minutes, 0)
+  const weeks = days / 7
+  return { rows, totalMin: total, perUserWeekMin: activeUsers >= MIN_GROUP ? Math.round(total / activeUsers / weeks) : null }
+}

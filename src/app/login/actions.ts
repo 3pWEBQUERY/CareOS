@@ -2,7 +2,7 @@
 
 import { redirect } from 'next/navigation'
 import { db } from '@/lib/db'
-import { createSession, destroySession, getSession, requestMeta } from '@/lib/auth/session'
+import { createSession, destroySession, getSession, orgLoginBlock, requestMeta } from '@/lib/auth/session'
 import { verifyPassword } from '@/lib/auth/password'
 import { verifyTotp } from '@/lib/auth/mfa'
 import { peekRateLimit, rateLimit } from '@/lib/rate-limit'
@@ -41,6 +41,12 @@ export async function loginAction(_: LoginState, form: FormData): Promise<LoginS
   }
   // Selbstregistrierung (PRD §33): Konto wartet auf Freigabe – erst nach korrektem Passwort verraten (keine Kontenaufzählung)
   if (!user.active) return { error: user.pendingSince ? 'pending' : 'inactive', email }
+  // Organisation gesperrt oder Registrierung noch nicht freigegeben (Plattform, PRD §42)
+  const block = await orgLoginBlock(user.orgId)
+  if (block) {
+    await auditSystem({ action: 'auth.login_blocked', entityType: 'User', entityId: user.id, orgId: user.orgId, userId: user.id, context: { reason: block }, ...meta })
+    return { error: block === 'pending' ? 'orgPending' : 'suspended', email }
+  }
 
   await createSession(user.id, !user.mfaEnabled, 'password')
   await auditSystem({ action: 'auth.login', entityType: 'User', entityId: user.id, orgId: user.orgId, userId: user.id, context: { method: 'password' }, ...meta })

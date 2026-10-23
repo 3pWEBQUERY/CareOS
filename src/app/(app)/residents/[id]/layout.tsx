@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation'
 import { db } from '@/lib/db'
 import { getCtx, residentInScope } from '@/lib/context'
 import { ResidentPager, ResidentTabs } from '@/components/residents/ResidentTabs'
-import { addDays, addMinutes, age, fmtDbDate, startOfDay } from '@/lib/time'
-import { OPEN_STATUSES } from '@/lib/tasks'
+import { addDays, addMinutes, age, fmtDate, fmtDbDate, startOfDay } from '@/lib/time'
+import { openAbsences } from '@/lib/adt'
+import { OPEN_STATUSES, overdueFilter } from '@/lib/tasks'
 import { abnormalKeys, LIVE, mergeLimits } from '@/lib/vitals'
 import { audit } from '@/lib/audit'
 import { storageConfigured } from '@/lib/env'
@@ -22,11 +23,16 @@ export default async function ResidentLayout({ children, params }: { children: R
   const [peers, over, lastVital, limits, openWounds] = await Promise.all([
     // Reihenfolge wie in der Bewohnerliste (Zimmer, Name) für «vorherige/nächste Person»
     db.resident.findMany({ where: { orgId: ctx.org.id, unitId: { in: listUnitIds }, status: { in: ['active', 'absent'] } }, select: { id: true, lastName: true, firstName: true, room: { select: { number: true } } }, orderBy: [{ room: { number: 'asc' } }, { lastName: 'asc' }] }),
-    db.task.count({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addMinutes(now, -15) } } }),
+    overdueFilter(ctx.org.id, now).then((w) => db.task.count({ where: { residentId: r.id, ...w } })),
     db.vitalSign.findFirst({ where: { residentId: r.id, ...LIVE, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
     db.wound.count({ where: { residentId: r.id, status: { not: 'closed' } } }),
   ])
+  // Laufende Abwesenheit mit Grund und geplanter Rückkehr (PRD §43)
+  const absence = r.status === 'absent' ? (await openAbsences([r.id])).get(r.id) ?? null : null
+  const absentText = absence
+    ? t(absence.expectedEnd ? 'residents.adt.bannerUntil' : 'residents.adt.banner', { date: fmtDate(absence.start, locale, { day: '2-digit', month: '2-digit' }), reason: absence.reason, until: absence.expectedEnd ? fmtDate(absence.expectedEnd, locale, { day: '2-digit', month: '2-digit' }) : '' })
+    : t('residents.banner.absent')
   // Lesezugriffe auf Gesundheitsdaten werden protokolliert (höchstens einmal pro Sitzung und Stunde).
   // entityType zuerst: nutzt den Index (entityType, entityId) statt das ganze Protokoll zu durchsuchen (PRD §66)
   const recent = await db.auditLog.findFirst({ where: { entityType: 'Resident', entityId: r.id, sessionId: ctx.sessionId, action: 'resident.view', at: { gte: addMinutes(now, -60) } }, select: { id: true } })
@@ -78,7 +84,7 @@ export default async function ResidentLayout({ children, params }: { children: R
           {r.importantNotes && <p className="rec-note" title={r.importantNotes}><span className="lbl">{t('residents.rec.important')}</span> {r.importantNotes}</p>}
         </div>
         <div className="flags">
-          {r.status === 'absent' && <span className="flag info">{t('residents.banner.absent')}</span>}
+          {r.status === 'absent' && <a className="flag info" href={`/residents/${r.id}/history#stay`}>{absentText}</a>}
           {r.allergies.length ? r.allergies.map((a) => <span key={a} className="flag crit">{t('residents.banner.allergy', { name: a })}</span>) : <span className="flag">{t('residents.banner.noAllergies')}</span>}
           {r.risks.map((a) => <span key={a} className="flag warn">{a}</span>)}
           <span className={'flag ' + reaCls}>{reaText}</span>

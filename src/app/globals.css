@@ -2156,3 +2156,132 @@ select.field::-ms-expand { display: none }
 .entry-head .sel-btn:hover:not(:disabled) { border-color: var(--fg-3) }
 @media (max-width: 720px) { .entry-head .sel-btn { min-height: 40px } }
 @media (forced-colors: active) { .sel-opt[data-active] { outline: 2px solid Highlight; outline-offset: -2px } .field.sel-btn[aria-expanded="true"] { outline: 2px solid Highlight } }
+
+/* ── Paket P: Notfallzugriff, Plattform-Betrieb, Developer-Portal ── */
+.emergency-banner { flex: none; margin-bottom: 10px; align-items: center; flex-wrap: wrap; gap: 8px }
+.plat-shell { display: flex; flex-direction: column; gap: 10px; height: 100%; padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.plat-shell > .topbar { flex: none; max-width: 1280px; width: 100%; margin-inline: auto }
+.plat-content { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; max-width: 1280px; width: 100%; margin-inline: auto }
+.plat-content > .panel { flex: 1 }
+.tabs a .pill { margin-left: 6px }
+.dev-ops { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface) }
+.dev-op > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 44px; flex-wrap: wrap }
+.dev-op > summary::-webkit-details-marker { display: none }
+.dev-op > summary:hover { background: var(--surface-2) }
+.dev-op[open] > summary { background: var(--surface-2); border-bottom: 1px solid var(--line) }
+.dev-op-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; min-width: 0 }
+.dev-m { min-width: 4.2em; text-align: center; font-family: var(--font-mono); text-transform: none }
+.dev-path { font-size: 0.8125rem; overflow-wrap: anywhere }
+.dev-ev { text-transform: none; font-family: var(--font-mono); letter-spacing: 0 }
+.dev-pre { margin: 0; background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; overflow-x: auto; font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.5; max-width: 100% }
+@media (max-width: 720px) { .dev-op > summary .grow { flex-basis: 100% } .plat-shell .topbar .ctx { display: none } }
+
+/* ───────── Angehörigenportal (Paket A, PRD §60) – nur .portal-* ───────── */
+.portal { min-height: 100%; display: flex; flex-direction: column }
+.portal-top { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; gap: 12px; min-width: 0; background: var(--surface); border-bottom: 1px solid var(--line); padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)) }
+.portal-brand { text-decoration: none; min-width: 0; border-radius: var(--r) }
+.portal-brand .brand span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.portal-switch { max-width: 240px }
+.portal-nav { display: flex; justify-content: center; gap: 2px; background: var(--surface); border-bottom: 1px solid var(--line); padding: 0 16px; overflow-x: auto; scrollbar-width: none }
+.portal-nav a { position: relative; display: flex; align-items: center; gap: 8px; padding: 11px 14px 10px; border-bottom: 2px solid transparent; color: var(--fg-2); font-weight: 500; text-decoration: none; white-space: nowrap; min-height: 44px }
+.portal-nav a:hover { color: var(--fg) }
+.portal-nav a[aria-current="page"] { color: var(--accent); border-bottom-color: var(--accent) }
+.portal-nav .badge { font-family: var(--font-mono); font-size: 0.625rem; line-height: 1; padding: 2px 5px; border-radius: var(--r-sm); background: var(--accent); color: var(--accent-fg) }
+.portal-main { width: min(880px, 100%); margin: 0 auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 14px; outline: none }
+.portal-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.portal-head h1 { margin: 2px 0 0; font-size: 1.375rem; font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere }
+.portal-head .sub { margin: 2px 0 0; color: var(--fg-3); font-size: 0.875rem }
+.portal-kicker { margin: 0; color: var(--fg-2); font-size: 0.875rem }
+.portal-head-actions { display: flex; gap: 8px; flex-wrap: wrap }
+.portal-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); align-items: start }
+.portal-li { align-items: center }
+.portal-when { flex: none; min-width: 3.25rem; color: var(--fg-2) }
+.portal-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere }
+.portal-foot { margin: 4px 0 0; text-align: center }
+.portal-body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 70ch }
+.portal-attach { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px }
+.portal-msgs { list-style: none; margin: 0; padding: 14px; display: flex; flex-direction: column; gap: 10px }
+.portal-msg { max-width: min(85%, 60ch); padding: 9px 12px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface-2); align-self: flex-start }
+.portal-msg.mine { align-self: flex-end; background: var(--accent-soft); border-color: transparent }
+.portal-msg p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere }
+.portal-reply { flex-direction: column; align-items: stretch; gap: 8px }
+.portal-reply-text { overflow-wrap: anywhere }
+.portal-times { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px }
+.portal-privacy summary { cursor: pointer; color: var(--accent); font-size: 0.8125rem; border-radius: var(--r-sm) }
+.portal-privacy p { margin: 6px 0 0 }
+.portal-consent { border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px 12px; margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.portal-consent legend { padding: 0 4px }
+.portal-contact { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 2px }
+.portal-team-detail { display: grid; gap: 14px; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); align-items: start }
+@media (max-width: 1024px) {
+  .portal-team-detail { grid-template-columns: minmax(0, 1fr) }
+}
+@media (max-width: 720px) {
+  .portal-me-name { display: none }
+  .portal-switch { max-width: 46vw }
+  .portal-main { padding: 14px 16px calc(24px + var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px)) }
+  .portal-head h1 { font-size: 1.25rem }
+  .portal-head-actions { width: 100% }
+  .portal-head-actions .btn { flex: 1 1 auto }
+  .portal-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 45; display: grid; grid-template-columns: repeat(var(--n, 5), minmax(0, 1fr)); gap: 0;
+    border-top: 1px solid var(--line); border-bottom: 0;
+    padding: 4px max(8px, env(safe-area-inset-left, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-right, 0px));
+  }
+  .portal-nav a { flex-direction: column; justify-content: center; gap: 2px; padding: 6px 2px; min-height: 52px; border-bottom: 0; border-radius: var(--r); font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600 }
+  .portal-nav a span:not(.badge):not(.sr-only):not([aria-hidden]) { max-width: 100%; overflow: hidden; text-overflow: ellipsis }
+  .portal-nav .badge { position: absolute; top: 4px; right: calc(50% - 20px) }
+  .portal-msg { max-width: 92% }
+  .portal-times { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
+}
+@media print {
+  .portal-nav, .portal-top .me { display: none !important }
+}
+
+/* ───────── Paket Ä: Ärzteportal (/md), ärztliche Übersicht, Therapie ───────── */
+.md-app { display: grid; height: 100%; gap: 10px; grid-template-rows: auto minmax(0, 1fr); padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.md-top .ctx { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.md-top .ctx > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.md-content { min-height: 0; min-width: 0; display: flex; flex-direction: column }
+.md-person { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 400px); align-items: start; min-height: 100% }
+.md-person-main { padding: 16px; min-width: 0 }
+.md-person-side { position: sticky; top: 0; align-self: stretch; border-left: 1px solid var(--line); min-width: 0; display: flex; flex-direction: column }
+.md-person-side > .visit-cap { flex: 1; border-top: 0 }
+.md-patients .li { align-items: center }
+.md-patients .room { flex: none; min-width: 3rem; text-align: center; font-size: 0.75rem; padding: 4px 6px; border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--fg-2); background: var(--surface) }
+.md-name { display: block; font-weight: 500 }
+.md-tags { flex-wrap: wrap; max-width: 50% }
+.md-assign .form-actions { margin-top: 0 }
+.th-row { align-items: center; gap: 10px }
+@media (max-width: 1100px) {
+  .md-person { grid-template-columns: minmax(0, 1fr) }
+  .md-person-side { position: static; border-left: 0; border-top: 1px solid var(--line) }
+}
+@media (max-width: 720px) {
+  .md-top .ctx .tag, .md-top .me > div { display: none }
+  .md-person-main { padding: 12px }
+  .md-tags { max-width: none; justify-content: flex-start !important }
+  .md-patients .li { flex-wrap: wrap }
+  /* Im Ärzteportal gibt es keine Bottom-Navigation */
+  .md-app .visit-cap-foot { bottom: env(safe-area-inset-bottom, 0px) }
+}
+.em-title { margin-right: 8px }
+.md-top .spacer { flex: 1 1 auto }
+@media (max-width: 480px) {
+  .md-top .ctx { display: none }
+}
+
+/* Tooltip (src/components/ui/Tooltip.tsx) – ersetzt das Browser-title */
+.tip-anchor { display: inline-flex }
+.tip { position: fixed; z-index: 1000; max-width: 16rem; padding: 4px 8px; border-radius: var(--r-sm); background: var(--fg); color: var(--bg); font-size: 0.75rem; font-weight: 500; line-height: 1.35; box-shadow: var(--shadow-pop); pointer-events: none; animation: tip-in .12s ease-out }
+.tip::after { content: ""; position: absolute; left: 50%; width: 8px; height: 8px; background: inherit; transform: translateX(-50%) rotate(45deg) }
+.tip[data-side="top"]::after { bottom: -4px }
+.tip[data-side="bottom"]::after { top: -4px }
+@keyframes tip-in { from { opacity: 0 } to { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .tip { animation: none } }
+@media (forced-colors: active) { .tip { border: 1px solid CanvasText } }
+
+/* Chat: Nachrichten nutzen die ganze Breite; Aktionen und Tagesmarke rechtsbündig, Text bleibt gut lesbar */
+.msg { max-width: none }
+.msg > div > p, .msg .chat-files, .msg .reacts { max-width: 72ch }
+.chat-day { justify-content: flex-end }

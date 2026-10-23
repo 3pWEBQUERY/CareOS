@@ -9,6 +9,7 @@
  */
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { DEFAULT_ROLES } from './permissions'
+import { MODULE_KEYS, normalizeModules } from './modules'
 import { ASSESSMENTS, CARE_DOMAINS, INCIDENT_TYPES } from './clinical-config'
 import { DEFAULT_FORMS } from './forms'
 import { VITALS, VITAL_KEYS } from './vitals'
@@ -20,7 +21,8 @@ export type OrgSetupOptions = {
   /** Name bei einer Wohngruppe, sonst Präfix («Wohngruppe» → Wohngruppe 1, 2 …) */
   unitName?: string
   units?: number
-  admin: { email: string; firstName?: string; lastName?: string; passwordHash: string; locale?: 'de' | 'fr' | 'it' | 'en' }
+  /** passwordHash null: Zugang über Einladungslink (Plattform → Neue Organisation) */
+  admin: { email: string; firstName?: string; lastName?: string; passwordHash: string | null; locale?: 'de' | 'fr' | 'it' | 'en' }
   /** Anzahl zufälliger Mitarbeitender (ohne Passwort; Einladungslinks unter Admin → Benutzer → Einladungen) */
   staff?: number
   /** Platzhalter-Domain für die E-Mail-Adressen der Mitarbeitenden */
@@ -31,7 +33,13 @@ export type OrgSetupOptions = {
   seed?: string | null
   /** Nur anlegen, wenn noch keine Organisation existiert (Erststart; mit Advisory Lock gegen parallele Instanzen). */
   onlyIfEmpty?: boolean
-  source: 'bootstrap' | 'signup'
+  source: 'bootstrap' | 'signup' | 'platform'
+  /** Aktive Module (PRD §69); Standard: alle */
+  modules?: readonly string[]
+  /** Registrierung (ORG_SIGNUP): Organisation bis zur Freigabe durch den Plattform-Betrieb gesperrt */
+  pendingApproval?: boolean
+  /** Datenstandort (PRD §36) */
+  dataRegion?: string
   today?: Date
 }
 
@@ -70,7 +78,14 @@ export async function setupOrganization(client: PrismaClient, o: OrgSetupOptions
 
     const settings: Record<string, unknown> = {}
     if (staffN) settings.placeholderDomain = domain
-    const org = await tx.organization.create({ data: { name, slug, settings: settings as Prisma.InputJsonValue } })
+    const org = await tx.organization.create({
+      data: {
+        name, slug, settings: settings as Prisma.InputJsonValue,
+        modules: o.modules ? normalizeModules(o.modules) : MODULE_KEYS,
+        ...(o.dataRegion ? { dataRegion: o.dataRegion } : {}),
+        ...(o.pendingApproval ? { suspendedAt: new Date(), suspendedReason: 'pending' } : {}),
+      },
+    })
     const loc = await tx.location.create({ data: { orgId: org.id, name: o.locationName?.trim() || 'Hauptstandort' } })
     const prefix = o.unitName?.trim() || 'Wohngruppe'
     const single = units === 1 && !!o.unitName?.trim()
@@ -102,7 +117,8 @@ export async function setupOrganization(client: PrismaClient, o: OrgSetupOptions
         { orgId: org.id, name: 'Pflege', kind: 'care' as const },
       ],
     })
-    await tx.featureFlag.createMany({ data: ['ai', 'voice', 'medication'].map((key) => ({ orgId: org.id, key, enabled: true })) })
+    // Kompatibilität: Schalter ai/voice folgen den Modulen ai/dictation (src/lib/platform.ts → setOrgModules)
+    await tx.featureFlag.createMany({ data: ['ai', 'voice'].map((key) => ({ orgId: org.id, key, enabled: true })) })
 
     // Systemadministration
     const initials = new Set<string>()

@@ -29,7 +29,7 @@ export default defineMessages({
     doneTitle: 'Anfrage eingegangen',
     doneText: 'Die Administration Ihrer Organisation prüft die Anfrage. Nach der Freigabe melden Sie sich mit Ihrer E-Mail-Adresse und Ihrem Passwort an.',
     doneOrgTitle: 'Anfrage verarbeitet',
-    doneOrgText: 'Sofern die E-Mail-Adresse noch nicht verwendet wird, ist die Organisation angelegt. Melden Sie sich an und richten Sie danach unter Profil → Sicherheit einen zweiten Faktor ein.',
+    doneOrgText: 'Sofern die E-Mail-Adresse noch nicht verwendet wird, ist die Organisation beantragt. Der Plattform-Betrieb prüft den Antrag; nach der Freigabe melden Sie sich an und richten unter Profil → Sicherheit einen zweiten Faktor ein.',
     closed: 'Die Registrierung ist nicht aktiviert. Bitte wenden Sie sich an die Administration Ihrer Organisation.',
     toLogin: 'Zur Anmeldung',
     errors: {
@@ -131,7 +131,7 @@ export default defineMessages({
     doneTitle: 'Demande reçue',
     doneText: 'L’administration de votre organisation examine la demande. Après validation, connectez-vous avec votre adresse e-mail et votre mot de passe.',
     doneOrgTitle: 'Demande traitée',
-    doneOrgText: 'Si l’adresse e-mail n’est pas encore utilisée, l’organisation est créée. Connectez-vous, puis configurez un second facteur sous Profil → Sécurité.',
+    doneOrgText: 'Si l’adresse e-mail n’est pas encore utilisée, l’organisation est demandée. L’exploitation de la plateforme examine la demande ; après validation, connectez-vous et configurez un second facteur sous Profil → Sécurité.',
     closed: 'L’inscription n’est pas activée. Veuillez vous adresser à l’administration de votre organisation.',
     toLogin: 'Vers la connexion',
     errors: {
@@ -233,7 +233,7 @@ export default defineMessages({
     doneTitle: 'Richiesta ricevuta',
     doneText: 'L’amministrazione della tua organizzazione esamina la richiesta. Dopo l’approvazione accedi con il tuo indirizzo e-mail e la tua password.',
     doneOrgTitle: 'Richiesta elaborata',
-    doneOrgText: 'Se l’indirizzo e-mail non è ancora in uso, l’organizzazione è stata creata. Accedi e configura poi un secondo fattore in Profilo → Sicurezza.',
+    doneOrgText: 'Se l’indirizzo e-mail non è ancora in uso, l’organizzazione è stata richiesta. La gestione della piattaforma esamina la richiesta; dopo l’approvazione accedi e configura un secondo fattore in Profilo → Sicurezza.',
     closed: 'La registrazione non è attiva. Rivolgiti all’amministrazione della tua organizzazione.',
     toLogin: 'Vai all’accesso',
     errors: {
@@ -335,7 +335,7 @@ export default defineMessages({
     doneTitle: 'Request received',
     doneText: 'Your organisation’s administrators will review the request. Once approved, sign in with your email address and password.',
     doneOrgTitle: 'Request processed',
-    doneOrgText: 'If the email address is not already in use, the organisation has been created. Sign in and then set up a second factor under Profile → Security.',
+    doneOrgText: 'If the email address is not already in use, the organisation has been requested. Platform operations will review the request; once approved, sign in and set up a second factor under Profile → Security.',
     closed: 'Registration is not enabled. Please contact your organisation’s administrators.',
     toLogin: 'Go to sign-in',
     errors: {

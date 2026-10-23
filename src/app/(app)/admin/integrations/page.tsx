@@ -14,6 +14,7 @@ import {
 } from './actions'
 import { ADAPTERS } from '@/lib/integrations/registry'
 import { Checkbox, Select, TextField, Textarea } from '@/components/ui/fields'
+import { TOKEN_DAYS, tokenState } from '@/lib/api-tokens'
 
 export async function generateMetadata() {
   const { t } = await getCtx()
@@ -62,12 +63,19 @@ async function ApiTokens() {
         <dt>{t('admin.api.restBase')}</dt><dd><code className="mono">{env.appUrl}/api/v1</code></dd>
         <dt>{t('admin.api.fhirBase')}</dt><dd><code className="mono">{env.appUrl}/api/fhir</code> <a className="small" href="/api/fhir/metadata" target="_blank" rel="noreferrer">CapabilityStatement</a></dd>
         <dt>{t('admin.api.auth')}</dt><dd><code className="mono">Authorization: Bearer cos_…</code></dd>
+        <dt>{t('developer.base.spec')}</dt><dd><Link href="/developer">{t('developer.title')}</Link> · <a className="mono small" href="/api/v1/openapi.json" target="_blank" rel="noreferrer">openapi.json</a></dd>
       </dl>
       <section className="card" aria-labelledby="api-new">
         <div className="card-head"><h2 id="api-new">{t('admin.api.create')}</h2></div>
         <div className="card-body">
           <SecretForm action={createTokenAction} submit={t('admin.api.createSubmit')} intro={t('admin.api.once')} label={t('admin.api.token')} success="admin.api.tokenCreated">
-            <TextField label={t('admin.api.name')} wrapStyle={{ maxWidth: 420 }} name="name" required maxLength={80} placeholder={t('admin.api.namePlaceholder')} />
+            <div className="form-grid">
+              <TextField label={t('admin.api.name')} name="name" required maxLength={80} placeholder={t('admin.api.namePlaceholder')} />
+              <Select label={t('developer.tokens.days')} name="days" defaultValue="">
+                <option value="">{t('developer.tokens.unlimited')}</option>
+                {TOKEN_DAYS.map((d) => <option key={d} value={String(d)}>{t('developer.tokens.daysN', { n: d })}</option>)}
+              </Select>
+            </div>
             <fieldset>
               <legend className="lbl">{t('admin.api.scopes')}</legend>
               <div className="grid-3" style={{ gap: 4 }}>
@@ -82,15 +90,16 @@ async function ApiTokens() {
       {tokens.length ? (
         <div className="tablewrap">
           <table className="stable">
-            <thead><tr><th>{t('admin.api.name')}</th><th>{t('admin.api.scopes')}</th><th>{t('admin.api.createdBy')}</th><th>{t('admin.api.lastUsed')}</th><th>{t('admin.api.status')}</th><th><span className="sr-only">{t('admin.common.actions')}</span></th></tr></thead>
+            <thead><tr><th>{t('admin.api.name')}</th><th>{t('admin.api.scopes')}</th><th>{t('admin.api.createdBy')}</th><th>{t('admin.api.lastUsed')}</th><th>{t('developer.col.expires')}</th><th>{t('admin.api.status')}</th><th><span className="sr-only">{t('admin.common.actions')}</span></th></tr></thead>
             <tbody>
               {tokens.map((k) => (
                 <tr key={k.id}>
-                  <th scope="row">{k.name}</th>
+                  <th scope="row">{k.name}{k.personal && <div className="small muted">{t('developer.tokens.personal')}</div>}</th>
                   <td><div className="chips">{k.scopes.map((s) => <code key={s} className="tag outline" style={{ textTransform: 'none', fontFamily: 'var(--font-mono)' }}>{s}</code>)}</div></td>
                   <td className="small">{who.get(k.createdById) ?? '–'}<div className="muted mono">{fmtDate(k.createdAt, locale)}</div></td>
                   <td className="num nowrap">{k.lastUsedAt ? rel(k.lastUsedAt) : <span className="muted">{t('admin.users.never')}</span>}</td>
-                  <td>{k.revokedAt ? <span className="tag crit">{t('admin.api.revoked')}</span> : <span className="tag ok">{t('admin.config.active')}</span>}</td>
+                  <td className="num nowrap">{k.expiresAt ? fmtDate(k.expiresAt, locale) : <span className="muted">{t('developer.tokens.unlimited')}</span>}</td>
+                  <td>{k.revokedAt ? <span className="tag crit">{t('admin.api.revoked')}</span> : tokenState(k, now) === 'expired' ? <span className="tag">{t('developer.tokens.state.expired')}</span> : <span className="tag ok">{t('admin.config.active')}</span>}</td>
                   <td className="right">{!k.revokedAt && <ActBtn action={revokeTokenAction.bind(null, k.id)} className="btn sm danger" confirm="admin.api.revokeConfirm" context={<span><strong>{k.name}</strong> · {k.scopes.join(', ')} · {t('admin.api.lastUsed')}: {k.lastUsedAt ? rel(k.lastUsedAt) : t('admin.users.never')}</span>} consequences={[t('admin.ux.revokeFinal')]}>{t('admin.api.revoke')}</ActBtn>}</td>
                 </tr>
               ))}

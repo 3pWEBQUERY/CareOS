@@ -60,7 +60,7 @@ export type DirectoryRow = {
 export async function directory(ctx: Ctx, now = new Date()): Promise<DirectoryRow[]> {
   const [users, units] = await Promise.all([
     db.user.findMany({
-      where: { orgId: ctx.org.id, active: true },
+      where: { orgId: ctx.org.id, active: true, kind: { not: 'external_physician' } }, // externe Ärztinnen/Ärzte nicht im Personenverzeichnis
       select: {
         id: true, firstName: true, lastName: true, initials: true, jobTitle: true, avatarFileId: true, email: true, workPhone: true, primaryUnitId: true,
         roles: { select: { unitId: true, locationId: true } },
@@ -89,7 +89,7 @@ export async function directory(ctx: Ctx, now = new Date()): Promise<DirectoryRo
 /** Profil einer Person mit den Angaben, die die betrachtende Person sehen darf. null = nicht gefunden. */
 export async function loadPerson(ctx: Ctx, id: string, now = new Date()) {
   const u = await db.user.findFirst({
-    where: { id, orgId: ctx.org.id },
+    where: { id, orgId: ctx.org.id, kind: { not: 'external_physician' } },
     select: {
       id: true, firstName: true, lastName: true, initials: true, jobTitle: true, email: true, phone: true, workPhone: true, phoneShared: true,
       avatarFileId: true, active: true, primaryUnitId: true, locale: true,

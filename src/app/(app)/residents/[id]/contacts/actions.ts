@@ -7,6 +7,7 @@ import { run, fd, fdBool, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { actionResident } from '../../_lib/resident'
+import { revokeForContact } from '@/lib/portal/manage'
 
 const schema = z.object({
   name: z.string().min(2, 'residents.contacts.errors.name').max(120),
@@ -43,6 +44,8 @@ export async function deleteContact(residentId: string, contactId: string): Prom
     const { ctx, r } = await actionResident(residentId, 'resident.edit')
     const old = await db.contact.findFirst({ where: { id: contactId, residentId: r.id } })
     if (!old) return { ok: false, error: 'common.notFound' }
+    // Portal-Zugänge dieser Person widerrufen (Einwilligung und Einladung bezogen sich auf sie)
+    await revokeForContact(ctx, old.id)
     await db.contact.delete({ where: { id: old.id } })
     await audit(ctx, { action: 'contact.delete', entityType: 'Contact', entityId: old.id, before: snap(old), context: { residentId: r.id } })
     await emit({ orgId: ctx.org.id, type: 'resident.updated', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id, payload: { contacts: true } })

@@ -25,6 +25,8 @@ export default async function VisitPage({ searchParams }: { searchParams: Promis
   const sp = await searchParams
   const ctx = await getCtx()
   const { t, unit } = ctx
+  // Modul Visite (PRD §69): serverseitig, nicht nur über die Navigation
+  if (!ctx.hasModule('visit')) return <Forbidden text={t('common.moduleOff')} />
   if (!unit) return <main className="panel main" style={{ flex: 1 }}><div className="tabpanel"><Empty title={t('tasks.noUnit')} /></div></main>
   if (!ctx.canHere('resident.read')) return <Forbidden text={t('common.notAllowed')} />
   const now = new Date()

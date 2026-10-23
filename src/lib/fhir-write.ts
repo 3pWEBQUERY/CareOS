@@ -76,3 +76,30 @@ export function parseFhirVital(raw: unknown, now = new Date()): ParsedVital | { 
   const note = (o.note ?? []).map((n) => n.text?.trim()).filter(Boolean).join(' ').slice(0, 500) || null
   return { residentId: m[1], at, values, note }
 }
+
+type Allergy = {
+  resourceType?: string; patient?: { reference?: string }
+  code?: { text?: string; coding?: { system?: string; code?: string; display?: string }[] }
+  clinicalStatus?: { coding?: Coding[] }; verificationStatus?: { coding?: Coding[] }
+}
+export type ParsedAllergy = { residentId: string; text: string }
+
+/**
+ * FHIR R4 AllergyIntolerance schreibend (PRD §41), z. B. Austrittsbericht des Spitals: neue, aktive Allergie als
+ * Eintrag in den Allergien der Person (Freitext wie in der App). Inaktive/erledigte oder als Fehler markierte
+ * Einträge werden abgewiesen – Entfernen bleibt eine bewusste Entscheidung in der Akte.
+ */
+export function parseFhirAllergy(raw: unknown): ParsedAllergy | { error: string } {
+  const o = (raw ?? {}) as Allergy
+  if (o.resourceType !== 'AllergyIntolerance') return { error: 'resourceType must be AllergyIntolerance' }
+  const m = /^Patient\/([\w-]+)$/.exec(o.patient?.reference ?? '')
+  if (!m) return { error: 'patient.reference must be Patient/{id}' }
+  const clinical = o.clinicalStatus?.coding?.[0]?.code
+  if (clinical && clinical !== 'active') return { error: 'only clinicalStatus active is supported; remove allergies in the record' }
+  const verification = o.verificationStatus?.coding?.[0]?.code
+  if (verification === 'entered-in-error' || verification === 'refuted') return { error: `verificationStatus ${verification} is not supported` }
+  const text = (o.code?.text || o.code?.coding?.find((c) => c.display)?.display || '').replace(/[\r\n]+/g, ' ').trim()
+  if (!text) return { error: 'code.text or code.coding.display required' }
+  if (text.length > 80) return { error: 'allergy text longer than 80 characters' }
+  return { residentId: m[1], text }
+}

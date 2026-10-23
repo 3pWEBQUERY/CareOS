@@ -37,7 +37,8 @@ export default async function DayPage({ params }: { params: Promise<{ id: string
       source: k.source,
       at: k.completedAt ? hm(k.completedAt) : null,
       by: k.completedById ? names.get(k.completedById)?.short ?? null : null,
-      note: k.note,
+      // Systemabschluss (Rückstand nach Schichtende, Abwesenheit) als verständlicher Text statt leerer Begründung
+      note: k.autoClosed && k.status === 'skipped' ? t(k.autoClosed === 'absence' ? 'tasks.autoClosed.absence' : 'tasks.autoClosed.shiftEnd') : k.note,
     }
   })
   return (

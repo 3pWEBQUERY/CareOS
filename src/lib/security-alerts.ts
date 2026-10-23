@@ -21,6 +21,8 @@ const WATCHED = [
   'admin.role.create', 'admin.role.update', 'admin.role.delete', 'admin.user.role_assign', 'admin.user.role_remove',
   'admin.user.mfa_reset', 'admin.user.password_reset', 'admin.user.create', 'admin.user.invite',
   'admin.api_token.create', 'admin.api_token.revoke', 'admin.user.sessions_revoked',
+  // Angehörigenportal (Paket A)
+  'portal.login_failed', 'portal.mfa_failed',
 ]
 
 /** IP nie im Klartext im Alarm: HMAC mit APP_SECRET (stabil je Installation). */

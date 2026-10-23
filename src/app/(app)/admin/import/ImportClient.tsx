@@ -16,7 +16,10 @@ type Filter = 'all' | 'error' | 'warn'
 
 const SHOW_MAX = 300
 const STATUS_TONE: Record<RowStatus, string> = { create: 'ok', update: 'accent', skip: '', error: 'crit' }
-const TARGET: Record<ImportKind, string> = { residents: '/residents', staff: '/admin/users', shifts: '/schedule?view=team' }
+const TARGET: Record<ImportKind, string> = { residents: '/residents', staff: '/admin/users', shifts: '/schedule?view=team', medications: '/residents', contacts: '/residents' }
+/** Erläuterungen je Spalte; «email» ist nur beim Personal das Erkennungsmerkmal, die Person bei Medikation/Kontakten. */
+const NOTES = ['unit', 'room', 'careLevel', 'role', 'roleScope', 'qualifications', 'shift', 'person', 'kind', 'morning', 'noon', 'evening', 'night', 'name']
+const noteKey = (kind: ImportKind, key: string) => (key === 'email' && kind === 'staff' ? 'email' : (key === 'insuranceNo' || key === 'birthDate') && (kind === 'medications' || kind === 'contacts') ? 'match' : NOTES.includes(key) && !(key === 'name' && kind !== 'medications') ? key : null)
 
 const download = (name: string, csv: string) => {
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
@@ -161,7 +164,7 @@ export function ImportClient({ kinds }: { kinds: ImportKind[] }) {
                     <td className="nowrap">{s.names[locale][0]}{s.required && <> <span className="tag outline">{t('imports.yes')}</span></>}</td>
                     <td className="small">
                       {t('imports.fmt.' + s.type)}
-                      {(['unit', 'room', 'careLevel', 'email', 'role', 'roleScope', 'qualifications', 'shift', 'person'] as const).includes(s.key as never) && <span className="muted" style={{ display: 'block' }}>{t('imports.note.' + s.key)}</span>}
+                      {noteKey(kind, s.key) && <span className="muted" style={{ display: 'block' }}>{t('imports.note.' + noteKey(kind, s.key))}</span>}
                     </td>
                   </tr>
                 ))}

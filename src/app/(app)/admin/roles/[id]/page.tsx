@@ -7,7 +7,8 @@ import { Forbidden } from '@/components/ui/Empty'
 import { ActBtn } from '@/components/admin/ui'
 import { AdminHead } from '../../Head'
 import { PermissionMatrix } from '../Matrix'
-import { deleteRoleAction, updateRoleAction } from '../actions'
+import { deleteRoleAction, slimSysadminAction, updateRoleAction } from '../actions'
+import { clinicalPermissions } from '@/lib/least-privilege'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const ctx = await getCtx()
@@ -35,6 +36,12 @@ export default async function RoleDetail({ params }: { params: Promise<{ id: str
       <div className="scroll">
         <div className="tabpanel">
           {role.permissions.includes('admin.roles') && <div className="alert warn"><span className="grow">{t('admin.roles.adminWarning')}</span></div>}
+          {role.key === 'sysadmin' && clinicalPermissions(role.permissions).length > 0 && (
+            <div className="alert warn">
+              <span className="grow">{t('tenancy.roles.sysadminClinical')}</span>
+              <ActBtn action={slimSysadminAction.bind(null, role.id)} className="btn sm" confirm="tenancy.roles.sysadminResetConfirm" consequences={[t('tenancy.roles.sysadminResetHint')]} context={<span><strong>{role.name}</strong> · {t('admin.ux.holdersN', { n: role.assignments.length })}</span>}>{t('tenancy.roles.sysadminReset')}</ActBtn>
+            </div>
+          )}
           <div className="grid-2" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))' }}>
             <PermissionMatrix roleId={role.id} name={role.name} description={role.description ?? ''} groups={groups} initial={role.permissions} action={updateRoleAction} />
             <section className="card" aria-labelledby="r-users">

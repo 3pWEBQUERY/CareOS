@@ -4,6 +4,7 @@ import { auditSystem } from '@/lib/audit'
 import { notifyT } from '@/lib/notify-t'
 import { syncExpired } from '@/lib/learn'
 import { dateKey } from '@/lib/time'
+import { orgHasModule } from '@/lib/modules'
 import {
   CERT_STAGES, DOC_STAGES, DUE_STAGES, GRACE_DAYS, RENEW_DAYS, daysUntil, latestCertificates, leadNotice, reminderPriority, reminderStage, renewalDue, shouldRemind,
 } from '@/lib/reminder-policy'
@@ -44,9 +45,15 @@ export async function runReminders(orgId: string, now = new Date()) {
   const leads: Lead[] = []
   const name = (u: { firstName: string; lastName: string }) => `${u.lastName} ${u.firstName}`
 
+  // Module (PRD §69): ohne «Lernen» keine Schulungs-/Zertifikatserinnerungen, ohne «Dokumente» keine Gültigkeitshinweise.
+  // Qualifikationen (z. B. BLS-AED) gehören zum Personal und werden weiter erinnert.
+  const org = await db.organization.findUnique({ where: { id: orgId }, select: { modules: true } })
+  const learnOn = orgHasModule(org, 'learn')
+  const docsOn = orgHasModule(org, 'docs')
+
   // 1. Abgelaufene Schulungen wieder öffnen; Pflichtschulungen mit Gültigkeit vor Ablauf neu zuweisen
-  await syncExpired(orgId)
-  const certs = latestCertificates(
+  if (learnOn) await syncExpired(orgId)
+  const certs = !learnOn ? [] : latestCertificates(
     await db.certificate.findMany({
       where: { user: { orgId, active: true } },
       select: { id: true, userId: true, courseId: true, title: true, issuedAt: true, expiresAt: true, user: { select: { firstName: true, lastName: true, primaryUnitId: true } } },
@@ -110,7 +117,7 @@ export async function runReminders(orgId: string, now = new Date()) {
   }
 
   // 3. Offene Schulungen mit Frist
-  const open = await db.enrollment.findMany({
+  const open = !learnOn ? [] : await db.enrollment.findMany({
     where: { status: { in: ['assigned', 'in_progress', 'expired'] }, dueAt: { gte: since, lte: new Date(now.getTime() + (DUE_STAGES[0] + 1) * 86_400_000) }, course: { orgId, published: true }, user: { active: true } },
     select: { id: true, userId: true, courseId: true, dueAt: true, course: { select: { title: true, mandatory: true } }, user: { select: { firstName: true, lastName: true } } },
   })
@@ -135,7 +142,7 @@ export async function runReminders(orgId: string, now = new Date()) {
   }
 
   // Zusammenfassung an Leitungen (learn.manage im Bereich der Person), eine Benachrichtigung pro Leitung
-  if (leads.length) {
+  if (leads.length && learnOn) {
     const [grants, people] = await Promise.all([
       db.roleAssignment.findMany({ where: { role: { orgId, permissions: { has: 'learn.manage' } }, user: { active: true } }, select: { userId: true, unitId: true, locationId: true } }),
       db.user.findMany({ where: { id: { in: [...new Set(leads.map((l) => l.userId))] } }, select: { id: true, primaryUnitId: true, roles: { select: { unitId: true, locationId: true } } } }),
@@ -169,7 +176,7 @@ export async function runReminders(orgId: string, now = new Date()) {
   }
 
   // 4. Dokument-Gültigkeit
-  const docs = await db.document.findMany({
+  const docs = !docsOn ? [] : await db.document.findMany({
     where: { orgId, status: 'approved', validUntil: { gte: since, lte: new Date(now.getTime() + (DOC_STAGES[0] + 1) * 86_400_000) } },
     select: { id: true, title: true, validUntil: true, ownerId: true },
   })

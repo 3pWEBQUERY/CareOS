@@ -186,7 +186,7 @@ export async function syncSlotTask(
     return 'skipped'
   }
   if (!complete && applicable.length && closed) {
-    await db.task.update({ where: { id: task.id }, data: { status: 'planned', completedById: null, completedAt: null, note: null } })
+    await db.task.update({ where: { id: task.id }, data: { status: 'planned', completedById: null, completedAt: null, note: null, autoClosed: null } })
     return 'reopened'
   }
   return null

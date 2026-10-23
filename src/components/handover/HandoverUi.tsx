@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useOptimistic, useState, useTransition } from 'react'
+import { createContext, useContext, useEffect, useOptimistic, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -12,7 +12,7 @@ import { Checkbox, Textarea } from '@/components/ui/fields'
 
 export type HoItem = { text: string; time?: string; tone?: 'c' | 'w' | ''; muted?: boolean; flag?: string }
 export type HoBlockDto = {
-  resident: { id: string; name: string; room: string | null; meta: string; allergies: string[]; assigned?: { shift: string; list: string[] } }
+  resident: { id: string; name: string; room: string | null; meta: string; allergies: string[]; absent?: string | null; assigned?: { shift: string; list: string[] } }
   cols: { happened: HoItem[]; done: HoItem[]; watch: HoItem[]; open: HoItem[] }
   more: { happened: number; done: number; watch: number; open: number }
   entry: { watch: string | null; open: string | null; important: boolean; author: string | null } | null
@@ -74,6 +74,12 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
   const scope = useContext(AckScope)
   const [mine, setMine] = useOptimistic(false)
   const [edit, setEdit] = useState(false)
+  // Stand beim Öffnen für die Konflikterkennung (PRD §32); nach einem Konflikt auf den aktuellen Stand nachführen
+  const snap = () => JSON.stringify({ watch: b.entry?.watch ?? null, open: b.entry?.open ?? null, important: !!b.entry?.important })
+  const [base, setBase] = useState('')
+  const [conflicted, setConflicted] = useState(false)
+  const current = snap()
+  useEffect(() => { if (conflicted) setBase(current) }, [conflicted, current])
   const important = !!b.entry?.important
   const optAcked = !b.acked && (mine || !!scope?.all)
   const acked = !!b.acked || optAcked
@@ -84,10 +90,11 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
         <Link className="linkbtn" href={`/residents/${b.resident.id}`} id={'ho-' + b.resident.id}><strong>{b.resident.name}</strong></Link>
         {b.resident.meta && <span className="small muted">{b.resident.meta}</span>}
         {b.resident.assigned && b.resident.assigned.list.length > 0 && <span className="small muted ho-assigned">{t('home.ho.assigned', { shift: b.resident.assigned.shift, list: b.resident.assigned.list.join(', ') })}</span>}
+        {b.resident.absent && <span className="flag info">{b.resident.absent}</span>}
         {b.resident.allergies.map((a) => <span key={a} className="flag crit">{t('residents.banner.allergy', { name: a })}</span>)}
         {important && <span className="tag warn">{t('tasks.handover.important')}</span>}
         <div className="push">
-          {canEdit && <button type="button" className="btn ghost" onClick={() => setEdit(true)}>{t(b.entry ? 'tasks.handover.entry.edit' : 'tasks.handover.entry.add')}</button>}
+          {canEdit && <button type="button" className="btn ghost" onClick={() => { setBase(snap()); setConflicted(false); setEdit(true) }}>{t(b.entry ? 'tasks.handover.entry.edit' : 'tasks.handover.entry.add')}</button>}
           {canAck && (
             <button type="button" className={'btn' + (important && !acked ? ' primary' : '')} disabled={acked || pending}
               onClick={() => ack({ ...target, residentId: b.resident.id }, () => { setMine(true); scope?.add(b.resident.id) })}>
@@ -123,7 +130,8 @@ export function HandoverCard({ b, target, canAck, canEdit }: { b: HoBlockDto; ta
       )}
       {edit && (
         <Dialog open onClose={() => setEdit(false)} title={t('tasks.handover.entry.title')} context={<><strong>{b.resident.name}</strong>{b.resident.room && <span className="mono">{t('meds.roomShort', { room: b.resident.room })}</span>}</>}>
-          <ActionForm action={saveEntryAction} onDone={(r) => r.ok && setEdit(false)} reset={false}>
+          <ActionForm action={saveEntryAction} onDone={(r) => (r.ok ? setEdit(false) : setConflicted(true))} reset={false}>
+            <input type="hidden" name="base" value={base} />
             <input type="hidden" name="shiftCode" value={target.shiftCode} />
             <input type="hidden" name="date" value={target.date} />
             <input type="hidden" name="residentId" value={b.resident.id} />

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -293,8 +293,17 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
   const { pending, go } = useRun()
 
   const existing = areas.find((a) => a.domain === domain)
+  // Stand beim Öffnen des Bereichs für die Konflikterkennung (PRD §32)
+  const [base, setBase] = useState<Record<string, string> | null>(null)
+  const [rebase, setRebase] = useState(false)
+  const snapOf = (d: string) => { const a = areas.find((x) => x.domain === d); return d ? { situation: a?.situation ?? '', resources: a?.resources ?? '', needs: a?.needs ?? '', risks: a?.risks ?? '', goal: a?.goal ?? '', evaluateBy: a?.evaluateBy ?? '' } : null }
+  const curSnap = JSON.stringify(snapOf(domain))
+  // Nach einem Konflikthinweis: aktuelle Fassung ist geladen – erneutes Speichern übernimmt die eigenen Werte
+  useEffect(() => { if (rebase) setBase(JSON.parse(curSnap)) }, [rebase, curSnap])
   const load = (d: string) => {
     const a = areas.find((x) => x.domain === d)
+    setBase(snapOf(d))
+    setRebase(false)
     setF({ situation: a?.situation ?? '', resources: a?.resources ?? '', needs: a?.needs ?? '', risks: a?.risks ?? '', goal: a?.goal ?? '', evaluateBy: a?.evaluateBy || defaultEval })
   }
   const begin = () => {
@@ -318,8 +327,8 @@ export function PlanAreaButton({ residentId, domains, categories, areas, initial
     const ev = document.querySelector<HTMLInputElement>('#pf-eval')
     if (ev?.matches(':invalid')) return ev.focus() // ungültiges Datum: Meldung steht am Feld
     const list = iv.title.trim() ? [...pendingIvs, iv] : pendingIvs
-    go(() => saveAreaAction(residentId, { domain, ...f, interventions: list, aiInteractionId: aiUsed }), {
-      success: 'care.plan.areaSaved', toDraft: true, onOk: () => setOpen(false), onErr: setErr,
+    go(() => saveAreaAction(residentId, { domain, ...f, interventions: list, aiInteractionId: aiUsed, base }), {
+      success: 'care.plan.areaSaved', toDraft: true, onOk: () => setOpen(false), onErr: (e: string) => { setErr(e); setRebase(true) },
     })
   }
   const askAi = () =>

@@ -12,8 +12,11 @@ import { shiftName } from '@/lib/shift-name'
 import { dbDate, parseDateKey, shiftBounds } from '@/lib/time'
 import { collectHandover, handoverText } from './collect'
 import { ackSettings } from '@/lib/acks'
+import { mergeEdit, parseBase } from '@/lib/merge-check'
+import { conflictMessage } from '@/lib/merge-server'
 
 const err = (error: string, field?: string): ActionResult => ({ ok: false, error, field })
+const ENTRY_FIELDS = ['watch', 'open', 'important'] as const
 
 /** Schicht aus Code + Startdatum; liefert Bereich, Grenzen und (optional angelegte) Übergabe. */
 async function target(ctx: Ctx, form: FormData, create: boolean) {
@@ -47,11 +50,27 @@ export async function saveEntryAction(form: FormData): Promise<ActionResult> {
     const important = fdBool(form, 'important')
     if (important && !watch && !open) return err('tasks.handover.errors.importantEmpty', 'watch')
     const before = await db.handoverEntry.findUnique({ where: { handoverId_residentId: { handoverId: handover.id, residentId: r.id } } })
-    const after = await db.handoverEntry.upsert({
-      where: { handoverId_residentId: { handoverId: handover.id, residentId: r.id } },
-      update: { watch, open, important, authorId: ctx.user.id },
-      create: { handoverId: handover.id, residentId: r.id, watch, open, important, authorId: ctx.user.id },
-    })
+    // Konflikterkennung (PRD §32): zwei Personen ergänzen dieselbe Person – nur eigene Änderungen übernehmen
+    const m = mergeEdit(parseBase(fd(form, 'base')), before ?? { watch: null, open: null, important: false }, { watch, open, important }, ENTRY_FIELDS)
+    if (m.conflicts.length) {
+      refresh()
+      return err(before ? await conflictMessage(ctx, { entityType: 'HandoverEntry', entityId: before.id, actions: ['handover.entry.save'], fields: m.conflicts.map((k) => ctx.t('tasks.handover.' + (k === 'important' ? 'important' : 'cols.' + k))) }) : 'common.genericError', m.conflicts[0] === 'important' ? undefined : m.conflicts[0])
+    }
+    const v = m.data as { watch: string | null; open: string | null; important: boolean }
+    if (v.important && !v.watch && !v.open) return err('tasks.handover.errors.importantEmpty', 'watch')
+    let after
+    if (before) {
+      // Bedingtes Update: gleichzeitiges Speichern überschreibt nicht stillschweigend
+      const upd = await db.handoverEntry.updateMany({ where: { id: before.id, updatedAt: before.updatedAt }, data: { ...v, authorId: ctx.user.id } })
+      if (!upd.count) { refresh(); return err('tasks.handover.errors.concurrent') }
+      after = await db.handoverEntry.findUniqueOrThrow({ where: { id: before.id } })
+    } else {
+      after = await db.handoverEntry.upsert({
+        where: { handoverId_residentId: { handoverId: handover.id, residentId: r.id } },
+        update: { ...v, authorId: ctx.user.id },
+        create: { handoverId: handover.id, residentId: r.id, ...v, authorId: ctx.user.id },
+      })
+    }
     await audit(ctx, { action: 'handover.entry.save', entityType: 'HandoverEntry', entityId: after.id, before, after, context: { residentId: r.id, handoverId: handover.id } })
     await emit({ orgId: ctx.org.id, type: 'handover.updated', unitId: handover.unitId, residentId: r.id, actorId: ctx.user.id, payload: { handoverId: handover.id } })
     refresh()
