@@ -1,20 +1,25 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getCtx } from '@/lib/context'
 import { audit } from '@/lib/audit'
+import { exportRateLimit } from '@/lib/rate-limit'
 import { billingCsvRows, billingRows, monthRange } from '@/lib/billing'
 import { toCsv } from '@/lib/import/csv'
 import { categoryLabel } from '@/lib/care'
 
 /**
  * GET /insights/billing?month=YYYY-MM[&unit=] – Abrechnungsexport als CSV (PRD §40): je Person Pflegestufe,
- * Aufenthalts- und Abwesenheitstage, dokumentierte Pflegeminuten und Leistungen je Kategorie. Berechtigung
- * «Kennzahlen» im Bereich; jeder Export wird protokolliert (Audit «billing.export»).
+ * Aufenthalts- und Abwesenheitstage, dokumentierte Pflegeminuten und Leistungen je Kategorie. Modul «Kennzahlen»,
+ * Berechtigung «Kennzahlen» im Bereich, Rate-Limit je Person (EXPORT_LIMITS); jeder Export wird protokolliert
+ * (Audit «billing.export»).
  */
 export async function GET(req: NextRequest) {
   const ctx = await getCtx()
   const { t } = ctx
+  if (!ctx.hasModule('insights')) return NextResponse.json({ error: 'module_inactive' }, { status: 403 })
   const units = ctx.units.filter((u) => ctx.can('insights.view', { unitId: u.id, locationId: u.locationId }))
   if (!units.length) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  const rl = await exportRateLimit('billing', ctx.user.id)
+  if (!rl.ok) return NextResponse.json({ error: 'rate' }, { status: 429, headers: { 'retry-after': String(rl.retryAfter) } })
   const month = req.nextUrl.searchParams.get('month') ?? ''
   if (!monthRange(month)) return NextResponse.json({ error: 'month' }, { status: 400 })
   const unit = units.find((u) => u.id === req.nextUrl.searchParams.get('unit'))

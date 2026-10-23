@@ -31,6 +31,13 @@ export async function rateLimit(key: string, limit: number, windowMs: number): P
   }
 }
 
+/** Datenexporte mit Personendaten: je Person und Art pro Stunde (Massenabzüge fallen auf, die Datenbank bleibt geschont). */
+export const EXPORT_LIMITS = { billing: 30, audit: 20, resident: 60, org: 5 } as const
+
+export function exportRateLimit(kind: keyof typeof EXPORT_LIMITS, userId: string) {
+  return rateLimit(`export:${kind}:${userId}`, EXPORT_LIMITS[kind], 60 * 60_000)
+}
+
 /** Zähler zurücksetzen (z. B. nach erfolgreicher Anmeldung). */
 export async function resetRateLimit(key: string) {
   await db.rateLimit.delete({ where: { key: storageKey(key) } }).catch(() => {})
