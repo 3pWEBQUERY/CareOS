@@ -1,0 +1,97 @@
+/* ───────── Spitex: Disposition, Meine Tour, Klient/innen, Leistungsnachweis ───────── */
+/* Nur Design-Tokens aus globals.css (hell/dunkel); keine festen Breiten, die auf 390 px quer scrollen würden. */
+
+.sx-daybar { gap: 10px }
+.sx-dayname { font-weight: 600; font-size: 0.9375rem }
+.sx-daybar .seg a { min-width: 2.5rem; text-align: center }
+
+/* Tagesplan: offene Einsätze und je Person eine Tour; auf dem Handy untereinander */
+.sx-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; align-items: start }
+.sx-col .card-head h2 { overflow-wrap: anywhere }
+.sx-open { border-color: var(--line-strong) }
+.sx-busy { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2) }
+.sx-busy .tag { text-transform: none; letter-spacing: 0; font-size: 0.75rem }
+
+.sx-visit { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; min-width: 0 }
+.sx-visit.has-conflict { box-shadow: inset 3px 0 0 var(--warn) }
+.sx-visit.is-off .sx-visit-name a { color: var(--fg-3); text-decoration: line-through; text-decoration-color: var(--line-strong) }
+.sx-visit.is-off .sx-klv { opacity: .7 }
+.sx-visit-main { display: flex; gap: 10px; align-items: flex-start; min-width: 0 }
+.sx-time { flex: none; min-width: 5.75rem; font-size: 0.8125rem; padding-top: 1px }
+.sx-visit-name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-weight: 500 }
+.sx-addr { overflow-wrap: anywhere }
+.sx-klv { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; align-items: center }
+.sx-chip { display: inline-flex; gap: 4px; align-items: baseline; border: 1px solid var(--line); border-radius: var(--r-sm); padding: 1px 6px; background: var(--surface); color: var(--fg-2); max-width: 100% }
+.sx-chip b, .sx-klv-b { font-family: var(--font-mono); font-weight: 600; color: var(--accent); text-transform: uppercase }
+.sx-conflict { margin-top: 4px; padding: 3px 8px; border-radius: var(--r-sm); background: var(--warn-soft); color: var(--warn) }
+.sx-visit-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-left: calc(5.75rem + 10px) }
+.sx-visit-tools .sx-assign, .sx-visit-tools .fld:has(.sx-assign) { flex: 1 1 10rem; min-width: 0 }
+.sx-move { display: inline-flex; gap: 2px }
+.sx-move .icon-btn:disabled { opacity: .35; cursor: default }
+
+/* Leistungen im Dialog (Einsatz, Wochenvorlage) */
+.sx-svc { display: flex; flex-direction: column; gap: 8px }
+.sx-svc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px }
+.sx-svc-row { display: grid; grid-template-columns: 9rem minmax(0, 1fr) 7.5rem 32px; gap: 8px; align-items: end }
+.sx-svc-del { margin-bottom: 1px }
+.sx-svc-row + .sx-svc-row { border-top: 1px solid var(--line); padding-top: 8px }
+.sx-svc-add { gap: 8px }
+.sx-svc-add > .fld, .sx-svc-add > :first-child { flex: 1 1 14rem; min-width: 0 }
+
+/* Meine Tour: eine Karte je Einsatz, grosse Bedienflächen für die Einhandbedienung (PRD §28) */
+.sx-tour-panel { max-width: 46rem; width: 100%; margin-inline: auto }
+.sx-tour { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px }
+.sx-stop { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); min-width: 0 }
+.sx-stop.is-current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) }
+.sx-stop.is-closed { background: var(--surface-2) }
+.sx-stop-head { display: flex; gap: 10px; align-items: flex-start }
+.sx-stop-n { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; font-size: 0.75rem; color: var(--fg-2); background: var(--surface) }
+.sx-stop.is-current .sx-stop-n { border-color: var(--accent); background: var(--accent); color: var(--accent-fg) }
+.sx-stop-time { font-size: 0.8125rem; color: var(--fg-2) }
+.sx-stop-name { margin: 0; font-size: 1rem; font-weight: 600; overflow-wrap: anywhere }
+.sx-allergy { align-self: flex-start; white-space: normal }
+.sx-where { display: flex; flex-direction: column; gap: 6px }
+.sx-address { font-weight: 500; overflow-wrap: anywhere }
+.sx-where-act { gap: 6px }
+.sx-where-act .btn { gap: 6px }
+.sx-access { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 10px; border: 1px dashed var(--warn); border-radius: var(--r); background: var(--warn-soft) }
+.sx-access .lbl { color: var(--warn) }
+.sx-access p { margin: 0; font-size: 0.9375rem; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--fg) }
+.sx-stop-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.sx-doc { border-top: 1px solid var(--line); padding-top: 10px }
+.sx-check { display: flex; flex-direction: column; gap: 6px }
+.sx-check-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column }
+.sx-check-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; min-width: 0 }
+.sx-check-list li + li { border-top: 1px solid var(--line) }
+.sx-check-list .check { min-width: 0; flex: 1; min-height: 36px }
+.sx-check-list .check-lbl { overflow-wrap: anywhere }
+.sx-check-min { flex: none; width: 7.5rem }
+
+/* Klient/innen */
+.sx-clients { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 12px; align-items: start }
+.sx-clients .card-head h2 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; overflow-wrap: anywhere }
+.sx-tpl-list { border: 1px solid var(--line); border-radius: var(--r) }
+.sx-tpl { flex-wrap: wrap; align-items: center }
+
+/* Leistungsnachweis */
+.sx-month .fld { min-width: 0 }
+.sx-proof-table tfoot th, .sx-proof-table tfoot td { border-top: 1px solid var(--line-strong); font-weight: 600; padding: 8px 12px; text-align: left }
+.sx-proof-table tfoot td.right { text-align: right }
+
+@media (max-width: 720px) {
+  .sx-visit-tools { padding-left: 0 }
+  .sx-time { min-width: 5rem }
+  .sx-svc-row { grid-template-columns: minmax(0, 1fr) 7rem 32px }
+  .sx-svc-row .sx-svc-label { grid-column: 1 / -1; grid-row: 1 }
+  .sx-svc-row .lbl.sr-only + * { margin-top: 0 }
+  .sx-stop-act .btn.lg { flex: 1 1 100% }
+  .sx-proof-table tfoot tr { display: grid; grid-template-columns: minmax(0, 1fr) auto }
+}
+
+@media print {
+  .main.sx-proof, .main.sx-proof .scroll { overflow: visible !important }
+  .sx-proof .view-head .row, .sx-proof .tabs { display: none !important }
+  .sx-proof .card, .sx-proof .tablewrap { border-color: #999 }
+  .sx-proof .metric { box-shadow: none; border-right: 1px solid #999 }
+  .sx-proof .stable th, .sx-proof .stable td { padding: 4px 6px }
+}

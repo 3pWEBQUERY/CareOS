@@ -15,13 +15,14 @@ export const EVENT_TYPES = [
   'resident.updated', 'visit.updated', 'assignment.updated',
   'post.published', 'message.created',
   'document.published', 'schedule.changed', 'notification.created',
+  'homecare.updated',
 ] as const satisfies readonly EventType[]
 // Compile-Zeit-Prüfung: fehlt ein Typ in der Liste, schlägt der Typecheck fehl.
 type MissingEvent = Exclude<EventType, (typeof EVENT_TYPES)[number]>
 export const _eventListComplete: MissingEvent extends never ? true : MissingEvent = true
 
 /** Scopes für API-Tokens (PRD §40). */
-export const API_SCOPES = ['residents:read', 'tasks:read', 'tasks:write', 'observations:write', 'events:read', 'fhir:read', 'labs:write', 'residents:adt'] as const
+export const API_SCOPES = ['residents:read', 'tasks:read', 'tasks:write', 'observations:write', 'events:read', 'fhir:read', 'labs:write', 'residents:adt', 'documents:write'] as const
 export type ApiScope = (typeof API_SCOPES)[number]
 
 /** Integrationsarten (PRD §40/§41) – informativ, die eigentliche Anbindung erfolgt über die Integration Layer. */
@@ -86,6 +87,6 @@ export function slugKey(name: string) {
     .slice(0, 40)
 }
 
-export const UNIT_KINDS = ['ward', 'group', 'dementia', 'day', 'other'] as const
+export const UNIT_KINDS = ['ward', 'group', 'dementia', 'day', 'homecare', 'other'] as const
 
 export const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/

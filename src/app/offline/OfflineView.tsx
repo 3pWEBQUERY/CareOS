@@ -6,11 +6,12 @@ import { LOCALES, pickLocale, type Locale, type Tree } from '@/i18n/core'
 import { Brand } from '@/components/Brand'
 import { toast, Toaster } from '@/components/toast'
 import { offlineSupported, queueOp, useOutbox } from '@/lib/offline/client'
-import { loadSnapshot } from '@/lib/offline/store'
-import { NOTE_CATEGORIES, type ShiftSnapshot } from '@/lib/offline/types'
+import { loadSnapshot, loadTour } from '@/lib/offline/store'
+import { NOTE_CATEGORIES, type ShiftSnapshot, type TourSnapshot } from '@/lib/offline/types'
 import { Select, Textarea } from '@/components/ui/fields'
+import { TourCard } from '@/components/spitex/TourCard'
 
-type State = { status: 'loading' } | { status: 'none' } | { status: 'ok'; snap: ShiftSnapshot }
+type State = { status: 'loading' } | { status: 'none' } | { status: 'ok'; snap: ShiftSnapshot | null; tour: TourSnapshot | null }
 
 export function OfflineView({ messages }: { messages: Record<Locale, Tree> }) {
   const [state, setState] = useState<State>({ status: 'loading' })
@@ -19,13 +20,15 @@ export function OfflineView({ messages }: { messages: Record<Locale, Tree> }) {
   useEffect(() => {
     setBrowserLocale(pickLocale(navigator.language))
     if (!offlineSupported()) { setState({ status: 'none' }); return }
-    void loadSnapshot().then((snap) => {
-      setState(snap ? { status: 'ok', snap } : { status: 'none' })
+    // Spitex: «Meine Tour» liegt als eigener Lesestand vor (auch ohne Schicht-Lesestand nutzbar)
+    void Promise.all([loadSnapshot(), loadTour().catch(() => null)]).then(([snap, tour]) => {
+      const mine = tour && (!snap || tour.userId === snap.userId) ? tour : null
+      setState(snap || mine ? { status: 'ok', snap, tour: mine } : { status: 'none' })
       if (snap?.theme && ['light', 'dark', 'system'].includes(snap.theme)) document.documentElement.dataset.theme = snap.theme
       if (snap?.locale) document.documentElement.lang = snap.locale
     }).catch(() => setState({ status: 'none' }))
   }, [])
-  const locale: Locale = state.status === 'ok' && (LOCALES as readonly string[]).includes(state.snap.locale)
+  const locale: Locale = state.status === 'ok' && state.snap && (LOCALES as readonly string[]).includes(state.snap.locale)
     ? (state.snap.locale as Locale)
     : browserLocale
   return (
@@ -40,7 +43,8 @@ function View({ state }: { state: State }) {
   const t = useT()
   const [online, setOnline] = useState(true)
   const snap = state.status === 'ok' ? state.snap : null
-  const counts = useOutbox(snap?.userId)
+  const tour = state.status === 'ok' ? state.tour : null
+  const counts = useOutbox(snap?.userId ?? tour?.userId)
   useEffect(() => {
     const upd = () => setOnline(navigator.onLine)
     upd()
@@ -48,7 +52,8 @@ function View({ state }: { state: State }) {
     window.addEventListener('offline', upd)
     return () => { window.removeEventListener('online', upd); window.removeEventListener('offline', upd) }
   }, [])
-  const time = snap ? new Date(snap.savedAt).toLocaleTimeString(snap.locale === 'en' ? 'en-GB' : snap.locale + '-CH', { hour: '2-digit', minute: '2-digit' }) : ''
+  const saved = snap?.savedAt ?? tour?.savedAt
+  const time = saved ? new Date(saved).toLocaleTimeString(!snap || snap.locale === 'en' ? 'en-GB' : snap.locale + '-CH', { hour: '2-digit', minute: '2-digit' }) : ''
 
   return (
     <main className="panel main offline-view" style={{ overflow: 'visible' }}>
@@ -61,7 +66,7 @@ function View({ state }: { state: State }) {
         <a className={'btn' + (online ? ' primary' : '')} href="/">{online ? t('common.offlineSync.page.openApp') : t('common.offlineSync.page.retry')}</a>
       </div>
       <div className="tabpanel">
-        {snap && (
+        {(snap || tour) && (
           <div className={'alert ' + (online ? 'info' : 'warn')} role="status">
             <div className="grow">
               <strong>{t(online ? 'common.offlineSync.page.standOnline' : 'common.offlineSync.page.stand', { time })}</strong>
@@ -76,9 +81,34 @@ function View({ state }: { state: State }) {
             <span>{t('common.offlineSync.page.noneHint')}</span>
           </div>
         )}
+        {tour && <Tour tour={tour} />}
         {snap && <Residents snap={snap} />}
       </div>
     </main>
+  )
+}
+
+/** Spitex: Tour des Tages offline – Beginn und Abschluss werden mit dem Zeitpunkt des Geräts vorgemerkt. */
+function Tour({ tour }: { tour: TourSnapshot }) {
+  const t = useT()
+  const current = tour.visits.find((v) => v.status === 'planned' || v.status === 'started')?.id
+  return (
+    <section className="stack-sm" aria-labelledby="off-tour">
+      <h2 className="sec" id="off-tour">{t('spitex.tour.title')}</h2>
+      <ol className="sx-tour">
+        {tour.visits.map((v, i) => (
+          <TourCard key={v.id} v={v} n={i + 1} current={v.id === current}
+            onStep={async (d) => {
+              try {
+                await queueOp({ kind: 'visit', residentId: v.residentId, data: d }, { who: v.name, label: `${v.from}–${v.to}` }, tour.userId)
+                return { ok: true, queued: true, message: 'common.offlineSync.queued' }
+              } catch {
+                return { ok: false, error: 'common.offlineSync.unsupported' }
+              }
+            }} />
+        ))}
+      </ol>
+    </section>
   )
 }
 

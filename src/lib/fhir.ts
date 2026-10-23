@@ -1,8 +1,9 @@
 import 'server-only'
 import { NextResponse } from 'next/server'
-import type { Medication, Resident, VitalSign } from '@prisma/client'
+import type { FileObject, Medication, Resident, ResidentFile, VitalSign } from '@prisma/client'
 import { dateKey, fromDbDate } from '@/lib/time'
 import { VITALS } from '@/lib/vitals'
+import { REPORT_LOINC, type ReportKind } from '@/lib/fhir-write'
 
 /** HL7 FHIR R4 (nur lesend). Abbildung der CareOS-Daten auf Ressourcen (PRD §41). */
 export const FHIR_CT = 'application/fhir+json; charset=utf-8'
@@ -119,6 +120,27 @@ export function allergies(r: Resident) {
     code: { text },
     patient: { reference: `Patient/${r.id}` },
   }))
+}
+
+/**
+ * Dateien der Akte als DocumentReference (PRD §41). Externe Berichte tragen den LOINC-Typ (Austritts- bzw. Klinikbericht)
+ * und die Extension «received-via»; übrige Dateien nur die CareOS-Kategorie. Inhalt nur als Metadaten (Abruf in der App).
+ */
+export function documentReference(rf: ResidentFile & { file: Pick<FileObject, 'contentType' | 'filename' | 'size' | 'createdAt'> }) {
+  const loinc = rf.reportKind && rf.reportKind in REPORT_LOINC ? REPORT_LOINC[rf.reportKind as ReportKind] : null
+  return {
+    resourceType: 'DocumentReference',
+    id: rf.id,
+    meta: { lastUpdated: rf.createdAt.toISOString() },
+    status: 'current',
+    type: loinc ? { coding: [{ system: 'http://loinc.org', code: loinc.code, display: loinc.display }], text: loinc.display } : { text: rf.category },
+    category: [{ coding: [{ system: 'urn:careos:file-category', code: rf.category }] }],
+    subject: { reference: `Patient/${rf.residentId}` },
+    date: (rf.reportDate ?? rf.createdAt).toISOString(),
+    description: rf.title,
+    content: [{ attachment: { contentType: rf.file.contentType, title: rf.file.filename, size: rf.file.size, creation: rf.file.createdAt.toISOString() } }],
+    ...(rf.external ? { extension: [{ url: 'urn:careos:external-report', valueBoolean: true }, ...(rf.receivedVia ? [{ url: 'urn:careos:received-via', valueString: rf.receivedVia }] : [])] } : {}),
+  }
 }
 
 /** "Patient/abc" oder "abc" → "abc" */

@@ -5,7 +5,8 @@ import { Empty } from '@/components/ui/Empty'
 import { fmtDay, NoAccess, PortalHead, portalPage } from '../ui'
 
 export async function generateMetadata() {
-  return { title: (await getPortalCtx()).t('portal.updates.title') }
+  const p = await getPortalCtx()
+  return { title: p.t(p.self ? 'residentPortal.news.title' : 'portal.updates.title') }
 }
 
 export default async function PortalUpdatesPage() {
@@ -16,9 +17,11 @@ export default async function PortalUpdatesPage() {
   const updates = await portalUpdates(p, current, 60)
   const files = await updateAttachments(p.org.id, [...new Set(updates.flatMap((u) => u.fileIds))])
   const byId = new Map(files.map((f) => [f.id, f]))
+  // Bewohnerportal: «Neuigkeiten» statt «Mitteilungen der Station»
+  const k = (x: string) => (p.self ? 'residentPortal.news.' : 'portal.updates.') + x
   return (
     <>
-      <PortalHead label={current.resident.unit} title={t('portal.updates.title')} sub={t('portal.updates.sub')} />
+      <PortalHead label={current.resident.unit} title={t(k('title'))} sub={t(k('sub'))} />
       {updates.length ? updates.map((u) => (
         <article key={u.id} id={`u-${u.id}`} className="card portal-update">
           <div className="card-head">
@@ -26,7 +29,7 @@ export default async function PortalUpdatesPage() {
             <span className="small muted mono">{fmtDay(u.publishedAt, locale, t)}</span>
           </div>
           <div className="card-body stack-sm">
-            {u.residentId && <span className="tag outline">{t('portal.updates.personal')}</span>}
+            {u.residentId && <span className="tag outline">{t(k('personal'))}</span>}
             <p className="portal-body">{u.body}</p>
             {u.fileIds.some((id) => byId.has(id)) && (
               <ul className="portal-attach">
@@ -37,7 +40,7 @@ export default async function PortalUpdatesPage() {
             )}
           </div>
         </article>
-      )) : <Empty title={t('portal.updates.none')} />}
+      )) : <Empty title={t(k('none'))} />}
     </>
   )
 }

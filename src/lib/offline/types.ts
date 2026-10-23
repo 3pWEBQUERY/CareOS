@@ -2,7 +2,7 @@
  * Offline-Erfassung (PRD §39): gemeinsame Typen für Gerät (Outbox) und Server (Synchronisation).
  * Keine Abhängigkeiten – wird im Client-Bundle verwendet.
  */
-export const OFFLINE_KINDS = ['note', 'vitals', 'task', 'intake'] as const
+export const OFFLINE_KINDS = ['note', 'vitals', 'task', 'intake', 'visit'] as const
 export type OfflineKind = (typeof OFFLINE_KINDS)[number]
 
 /** Offline-Einträge höchstens 24 h auf dem Gerät, Lesestand höchstens 12 h. */
@@ -17,6 +17,13 @@ export const NOTE_CATEGORIES = ['care', 'observation', 'physician', 'relatives',
 export type NoteData = { category: string; text: string; important: boolean }
 export type VitalsData = { values: Record<string, number>; note?: string | null; /** organisationseigene Parameter (PRD §45) */ extra?: Record<string, number> }
 export type TaskData = { taskId: string; status: 'done' | 'partial' | 'skipped'; reason?: string; note?: string }
+/** Spitex-Einsatz (Meine Tour): Beginn, Abschluss mit Leistungen und Notiz, nicht angetroffen (Grund in note). */
+export type VisitStepData = {
+  visitId: string
+  step: 'start' | 'finish' | 'missed'
+  services?: { id: string; done: boolean; minutes: number | null }[]
+  note?: string
+}
 export type IntakeData = { type: 'drink'; ml: number; item?: string } | { type: 'meal'; meal: string; portion: number } | { type: 'fluid'; fluid: string; ml: number; item?: string }
 
 export type OfflineOpInput =
@@ -24,6 +31,7 @@ export type OfflineOpInput =
   | { kind: 'vitals'; residentId: string; data: VitalsData }
   | { kind: 'task'; residentId: string; data: TaskData }
   | { kind: 'intake'; residentId: string; data: IntakeData }
+  | { kind: 'visit'; residentId: string; data: VisitStepData }
 
 /** Ein Vorgang, wie er an /api/offline/sync gesendet wird. id = UUID = Idempotenzschlüssel, at = Zeitpunkt auf dem Gerät. */
 export type OfflineOp = OfflineOpInput & { id: string; at: string }
@@ -32,6 +40,7 @@ export type OpStatus = 'applied' | 'duplicate' | 'conflict' | 'rejected' | 'erro
 export type ConflictReason =
   | 'taskClosed' | 'taskChanged' | 'taskNotFound' | 'medOnly' | 'discharged' | 'implausible'
   | 'invalid' | 'forbidden' | 'tooOld' | 'future' | 'idTaken' | 'error'
+  | 'visitNotFound' | 'visitClosed' | 'visitNotStarted'
 export type OpResult = { id: string; status: OpStatus; reason?: ConflictReason; detail?: Record<string, string> }
 
 /** Anzeige-Metadaten, verschlüsselt zusammen mit den Daten gespeichert. */
@@ -47,4 +56,18 @@ export type ShiftSnapshot = {
   savedAt: string
   residents: { id: string; name: string; room: string | null; allergies: string[]; rea: 'yes' | 'no' | 'unknown'; risks: string[]; absent: boolean }[]
   tasks: { id: string; residentId: string | null; time: string; title: string; med: boolean }[]
+}
+
+/** Lesestand «Meine Tour» (Spitex) – ohne Zugangsangaben (Türcode, Schlüsselbox), die nur online mit Protokoll erscheinen. */
+export type TourSnapshot = {
+  userId: string
+  savedAt: string
+  day: string
+  visits: {
+    id: string; residentId: string; name: string; address: string; mapsHref: string | null; phone: string | null
+    from: string; to: string; status: string; startedAt: string | null
+    /** Allergien (Sicherheit vor Ort, wie im Schicht-Lesestand) */
+    allergies?: string[]
+    services: { id: string; klv: string; label: string; plannedMin: number }[]
+  }[]
 }

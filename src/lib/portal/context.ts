@@ -8,11 +8,11 @@ import { dictionary } from '@/i18n'
 import { makeT, type Locale, type Terminology, type TFn } from '@/i18n/core'
 import { requirePortalSession } from './auth'
 import { portalEnabled } from './module'
-import { effectiveGrants, hasGrant, portalResident, type PortalGrant } from './policy'
+import { effectiveGrants, hasGrant, isSelfAccess, portalResident, type PortalGrant } from './policy'
 import { PORTAL_RESIDENT_COOKIE } from './routing'
 
 /**
- * Kontext des Angehörigenportals – die einzige Stelle, an der im Portal der Bezug zu Bewohnenden entsteht.
+ * Kontext des Portals (Angehörige und Bewohnerportal) – die einzige Stelle, an der im Portal der Bezug zu Bewohnenden entsteht.
  * Nutzt nie getCtx() der Stationsapp: keine Rollen, keine Bereiche, nur die eigenen, angenommenen,
  * nicht widerrufenen Zugänge mit ihren wirksamen Freigaben.
  */
@@ -55,6 +55,8 @@ async function loadPortalCtx() {
     moduleOn,
     accesses,
     current,
+    /** Aktueller Zugang ist die Person selbst (Bewohnerportal): eigene Startseite, einfache Sprache */
+    self: isSelfAccess(current),
     locale,
     t,
     can: (g: PortalGrant) => !!current && hasGrant(current.grants, g),

@@ -10,6 +10,8 @@ export type EscalationPolicy = {
   vitalsAbnormalNotifyRoles: string[]
   incidentSevereNotifyRoles: string[]
   unackedImportantHandoverMinutes: number
+  /** Visitenfragen (PRD §29, §49): unbeantwortet länger als diese Stunden → erneute Meldung an Ärztin/Arzt und Leitung */
+  visitQuestionHours: number
 }
 
 export const DEFAULT_ESCALATION: EscalationPolicy = {
@@ -20,6 +22,7 @@ export const DEFAULT_ESCALATION: EscalationPolicy = {
   vitalsAbnormalNotifyRoles: ['ward_lead'],
   incidentSevereNotifyRoles: ['nursing_director'],
   unackedImportantHandoverMinutes: 120,
+  visitQuestionHours: 48,
 }
 
 export const ESCALATION_LIMITS = {
@@ -27,6 +30,8 @@ export const ESCALATION_LIMITS = {
   criticalTaskOverdueMinutes: { min: 5, max: 240 },
   unackedImportantHandoverMinutes: { min: 30, max: 1440 },
 } as const
+
+export const VISIT_QUESTION_HOURS = { min: 4, max: 336 } as const
 
 /** Nur so weit zurück wird eskaliert, damit beim Einschalten keine Flut alter Aufgaben entsteht. */
 export const ESCALATION_LOOKBACK_HOURS = 24
@@ -51,6 +56,7 @@ export function escalationPolicy(settings: unknown): EscalationPolicy {
     vitalsAbnormalNotifyRoles: roleList(raw.vitalsAbnormalNotifyRoles, d.vitalsAbnormalNotifyRoles),
     incidentSevereNotifyRoles: roleList(raw.incidentSevereNotifyRoles, d.incidentSevereNotifyRoles),
     unackedImportantHandoverMinutes: clampInt(raw.unackedImportantHandoverMinutes, d.unackedImportantHandoverMinutes, L.unackedImportantHandoverMinutes.min, L.unackedImportantHandoverMinutes.max),
+    visitQuestionHours: clampInt(raw.visitQuestionHours, d.visitQuestionHours, VISIT_QUESTION_HOURS.min, VISIT_QUESTION_HOURS.max),
   }
 }
 
@@ -77,3 +83,8 @@ export const escalationWindow = (p: EscalationPolicy, now = new Date()) => ({
   from: new Date(now.getTime() - ESCALATION_LOOKBACK_HOURS * 3600_000),
   to: new Date(now.getTime() - Math.min(p.taskOverdueMinutes, p.criticalTaskOverdueMinutes) * 60_000),
 })
+
+/** Muss diese Visitenfrage jetzt eskaliert werden? (offen, älter als die Frist, noch nicht gemeldet) */
+export function visitQuestionDue(q: { status: string; createdAt: Date; escalatedAt: Date | null }, p: EscalationPolicy, now = new Date()) {
+  return p.enabled && q.status === 'open' && !q.escalatedAt && now.getTime() - q.createdAt.getTime() >= p.visitQuestionHours * 3600_000
+}

@@ -4,6 +4,7 @@ import { getCtx } from '@/lib/context'
 import { Forbidden } from '@/components/ui/Empty'
 import { fmtRel, hm, fmtDayMonth } from '@/lib/time'
 import { portalEnabled } from '@/lib/portal/module'
+import { isSelfAccess } from '@/lib/portal/policy'
 import { FamilyHead, ModuleOff } from './Head'
 import { familyUnits, inboxUnitIds, staffName } from './lib'
 
@@ -15,7 +16,7 @@ export async function generateMetadata() {
 const FILTERS = ['open', 'mine', 'done'] as const
 type Filter = (typeof FILTERS)[number]
 
-/** Posteingang: Nachrichten und Besuchsanfragen von Angehörigen, je Bereich, zuweisen und beantworten. */
+/** Posteingang: Nachrichten und Besuchsanfragen von Angehörigen und aus dem Bewohnerportal, je Bereich, zuweisen und beantworten. */
 export default async function FamilyInbox({ searchParams }: { searchParams: Promise<{ f?: string; all?: string }> }) {
   const ctx = await getCtx()
   const { t, locale } = ctx
@@ -37,13 +38,13 @@ export default async function FamilyInbox({ searchParams }: { searchParams: Prom
   const [threads, visits, openThreads, openVisits] = await Promise.all([
     db.portalThread.findMany({
       where: { orgId: ctx.org.id, resident: res, ...threadWhere },
-      include: { resident: { select: { firstName: true, lastName: true, room: { select: { number: true } }, unit: { select: { name: true } } } }, access: { select: { inviteName: true, account: { select: { name: true } } } }, messages: { select: { side: true, body: true }, orderBy: { createdAt: 'desc' }, take: 1 } },
+      include: { resident: { select: { firstName: true, lastName: true, room: { select: { number: true } }, unit: { select: { name: true } } } }, access: { select: { inviteName: true, role: true, account: { select: { name: true } } } }, messages: { select: { side: true, body: true }, orderBy: { createdAt: 'desc' }, take: 1 } },
       orderBy: { lastMessageAt: 'desc' },
       take: 100,
     }),
     db.visitRequest.findMany({
       where: { orgId: ctx.org.id, resident: res, ...visitWhere },
-      include: { resident: { select: { firstName: true, lastName: true, room: { select: { number: true } }, unit: { select: { name: true } } } }, access: { select: { inviteName: true, account: { select: { name: true } } } } },
+      include: { resident: { select: { firstName: true, lastName: true, room: { select: { number: true } }, unit: { select: { name: true } } } }, access: { select: { inviteName: true, role: true, account: { select: { name: true } } } } },
       orderBy: { start: 'asc' },
       take: 100,
     }),
@@ -52,11 +53,11 @@ export default async function FamilyInbox({ searchParams }: { searchParams: Prom
   ])
   const staffIds = [...new Set([...threads.map((x) => x.assigneeId), ...visits.map((x) => x.assigneeId)].filter((x): x is string => !!x))]
   const staff = new Map((await db.user.findMany({ where: { id: { in: staffIds }, orgId: ctx.org.id }, select: { id: true, firstName: true, lastName: true } })).map((u) => [u.id, staffName(u)]))
-  type Item = { key: string; href: string; at: Date; kind: 'message' | 'visit'; who: string; resident: string; title: string; excerpt?: string; status: string; tone: string; unread: boolean; assignee: string | null }
+  type Item = { key: string; href: string; at: Date; kind: 'message' | 'visit'; who: string; self: boolean; resident: string; title: string; excerpt?: string; status: string; tone: string; unread: boolean; assignee: string | null }
   const items: Item[] = [
     ...threads.map((th) => ({
       key: 'm' + th.id, href: `/team/family/m/${th.id}`, at: th.lastMessageAt, kind: 'message' as const,
-      who: th.access?.account?.name ?? th.access?.inviteName ?? '–',
+      who: th.access?.account?.name ?? th.access?.inviteName ?? '–', self: isSelfAccess(th.access),
       resident: `${th.resident.lastName} ${th.resident.firstName}` + (th.resident.room ? ` · ${t('residents.banner.room')} ${th.resident.room.number}` : '') + (all || unitIds.length > 1 ? ` · ${th.resident.unit.name}` : ''),
       title: th.subject, excerpt: th.messages[0]?.body.slice(0, 160),
       status: t('portal.threadStatus.' + th.status), tone: th.status === 'open' ? 'accent' : th.status === 'answered' ? 'ok' : '',
@@ -64,9 +65,9 @@ export default async function FamilyInbox({ searchParams }: { searchParams: Prom
     })),
     ...visits.map((v) => ({
       key: 'v' + v.id, href: `/team/family/v/${v.id}`, at: v.createdAt, kind: 'visit' as const,
-      who: v.access?.account?.name ?? v.access?.inviteName ?? '–',
+      who: v.access?.account?.name ?? v.access?.inviteName ?? '–', self: isSelfAccess(v.access),
       resident: `${v.resident.lastName} ${v.resident.firstName}` + (v.resident.room ? ` · ${t('residents.banner.room')} ${v.resident.room.number}` : '') + (all || unitIds.length > 1 ? ` · ${v.resident.unit.name}` : ''),
-      title: t('portal.team.visitLine', { date: fmtDayMonth(v.start, locale), from: hm(v.start), to: hm(v.end), n: v.visitors }),
+      title: t('portal.team.visitLine', { date: fmtDayMonth(v.start, locale), from: hm(v.start), to: hm(v.end), n: v.visitors }) + (v.visitorName ? ' · ' + t('residentPortal.team.visitorName', { name: v.visitorName }) : ''),
       excerpt: v.note ?? undefined,
       status: t('portal.visitStatus.' + v.status), tone: v.status === 'requested' ? 'accent' : v.status === 'confirmed' ? 'ok' : v.status === 'declined' ? 'warn' : '',
       unread: v.status === 'requested' && !v.staffReadAt, assignee: v.assigneeId ? staff.get(v.assigneeId) ?? null : null,
@@ -109,6 +110,7 @@ export default async function FamilyInbox({ searchParams }: { searchParams: Prom
                           <span className={'tag ' + (it.kind === 'visit' ? 'violet' : 'outline')}>{t('portal.team.kind.' + it.kind)}</span>
                           <strong>{it.resident}</strong>
                           <span className="small muted">{t('portal.team.from', { name: it.who })}</span>
+                          {it.self && <span className="tag accent">{t('residentPortal.team.self')}</span>}
                         </div>
                         <div style={{ fontWeight: it.unread ? 600 : 500 }}>{it.title}</div>
                         {it.excerpt && <p className="small fg2 portal-clamp" style={{ margin: 0 }}>{it.excerpt}</p>}

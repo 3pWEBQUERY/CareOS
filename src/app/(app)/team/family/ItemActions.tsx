@@ -43,13 +43,13 @@ export function AssignForm({ kind, id, value, options }: { kind: 'message' | 'vi
 }
 
 /** Nachricht in den Verlauf übernehmen: Text vorbefüllt, vor dem Speichern anpassbar (Document Once). */
-export function ToChart({ threadId, messageId, text, context }: { threadId: string; messageId: string; text: string; context: string }) {
+export function ToChart({ threadId, messageId, text, context, category }: { threadId: string; messageId: string; text: string; context: string; category?: string }) {
   const t = useT()
   const [open, setOpen] = useState(false)
   return (
     <>
       <button type="button" className="linkbtn small" onClick={() => setOpen(true)}>{t('portal.team.toChart')}</button>
-      <Dialog open={open} onClose={() => setOpen(false)} title={t('portal.team.toChartTitle')} context={<span><strong>{context}</strong> · {t('portal.team.toChartCat')}</span>}>
+      <Dialog open={open} onClose={() => setOpen(false)} title={t('portal.team.toChartTitle')} context={<span><strong>{context}</strong> · {category ?? t('portal.team.toChartCat')}</span>}>
         {open && (
           <ActionForm action={messageToChartAction.bind(null, threadId, messageId)} onDone={(r) => r.ok && setOpen(false)}>
             <Textarea label={t('portal.team.toChartText')} name="text" required rows={5} maxLength={4000} defaultValue={text} />

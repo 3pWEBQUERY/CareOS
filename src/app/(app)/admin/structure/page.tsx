@@ -52,8 +52,9 @@ export default async function StructurePage({ searchParams }: { searchParams: Pr
       {u && <input type="hidden" name="id" value={u.id} />}
       <TextField label={t('admin.structure.name')} name="name" defaultValue={u?.name} required maxLength={120} autoFocus />
       <TextField label={t('admin.structure.shortName')} name="shortName" defaultValue={u?.shortName ?? ''} maxLength={12} />
-      <Select label={t('admin.structure.kind')} name="kind" defaultValue={u?.kind ?? 'ward'}>{UNIT_KINDS.map((k) => <option key={k} value={k}>{t('admin.structure.kinds.' + k)}</option>)}</Select>
+      <Select label={t('admin.structure.kind')} name="kind" defaultValue={u?.kind ?? 'ward'} hint={t(ctx.hasModule('spitex') ? 'admin.structure.homecareHint' : 'admin.structure.homecareOff')}>{UNIT_KINDS.map((k) => <option key={k} value={k}>{t('admin.structure.kinds.' + k)}</option>)}</Select>
       <Select label={t('admin.structure.location')} name="locationId" defaultValue={u?.locationId ?? locations[0]?.id} required>{locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}</Select>
+      <TextField label={t('admin.structure.phone')} name="phone" type="tel" defaultValue={u?.phone ?? ''} maxLength={40} hint={t('residentPortal.record.unitPhoneHint')} wrapClassName="span-all" />
     </div>
   )
   const teamFields = (tm?: (typeof teams)[number]) => (

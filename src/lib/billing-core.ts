@@ -6,6 +6,7 @@
  *   aus den Pflegeepisoden «absence». Laufende Abwesenheit zählt bis Monatsende.
  * - Pflegeminuten: Summe der geplanten Dauer quittierter Aufgaben (erledigt oder teilweise) im Monat – dokumentierte
  *   Leistungen, keine Zeitmessung. Pflegestufe: aktueller Stand der Stammdaten.
+ * - Spitex (Einsatzgebiete): erbrachte Minuten je KLV-Kategorie a/b/c aus abgeschlossenen Einsätzen (src/lib/spitex.ts).
  */
 export const monthRange = (key: string) => {
   const m = /^(\d{4})-(\d{2})$/.exec(key)
@@ -37,17 +38,24 @@ export function absenceNights(a: Date, b: Date | null, start: Date, end: Date) {
 export type BillingRow = {
   lastName: string; firstName: string; birthDate: string; insuranceNo: string | null; unit: string; careLevel: number | null
   stayDays: number; absenceDays: number; careMinutes: number; services: number; byCategory: Record<string, number>
+  /** Spitex: Minuten je KLV-Kategorie (nur Personen mit Einsätzen im Monat) */
+  klv?: { a: number; b: number; c: number }
 }
 
-/** CSV-Zeilen (Kopf + Daten); Kategorien als eigene Spalten in fester Reihenfolge. */
-export function billingCsvRows(rows: BillingRow[], header: { base: string[]; category: (c: string) => string }) {
+/**
+ * CSV-Zeilen (Kopf + Daten); Kategorien als eigene Spalten in fester Reihenfolge. KLV-Spalten (a, b, c) nur, wenn
+ * im Export Spitex-Einsätze vorkommen und `header.klv` gesetzt ist.
+ */
+export function billingCsvRows(rows: BillingRow[], header: { base: string[]; category: (c: string) => string; klv?: (k: 'a' | 'b' | 'c') => string }) {
   const cats = [...new Set(rows.flatMap((r) => Object.keys(r.byCategory)))].sort()
+  const klv = header.klv && rows.some((r) => r.klv) ? (['a', 'b', 'c'] as const) : []
   return [
-    [...header.base, ...cats.map(header.category)],
+    [...header.base, ...cats.map(header.category), ...klv.map((k) => header.klv!(k))],
     ...rows.map((r) => [
       r.lastName, r.firstName, r.birthDate, r.insuranceNo ?? '', r.unit, r.careLevel != null ? String(r.careLevel) : '',
       String(r.stayDays), String(r.absenceDays), String(r.careMinutes), (r.careMinutes / 60).toFixed(2), String(r.services),
       ...cats.map((c) => String(r.byCategory[c] ?? 0)),
+      ...klv.map((k) => String(r.klv?.[k] ?? 0)),
     ]),
   ]
 }

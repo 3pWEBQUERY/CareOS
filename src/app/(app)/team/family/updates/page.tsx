@@ -4,6 +4,7 @@ import { Forbidden } from '@/components/ui/Empty'
 import { storageConfigured } from '@/lib/env'
 import { dateKey, fmtRel, fmtDate } from '@/lib/time'
 import { portalEnabled } from '@/lib/portal/module'
+import { normalizeAudience } from '@/lib/portal/policy'
 import { FamilyHead, ModuleOff } from '../Head'
 import { familyUnits, staffName } from '../lib'
 import { DeleteUpdate, UpdateForm } from './UpdateForm'
@@ -52,6 +53,7 @@ export default async function FamilyUpdates() {
                           <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
                             <strong>{u.title}</strong>
                             <span className="tag outline">{u.resident ? `${u.resident.lastName} ${u.resident.firstName}` : u.unitId ? unitName.get(u.unitId) ?? '–' : t('portal.team.scopeOrg')}</span>
+                            {u.audience !== 'family' && <span className="tag accent">{t('residentPortal.team.audiences.' + normalizeAudience(u.audience))}</span>}
                             {expired && <span className="tag">{t('portal.team.expired')}</span>}
                             {u.fileIds.length > 0 && <span className="small muted">{t('portal.team.attachments', { n: u.fileIds.length })}</span>}
                           </div>

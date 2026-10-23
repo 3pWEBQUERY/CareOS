@@ -5,6 +5,7 @@ import { getCtx } from '@/lib/context'
 import { audit } from '@/lib/audit'
 import { fmtDate, fmtRel, hm, weekdayShort } from '@/lib/time'
 import { portalEnabled } from '@/lib/portal/module'
+import { isSelfAccess } from '@/lib/portal/policy'
 import { ModuleOff } from '../../Head'
 import { assignees, staffName, visitInScope } from '../../lib'
 import { AssignForm, VisitDecision } from '../../ItemActions'
@@ -38,7 +39,9 @@ export default async function FamilyVisit({ params }: { params: Promise<{ id: st
         <div>
           <Link className="lbl" href="/team/family">← {t('portal.team.tabs.inbox')}</Link>
           <h1>{t('portal.team.visitHead', { when })}</h1>
-          <p className="sub"><Link href={`/residents/${r.id}/appointments`}>{context}</Link> · {t('portal.team.from', { name: who })}</p>
+          <p className="sub">
+            <Link href={`/residents/${r.id}/appointments`}>{context}</Link> · {isSelfAccess(v.access) ? t('residentPortal.team.announcedBy', { name: who }) : t('portal.team.from', { name: who })}
+          </p>
         </div>
         <span className={'tag ' + (v.status === 'requested' ? 'accent' : v.status === 'confirmed' ? 'ok' : v.status === 'declined' ? 'warn' : '')}>{t('portal.visitStatus.' + v.status)}</span>
       </div>
@@ -49,6 +52,7 @@ export default async function FamilyVisit({ params }: { params: Promise<{ id: st
             <div className="card-body stack">
               <dl className="kv">
                 <dt>{t('portal.visits.date')}</dt><dd>{when}</dd>
+                {v.visitorName && <><dt>{t('residentPortal.visits.visitorName')}</dt><dd>{v.visitorName}</dd></>}
                 <dt>{t('portal.visits.visitors')}</dt><dd className="mono">{v.visitors}</dd>
                 {v.note && <><dt>{t('portal.visits.note')}</dt><dd>{v.note}</dd></>}
                 {v.reply && <><dt>{t('portal.visits.reply')}</dt><dd>{v.reply}{decider && <span className="small muted"> · {staffName(decider)}</span>}</dd></>}

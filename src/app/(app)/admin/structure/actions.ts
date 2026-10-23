@@ -60,7 +60,7 @@ export async function saveUnitAction(form: FormData): Promise<ActionResult> {
     const id = fd(form, 'id')
     const locationId = fd(form, 'locationId')
     const kind = fd(form, 'kind')
-    const data = { name: fd(form, 'name').slice(0, 120), shortName: fd(form, 'shortName').slice(0, 12) || null, kind: (UNIT_KINDS as readonly string[]).includes(kind) ? kind : 'ward', locationId }
+    const data = { name: fd(form, 'name').slice(0, 120), shortName: fd(form, 'shortName').slice(0, 12) || null, kind: (UNIT_KINDS as readonly string[]).includes(kind) ? kind : 'ward', locationId, phone: fd(form, 'phone').slice(0, 40) || null }
     if (data.name.length < 2) return { ok: false, error: 'admin.errors.name', field: 'name' }
     if (!(await db.location.findFirst({ where: { id: locationId, orgId: ctx.org.id } }))) return { ok: false, error: 'admin.structure.pickLocation', field: 'locationId' }
     if (id) {

@@ -7,6 +7,7 @@ import { hash } from '@node-rs/argon2'
 import { DEFAULT_ROLES } from '../src/lib/permissions'
 import { ASSESSMENTS, CARE_DOMAINS, INCIDENT_TYPES } from '../src/lib/clinical-config'
 import { DEFAULT_FORMS } from '../src/lib/forms'
+import { seedSpitexDemo } from './seed-spitex'
 
 const db = new PrismaClient()
 
@@ -626,6 +627,9 @@ export async function seedDemo(client: PrismaClient = db) {
   ] })
 
   await client.featureFlag.createMany({ data: [{ orgId: org.id, key: 'ai', enabled: true }, { orgId: org.id, key: 'voice', enabled: true }, { orgId: org.id, key: 'medication', enabled: true }] })
+
+  // Spitex (Zusatzmodul): Einsatzgebiet mit Klient/innen, Wochenvorlagen und Einsätzen
+  await seedSpitexDemo(client, { orgId: org.id, roles, pw, today, now, wardUnitId: wg2.id, lateShiftTypeId: st.S, rng: R })
 
   console.log('Demodaten angelegt. Login: anna.muster@lindenhof.ch / careos-demo')
   return true

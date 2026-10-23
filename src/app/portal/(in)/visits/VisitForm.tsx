@@ -7,25 +7,27 @@ import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
 import { ActionForm } from '@/components/ui/ActionForm'
 import { useConfirm } from '@/components/ui/ConfirmDialog'
-import { DateField, NumberField, Textarea, TimeField } from '@/components/ui/fields'
-import { VISIT_MAX_VISITORS } from '@/lib/portal/policy'
+import { DateField, NumberField, TextField, Textarea, TimeField } from '@/components/ui/fields'
+import { VISITOR_NAME_MAX, VISIT_MAX_VISITORS } from '@/lib/portal/policy'
 import { cancelVisitAction, requestVisitAction } from '../actions'
 
-export function VisitForm({ min, max, cancelHref }: { min: string; max: string; cancelHref: string | null }) {
+/** Besuch anmelden. `self` = Bewohnerportal: zusätzlich «Wer kommt?», Hinweise in einfacher Sprache. */
+export function VisitForm({ min, max, cancelHref, self }: { min: string; max: string; cancelHref: string | null; self?: boolean }) {
   const t = useT()
   const router = useRouter()
   return (
     <ActionForm action={requestVisitAction} onDone={(r) => { if (r.ok) router.push('/portal/visits') }}>
       <div className="form-grid">
+        {self && <TextField label={t('residentPortal.visits.visitorName')} name="visitorName" required maxLength={VISITOR_NAME_MAX} placeholder={t('residentPortal.visits.visitorNamePh')} wrapClassName="span-all" />}
         <DateField label={t('portal.visits.date')} name="date" required min={min} max={max} />
         <div className="portal-times">
           <TimeField label={t('portal.visits.from')} name="from" required step={900} quick={false} defaultValue="14:00" />
           <TimeField label={t('portal.visits.to')} name="to" required step={900} quick={false} defaultValue="15:00" />
         </div>
         <NumberField label={t('portal.visits.visitors')} name="visitors" required min={1} max={VISIT_MAX_VISITORS} step={1} defaultValue={1} />
-        <Textarea label={t('portal.visits.note')} name="note" optional rows={2} maxLength={500} placeholder={t('portal.visits.notePh')} wrapClassName="span-all" />
+        <Textarea label={t('portal.visits.note')} name="note" optional rows={2} maxLength={500} placeholder={t(self ? 'residentPortal.visits.notePh' : 'portal.visits.notePh')} wrapClassName="span-all" />
       </div>
-      <p className="small muted" style={{ margin: 0 }}>{t('portal.visits.confirmHint')}</p>
+      <p className="small muted" style={{ margin: 0 }}>{t(self ? 'residentPortal.visits.confirmHint' : 'portal.visits.confirmHint')}</p>
       <div className="form-actions">
         <span className="spacer" />
         {cancelHref && <Link className="btn" href={cancelHref}>{t('common.cancel')}</Link>}

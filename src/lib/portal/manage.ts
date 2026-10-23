@@ -9,6 +9,7 @@ import { fmtDate } from '@/lib/time'
 import { mailConfigured, sendMail } from '@/lib/mail'
 import { revokePortalSessions } from './auth'
 import { issuePortalInvite } from './invites'
+import { isSelfAccess } from './policy'
 
 /** Schnappschuss eines Zugangs fürs Audit (ohne Token-Hash). */
 export const accessSnap = (a: { role: string; grants: string[]; consentBy: string; consentName: string; consentAt: Date; consentScope: string[]; consentNote: string | null; inviteEmail: string; revokedAt: Date | null; revokeReason: string | null }) => ({
@@ -25,10 +26,12 @@ export async function sendPortalInvite(ctx: Ctx, accessId: string) {
     const locale = ctx.org.defaultLocale as Locale
     const t = makeT(dictionary(locale), locale, ctx.org.terminology as Terminology)
     const org = ctx.org.brandName || ctx.org.name
+    // Bewohnerportal: eigener Betreff und Text (die Person selbst, nicht Angehörige)
+    const ns = isSelfAccess(a) ? 'residentPortal.mail.' : 'portal.mail.'
     mailed = (await sendMail({
       to: a.inviteEmail,
-      subject: t('portal.mail.subject', { org }),
-      text: t('portal.mail.text', { name: a.inviteName, org, url: link.url, until: fmtDate(link.expiresAt, locale) }),
+      subject: t(ns + 'subject', { org }),
+      text: t(ns + 'text', { name: a.inviteName, org, url: link.url, until: fmtDate(link.expiresAt, locale) }),
     })).sent
   }
   return { ...link, mailed }

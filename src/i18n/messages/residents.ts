@@ -300,6 +300,15 @@ export default defineMessages({
       uploaded: 'Dokument gespeichert',
       none: 'Keine Dokumente vorhanden.',
       noStorageTitle: 'Dateiablage nicht eingerichtet. ',
+      external: 'Extern',
+      viaInterface: 'eingegangen über Schnittstelle',
+      reportKind: { discharge: 'Austrittsbericht', clinic: 'Klinikbericht' },
+      reportDate: 'Bericht vom {date}',
+      notify: {
+        discharge: 'Austrittsbericht eingegangen · {who}',
+        clinic: 'Externer Bericht eingegangen · {who}',
+        body: '{title} – eingegangen über Schnittstelle',
+      },
       cat: {
         report: 'Bericht',
         lab: 'Labor',
@@ -758,6 +767,15 @@ export default defineMessages({
       uploaded: 'Document enregistré',
       none: 'Aucun document.',
       noStorageTitle: 'Stockage de fichiers non configuré. ',
+      external: 'Externe',
+      viaInterface: 'reçu via l’interface',
+      reportKind: { discharge: 'Rapport de sortie', clinic: 'Rapport de clinique' },
+      reportDate: 'Rapport du {date}',
+      notify: {
+        discharge: 'Rapport de sortie reçu · {who}',
+        clinic: 'Rapport externe reçu · {who}',
+        body: '{title} – reçu via l’interface',
+      },
       cat: {
         report: 'Rapport',
         lab: 'Laboratoire',
@@ -1216,6 +1234,15 @@ export default defineMessages({
       uploaded: 'Documento salvato',
       none: 'Nessun documento.',
       noStorageTitle: 'Archivio file non configurato. ',
+      external: 'Esterno',
+      viaInterface: 'ricevuto tramite interfaccia',
+      reportKind: { discharge: 'Lettera di dimissione', clinic: 'Referto clinico' },
+      reportDate: 'Referto del {date}',
+      notify: {
+        discharge: 'Lettera di dimissione ricevuta · {who}',
+        clinic: 'Referto esterno ricevuto · {who}',
+        body: '{title} – ricevuto tramite interfaccia',
+      },
       cat: {
         report: 'Rapporto',
         lab: 'Laboratorio',
@@ -1674,6 +1701,15 @@ export default defineMessages({
       uploaded: 'Document saved',
       none: 'No documents.',
       noStorageTitle: 'File storage not set up. ',
+      external: 'External',
+      viaInterface: 'received via interface',
+      reportKind: { discharge: 'Discharge report', clinic: 'Clinic report' },
+      reportDate: 'Report dated {date}',
+      notify: {
+        discharge: 'Discharge report received · {who}',
+        clinic: 'External report received · {who}',
+        body: '{title} – received via interface',
+      },
       cat: {
         report: 'Report',
         lab: 'Laboratory',

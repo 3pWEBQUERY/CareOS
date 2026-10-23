@@ -270,6 +270,8 @@ model Unit {
   name       String
   shortName  String?
   kind       String   @default("ward")
+  /// Telefon des Bereichs (Stationszimmer); im Bewohnerportal unter «Hilfe und Kontakt», sonst Telefon des Standorts
+  phone      String?
   createdAt  DateTime @default(now())
 
   org        Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -485,6 +487,20 @@ model ApiToken {
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@index([createdById])
+}
+
+/// Kalender-Abo (PRD §19): geheime Adresse /api/ical/<token> mit den eigenen Diensten. Gespeichert nur als SHA-256-Hash;
+/// höchstens ein aktives Token je Person (neu erzeugen widerruft das bisherige).
+model CalendarToken {
+  id         String    @id @default(cuid())
+  orgId      String
+  userId     String
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  @@index([userId])
 }
 
 // ───────────────────────── Workforce ─────────────────────────
@@ -710,6 +726,16 @@ model Resident {
   /// Zugeordnete Ärztinnen und Ärzte mit Konto (Freitext `physician` bleibt für Personen ohne Konto)
   physicians      ResidentPhysician[]
   therapyPlans    TherapyPlan[]
+  /// Spitex (PRD §60): Einsatzort zu Hause und Telefon der Person
+  street          String?
+  postalCode      String?
+  city            String?
+  phone           String?
+  /// Spitex: Zugang (Türcode, Schlüsselbox) – verschlüsselt gespeichert (src/lib/crypto.ts); Anzeige nur mit Spitex-Recht
+  /// im Bereich, jede Anzeige wird protokolliert (Audit spitex.access.view)
+  accessNote      String?
+  homeCareVisits    HomeCareVisit[]
+  homeCareTemplates HomeCareTemplate[]
 
   @@index([orgId, unitId])
 }
@@ -775,6 +801,14 @@ model ResidentFile {
   portalShared     Boolean   @default(false)
   portalSharedAt   DateTime?
   portalSharedById String?
+  /// Externer Bericht (PRD §41): Austrittsbericht oder Bericht einer Klinik, eingegangen über eine Schnittstelle.
+  external   Boolean    @default(false)
+  /// Eingang: fhir (POST /api/fhir/DocumentReference); null = in der App hochgeladen
+  receivedVia String?
+  /// Art des externen Berichts: discharge | clinic
+  reportKind String?
+  /// Datum des Berichts laut Absender (DocumentReference.date)
+  reportDate DateTime?
   resident   Resident   @relation(fields: [residentId], references: [id], onDelete: Cascade)
   file       FileObject @relation(fields: [fileId], references: [id], onDelete: Cascade)
 }
@@ -1415,6 +1449,11 @@ model DocumentVersion {
   approvedAt   DateTime?
   /// Zur Freigabe eingereicht (Docs). Ohne approvedAt und ohne submittedAt = Entwurf.
   submittedAt  DateTime?
+  /// Assign (PRD §49): gewählte Person für die Freigabe (docs.approve). null = alle mit docs.approve.
+  reviewerId   String?
+  /// Frist der Freigabe; danach eskaliert der Job «escalations» einmal (reviewEscalatedAt).
+  reviewDueAt  DateTime?
+  reviewEscalatedAt DateTime?
   createdAt    DateTime  @default(now())
   document     Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
@@ -1755,6 +1794,8 @@ model VisitQuestion {
   createdAt   DateTime            @default(now())
   closedById  String?
   closedAt    DateTime?
+  /// Escalate (PRD §49): offen über die Frist (Organization.settings.escalation.visitQuestionHours) – einmal gemeldet.
+  escalatedAt DateTime?
 
   resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
   visit    Visit?   @relation(fields: [visitId], references: [id], onDelete: SetNull)
@@ -2050,6 +2091,8 @@ model PortalAccount {
   lockedAt     DateTime?
   lockedById   String?
   lastLoginAt  DateTime?
+  /// Schriftgrösse des Kontos (m | l | xl, src/lib/theme.ts); wird bei der Anmeldung auf das Gerät übernommen
+  textSize     String?
   createdAt    DateTime  @default(now())
 
   org      Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -2085,7 +2128,7 @@ model PortalAccess {
   /// gesetzt, sobald die Einladung angenommen ist
   accountId       String?
   contactId       String?
-  /// relative | legal_rep | self (Bewohnerportal, vorbereitet)
+  /// relative | legal_rep | self (Bewohnerportal: die Person selbst, ohne Kontakt)
   role            String    @default("relative")
   /// Freigaben: appointments | updates | messages | visits | files (nie klinische Daten)
   grants          String[]  @default([])
@@ -2171,6 +2214,8 @@ model PortalUpdate {
   title       String
   body        String
   fileIds     String[]  @default([])
+  /// Für wen: family (Angehörige) | residents (Bewohnende selbst) | all
+  audience    String    @default("family")
   authorId    String
   publishedAt DateTime  @default(now())
   expiresAt   DateTime?
@@ -2190,6 +2235,8 @@ model VisitRequest {
   start         DateTime
   end           DateTime
   visitors      Int       @default(1)
+  /// Name der Besuchenden, wenn die Person selbst einen Besuch anmeldet (Bewohnerportal)
+  visitorName   String?
   note          String?
   /// requested | confirmed | declined | cancelled
   status        String    @default("requested")
@@ -2225,4 +2272,107 @@ model EmergencyAccess {
 
   @@index([orgId, startedAt])
   @@index([userId, expiresAt])
+}
+
+// ───────────────────────── Spitex (ambulante Pflege) ─────────────────────────
+
+enum HomeCareVisitStatus {
+  planned
+  started
+  done
+  missed
+  cancelled
+}
+
+/// Spitex-Einsatz (PRD §60): ein Besuch bei der Person zu Hause, geplant (Disposition) und durchgeführt (Meine Tour).
+/// Aus einer Wochenvorlage erzeugt (templateId + date eindeutig, ensureVisitsForDay) oder einzeln geplant.
+model HomeCareVisit {
+  id           String              @id @default(cuid())
+  orgId        String
+  /// Einsatzgebiet (Unit.kind = homecare) zum Zeitpunkt der Planung
+  unitId       String
+  residentId   String
+  /// Zugewiesene Person; null = noch nicht disponiert
+  assigneeId   String?
+  templateId   String?
+  /// Kalendertag des Einsatzes
+  date         DateTime            @db.Date
+  plannedStart DateTime
+  plannedEnd   DateTime
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  status       HomeCareVisitStatus @default(planned)
+  /// Kurznotiz zum Einsatz; beim Abschluss als Verlaufseintrag übernommen (observationId)
+  note         String?
+  /// Reihenfolge in der Tour der zugewiesenen Person (aufsteigend)
+  sequence     Int                 @default(0)
+  observationId String?
+  startedById  String?
+  doneById     String?
+  createdById  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @default(now()) @updatedAt
+
+  resident Resident          @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  services HomeCareService[]
+
+  @@unique([templateId, date])
+  @@index([unitId, date])
+  @@index([assigneeId, date])
+  @@index([residentId, date])
+}
+
+/// Leistung eines Einsatzes nach KLV Art. 7 Abs. 2 (a Abklärung/Beratung, b Untersuchung/Behandlung, c Grundpflege).
+model HomeCareService {
+  id         String  @id @default(cuid())
+  visitId    String
+  /// a | b | c
+  klv        String
+  label      String
+  plannedMin Int
+  /// Erfasste Minuten; null = nicht erbracht bzw. noch offen
+  actualMin  Int?
+  done       Boolean @default(false)
+  order      Int     @default(0)
+
+  visit HomeCareVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+
+  @@index([visitId])
+}
+
+/// Wochenvorlage je Person: Wochentage, Zeitfenster, Leistungen und bevorzugte Person. Erzeugt Einsätze je Tag.
+model HomeCareTemplate {
+  id              String    @id @default(cuid())
+  orgId           String
+  residentId      String
+  /// Wochentage 0 = So … 6 = Sa
+  weekdays        Int[]
+  /// Zeitfenster HH:MM
+  start           String
+  end             String
+  /// Leistungen [{ klv, label, minutes }]
+  services        Json      @default("[]")
+  preferredUserId String?
+  startDate       DateTime  @db.Date
+  endDate         DateTime? @db.Date
+  active          Boolean   @default(true)
+  note            String?
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @default(now()) @updatedAt
+
+  resident Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, active])
+  @@index([residentId])
+}
+
+/// Merker der Einsatzerzeugung je Einsatzgebiet und Tag (wie TaskGeneration): gilt über alle Instanzen,
+/// gleichzeitige Erzeugung wird mit pg_advisory_xact_lock serialisiert, Duplikate verhindert @@unique([templateId, date]).
+model HomeCareGeneration {
+  unitId String
+  day    DateTime @db.Date
+  at     DateTime @default(now())
+
+  @@id([unitId, day])
 }

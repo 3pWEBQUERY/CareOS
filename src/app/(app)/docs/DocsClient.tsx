@@ -8,7 +8,7 @@ import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { Dialog } from '@/components/ui/Dialog'
 import { useConfirm, splitQuestion } from '@/components/ui/ConfirmDialog'
 import { toast } from '@/components/toast'
-import { createDocument, updateDocumentMeta, createVersion, updateDraft, askAssistant, type AssistantAnswer } from './actions'
+import { createDocument, updateDocumentMeta, createVersion, updateDraft, askAssistant, submitVersion, type AssistantAnswer } from './actions'
 import { Checkbox, CheckboxGroup, Combobox, DateField, FileField, Select, TextField, Textarea } from '@/components/ui/fields'
 import { ACCEPT_UPLOADS, MAX_UPLOAD_BYTES } from '@/lib/upload-limits'
 
@@ -162,6 +162,29 @@ export function VersionButton({ documentId, draft, suggest, suggestCritical, bas
             ) : null}
           </div>
           <div className="form-actions"><span className="small muted">{t('docs.f.draftHint')}</span><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('common.save')}</Submit></div>
+        </ActionForm>
+      </Dialog>
+    </>
+  )
+}
+
+/** Zur Freigabe einreichen (PRD §49 Assign): Person mit Freigaberecht und Frist wählen. */
+export function SubmitButton({ versionId, reviewers, due, min, max }: { versionId: string; reviewers: { id: string; name: string }[]; due: string; min: string; max: string }) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button type="button" className="btn sm primary" onClick={() => setOpen(true)}>{t('docs.submit')}</button>
+      <Dialog open={open} onClose={() => setOpen(false)} title={t('docs.review.title')}>
+        <ActionForm action={submitVersion.bind(null, versionId)} success="docs.submitted" onDone={(r) => r.ok && setOpen(false)}>
+          <div className="form-grid">
+            <Select label={t('docs.review.reviewer')} name="reviewerId" defaultValue="" hint={t('docs.review.reviewerHint')}>
+              <option value="">{t('docs.review.anyApprover')}</option>
+              {reviewers.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </Select>
+            <DateField label={t('docs.review.due')} name="dueDate" defaultValue={due} min={min} max={max} required />
+          </div>
+          <div className="form-actions"><span className="small muted">{t('docs.review.escalateHint')}</span><span className="spacer" /><button type="button" className="btn" onClick={() => setOpen(false)}>{t('common.cancel')}</button><Submit>{t('docs.submit')}</Submit></div>
         </ActionForm>
       </Dialog>
     </>

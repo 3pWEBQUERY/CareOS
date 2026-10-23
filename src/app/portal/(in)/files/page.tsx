@@ -17,7 +17,7 @@ export default async function PortalFiles() {
   const size = (b: number) => (b < 1024 * 1024 ? `${fmtNum(b / 1024, 0, locale)} KB` : `${fmtNum(b / 1024 / 1024, 1, locale)} MB`)
   return (
     <>
-      <PortalHead label={`${current.resident.firstName} ${current.resident.lastName}`} title={t('portal.files.title')} sub={t('portal.files.sub')} />
+      <PortalHead label={p.self ? undefined : `${current.resident.firstName} ${current.resident.lastName}`} title={t('portal.files.title')} sub={t('portal.files.sub')} />
       {files.length ? (
         <section className="card" aria-label={t('portal.files.title')}>
           <ul className="list">

@@ -21,6 +21,7 @@ export const SCOPE_PERMISSIONS: Record<ApiScope, readonly string[]> = {
   'fhir:read': ['resident.read'],
   'labs:write': ['admin.integrations'],
   'residents:adt': ['resident.edit'],
+  'documents:write': ['resident.chart.write'],
 }
 
 /** Gültigkeit persönlicher Tokens in Tagen */

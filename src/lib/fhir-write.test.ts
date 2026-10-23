@@ -39,3 +39,46 @@ test('FHIR AllergyIntolerance schreibend: Prüfung', async () => {
   assert.match((parseFhirAllergy({ resourceType: 'AllergyIntolerance', patient: { reference: 'x' }, code: { text: 'Latex' } }) as { error: string }).error, /patient.reference/)
   assert.match((parseFhirAllergy({ resourceType: 'Observation' }) as { error: string }).error, /resourceType/)
 })
+
+test('FHIR DocumentReference schreibend: Austrittsbericht als PDF', async () => {
+  const { parseFhirDocumentReference } = await import('./fhir-write')
+  const pdf = Buffer.from('%PDF-1.7\n%âãÏÓ\n1 0 obj\n<<>>\nendobj\n').toString('base64')
+  const doc = {
+    resourceType: 'DocumentReference', status: 'current', subject: { reference: 'Patient/abc1' }, date: '2026-10-22T10:30:00+02:00',
+    type: { coding: [{ system: 'http://loinc.org', code: '18842-5', display: 'Discharge summary' }] },
+    content: [{ attachment: { contentType: 'application/pdf', title: 'Austrittsbericht: Kantonsspital / Medizin', data: pdf } }],
+  }
+  const r = parseFhirDocumentReference(doc, 1024, now)
+  assert.ok(!('error' in r))
+  if (!('error' in r)) {
+    assert.equal(r.residentId, 'abc1')
+    assert.equal(r.kind, 'discharge')
+    assert.equal(r.title, 'Austrittsbericht: Kantonsspital / Medizin')
+    assert.equal(r.filename, 'Austrittsbericht Kantonsspital Medizin.pdf')
+    assert.equal(r.date.toISOString(), '2026-10-22T08:30:00.000Z')
+    assert.equal(Buffer.from(r.bytes).toString('latin1').slice(0, 5), '%PDF-')
+  }
+  // anderer Typ → Klinikbericht, Datum aus attachment.creation, Titel aus description
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]).toString('base64')
+  const c = parseFhirDocumentReference({ ...doc, date: undefined, description: 'Bericht Kardiologie', type: { text: 'Konsiliarbericht' }, content: [{ attachment: { contentType: 'image/png', creation: '2026-10-21', data: png } }] }, 1024, now)
+  assert.deepEqual('error' in c ? c : [c.kind, c.title, c.filename], ['clinic', 'Bericht Kardiologie', 'Bericht Kardiologie.png'])
+})
+
+test('FHIR DocumentReference schreibend: verständliche Fehler', async () => {
+  const { parseFhirDocumentReference } = await import('./fhir-write')
+  const pdf = Buffer.from('%PDF-1.4 test').toString('base64')
+  const base = { resourceType: 'DocumentReference', status: 'current', subject: { reference: 'Patient/a' }, date: '2026-10-22', type: { coding: [{ code: '11488-4' }] }, content: [{ attachment: { contentType: 'application/pdf', title: 'Bericht', data: pdf } }] }
+  const e = (x: unknown, max = 1024) => { const r = parseFhirDocumentReference(x, max, now); return 'error' in r ? r.error : '' }
+  assert.equal(e(base), '')
+  assert.match(e({ ...base, status: 'superseded' }), /status/)
+  assert.match(e({ ...base, subject: { reference: 'Group/1' } }), /subject/)
+  assert.match(e({ ...base, type: undefined }), /type/)
+  assert.match(e({ ...base, date: '2026-10-22T10:00:00' }), /ISO 8601/)
+  assert.match(e({ ...base, date: '2026-10-23' }), /future/)
+  assert.match(e({ ...base, content: [] }), /exactly one/)
+  assert.match(e({ ...base, content: [{ attachment: { ...base.content[0].attachment, contentType: 'application/zip' } }] }), /contentType/)
+  assert.match(e({ ...base, content: [{ attachment: { ...base.content[0].attachment, data: undefined } }] }), /base64/)
+  assert.match(e({ ...base, content: [{ attachment: { ...base.content[0].attachment, data: '***' } }] }), /not valid base64/)
+  assert.match(e({ ...base, content: [{ attachment: { ...base.content[0].attachment, contentType: 'image/jpeg' } }] }), /does not match/)
+  assert.match(e(base, 4), /larger than/)
+})

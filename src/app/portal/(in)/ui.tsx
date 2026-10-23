@@ -11,6 +11,8 @@ export function fmtDay(d: Date, locale: Locale, t: PortalCtx['t'], now = new Dat
   return new Intl.DateTimeFormat(INTL_LOCALE[locale], { weekday: 'long', day: 'numeric', month: 'long' }).format(d)
 }
 export const fmtWhen = (d: Date, locale: Locale, t: PortalCtx['t']) => `${fmtDay(d, locale, t)}, ${hm(d)}`
+/** Langes Datum für den Kopf von «Mein Tag»: «Freitag, 23. Oktober». */
+export const fmtLongDate = (d: Date, locale: Locale) => new Intl.DateTimeFormat(INTL_LOCALE[locale], { weekday: 'long', day: 'numeric', month: 'long' }).format(d)
 export const fmtShortDate = (d: Date, locale: Locale) => new Intl.DateTimeFormat(INTL_LOCALE[locale], { day: '2-digit', month: '2-digit', year: 'numeric' }).format(d)
 
 /** Lädt den Portal-Kontext für eine Seite und protokolliert den Zugriff (PRD §36: jeder Portalzugriff im Audit). */
@@ -42,4 +44,15 @@ export function NoAccess({ p, grant }: { p: PortalCtx; grant?: boolean }) {
       <Empty title={grant ? p.t('portal.empty.grant') : p.t('portal.empty.noAccess')}>{p.t('portal.empty.contact')}</Empty>
     </>
   )
+}
+
+/**
+ * Bezeichnung eines Termins im Bewohnerportal (einfache Sprache): Therapieart, sonst Titel (nur nicht klinische
+ * Arten, policy.ts), sonst die Art. `meta` ergänzt Ort und – wenn ein Titel steht – die Art.
+ */
+export function selfAppointmentText(a: { kind: string; title: string | null; discipline: string | null; place: string | null }, t: PortalCtx['t']) {
+  const kind = t('residentPortal.kinds.' + a.kind)
+  const label = a.discipline ? t('residentPortal.disciplines.' + a.discipline) : a.title ?? kind
+  const meta = [a.title && !a.discipline ? kind : null, a.place].filter(Boolean).join(' · ')
+  return { label, meta }
 }

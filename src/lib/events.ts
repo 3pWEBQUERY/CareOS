@@ -18,6 +18,7 @@ export type EventType =
   | 'resident.updated' | 'visit.updated' | 'assignment.updated'
   | 'post.published' | 'message.created'
   | 'document.published' | 'schedule.changed' | 'notification.created'
+  | 'homecare.updated'
 
 export type EmitInput = {
   orgId: string

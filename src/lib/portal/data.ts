@@ -2,7 +2,7 @@ import 'server-only'
 import { db } from '@/lib/db'
 import { addDays, startOfDay } from '@/lib/time'
 import type { PortalCtx } from './context'
-import { hasGrant, portalAppointment, portalFile, SHAREABLE_FILE_CATEGORIES } from './policy'
+import { hasGrant, isSelfAccess, portalAppointment, portalFile, portalVisit, SHAREABLE_FILE_CATEGORIES, threadWhere, updateWhere, visitWhere } from './policy'
 
 /**
  * Lesezugriffe des Portals. Jede Funktion prüft die Freigabe des aktuellen Zugangs und liefert nur die
@@ -15,26 +15,24 @@ export async function portalAppointments(p: PortalCtx, cur: Cur, opts: { from?: 
   const from = opts.from ?? startOfDay(new Date())
   const rows = await db.appointment.findMany({
     where: { residentId: cur.residentId, resident: { orgId: p.org.id }, at: { gte: from, lt: addDays(from, opts.days ?? 60) } },
-    select: { id: true, at: true, kind: true, title: true, place: true, done: true },
+    select: { id: true, residentId: true, at: true, kind: true, title: true, place: true, done: true, therapyPlanId: true },
     orderBy: { at: 'asc' },
     take: opts.take ?? 50,
   })
-  return rows.map(portalAppointment)
+  // Bewohnerportal: bei Therapieeinheiten nur die Therapieart (nie Ziel, Anleitung oder Verlauf)
+  const planIds = isSelfAccess(cur) ? [...new Set(rows.map((r) => r.therapyPlanId).filter((x): x is string => !!x))] : []
+  const plans = planIds.length
+    ? await db.therapyPlan.findMany({ where: { id: { in: planIds }, orgId: p.org.id, residentId: cur.residentId }, select: { id: true, discipline: true } })
+    : []
+  const discipline = new Map(plans.map((x) => [x.id, x.discipline]))
+  return rows.map((r) => ({ ...portalAppointment(r, r.therapyPlanId ? discipline.get(r.therapyPlanId) : null), residentId: r.residentId }))
 }
 
-/** Mitteilungen für Angehörige: an die Person, an ihren Bereich oder an die ganze Organisation. */
+/** Mitteilungen: an die Person, an ihren Bereich oder an die ganze Organisation – je nach Empfängerkreis des Zugangs. */
 export async function portalUpdates(p: PortalCtx, cur: Cur, take = 20) {
   if (!hasGrant(cur.grants, 'updates')) return []
-  const now = new Date()
   return db.portalUpdate.findMany({
-    where: {
-      orgId: p.org.id,
-      publishedAt: { lte: now },
-      AND: [
-        { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-        { OR: [{ residentId: cur.residentId }, { residentId: null, unitId: cur.unitId }, { residentId: null, unitId: null }] },
-      ],
-    },
+    where: updateWhere(p.org.id, cur, new Date()),
     select: { id: true, title: true, body: true, fileIds: true, publishedAt: true, residentId: true },
     orderBy: { publishedAt: 'desc' },
     take,
@@ -44,7 +42,7 @@ export async function portalUpdates(p: PortalCtx, cur: Cur, take = 20) {
 export async function portalThreads(p: PortalCtx, cur: Cur) {
   if (!hasGrant(cur.grants, 'messages')) return []
   return db.portalThread.findMany({
-    where: { orgId: p.org.id, residentId: cur.residentId, access: { accountId: p.account.id } },
+    where: threadWhere(p.org.id, cur, p.account.id),
     select: { id: true, subject: true, status: true, lastMessageAt: true, familyReadAt: true, _count: { select: { messages: true } } },
     orderBy: { lastMessageAt: 'desc' },
     take: 100,
@@ -55,7 +53,7 @@ export async function portalThreads(p: PortalCtx, cur: Cur) {
 export async function portalThread(p: PortalCtx, cur: Cur, id: string) {
   if (!hasGrant(cur.grants, 'messages')) return null
   const th = await db.portalThread.findFirst({
-    where: { id, orgId: p.org.id, residentId: cur.residentId, access: { accountId: p.account.id } },
+    where: { id, ...threadWhere(p.org.id, cur, p.account.id) },
     select: { id: true, subject: true, status: true, lastMessageAt: true, familyReadAt: true, messages: { select: { id: true, side: true, userId: true, body: true, createdAt: true }, orderBy: { createdAt: 'asc' } } },
   })
   if (!th) return null
@@ -65,14 +63,26 @@ export async function portalThread(p: PortalCtx, cur: Cur, id: string) {
   return { ...th, messages: th.messages.map((m) => ({ id: m.id, side: m.side, body: m.body, createdAt: m.createdAt, author: m.userId ? name.get(m.userId) ?? null : null })) }
 }
 
+/** Besuche: Angehörige sehen ihre Anfragen, die Person selbst auch die Besuche ihrer Angehörigen (ohne deren Notizen). */
 export async function portalVisits(p: PortalCtx, cur: Cur) {
   if (!hasGrant(cur.grants, 'visits')) return []
-  return db.visitRequest.findMany({
-    where: { orgId: p.org.id, residentId: cur.residentId, access: { accountId: p.account.id }, end: { gte: addDays(new Date(), -30) } },
-    select: { id: true, start: true, end: true, visitors: true, note: true, status: true, reply: true, decidedAt: true, createdAt: true },
+  const rows = await db.visitRequest.findMany({
+    where: visitWhere(p.org.id, cur, p.account.id, addDays(new Date(), -30)),
+    select: {
+      id: true, residentId: true, start: true, end: true, visitors: true, visitorName: true, note: true, status: true, reply: true, decidedAt: true, createdAt: true, appointmentId: true,
+      access: { select: { accountId: true, role: true, inviteName: true, account: { select: { name: true } } } },
+    },
     orderBy: { start: 'asc' },
     take: 100,
   })
+  return rows.map((v) => portalVisit(v, cur, p.account.id)).filter((v): v is NonNullable<typeof v> => !!v)
+}
+
+/** Hilfe und Kontakt (Bewohnerportal): Name und Telefon des Bereichs, sonst Telefon des Standorts. */
+export async function portalHelp(p: PortalCtx, cur: Cur) {
+  const u = await db.unit.findFirst({ where: { id: cur.unitId, orgId: p.org.id }, select: { name: true, phone: true, location: { select: { name: true, phone: true } } } })
+  if (!u) return null
+  return { unit: u.name, location: u.location.name, phone: u.phone || u.location.phone || null }
 }
 
 export async function portalFiles(p: PortalCtx, cur: Cur) {
@@ -95,7 +105,7 @@ export async function updateAttachments(orgId: string, fileIds: string[]) {
 export async function portalUnread(p: PortalCtx, cur: Cur) {
   const [threads] = await Promise.all([
     hasGrant(cur.grants, 'messages')
-      ? db.portalThread.findMany({ where: { orgId: p.org.id, residentId: cur.residentId, access: { accountId: p.account.id } }, select: { lastMessageAt: true, familyReadAt: true, messages: { select: { side: true }, orderBy: { createdAt: 'desc' }, take: 1 } } })
+      ? db.portalThread.findMany({ where: threadWhere(p.org.id, cur, p.account.id), select: { lastMessageAt: true, familyReadAt: true, messages: { select: { side: true }, orderBy: { createdAt: 'desc' }, take: 1 } } })
       : Promise.resolve([]),
   ])
   return { messages: threads.filter((t) => t.messages[0]?.side === 'staff' && (!t.familyReadAt || t.familyReadAt < t.lastMessageAt)).length }

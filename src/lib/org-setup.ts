@@ -9,7 +9,7 @@
  */
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { DEFAULT_ROLES } from './permissions'
-import { MODULE_KEYS, normalizeModules } from './modules'
+import { DEFAULT_MODULES, normalizeModules } from './modules'
 import { ASSESSMENTS, CARE_DOMAINS, INCIDENT_TYPES } from './clinical-config'
 import { DEFAULT_FORMS } from './forms'
 import { VITALS, VITAL_KEYS } from './vitals'
@@ -34,7 +34,7 @@ export type OrgSetupOptions = {
   /** Nur anlegen, wenn noch keine Organisation existiert (Erststart; mit Advisory Lock gegen parallele Instanzen). */
   onlyIfEmpty?: boolean
   source: 'bootstrap' | 'signup' | 'platform'
-  /** Aktive Module (PRD §69); Standard: alle */
+  /** Aktive Module (PRD §69); Standard: alle ausser Zusatzmodulen (DEFAULT_MODULES, z. B. ohne Spitex) */
   modules?: readonly string[]
   /** Registrierung (ORG_SIGNUP): Organisation bis zur Freigabe durch den Plattform-Betrieb gesperrt */
   pendingApproval?: boolean
@@ -81,7 +81,7 @@ export async function setupOrganization(client: PrismaClient, o: OrgSetupOptions
     const org = await tx.organization.create({
       data: {
         name, slug, settings: settings as Prisma.InputJsonValue,
-        modules: o.modules ? normalizeModules(o.modules) : MODULE_KEYS,
+        modules: o.modules ? normalizeModules(o.modules) : DEFAULT_MODULES,
         ...(o.dataRegion ? { dataRegion: o.dataRegion } : {}),
         ...(o.pendingApproval ? { suspendedAt: new Date(), suspendedReason: 'pending' } : {}),
       },
