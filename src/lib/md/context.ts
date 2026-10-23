@@ -17,7 +17,8 @@ async function loadMdCtx() {
   if (!isExternalPhysician(ctx.user)) redirect('/')
   const now = new Date()
   const perms = mdPermissions((p) => stripDisabled(p, ctx.modules))
-  const rows = await db.resident.findMany({
+  // Ohne Modul Visite (PRD §69) entsteht kein Bewohnerbezug im Portal
+  const rows = !ctx.hasModule('visit') ? [] : await db.resident.findMany({
     where: { orgId: ctx.org.id, status: { in: ['active', 'absent'] }, ...assignedWhere(ctx.user.id, now) },
     select: { id: true },
   })

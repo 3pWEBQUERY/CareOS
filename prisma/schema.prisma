@@ -207,7 +207,7 @@ model Organization {
   settings      Json        @default("{}")
   createdAt     DateTime    @default(now())
   /// Aktive Module (PRD §69, src/lib/modules.ts). Bestehende Organisationen: alle an. «core» ist immer aktiv und wird nicht gespeichert.
-  modules         String[]  @default(["schedule", "chat", "docs", "learn", "medication", "visit", "dictation", "quality", "insights", "ai", "portals"])
+  modules         String[]  @default(["schedule", "chat", "docs", "learn", "medication", "visit", "therapy", "dictation", "quality", "insights", "ai", "portals"])
   /// Plattform (PRD §42): gesetzt = Anmeldung, Sitzungen und API-Tokens der Organisation werden abgewiesen.
   suspendedAt     DateTime?
   /// «pending» = Registrierung wartet auf Freigabe (ORG_SIGNUP), sonst Grund der Sperre (nur Plattform sichtbar)

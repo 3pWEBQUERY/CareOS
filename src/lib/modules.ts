@@ -32,6 +32,8 @@ export const MODULES = [
   { key: 'learn', pkg: 'workforce', perms: ['learn.'], paths: ['/learn'] },
   { key: 'medication', pkg: 'clinical_plus', perms: ['resident.medication.'], paths: ['/tasks/medround', '/residents/*/meds'], api: ['/api/fhir/MedicationStatement'] },
   { key: 'visit', pkg: 'clinical_plus', perms: ['resident.visit.'], paths: ['/tasks/visit'] },
+  // Paket Ä: Therapie (Physio/Ergo/Logo, PRD §60) – bestehende Organisationen per Datenmigration aktiv
+  { key: 'therapy', pkg: 'clinical_plus', perms: ['therapy.'], paths: ['/therapy'] },
   { key: 'quality', pkg: 'quality', perms: ['quality.'], paths: ['/quality'] },
   { key: 'insights', pkg: 'quality', perms: ['insights.'], paths: ['/insights'] },
   { key: 'ai', pkg: 'intelligence', perms: ['ai.'], paths: [] },

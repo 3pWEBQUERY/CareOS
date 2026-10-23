@@ -19,6 +19,7 @@ const askSchema = z.object({
 export async function askVisitQuestion(residentId: string, input: { text: string; ref: string }): Promise<ActionResult> {
   return run(async () => {
     const { ctx, r } = await actionResident(residentId, 'resident.chart.write')
+    if (!ctx.hasModule('visit')) return { ok: false, error: 'common.moduleOff' }
     const p = askSchema.parse(input)
     let ref: { refType: string; refId: string; refLabel: string } | null = null
     if (p.ref) {
@@ -45,6 +46,7 @@ export async function askVisitQuestion(residentId: string, input: { text: string
 export async function withdrawVisitQuestion(residentId: string, questionId: string): Promise<ActionResult> {
   return run(async () => {
     const { ctx, r } = await actionResident(residentId, 'resident.chart.write')
+    if (!ctx.hasModule('visit')) return { ok: false, error: 'common.moduleOff' }
     const q = await db.visitQuestion.findFirst({ where: { id: questionId, residentId: r.id, orgId: ctx.org.id } })
     if (!q) return { ok: false, error: 'common.notFound' }
     if (q.status !== 'open') return { ok: false, error: 'visit.errors.notOpen' }

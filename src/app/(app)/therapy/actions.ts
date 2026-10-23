@@ -8,7 +8,7 @@ import { run, fd, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { ensureTasksForDay, invalidateTaskGeneration } from '@/lib/tasks'
-import { addMinutes, atTime, dbDate, parseDateKey, startOfDay } from '@/lib/time'
+import { addDays, addMinutes, atTime, dbDate, parseDateKey, startOfDay } from '@/lib/time'
 import { CARE_CATEGORY, isDiscipline, planSchema, sessionSchema, sessionText, type Discipline } from '@/lib/therapy'
 import type { Permission } from '@/lib/permissions'
 
@@ -44,13 +44,15 @@ export async function createPlanAction(form: FormData): Promise<ActionResult> {
     const order = p.orderId ? await db.visitOrder.findFirst({ where: { id: p.orderId, residentId: r.id, kind: 'therapy' } }) : null
     if (p.orderId && !order) return err('common.notFound', 'orderId')
     const t = ctx.t
+    // Pflege-Anleitung: liegt die Uhrzeit heute schon zurück, beginnt die Aufgabe morgen (keine sofort überfällige Aufgabe)
+    const careStart = p.careTime && atTime(start, p.careTime) < new Date() ? addDays(start, 1) : start
     const plan = await db.$transaction(async (tx) => {
       let careTemplateId: string | null = null
       if (p.careInstructions) {
         const tpl = await tx.taskTemplate.create({
           data: {
             orgId: ctx.org.id, unitId: r.unitId, residentId: r.id, title: p.careInstructions.slice(0, 200), description: t('therapy.careTaskDesc', { discipline: t('therapy.disciplines.' + p.discipline), goal: p.goal }),
-            category: CARE_CATEGORY[p.discipline], rhythm: 'daily', every: 1, weekdays: [], times: [p.careTime], startDate: dbDate(start), endDate: end ? dbDate(end) : null,
+            category: CARE_CATEGORY[p.discipline], rhythm: 'daily', every: 1, weekdays: [], times: [p.careTime], startDate: dbDate(careStart), endDate: end ? dbDate(end) : null,
             durationMin: 10, priority: 'routine', createdById: ctx.user.id,
           },
         })

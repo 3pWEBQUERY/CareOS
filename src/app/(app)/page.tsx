@@ -39,7 +39,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     leadPerms: ctx.can('schedule.manage') || ctx.can('insights.view'),
     quality: ctx.can('quality.manage'),
     office: ctx.can('admin.users') || ctx.can('admin.org'),
-    physician: ctx.can('resident.medication.edit') && ctx.can('resident.visit.conduct') && !ctx.can('task.complete'),
+    // Ärztlich: Visite dokumentieren ohne Pflegeaufgaben (Pflegefachpersonen haben beides)
+    physician: ctx.can('resident.visit.conduct') && !ctx.can('task.complete'),
     therapy: ctx.can('therapy.document') && !ctx.can('resident.medication.administer'),
   }, sp.view)
 

@@ -3,12 +3,12 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
-import { requestMeta } from '@/lib/auth/session'
+import { orgBlockReason, requestMeta } from '@/lib/auth/session'
 import { hashPassword, passwordProblem, verifyPassword } from '@/lib/auth/password'
 import { verifyTotp } from '@/lib/auth/mfa'
 import { peekRateLimit, rateLimit } from '@/lib/rate-limit'
 import { auditSystem } from '@/lib/audit'
-import { createPortalSession, destroyPortalSession, getPortalSession } from '@/lib/portal/auth'
+import { createPortalSession, destroyPortalSession, getPortalSession, PortalOrgBlockedError } from '@/lib/portal/auth'
 import { findPortalInvite } from '@/lib/portal/invites'
 import { normalizeEmail } from '@/lib/portal/invite-core'
 import { residentVisible } from '@/lib/portal/policy'
@@ -50,8 +50,9 @@ export async function portalLoginAction(_: PortalAuthState, form: FormData): Pro
     return { error: 'invalid', email }
   }
   const org = await db.organization.findUnique({ where: { id: account.orgId } })
-  if (account.lockedAt || !portalEnabled(org)) {
-    await auditSystem({ action: 'portal.login_blocked', entityType: 'PortalAccount', entityId: account.id, orgId: account.orgId, context: { reason: account.lockedAt ? 'locked' : 'module' }, ...meta })
+  const orgBlocked = !org || !!orgBlockReason(org)
+  if (account.lockedAt || orgBlocked || !portalEnabled(org)) {
+    await auditSystem({ action: 'portal.login_blocked', entityType: 'PortalAccount', entityId: account.id, orgId: account.orgId, context: { reason: account.lockedAt ? 'locked' : orgBlocked ? 'org_suspended' : 'module' }, ...meta })
     return { error: account.lockedAt ? 'accountLocked' : 'unavailable', email }
   }
   await createPortalSession(account.id, !account.mfaEnabled)
@@ -130,7 +131,13 @@ export async function acceptPortalInviteAction(_: PortalAuthState, form: FormDat
   if (!done.count) return { error: 'used' }
   await auditSystem({ action: 'portal.access.accepted', entityType: 'PortalAccess', entityId: access.id, orgId: access.orgId, context: { portalAccountId: accountId, residentId: access.residentId, newAccount: !existing }, ...meta })
   const acc = await db.portalAccount.findUniqueOrThrow({ where: { id: accountId } })
-  await createPortalSession(accountId, !acc.mfaEnabled)
+  try {
+    await createPortalSession(accountId, !acc.mfaEnabled)
+  } catch (e) {
+    // Organisation gesperrt: Zugang ist angenommen, Anmeldung später möglich
+    if (e instanceof PortalOrgBlockedError) redirect('/portal/login')
+    throw e
+  }
   ;(await cookies()).set(PORTAL_RESIDENT_COOKIE, access.id, { httpOnly: true, sameSite: 'lax', path: '/portal', secure: prod, maxAge: 365 * 86400 })
   redirect(acc.mfaEnabled ? '/portal/login/mfa' : '/portal')
 }

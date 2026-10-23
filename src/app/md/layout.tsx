@@ -22,6 +22,8 @@ export default async function MdLayout({ children }: { children: React.ReactNode
   const md = await getMdCtx()
   if (await needsMfaSetup(md)) redirect(MFA_SETUP_URL)
   const { t, user, org } = md
+  // Ärzteportal hängt am Modul Visite (PRD §69); ohne Modul nur Hinweis, keine Daten
+  const off = !md.hasModule('visit')
   const [unread, critical] = await Promise.all([
     db.notification.count({ where: { userId: user.id, readAt: null } }),
     db.notification.count({ where: { userId: user.id, readAt: null, priority: 'critical' } }),
@@ -45,7 +47,7 @@ export default async function MdLayout({ children }: { children: React.ReactNode
           </Link>
           <SignOutForm label={t('md.nav.signOut')} className="btn sm md-signout" />
         </header>
-        <div className="md-content" id="main">{children}</div>
+        <div className="md-content" id="main">{off ? <main className="panel main" style={{ flex: 1 }}><div className="view-head"><h1>{t('md.portal')}</h1></div><div className="tabpanel"><div className="alert warn" role="status"><span className="grow">{t('common.moduleOff')}</span></div></div></main> : children}</div>
       </div>
       <Toaster />
       <ScrollRegions />

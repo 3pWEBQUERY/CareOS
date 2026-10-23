@@ -18,6 +18,7 @@ export default async function TherapyPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams
   const ctx = await getCtx()
   const { t, locale } = ctx
+  if (!ctx.hasModule('therapy')) return <Forbidden text={t('common.moduleOff')} />
   const allowed = therapyUnitIds(ctx)
   if (!allowed.length) return <Forbidden text={t('common.notAllowed')} />
   const all = sp.u === 'all' || !ctx.unit || !allowed.includes(ctx.unit.id)
