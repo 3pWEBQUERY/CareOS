@@ -58,8 +58,8 @@ export function ProposalBanner({ proposal: p, monthLabel, preview, onPreview, on
       <div className="card-body stack-sm">
         <div className="metrics metrics-sm2">
           <div className="metric"><span className="lbl">{t('roster.proposal.coverage')}</span><span className={'val' + (s.coverageRate < 100 ? ' warn' : ' ok')}>{s.coverageRate} <small>%</small></span><span className="small muted">{t('roster.proposal.before', { n: s.before.coverageRate })}</span></div>
-          <div className="metric"><span className="lbl">{t('roster.proposal.errors')}</span><span className={'val' + (s.errors ? ' crit' : ' ok')}>{s.errors}</span></div>
-          <div className="metric"><span className="lbl">{t('roster.proposal.wishes')}</span><span className="val">{s.wishes.met} <small>/ {s.wishes.total}</small></span></div>
+          <div className="metric"><span className="lbl">{t('roster.proposal.errors')}</span><span className={'val' + (s.errors ? ' crit' : ' ok')}>{s.errors}</span><span className="small muted">{t('roster.proposal.beforeN', { n: s.before.errors })}</span></div>
+          <div className="metric"><span className="lbl">{t('roster.proposal.wishes')}</span><span className="val">{s.wishes.total ? <>{s.wishes.met} <small>/ {s.wishes.total}</small></> : '–'}</span></div>
           <div className="metric"><span className="lbl">{t('roster.proposal.changes')}</span><span className="val">{s.changes}</span></div>
         </div>
         {!s.changes && <p className="small muted" style={{ margin: 0 }}>{t('roster.proposal.noChanges')}</p>}

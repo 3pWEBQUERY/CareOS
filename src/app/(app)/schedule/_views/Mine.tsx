@@ -125,7 +125,7 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
   const [shifts, absences, open, wishes, types] = await Promise.all([
     db.shift.findMany({ where: { userId: user.id, date: { gte: dbDate(first), lte: dbDate(last) }, status: { not: 'cancelled' }, ...draft.where }, include: { shiftType: true } }),
     absencesIn([user.id], first, last),
-    ctx.unit ? db.shift.findMany({ where: { unitId: ctx.unit.id, status: 'open', date: { gte: dbDate(first), lte: dbDate(last) } }, include: { shiftType: true } }) : [],
+    ctx.unit ? db.shift.findMany({ where: { unitId: ctx.unit.id, status: 'open', date: { gte: dbDate(first), lte: dbDate(last) }, ...draft.where }, include: { shiftType: true } }) : [],
     db.shiftWish.findMany({ where: { userId: user.id, date: { gte: dbDate(month), lte: dbDate(monthEnd) } }, include: { shiftType: true } }),
     db.shiftType.findMany({ where: { orgId: ctx.org.id }, orderBy: { start: 'asc' } }),
   ])

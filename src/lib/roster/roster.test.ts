@@ -95,3 +95,49 @@ test('Ruhezeit über die Monatsgrenze (Kontext aus dem Vormonat)', () => {
   assert.notEqual(grid[cellKey('u8', '2026-11-01')], 'F')
   assert.deepEqual(evaluate(p, grid).issues.filter((i) => i.severity === 'error'), [])
 })
+
+test('KI: Prompt enthält Regeln, Personen, Abwesenheiten, Wünsche und Anweisungen', async () => {
+  const { buildPrompt } = await import('./ai-format')
+  const p = problem({
+    absent: { [cellKey('u1', '2026-11-10')]: 'approved', [cellKey('u1', '2026-11-11')]: 'approved' },
+    wishes: { [cellKey('u2', '2026-11-20')]: { kind: 'off' } },
+    locked: { [cellKey('u3', '2026-10-31')]: 'N' },
+  })
+  const { system, user, alias } = buildPrompt(p, { [cellKey('u0', '2026-11-02')]: 'F' }, 'fill', 'November 2026', 'P2 keine Nachtdienste', 'de')
+  assert.match(system, /mindestens 11 Stunden/)
+  assert.match(user, /Tage 1–30/)
+  assert.match(user, /P1 \| P0 \| 80 %/)
+  assert.match(user, /fix: 2 F/)
+  assert.match(user, /abwesend: 10–11/)
+  assert.match(user, /Wünsche: frei 20/)
+  assert.match(user, /Vormonat \(Tage vor dem 1\.\): -1 N/)
+  assert.match(user, /<anweisungen>\nP2 keine Nachtdienste\n<\/anweisungen>/)
+  assert.equal(alias.get('u0'), 'P1')
+  // Krankheit o. ä. wird nicht übermittelt
+  assert.doesNotMatch(user, /krank|Ferien/i)
+})
+
+test('KI: Antwort wird übersetzt und vom Solver regelkonform gemacht', async () => {
+  const { buildPrompt, readAiResult, aiSchema } = await import('./ai-format')
+  const p = problem()
+  const { alias } = buildPrompt(p, {}, 'replace', 'November 2026', '', 'de')
+  const days = p.days.length
+  const raw = {
+    plan: [
+      { person: 'P1', shifts: Array.from({ length: days }, (_, i) => (i === 1 ? 'S' : i === 2 ? 'F' : '')) },
+      { person: 'P99', shifts: Array(days).fill('F') },
+    ],
+    constraints: [{ person: 'P2', allowed: ['F'], offDays: [12, 40] }],
+    notes: ['Am 5. fehlt eine Nacht, weil P3 abwesend ist.'],
+  }
+  const parsed = aiSchema(['F', 'S', 'N']).parse(raw)
+  const r = readAiResult(p, alias, parsed)
+  assert.equal(r.seed[cellKey('u0', '2026-11-02')], 'S')
+  assert.deepEqual(r.constraints.u1, { allowed: ['F'], offDays: ['2026-11-12'] })
+  assert.equal(r.notes[0], 'Am 5. fehlt eine Nacht, weil P2 abwesend ist.')
+  const { grid } = plan(p, {}, { mode: 'replace', seed: r.seed, constraints: r.constraints })
+  assert.deepEqual(evaluate(p, grid).issues.filter((i) => i.severity === 'error'), [])
+  for (const d of p.days) assert.ok(!grid[cellKey('u1', d)] || grid[cellKey('u1', d)] === 'F')
+  assert.equal(grid[cellKey('u1', '2026-11-12')] ?? null, null)
+  assert.throws(() => aiSchema(['F']).parse({ plan: [{ person: 'P1', shifts: ['Q'] }], constraints: [], notes: [] }))
+})

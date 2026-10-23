@@ -2377,3 +2377,8 @@ select.field::-ms-expand { display: none }
 .wish-btn.on { border-style: solid; border-color: var(--warn); color: var(--warn) }
 .wish-btn:hover { border-color: var(--accent); color: var(--accent) }
 @media (hover: none) { .wish-btn { opacity: 1 } }
+.rst-head .spacer, .rst-bar .spacer, .rst-proposal .card-head .spacer { flex: 1 }
+@media (max-width: 720px) {
+  .rst .rst-name { min-width: 118px; max-width: 128px; padding: 3px 6px }
+  .rst-person .small { display: none }
+}

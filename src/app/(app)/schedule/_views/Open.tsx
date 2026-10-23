@@ -4,7 +4,7 @@ import { addDays, dbDate, fmtDayMonth, fromDbDate, weekdayShort } from '@/lib/ti
 import { Empty } from '@/components/ui/Empty'
 import { ActButton } from '../../team/_ui/ActButton'
 import { applyOpenShiftAction, cancelSwapAction, decideSwapAction } from '../actions'
-import { dbKey, unitStaff } from '../lib'
+import { dbKey, draftFilter, unitStaff } from '../lib'
 import { OpenShiftCreate } from '../_ui/OpenShiftCreate'
 import { shiftName } from '@/lib/shift-name'
 
@@ -13,9 +13,10 @@ export async function OpenView({ ctx, now, canManage }: { ctx: Ctx; now: Date; c
   const { t, user, unit, locale } = ctx
   if (!unit) return <Empty title={t('schedule.noUnit')} />
   const until = addDays(now, 90)
+  const draft = await draftFilter(ctx, now, until)
   const [shifts, myQuals, types, quals] = await Promise.all([
     db.shift.findMany({
-      where: { unitId: unit.id, status: 'open', userId: null, date: { gte: dbDate(now), lte: dbDate(until) } },
+      where: { unitId: unit.id, status: 'open', userId: null, date: { gte: dbDate(now), lte: dbDate(until) }, ...draft.where },
       include: { shiftType: true, swaps: { where: { status: 'requested' }, orderBy: { createdAt: 'asc' } } },
       orderBy: [{ date: 'asc' }, { shiftType: { start: 'asc' } }],
     }),

@@ -479,6 +479,7 @@ export function RosterBoard(props: RosterProps) {
                 <th scope="row" className="rst-name"><span className="small ellipsis">{keyQual}</span></th>
                 {days.map((d) => {
                   const missing = types.filter((x) => { const cv = ev.coverage[d.key]?.[x.code]; return cv && cv.target > 0 && cv.n > 0 && !cv.key }).map((x) => x.code)
+                  if (!types.some((x) => (ev.coverage[d.key]?.[x.code]?.n ?? 0) > 0)) return <td key={d.key} className={'rst-cov' + (d.weekend ? ' we' : '')} />
                   return <td key={d.key} className={'rst-cov ' + (missing.length ? 'under' : 'ok') + (d.weekend ? ' we' : '')} title={missing.length ? t('schedule.coverage.qualMissing', { qual: keyQual }) + ': ' + missing.join(' ') : t('schedule.coverage.qualOk', { qual: keyQual })}>{missing.length ? missing.join('') : '✓'}</td>
                 })}
                 <td colSpan={5} />

@@ -1,5 +1,6 @@
 'use server'
 
+import Anthropic from '@anthropic-ai/sdk'
 import { refresh } from 'next/cache'
 import { after } from 'next/server'
 import type { Prisma } from '@prisma/client'
@@ -207,8 +208,10 @@ export async function startProposalAction(form: FormData): Promise<ActionResult<
       try {
         await computeProposal(ctx, pr.id)
       } catch (e) {
-        const reason = e instanceof AiUnavailable ? e.message : 'error'
-        if (!(e instanceof AiUnavailable)) await captureError(e, { route: 'roster-proposal', routeType: 'action' }).catch(() => console.error('[roster]', e))
+        const api = e instanceof Anthropic.APIError ? e.status : undefined
+        const reason = e instanceof AiUnavailable ? e.message
+          : api === 401 || api === 403 ? 'auth' : api === 429 ? 'rate' : api && api >= 500 ? 'overloaded' : 'error'
+        if (!(e instanceof AiUnavailable) && !api) await captureError(e, { route: 'roster-proposal', routeType: 'action' }).catch(() => console.error('[roster]', e))
         await db.scheduleProposal.update({ where: { id: pr.id }, data: { status: 'failed', error: reason } })
       }
     }
