@@ -89,8 +89,8 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     })
     raw.reverse()
     const fileIds = [...new Set(raw.flatMap((m) => (m.deletedAt ? [] : m.fileIds)))]
-    const files = fileIds.length ? await db.fileObject.findMany({ where: { id: { in: fileIds }, orgId: org.id }, select: { id: true, filename: true } }) : []
-    const fileName = new Map(files.map((f) => [f.id, f.filename]))
+    const files = fileIds.length ? await db.fileObject.findMany({ where: { id: { in: fileIds }, orgId: org.id }, select: { id: true, filename: true, contentType: true, size: true } }) : []
+    const fileInfo = new Map(files.map((f) => [f.id, f]))
     const byId = new Map(c.members.map((m) => [m.userId, m.user]))
     const missing = [...new Set(raw.map((m) => m.authorId).filter((id) => !byId.has(id)))]
     if (missing.length) for (const u of await db.user.findMany({ where: { id: { in: missing } }, select: { id: true, firstName: true, lastName: true, initials: true, jobTitle: true } })) byId.set(u.id, u)
@@ -115,7 +115,7 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
         edited: !!m.editedAt,
         deleted: !!m.deletedAt,
         mine: m.authorId === user.id,
-        files: m.deletedAt ? [] : m.fileIds.map((id) => ({ id, name: fileName.get(id) ?? id })),
+        files: m.deletedAt ? [] : m.fileIds.map((id) => { const f = fileInfo.get(id); return { id, name: f?.filename ?? id, type: f?.contentType ?? 'application/octet-stream', size: f?.size ?? 0 } }),
         reactions: m.deletedAt ? [] : [...counts.entries()].map(([symbol, v]) => ({ symbol, ...v })),
       }
     })

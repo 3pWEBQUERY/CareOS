@@ -22,7 +22,7 @@ export type ChatMsg = {
   edited: boolean
   deleted: boolean
   mine: boolean
-  files: { id: string; name: string }[]
+  files: { id: string; name: string; type: string; size: number }[]
   reactions: { symbol: string; n: number; mine: boolean }[]
 }
 type Member = { id: string; name: string; initials: string; job: string }
@@ -252,7 +252,7 @@ export function ChatView({ conv, me, members, candidates, messages, wasUnread, l
                     : <span>{t('team.ux.sending')}</span>}
                 </div>
                 {p.body && <p>{renderBody(p.body)}</p>}
-                {p.files.length > 0 && <ul className="chat-files">{p.files.map((f, i) => <li key={i}><span className="chip"><IconFile size={14} /> {f.name}</span></li>)}</ul>}
+                {p.files.length > 0 && <ul className="chat-files">{p.files.map((f, i) => <li key={i}><PendingAttachment file={f} /></li>)}</ul>}
                 {p.state === 'failed' && (
                   <div className="row" style={{ gap: 8, marginTop: 4 }}>
                     <button type="button" className="btn sm" onClick={() => deliver(p)}>{t('team.ux.retry')}</button>
@@ -326,7 +326,7 @@ function Message({ m, renderBody, onRun, onAsk }: { m: ChatMsg; renderBody: (s: 
         {m.files.length > 0 && (
           <ul className="chat-files">
             {m.files.map((f) => (
-              <li key={f.id}><a href={`/api/files/${f.id}`} target="_blank" rel="noreferrer" className="chip"><IconFile size={14} /> {f.name}</a></li>
+              <li key={f.id}><Attachment href={`/api/files/${f.id}`} name={f.name} type={f.type} size={f.size} /></li>
             ))}
           </ul>
         )}
@@ -345,6 +345,48 @@ function Message({ m, renderBody, onRun, onAsk }: { m: ChatMsg; renderBody: (s: 
 }
 
 /** Eingabe mit @-Erwähnungen (Autovervollständigung der Mitglieder) und Anhängen. Enter sendet, Umschalt+Enter neue Zeile. */
+/** Anhang im Verlauf: Bilder als Vorschau, Videos abspielbar, sonst Datei-Karte mit Name, Grösse und Download. */
+function Attachment({ href, name, type, size, pending }: { href: string; name: string; type: string; size: number; pending?: boolean }) {
+  const t = useT()
+  const locale = useLocale()
+  const [broken, setBroken] = useState(false)
+  if (type.startsWith('image/') && !broken)
+    return (
+      <a className="chat-img" href={href} target="_blank" rel="noreferrer" aria-label={t('team.chat.openImage', { name })}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- geschützte Datei hinter Redirect, kein Bild-Optimizer */}
+        <img src={href} alt={name} loading="lazy" decoding="async" onError={() => setBroken(true)} />
+      </a>
+    )
+  if (type.startsWith('video/') && !pending)
+    return <video className="chat-video" src={href} controls preload="metadata" aria-label={name} />
+  const kb = size / 1024
+  const sizeText = new Intl.NumberFormat(INTL_LOCALE[locale], { maximumFractionDigits: 1 }).format(kb >= 1024 ? kb / 1024 : Math.max(1, Math.round(kb))) + (kb >= 1024 ? ' MB' : ' KB')
+  const card = (
+    <>
+      <IconFile size={18} />
+      <span className="chat-file-main"><span className="chat-file-name">{name}</span><span className="chat-file-meta mono">{sizeText}</span></span>
+    </>
+  )
+  return pending ? <span className="chat-file">{card}</span> : (
+    <span className="chat-file">
+      <a href={href} target="_blank" rel="noreferrer" className="chat-file-open">{card}</a>
+      <a href={href + '?download=1'} className="btn sm ghost" download aria-label={t('team.chat.download', { name })}>{t('team.chat.downloadShort')}</a>
+    </span>
+  )
+}
+
+/** Noch nicht gesendeter Anhang: Bild-Vorschau aus der lokalen Datei. */
+function PendingAttachment({ file }: { file: File }) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!file.type.startsWith('image/')) return
+    const u = URL.createObjectURL(file)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [file])
+  return <Attachment href={url ?? ''} name={file.name} type={url ? file.type : 'application/octet-stream'} size={file.size} pending />
+}
+
 function Composer({ members, onSend }: { members: Member[]; onSend: (body: string, mentions: string, files: File[]) => void }) {
   const t = useT()
   const [text, setText] = useState('')
