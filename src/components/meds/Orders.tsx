@@ -312,8 +312,11 @@ function OrderDialog({ order, onClose, resident, defaultSlots, defaultPrescriber
           <div className="stack-sm">
             <div className="alert warn"><span className="grow">{t('meds.phone.info', { h: phoneHours })}</span></div>
             <div className="form-grid">
-              <SegmentedControl name="orderSource" aria-label={t('meds.phone.sourceLabel')} defaultValue="phone"
-                options={(['phone', 'verbal'] as const).map((k) => ({ value: k, label: t('meds.phone.source.' + k) }))} />
+              <div className="stack-sm" style={{ gap: 6 }}>
+                <span className="lbl" aria-hidden="true">{t('meds.phone.sourceLabel')}</span>
+                <SegmentedControl name="orderSource" aria-label={t('meds.phone.sourceLabel')} defaultValue="phone"
+                  options={(['phone', 'verbal'] as const).map((k) => ({ value: k, label: t('meds.phone.source.' + k) }))} />
+              </div>
               <Combobox label={t('meds.phone.orderedBy')} hint={t('meds.phone.orderedByHint')} name="orderedBy" required freeText maxLength={120}
                 options={physicians.map((p) => ({ value: p.id, label: p.name, hint: [p.hint, p.external ? t('meds.phone.external') : ''].filter(Boolean).join(' · ') }))} />
             </div>

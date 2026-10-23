@@ -2270,3 +2270,18 @@ select.field::-ms-expand { display: none }
 @media (max-width: 480px) {
   .md-top .ctx { display: none }
 }
+
+/* Tooltip (src/components/ui/Tooltip.tsx) – ersetzt das Browser-title */
+.tip-anchor { display: inline-flex }
+.tip { position: fixed; z-index: 1000; max-width: 16rem; padding: 4px 8px; border-radius: var(--r-sm); background: var(--fg); color: var(--bg); font-size: 0.75rem; font-weight: 500; line-height: 1.35; box-shadow: var(--shadow-pop); pointer-events: none; animation: tip-in .12s ease-out }
+.tip::after { content: ""; position: absolute; left: 50%; width: 8px; height: 8px; background: inherit; transform: translateX(-50%) rotate(45deg) }
+.tip[data-side="top"]::after { bottom: -4px }
+.tip[data-side="bottom"]::after { top: -4px }
+@keyframes tip-in { from { opacity: 0 } to { opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .tip { animation: none } }
+@media (forced-colors: active) { .tip { border: 1px solid CanvasText } }
+
+/* Chat: Nachrichten nutzen die ganze Breite; Aktionen und Tagesmarke rechtsbündig, Text bleibt gut lesbar */
+.msg { max-width: none }
+.msg > div > p, .msg .chat-files, .msg .reacts { max-width: 72ch }
+.chat-day { justify-content: flex-end }

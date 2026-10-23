@@ -63,8 +63,36 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 - «Jetzt fällig» (`taskView` = `due`, 30 Min. vor bis 15 Min. nach Fälligkeit) entspricht dem PRD-Zustand «bereit»; der gespeicherte Status `ready` wird nicht gesetzt und wie `planned` behandelt.
 - Aufgaben, die sich durch Dokumentation schliessen (Medikamente, Assessments, Evaluationen, Nachkontrollen), zeigen einen Link statt des Häkchens. Ereignis-Massnahmen folgen ihrer Aufgabe (`syncIncidentActions`, Abgleich im Eskalationsjob) – nie beim Rendern schreiben.
 
+- **Erzeugung über mehrere Instanzen** (PRD §66): Merker `TaskGeneration (unitId, day)` in Postgres (10 Min. gültig), Erzeugung je Bereich unter `pg_advisory_xact_lock`, Duplikate verhindert `@@unique([source, sourceId, dueAt])`. `invalidateTaskGeneration(unitId)` löscht den Merker (wirkt auf allen Instanzen nach höchstens 30 s Prozess-Cache; auf der eigenen sofort). Der Job `tasks` (alle 5 Min.) erzeugt für alle Bereiche, damit Seitenaufrufe nicht warten. Medikamenten-Zeitpunkte nur mit Modul Medikation.
+- **Rückstand und «überfällig»** (`src/lib/task-backlog.ts`, eine Regel für Navigation, Startseite, Kennzahlen, Liste, Suche, Übergabe): überfällig = offen **inkl. eskaliert** und > 15 Min. nach Fälligkeit (`isOverdue`, Prisma: `overdueFilter(orgId)` bzw. `overdueWhere(cutoff)`). Zeitgebundene Routine (Pflegeplanung ohne Evaluationen, Medikamenten-Zeitpunkte, Serien) bleibt in der Folgeschicht sichtbar («aus Vorschicht», Übergabe «Was ist noch offen?») und wird danach vom Job als `skipped` mit `Task.autoClosed = 'shift_end'` («nicht erledigt – übergeben», Audit `task.expire`) geschlossen. Einzelaufgaben bleiben offen (höchstens 7 Tage in Listen/Zählern); «Rückstand abschliessen» schliesst sie gesammelt mit Begründung. Neue Zähler nie mit eigenem `dueAt`-Fenster bauen.
+- **Abwesenheit** pausiert offene Aufgaben ab Beginn (`autoClosed = 'absence'`), die Rückkehr öffnet sie ab Rückkehrzeit wieder (`src/lib/adt.ts`).
+
+### Aufenthalt, ADT, HL7 v2 (PRD §43, §40, §41)
+- Alle Vorgänge (Eintritt, Abwesenheit, Rückkehr, Verlegung, Austritt) laufen über `src/lib/adt.ts` – aus der Akte (Historie → Aufenthalt, `adtAction`), über `POST /api/v1/residents/{id}/adt` und HL7 v2 (`POST /api/v1/hl7`, A01/A02/A03/A21/A22, ACK; Parser `src/lib/integrations/hl7v2.ts`, Zuordnung `hl7v2-run.ts`, Wiederholung derselben MSH-10 wird erkannt). Pflegeepisoden `CareEpisode.kind = stay | absence` (Verlegung: alter Aufenthalt endet, neuer mit `unitId`; Abwesenheit mit Grund und `expectedEnd`). Offene Aufgaben und Serien folgen der Person bei Verlegung. «abwesend» nie direkt in den Stammdaten setzen.
+- Laufende Abwesenheit lesen: `openAbsences(residentIds)` (Banner, Liste, Übergabe).
+
+### Konflikterkennung beim Bearbeiten (PRD §32)
+- Formular schickt den Stand beim Öffnen als `base` (JSON) mit; Server: `mergeEdit(base, current, mine, keys)` aus `src/lib/merge-check.ts` übernimmt nur eigene Änderungen, gleiches Feld unterschiedlich → Hinweis `conflictMessage()` (`src/lib/merge-server.ts`, wer/wann aus dem Audit) und `refresh()`; zusätzlich bedingtes Update. Umgesetzt für Stammdaten, Dokument-Entwürfe, Übergabe-Ergänzungen, Pflegeplan-Bereiche.
+
+### Tests
+- `npm test` = Unit-Tests (`src/**/*.test.ts`) und Integrationstests gegen Postgres (`tests/integration/*.test.ts`, nur mit `DATABASE_URL`; lokal eigene DB, z. B. `careos_it` mit `prisma migrate deploy`). Testrahmen `tests/integration/fixture.ts`: eigene Organisation je Datei, `ctxFor(userId)` baut den Kontext wie `getCtx()` für Berechtigungsgrenzen. `tests/server-only-stub.cjs` erlaubt das Laden von Server-Modulen.
+
 ### Visite
 - `/tasks/visit` (`src/lib/visit.ts`, `src/lib/visit-data.ts`): Pflege merkt Fragen vor (`VisitQuestion`, Akte → Übersicht), die Visite (`Visit`) beantwortet sie und erfasst Anordnungen (`VisitOrder`). Jede Anordnung wird eine Aufgabe (`source: 'order'`), die Zusammenfassung ein Verlaufseintrag (Kategorie `physician`). Medikamente werden in der Visite nie verordnet, nur als Aufgabe «Verordnung anpassen» mit Link in die Medikation. Berechtigung `resident.visit.conduct`.
+- Abschluss-Logik gemeinsam für Station und Ärzteportal in `src/lib/visit-complete.ts` (`Visit.physicianId` = Konto der Ärztin/des Arztes, sonst nur Freitext).
+
+### Ärzteportal, ärztliche Zuständigkeit (PRD §60)
+- Externe Ärztinnen/Ärzte: `User.kind = 'external_physician'`, keine Rollen. `getCtx()` gibt ihnen **keine Grants und keine Bereiche** (zentral, auch bei versehentlich zugewiesener Rolle); das App-Layout leitet nach `/md` um (nur `/profile` bleibt), zweiter Faktor ist Pflicht (`needsMfaSetup`).
+- `/md` nutzt `getMdCtx()` (`src/lib/md/context.ts`): feste Rechte `EXTERNAL_PHYSICIAN_PERMISSIONS` (ohne abgeschaltete Module), Personen nur über aktive `ResidentPhysician`-Zuordnung (`src/lib/md/scope.ts`). Personen im Portal immer über `mdResidentInScope` / `mdActionResident` laden, nie über `residentInScope`. Lesezugriffe als `md.resident.view` im Audit.
+- `ResidentPhysician` ist auch die Quelle für «Meine {Residents}» interner Ärztinnen/Ärzte (Startseite `physician`, `src/lib/md/board.ts`). Verwaltung: Administration › Ärztinnen und Ärzte (`/admin/physicians`, Übernahme aus dem Freitext `Resident.physician`).
+
+### Verordnungen: telefonisch, Codes, Interaktionen (PRD §13, §32)
+- Logik gemeinsam für Akte und Ärzteportal: `src/lib/medication-orders.ts` (`saveOrder`, `stopOrder`, `confirmOrder`). Pflege mit `resident.medication.phone_order` erfasst nur telefonische/mündliche Anordnungen (`Medication.orderSource`, `orderedById`, Frist `confirmDueAt`, Standard 24 h, `settings.medication.phoneOrderConfirmHours`); gilt sofort, Tag «nicht visiert» in Abgabeliste und Runde. Gegenzeichnen nur mit Verordnungsrecht und nicht durch die entgegennehmende Person (`src/lib/phone-orders.ts`); nach Fristablauf meldet der Job `escalations` einmal an Ärztin/Arzt und Leitung (`src/lib/phone-orders-server.ts`).
+- `Medication.atc`/`gtin` (`src/lib/medication-codes.ts`, GTIN mit Prüfziffer). Interaktionen im Dialog vor dem Speichern (`previewInteractionsAction`) und beim Speichern erneut (`src/lib/interaction-gate.ts`): ohne Adapter «nicht geprüft», «kontraindiziert» nur mit Begründung (Audit).
+
+### Therapie und Apotheke
+- Therapie (`/therapy`, Modul `therapy`, Rechte `therapy.read|manage|document`): `TherapyPlan` (Ziel, Frequenz, Evaluation, optional Pflege-Anleitung als `TaskTemplate`), Einheiten als `Appointment` (`kind: therapy`, `therapyPlanId`), Berichte als Verlaufseintrag Kategorie `therapy` (`structured.kind = 'therapy'`). Logik `src/lib/therapy.ts`, Daten `src/lib/therapy-data.ts`.
+- Apotheke (`/tasks/pharmacy`, Recht `resident.medication.stock`): `MedicationStockEntry` (`order` → `receipt` mit Charge/Verfall, `correction`), Bestellvorschlag aus der Reichweite (`src/lib/pharmacy.ts`), Bestellliste zum Kopieren bis ein Adapter `pharmacy` angebunden ist.
 
 ### Schicht, Zuteilung, Startseite
 - Bewohnerzuordnung pro Dienst (`ShiftAssignment`, Schicht = Code + Startdatum wie bei `Handover`): Daten `src/lib/assignment.ts`, reine Logik (Vorschlag, Unterschied) `src/lib/assignment-plan.ts`, Speichern `saveAssignmentsAction` in `app/(app)/_home/actions.ts` (Berechtigung `task.manage`), Dialog `components/handover/Assignment.tsx` (Home und Übergabe).
@@ -98,6 +126,7 @@ prisma/seed.ts          Demodaten „Haus Lindenhof“
 - Ist ein Anlass erledigt (z. B. auffälliger Vitalwert «gesehen»), `settleNotifications(orgId, groupKey)` aufrufen – markiert die gebündelte Meldung bei allen Empfangenden als gelesen.
 
 ### Integrationen (PRD §40/§41)
+- Abrechnung: `src/lib/billing.ts` (Regeln `billing-core.ts`), Export `GET /insights/billing?month=YYYY-MM` (Kennzahlen → Management). CSV-Importe zusätzlich für Medikationspläne und Kontakte (`src/lib/import/`; Allergie-Treffer werden nicht importiert). FHIR schreibend: `Observation`, `AllergyIntolerance`.
 - Adapter je `Integration.kind` in `src/lib/integrations/registry.ts` (`test`, optional `import`), jede Ausführung in `IntegrationRun` (nur Zählwerte). «prepared» = Schnittstelle vorbereitet. Labor: Format `src/lib/integrations/lab.ts`, Eingang `POST /api/v1/labs` (Scope `labs:write`) oder Admin-Import; Anzeige `<LabResults residentId />` (`src/components/labs/LabResults.tsx`).
 
 ### Angehörigenportal (PRD §60, §36)

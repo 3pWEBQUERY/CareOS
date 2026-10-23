@@ -38,7 +38,7 @@ export default defineMessages({
     },
     conflict: {
       master: 'Zwischenzeitlich geändert von {by} ({at}): {fields}. Ihre Eingaben sind nicht gespeichert. Die Anzeige ist aktualisiert – prüfen Sie diese Felder; erneutes Speichern übernimmt Ihre Werte.',
-      edited: 'Zwischenzeitlich geändert von {by} ({at}): {fields}. Ihre Eingaben sind nicht gespeichert und stehen noch im Formular. Die Anzeige ist aktualisiert – prüfen Sie die aktuelle Fassung; erneutes Speichern übernimmt Ihre Werte.',
+      edited: 'Zwischenzeitlich geändert von {by} ({at}): «{fields}». Ihre Eingaben sind nicht gespeichert und stehen noch im Formular. Die Anzeige ist aktualisiert – prüfen Sie die aktuelle Fassung; erneutes Speichern übernimmt Ihre Werte.',
       retry: 'Die Stammdaten wurden gerade gleichzeitig geändert. Bitte prüfen Sie die Angaben und speichern Sie erneut.',
       fields: {
         firstName: 'Vorname',
@@ -496,7 +496,7 @@ export default defineMessages({
     },
     conflict: {
       master: 'Modifié entre-temps par {by} ({at}) : {fields}. Vos saisies ne sont pas enregistrées. L’affichage est actualisé – vérifiez ces champs ; un nouvel enregistrement reprend vos valeurs.',
-      edited: 'Modifié entre-temps par {by} ({at}) : {fields}. Vos saisies ne sont pas enregistrées et restent dans le formulaire. L’affichage est actualisé – vérifiez la version actuelle ; enregistrer à nouveau reprend vos valeurs.',
+      edited: 'Modifié entre-temps par {by} ({at}) : « {fields} ». Vos saisies ne sont pas enregistrées et restent dans le formulaire. L’affichage est actualisé – vérifiez la version actuelle ; enregistrer à nouveau reprend vos valeurs.',
       retry: 'Les données de base viennent d’être modifiées simultanément. Veuillez vérifier les indications et enregistrer à nouveau.',
       fields: {
         firstName: 'Prénom',
@@ -954,7 +954,7 @@ export default defineMessages({
     },
     conflict: {
       master: 'Modificato nel frattempo da {by} ({at}): {fields}. I suoi dati non sono salvati. La vista è aggiornata – verifichi questi campi; salvando di nuovo vengono ripresi i suoi valori.',
-      edited: 'Modificato nel frattempo da {by} ({at}): {fields}. I suoi dati non sono salvati e restano nel modulo. La visualizzazione è aggiornata – verifichi la versione attuale; salvando di nuovo vengono ripresi i suoi valori.',
+      edited: 'Modificato nel frattempo da {by} ({at}): «{fields}». I suoi dati non sono salvati e restano nel modulo. La visualizzazione è aggiornata – verifichi la versione attuale; salvando di nuovo vengono ripresi i suoi valori.',
       retry: 'I dati anagrafici sono appena stati modificati contemporaneamente. Verifichi i dati e salvi di nuovo.',
       fields: {
         firstName: 'Nome',
@@ -1412,7 +1412,7 @@ export default defineMessages({
     },
     conflict: {
       master: 'Changed meanwhile by {by} ({at}): {fields}. Your entries have not been saved. The view has been updated – check these fields; saving again applies your values.',
-      edited: 'Changed in the meantime by {by} ({at}): {fields}. Your input has not been saved and is still in the form. The view has been updated – check the current version; saving again applies your values.',
+      edited: 'Changed in the meantime by {by} ({at}): “{fields}”. Your input has not been saved and is still in the form. The view has been updated – check the current version; saving again applies your values.',
       retry: 'The master data was just changed at the same time. Please check the details and save again.',
       fields: {
         firstName: 'First name',

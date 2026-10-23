@@ -149,6 +149,7 @@ export default async function MedsPage({ params, searchParams }: { params: Promi
       {low.length > 0 && (
         <div className="alert warn">
           <span className="grow"><strong>{t('meds.stock.lowTitle')}</strong>{low.map((m) => `${m.name} (${m.kind === 'prn' ? `${m.stock} ${m.stockUnit ?? ''}`.trim() : t('meds.stock.days', { n: stockDays(m) ?? 0 })})`).join(' · ')}</span>
+          {ctx.can('resident.medication.stock', scope) && <Link className="btn sm" href="/tasks/pharmacy">{t('meds.pharmacy.title')}</Link>}
         </div>
       )}
 
