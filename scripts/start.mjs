@@ -30,6 +30,12 @@ if (init) {
   }
 }
 
+// Optional: Mitarbeitende einer bestehenden Organisation auf ENSURE_STAFF auffüllen (Fehler stoppen den Start nicht)
+if (process.env.ENSURE_STAFF) {
+  const code = await exec('npx', ['tsx', 'prisma/ensure-staff.ts'])
+  if (code !== 0) console.error(`prisma/ensure-staff.ts fehlgeschlagen (Exit-Code ${code}) – App startet trotzdem.`)
+}
+
 const next = spawn('npx', ['next', 'start', '-p', port, '-H', '0.0.0.0'], { stdio: 'inherit', env: process.env })
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => next.kill(sig))
 next.on('exit', (code) => process.exit(code ?? 0))

@@ -81,6 +81,7 @@ INIT_RESIDENTS=100
   Stammbereich, Funktion und Team der Wohngruppe. Für 15 Personen und 4 Wohngruppen: 1 PDL, 4 Stationsleitungen,
   4 HF, 3 FaGe, 3 Pflegehilfe.
 - Ohne `INIT_STAFF`/`INIT_RESIDENTS` entsteht nur die Struktur mit der Systemadministration.
+- **Später auffüllen:** `ENSURE_STAFF=<Anzahl>` ergänzt bei jedem Start fehlende Mitarbeitende einer bestehenden Organisation nach demselben Rollen-Mix (keine zweite Leitung, bestehende Personen bleiben unverändert) und tut nichts mehr, sobald die Zahl erreicht ist. Bei mehreren Organisationen zusätzlich `ENSURE_STAFF_ORG=<slug>`.
 - Ist bereits eine Organisation vorhanden, passiert nichts (auch nicht bei mehreren Instanzen gleichzeitig).
 
 ### Erster Login und Einladungen verteilen
