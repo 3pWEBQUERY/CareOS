@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { getCtx, residentInScope } from '@/lib/context'
 import { ResidentPager, ResidentTabs } from '@/components/residents/ResidentTabs'
 import { addDays, addMinutes, age, fmtDbDate, startOfDay } from '@/lib/time'
-import { OPEN_STATUSES } from '@/lib/tasks'
+import { OPEN_STATUSES, overdueFilter } from '@/lib/tasks'
 import { abnormalKeys, LIVE, mergeLimits } from '@/lib/vitals'
 import { audit } from '@/lib/audit'
 import { storageConfigured } from '@/lib/env'
@@ -22,7 +22,7 @@ export default async function ResidentLayout({ children, params }: { children: R
   const [peers, over, lastVital, limits, openWounds] = await Promise.all([
     // Reihenfolge wie in der Bewohnerliste (Zimmer, Name) für «vorherige/nächste Person»
     db.resident.findMany({ where: { orgId: ctx.org.id, unitId: { in: listUnitIds }, status: { in: ['active', 'absent'] } }, select: { id: true, lastName: true, firstName: true, room: { select: { number: true } } }, orderBy: [{ room: { number: 'asc' } }, { lastName: 'asc' }] }),
-    db.task.count({ where: { residentId: r.id, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addMinutes(now, -15) } } }),
+    overdueFilter(ctx.org.id, now).then((w) => db.task.count({ where: { residentId: r.id, ...w } })),
     db.vitalSign.findFirst({ where: { residentId: r.id, ...LIVE, at: { gte: addDays(now, -1) } }, orderBy: { at: 'desc' } }),
     db.vitalThreshold.findMany({ where: { orgId: ctx.org.id, OR: [{ residentId: null }, { residentId: r.id }] } }),
     db.wound.count({ where: { residentId: r.id, status: { not: 'closed' } } }),

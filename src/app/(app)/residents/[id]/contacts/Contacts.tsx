@@ -9,10 +9,11 @@ import { useConfirm } from '@/components/ui/ConfirmDialog'
 import { IconPlus } from '@/components/icons'
 import { deleteContact, saveContact } from './actions'
 import { Checkbox, TextField, Textarea } from '@/components/ui/fields'
+import { ContactPortal, type AccessRow, type PortalProps } from './ContactPortal'
 
 type C = { id: string; name: string; relation: string; phone: string | null; email: string | null; isEmergency: boolean; isLegalRep: boolean; notes: string | null }
 
-export function Contacts({ residentId, who, contacts, canEdit }: { residentId: string; who: string; contacts: C[]; canEdit: boolean }) {
+export function Contacts({ residentId, who, contacts, canEdit, portal, accesses }: { residentId: string; who: string; contacts: C[]; canEdit: boolean; portal?: PortalProps; accesses?: Record<string, AccessRow[]> }) {
   const t = useT()
   const [edit, setEdit] = useState<C | 'new' | null>(null)
   const [pending, start] = useTransition()
@@ -53,6 +54,7 @@ export function Contacts({ residentId, who, contacts, canEdit }: { residentId: s
                   <dt>{t('residents.contacts.email')}</dt><dd style={{ overflowWrap: 'anywhere' }}>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : '–'}</dd>
                   {c.notes && <><dt>{t('residents.contacts.notes')}</dt><dd>{c.notes}</dd></>}
                 </dl>
+                {portal && <ContactPortal residentId={residentId} who={who} contact={c} accesses={accesses?.[c.id] ?? []} portal={portal} />}
               </div>
               {canEdit && <div className="card-foot"><button type="button" className="linkbtn small" onClick={() => setEdit(c)}>{t('common.edit')}</button></div>}
             </section>

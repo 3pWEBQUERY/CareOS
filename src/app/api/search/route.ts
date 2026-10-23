@@ -6,7 +6,8 @@ import { snippet } from '@/lib/search-snippet'
 import { fmtDate, fmtDayMonth, hm, sameDay } from '@/lib/time'
 import { taskTitle } from '@/lib/task-title'
 import { dedupeTaskHits, systemTaskMatches } from '@/lib/task-search'
-import { OPEN_STATUSES } from '@/lib/tasks'
+import { backlogCutoff, backlogWhere } from '@/lib/task-backlog'
+import { shiftTypes } from '@/lib/shift'
 import { canModerate, liveFilter, myRoleKeys, postAudienceWhere, visibleChannels } from '@/app/(app)/team/lib'
 
 /** Globale Suche, berechtigungsabhängig (PRD §24). Jede Quelle ist begrenzt, Suche ohne Gross-/Kleinschreibung. */
@@ -35,11 +36,12 @@ export async function GET(req: NextRequest) {
       ? (() => {
           // Systemaufgaben über ihren übersetzten Titel bzw. ihre Kategorie finden (Titel sind Schlüssel, siehe taskTitle)
           const sys = systemTaskMatches(t, q)
-          return db.task.findMany({
+          const now = new Date()
+          // Offene Aufgaben nach der Rückstandsregel (keine abgelaufenen Routine-Zeitpunkte früherer Schichten), bis morgen
+          return shiftTypes(ctx.org.id).then((types) => db.task.findMany({
             where: {
               unitId: { in: ctx.unitIds },
-              dueAt: { gte: new Date(Date.now() - 864e5) },
-              status: { in: [...OPEN_STATUSES] },
+              AND: [backlogWhere(backlogCutoff(types, now), new Date(now.getTime() + 864e5), now)],
               // Medikamentenaufgaben nur für Personen, die abgeben dürfen (wie in der Aufgabenliste)
               ...(ctx.can('resident.medication.administer') ? {} : { source: { not: 'medication' as const } }),
               OR: [
@@ -53,7 +55,7 @@ export async function GET(req: NextRequest) {
             include: { resident: { select: { firstName: true, lastName: true } } },
             take: 60,
             orderBy: { dueAt: 'asc' },
-          })
+          }))
         })()
       : [],
     // Mitteilungen nur aus Kanälen, die die Person sehen darf

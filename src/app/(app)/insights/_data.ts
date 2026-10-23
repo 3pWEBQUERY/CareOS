@@ -1,6 +1,8 @@
 import 'server-only'
 import { db } from '@/lib/db'
 import { ensureTasksForDay, OPEN_STATUSES } from '@/lib/tasks'
+import { backlogCutoff, overdueWhere } from '@/lib/task-backlog'
+import { shiftTypes } from '@/lib/shift'
 import { LIVE } from '@/lib/vitals'
 import { inAudience, roleKeysByUserIds } from '@/lib/audience'
 import { addDays, addMinutes, dateKey, dbDate, fromDbDate, shiftBounds, startOfDay } from '@/lib/time'
@@ -51,12 +53,14 @@ export async function careData(s: Scope) {
     select: { id: true, firstName: true, lastName: true, unitId: true, room: { select: { number: true } }, nutrition: { select: { fluidTargetMl: true } } },
   })
   const rIds = residents.map((r) => r.id)
+  const cutoff = backlogCutoff(await shiftTypes(orgId), now)
   const wk = weeks(12, now)
   const [openToday, overdue, falls, wounds, weights, intake] = await Promise.all([
     db.task.count({ where: { orgId, unitId: { in: unitIds }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: today, lt: addDays(today, 1) } } }),
     db.task.groupBy({
       by: ['category'],
-      where: { orgId, unitId: { in: unitIds }, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: from, lt: addMinutes(now, -15) }, source: { not: 'medication' } },
+      // Gleiche Regel wie Navigation und Aufgabenliste (inkl. eskaliert, Rückstand nach src/lib/task-backlog.ts)
+      where: { orgId, unitId: { in: unitIds }, AND: [overdueWhere(cutoff, now), { dueAt: { gte: from } }], source: { not: 'medication' } },
       _count: true,
     }),
     db.incident.findMany({ where: { orgId, unitId: { in: unitIds }, type: { key: 'fall' }, occurredAt: { gte: wk[0].start } }, select: { occurredAt: true, nearMiss: true } }),

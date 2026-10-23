@@ -1,7 +1,11 @@
 import 'server-only'
 import type { Prisma, Task } from '@prisma/client'
 import { db } from '@/lib/db'
-import { addDays, addMinutes, atTime, dateKey, fromDbDate, sameDay, startOfDay } from '@/lib/time'
+import { addDays, atTime, dateKey, dbDate, fromDbDate, sameDay, startOfDay } from '@/lib/time'
+import { log } from '@/lib/log'
+import { emit } from '@/lib/events'
+import { shiftTypes } from '@/lib/shift'
+import { backlogCutoff, overdueWhere, shouldExpire } from '@/lib/task-backlog'
 import { dueView } from '@/lib/task-view'
 import { LIVE } from '@/lib/vitals'
 import { ASSESSMENTS, CARE_DOMAINS } from '@/lib/clinical-config'
@@ -18,11 +22,32 @@ export function taskView(t: Pick<Task, 'status' | 'dueAt'>, now = new Date()): T
 export const isClosed = (s: Task['status']) => s === 'done' || s === 'partial' || s === 'skipped'
 export const OPEN_STATUSES = ['planned', 'ready', 'in_progress', 'escalated'] as const
 
-const generated = new Map<string, number>()
-/** Nach Änderungen an Pflegeplanung oder Medikation aufrufen, damit Aufgaben neu erzeugt werden. */
+/**
+ * Merker der Aufgabenerzeugung (PRD §66): massgeblich ist TaskGeneration in Postgres (gilt über alle Instanzen).
+ * Der Prozessspeicher spart nur wiederholte Abfragen in kurzer Folge (LOCAL_TTL) und merkt sich lokale Invalidierungen.
+ */
+const GEN_TTL_MS = 10 * 60_000
+const LOCAL_TTL_MS = 30_000
+const localChecked = new Map<string, number>()
+const localInvalid = new Map<string, number>()
+const lockKey = (unitId: string) => 'careos:tasks:' + unitId
+
+/**
+ * Nach Änderungen an Pflegeplanung, Medikation, Assessments oder Bewohnerstatus aufrufen, damit Aufgaben neu erzeugt
+ * werden – auf allen Instanzen. Wartet auf eine laufende Erzeugung des Bereichs (gleiche Advisory Lock), damit eine
+ * gerade laufende Erzeugung den Merker nicht nach der Invalidierung wieder setzt. Aufrufer müssen nicht warten.
+ */
 export function invalidateTaskGeneration(unitId?: string) {
-  if (!unitId) generated.clear()
-  else for (const k of generated.keys()) if (k.startsWith(unitId + ':')) generated.delete(k)
+  const now = Date.now()
+  if (!unitId) { localChecked.clear(); localInvalid.set('*', now) }
+  else { for (const k of localChecked.keys()) if (k.startsWith(unitId + ':')) localChecked.delete(k); localInvalid.set(unitId, now) }
+  const p = unitId
+    ? db.$transaction(async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey(unitId)}))`
+        await tx.taskGeneration.deleteMany({ where: { unitId } })
+      }, { timeout: 60_000, maxWait: 30_000 })
+    : db.taskGeneration.deleteMany({})
+  return Promise.resolve(p).then(() => undefined).catch((e) => { log.warn('tasks.invalidate_failed', { error: e instanceof Error ? e.message : String(e) }) })
 }
 
 /** Uhrzeit, zu der fällige Evaluationen der Pflegeplanung als Aufgabe erscheinen (ruhigere Tageszeit). */
@@ -48,10 +73,25 @@ export async function ensureTasksForDay(unitId: string, day = new Date()) {
     if (u) await applyWorkflowRules(u.orgId, [unitId], now).catch((e) => console.error('[workflows]', e))
   }
   const key = unitId + ':' + dateKey(day)
-  const last = generated.get(key)
-  if (last && Date.now() - last < 10 * 60_000) return
-  generated.set(key, Date.now())
+  const checked = localChecked.get(key) ?? 0
+  const invalidAt = Math.max(localInvalid.get(unitId) ?? 0, localInvalid.get('*') ?? 0)
+  if (checked > invalidAt && Date.now() - checked < LOCAL_TTL_MS) return
+  localChecked.set(key, Date.now())
+  const fresh = (row: { at: Date } | null) => !!row && Date.now() - row.at.getTime() < GEN_TTL_MS && row.at.getTime() > invalidAt
+  const where = { unitId_day: { unitId, day: dbDate(day) } }
+  if (fresh(await db.taskGeneration.findUnique({ where }))) return
+  // Eine Erzeugung je Bereich gleichzeitig (über alle Instanzen); die zweite sieht danach den frischen Merker.
+  await db.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey(unitId)}))`
+    if (fresh(await tx.taskGeneration.findUnique({ where }))) return
+    const startedAt = new Date()
+    await generateTasks(tx, unitId, day)
+    await tx.taskGeneration.upsert({ where, update: { at: startedAt }, create: { unitId, day: dbDate(day), at: startedAt } })
+  }, { timeout: 60_000, maxWait: 30_000 })
+}
 
+/** Erzeugt die Aufgaben eines Bereichs und Tages (idempotent über @@unique([source, sourceId, dueAt])). */
+async function generateTasks(db: Prisma.TransactionClient, unitId: string, day: Date) {
   const unit = await db.unit.findUnique({ where: { id: unitId }, select: { orgId: true } })
   if (!unit) return
   const wd = day.getDay()
@@ -165,9 +205,66 @@ export async function reconcileIncidentActions() {
   return syncIncidentActions(actions.map((a) => a.taskId!))
 }
 
-export async function overdueCount(unitId: string, now = new Date()) {
+/** Überfällig im Bereich – gleiche Regel wie Aufgabenliste und Kennzahlen (src/lib/task-backlog.ts, inkl. eskaliert). */
+export async function overdueCount(unitId: string, now = new Date(), opts: { medication?: boolean } = {}) {
   await ensureTasksForDay(unitId, now)
-  return db.task.count({
-    where: { unitId, status: { in: [...OPEN_STATUSES] }, dueAt: { gte: startOfDay(now), lt: addMinutes(now, -15) } },
-  })
+  const unit = await db.unit.findUnique({ where: { id: unitId }, select: { orgId: true } })
+  if (!unit) return 0
+  const cutoff = backlogCutoff(await shiftTypes(unit.orgId), now)
+  return db.task.count({ where: { unitId, ...overdueWhere(cutoff, now), ...(opts.medication === false ? { source: { not: 'medication' } } : {}) } })
+}
+
+/**
+ * Rückstand abbauen (Job «tasks»): zeitgebundene Routineaufgaben, deren eigene und folgende Schicht vorbei sind,
+ * als «nicht erledigt – übergeben» schliessen (status skipped, autoClosed shift_end, ohne Quittierende Person).
+ * Sie bleiben in Übergabe und Tagesplan als nicht erledigt sichtbar; jede Aufgabe wird im Audit protokolliert.
+ */
+export async function expireBacklog(now = new Date()) {
+  const orgs = await db.organization.findMany({ select: { id: true } })
+  let closed = 0
+  for (const org of orgs) {
+    const cutoff = backlogCutoff(await shiftTypes(org.id), now)
+    const open = await db.task.findMany({
+      where: { orgId: org.id, status: { in: [...OPEN_STATUSES] }, dueAt: { lt: cutoff }, source: { in: ['careplan', 'medication', 'recurring'] } },
+      select: { id: true, unitId: true, residentId: true, status: true, source: true, sourceId: true, dueAt: true },
+      take: 2000,
+    })
+    const due = open.filter((t) => shouldExpire(t, cutoff))
+    if (!due.length) continue
+    const at = new Date()
+    const byUnit = new Map<string, string[]>()
+    for (let i = 0; i < due.length; i += 200) {
+      const chunk = due.slice(i, i + 200)
+      const upd = await db.task.updateMany({ where: { id: { in: chunk.map((t) => t.id) }, status: { in: [...OPEN_STATUSES] } }, data: { status: 'skipped', autoClosed: 'shift_end', completedAt: at, completedById: null } })
+      closed += upd.count
+      await db.auditLog.createMany({
+        data: chunk.map((t) => ({
+          orgId: org.id, userId: null, action: 'task.expire', entityType: 'Task', entityId: t.id,
+          before: { status: t.status }, after: { status: 'skipped', autoClosed: 'shift_end' },
+          context: { residentId: t.residentId, auto: true, cutoff: cutoff.toISOString(), dueAt: t.dueAt.toISOString() },
+        })),
+      })
+      for (const t of chunk) byUnit.set(t.unitId, [...(byUnit.get(t.unitId) ?? []), t.id])
+    }
+    for (const [unitId, ids] of byUnit) await emit({ orgId: org.id, type: 'task.completed', unitId, payload: { taskIds: ids.slice(0, 50), status: 'skipped', auto: 'shift_end' } })
+  }
+  return closed
+}
+
+/** Job «tasks» (alle 5 Min.): Aufgaben für heute (und ab 18 Uhr für morgen) aller Bereiche erzeugen, Rückstand abbauen. */
+export async function runTaskJob(now = new Date()) {
+  const units = await db.unit.findMany({ select: { id: true } })
+  let generatedUnits = 0
+  for (const u of units) {
+    await ensureTasksForDay(u.id, now)
+    if (now.getHours() >= 18) await ensureTasksForDay(u.id, addDays(now, 1))
+    generatedUnits++
+  }
+  const expired = await expireBacklog(now)
+  return { units: generatedUnits, expired }
+}
+
+/** Prisma-Bedingung «überfällig» der Organisation (gemeinsame Regel, src/lib/task-backlog.ts) für eigene Zähler. */
+export async function overdueFilter(orgId: string, now = new Date()) {
+  return overdueWhere(backlogCutoff(await shiftTypes(orgId), now), now)
 }

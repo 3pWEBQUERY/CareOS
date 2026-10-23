@@ -17,9 +17,11 @@ import { lastDailySlot, retentionPolicy } from '@/lib/retention-policy'
  * - security:    alle 5 Minuten (Audit-Überwachung src/lib/security-alerts.ts, abgelaufene Rate-Limits, alte Fehlerzähler)
  * - reminders:   täglich 06:30 Europe/Zurich je Organisation, geprüft alle 10 Minuten (Ablauf von Zertifikaten,
  *                Qualifikationen, Schulungsfristen, Dokument-Gültigkeit; src/lib/reminders.ts)
+ * - tasks:       alle 5 Minuten (Aufgaben aller Bereiche erzeugen, damit Seitenaufrufe nicht warten; Rückstand
+ *                zeitgebundener Routineaufgaben nach der Folgeschicht schliessen; src/lib/tasks.ts runTaskJob)
  */
 
-export type JobName = 'escalations' | 'retention' | 'cleanup' | 'security' | 'reminders'
+export type JobName = 'escalations' | 'retention' | 'cleanup' | 'security' | 'reminders' | 'tasks'
 
 const MIN = 60_000
 const LOCK_TIMEOUT = 60 * MIN
@@ -111,12 +113,19 @@ async function remindersJob(now: Date) {
   }
 }
 
+async function tasksJob(now: Date) {
+  if (await ranSince('tasks', new Date(now.getTime() - 4 * MIN))) return
+  const { runTaskJob } = await import('@/lib/tasks')
+  await recordRun('tasks', {}, () => runTaskJob(now))
+}
+
 export const JOBS: Record<JobName, { everyMs: number; run: (now: Date) => Promise<void> }> = {
   escalations: { everyMs: 5 * MIN, run: escalationsJob },
   retention: { everyMs: 10 * MIN, run: retentionJob },
   cleanup: { everyMs: 60 * MIN, run: cleanupJob },
   security: { everyMs: 5 * MIN, run: securityJob },
   reminders: { everyMs: 10 * MIN, run: remindersJob },
+  tasks: { everyMs: 5 * MIN, run: tasksJob },
 }
 
 // ───────────── Scheduler ─────────────

@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   if (s?.mfaPassed) redirect('/')
   const { t } = await publicT()
   const next = sp.next?.startsWith('/') && !sp.next.startsWith('//') ? sp.next : '/'
-  const keys = ['email', 'password', 'submit', 'passkey', 'or', 'invalid', 'locked', 'inactive', 'pending', 'passkeyFailed'] as const
+  const keys = ['email', 'password', 'submit', 'passkey', 'or', 'invalid', 'locked', 'inactive', 'pending', 'passkeyFailed', 'suspended', 'orgPending'] as const
   const labels = Object.fromEntries(keys.map((k) => [k, t('auth.' + k)])) as Record<(typeof keys)[number], string>
   return (
     <main className="auth">
@@ -34,6 +34,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </header>
         <div className="body">
           {sp.error === 'sso' && <p className="alert crit" role="alert">{t('auth.ssoFailed')}</p>}
+          {(sp.error === 'suspended' || sp.error === 'orgPending') && <p className="alert warn" role="alert">{t('auth.' + sp.error)}</p>}
           <LoginForm labels={labels} next={next} sso={ssoConfigured() ? { label: env.oidc.label } : null} />
           {process.env.SEED_DEMO === 'true' && <p className="small muted" style={{ margin: 0 }}>{t('auth.demoHint')}</p>}
         </div>

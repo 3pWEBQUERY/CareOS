@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { exchangeCode } from '@/lib/auth/oidc'
-import { createSession, requestMeta } from '@/lib/auth/session'
+import { createSession, orgLoginBlock, requestMeta } from '@/lib/auth/session'
 import { auditSystem } from '@/lib/audit'
 import { env } from '@/lib/env'
 
@@ -17,6 +17,8 @@ export async function GET(req: NextRequest) {
     const user = (await db.user.findUnique({ where: { ssoSubject: sub } })) ?? (email ? await db.user.findUnique({ where: { email } }) : null)
     if (!user || !user.active) return fail
     if (!user.ssoSubject) await db.user.update({ where: { id: user.id }, data: { ssoSubject: sub } })
+    const block = await orgLoginBlock(user.orgId)
+    if (block) return NextResponse.redirect(new URL('/login?error=' + (block === 'pending' ? 'orgPending' : 'suspended'), env.appUrl))
     // Der Identity Provider ist für MFA zuständig.
     await createSession(user.id, true, 'sso')
     await auditSystem({ action: 'auth.login', entityType: 'User', entityId: user.id, orgId: user.orgId, userId: user.id, context: { method: 'oidc' }, ...(await requestMeta()) })

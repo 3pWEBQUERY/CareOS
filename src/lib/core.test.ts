@@ -20,8 +20,11 @@ test('Abgabe und Verordnung sind getrennt (PRD §34)', () => {
   const nurse = DEFAULT_ROLES.find((r) => r.key === 'nurse')!
   assert.ok(nurse.permissions.includes('resident.medication.administer'))
   assert.ok(!nurse.permissions.includes('resident.medication.edit'))
+  // Systemadministration ohne klinische Rechte (Least Privilege, PRD §34/§37)
   const admin = DEFAULT_ROLES.find((r) => r.key === 'sysadmin')!
-  assert.equal(admin.permissions.length, ALL_PERMISSIONS.length)
+  assert.ok(admin.permissions.length < ALL_PERMISSIONS.length)
+  assert.ok(admin.permissions.includes('admin.roles') && admin.permissions.includes('admin.emergency'))
+  assert.ok(!admin.permissions.some((p) => p.startsWith('resident.') || p.startsWith('task.') || p.startsWith('handover.') || p === 'chat.clinical' || p === 'ai.use'))
 })
 
 test('Plural und Terminologie', () => {

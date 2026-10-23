@@ -2,6 +2,7 @@ import 'server-only'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { isClosed, taskView } from '@/lib/tasks'
+import { isOverdue } from '@/lib/task-backlog'
 import { taskTitle } from '@/lib/task-title'
 import { addDays, dbDate, fmtDayMonth, fmtNum, hm, sameDay, shiftBounds, startOfDay, type ShiftDef } from '@/lib/time'
 import { abnormalKeys, flag, LIVE, mergeLimits, VITALS } from '@/lib/vitals'
@@ -135,6 +136,10 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
     // Was wurde getan?
     for (const k of tasks.filter((k) => k.residentId === r.id && isClosed(k.status))) {
       if (k.source === 'medication' && k.title === 'medication.slot') continue
+      // Pausiert während Abwesenheit: weder getan noch offen
+      if (k.autoClosed === 'absence') continue
+      // Vom System nach der Folgeschicht geschlossen: bleibt als «nicht erledigt – übergeben» unter «Was ist noch offen?»
+      if (k.autoClosed) { open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k), tone: 'c', flag: t('tasks.autoClosed.shiftEnd') }); continue }
       done.push({ at: (k.completedAt ?? k.dueAt).getTime(), time: hm(k.dueAt), tone: k.status === 'done' ? '' : 'w', text: taskTitle(t, k) + (k.status === 'done' ? '' : ` (${t('tasks.view.' + k.status)}${k.note ? ': ' + short(k.note, 60) : ''})`) })
     }
     for (const a of prnGiven.filter((a) => a.residentId === r.id && a.at >= from)) {
@@ -167,7 +172,8 @@ export async function collectHandover(ctx: Ctx, unitId: string, from: Date, to: 
       openCount++
       if (k.source === 'medication' && k.title === 'medication.slot') continue
       const v = taskView(k, now)
-      open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k), tone: v === 'over' || v === 'escalated' ? 'c' : '', flag: v === 'over' || v === 'escalated' ? t('tasks.view.' + v) : undefined })
+      const late = isOverdue(k, now)
+      open.push({ at: k.dueAt.getTime(), time: hm(k.dueAt), text: taskTitle(t, k), tone: late ? 'c' : '', flag: v === 'escalated' ? t('tasks.view.escalated') : late ? t('tasks.view.over') : undefined })
     }
     for (const d of doses.filter((d) => d.residentId === r.id)) {
       open.push({ at: d.at.getTime(), time: d.time, text: t(d.over ? 'tasks.handover.auto.doseOver' : 'tasks.handover.auto.dosePlanned', { drug: d.medication.name, dose: doseText(d.dose, d.medication.form) }), tone: d.over ? 'c' : '', flag: d.over ? t('tasks.view.over') : undefined })

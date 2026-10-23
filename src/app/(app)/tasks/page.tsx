@@ -4,7 +4,9 @@ import type { Task } from '@prisma/client'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { usersWithPermission } from '@/lib/notify'
-import { ensureTasksForDay, isClosed, OPEN_STATUSES, taskView } from '@/lib/tasks'
+import { ensureTasksForDay, isClosed, taskView } from '@/lib/tasks'
+import { backlogCutoff, backlogWhere, isOverdue, splitMinutes } from '@/lib/task-backlog'
+import { BacklogClose, type BacklogRow } from '@/components/tasks/BacklogClose'
 import { taskTitle } from '@/lib/task-title'
 import { shiftTypes } from '@/lib/shift'
 import { shiftName } from '@/lib/shift-name'
@@ -57,6 +59,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const saved = (await cookies()).get('careos_tasks_f_' + user.id)?.value
   const filter = isFilter(sp.f) ? sp.f : isFilter(saved) ? saved : 'open'
 
+  const cutoff = backlogCutoff(types, now)
   await ensureTasksForDay(unit.id, win.start)
   if (!sameDay(win.start, win.end)) await ensureTasksForDay(unit.id, win.end)
 
@@ -66,7 +69,9 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
         unitId: unit.id,
         OR: [
           { dueAt: { gte: win.start, lt: win.end } },
-          { dueAt: { gte: addDays(win.start, -1), lt: win.start }, status: { in: [...OPEN_STATUSES] } },
+          // Rückstand (nur für die laufende Schicht bzw. heute): offene Aufgaben der Vorschicht und offene Einzelaufgaben
+          // – gleiche Regel wie die Zähler (src/lib/task-backlog.ts)
+          ...(win.start <= now && now < win.end ? [backlogWhere(cutoff, win.start, now)] : []),
         ],
       },
       orderBy: [{ dueAt: 'asc' }, { createdAt: 'asc' }],
@@ -87,12 +92,14 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const doses = canMeds ? await openDoses(residents.filter((r) => r.status === 'active').map((r) => r.id), now, now) : []
 
   const open = tasks.filter((k) => !isClosed(k.status))
-  const over = open.filter((k) => taskView(k, now) === 'over')
-  const remaining = open.reduce((s, k) => s + k.durationMin, 0)
+  // Eine Zahl für «überfällig»: eskalierte Aufgaben zählen mit (Navigation, Startseite, Kennzahl und Filter gleich)
+  const over = open.filter((k) => isOverdue(k, now))
+  const remaining = splitMinutes(open.reduce((s, k) => s + k.durationMin, 0))
+  const backlog = open.filter((k) => k.dueAt < win.start)
   const list = tasks.filter((k) => {
     if (filter === 'done') return isClosed(k.status) && k.dueAt >= win.start
     if (isClosed(k.status)) return false
-    if (filter === 'over') return taskView(k, now) === 'over'
+    if (filter === 'over') return isOverdue(k, now)
     // «Meine»: mir zugewiesen oder bei mir zugeteilten Personen und niemand anderem zugewiesen
     if (filter === 'mine') return k.assigneeId === user.id || (!k.assigneeId && !!k.residentId && mineSet.has(k.residentId))
     return true
@@ -131,7 +138,13 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       note: k.note, createdBy: uName(k.createdById), sourceLabel: sourceLabel(k),
       link: k.residentId && medSlot && canMeds ? { href: `/residents/${k.residentId}/meds`, label: t('tasks.toMar') } : k.residentId && prn && canMeds ? { href: `/residents/${k.residentId}/meds#effect`, label: t('tasks.toEffect') } : k.residentId && k.source === 'order' && k.title === 'visit.order.medication' && canMeds ? { href: `/residents/${k.residentId}/meds#orders`, label: t('visit.task.toMeds') } : docLink(k),
       series: k.source === 'recurring' && k.sourceId && tplById.has(k.sourceId) ? { id: k.sourceId, label: seriesLabel(tplById.get(k.sourceId)!) } : null,
+      overdue: isOverdue(k, now), carried: !isClosed(k.status) && k.dueAt < win.start,
+      autoClosed: k.autoClosed ? t('tasks.autoClosed.' + (k.autoClosed === 'absence' ? 'absence' : 'shiftEnd')) : null,
     }
+  })
+  const backlogRows: BacklogRow[] = backlog.filter((k) => !(k.source === 'medication' && k.title === 'medication.slot')).map((k) => {
+    const r = k.residentId ? rById.get(k.residentId) : null
+    return { id: k.id, when: `${fmtDayMonth(k.dueAt, ctx.locale)} ${hm(k.dueAt)}`, title: taskTitle(t, k), resident: r ? `${r.lastName} ${r.firstName}` : null, room: r?.room?.number ?? null, escalated: k.status === 'escalated' }
   })
   const staff: StaffDto[] = users.filter((u) => staffIds.includes(u.id) && u.active).map((u) => ({ id: u.id, name: `${u.lastName} ${u.firstName}`, initials: u.initials })).sort((a, b) => a.name.localeCompare(b.name))
   const cats = [...new Set([...DEFAULT_CATEGORIES, ...tasks.filter((k) => k.source === 'manual' || k.source === 'recurring').map((k) => k.category)])]
@@ -197,10 +210,11 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
           <div className="metrics metrics-2">
             <a className="metric" href={q({ f: 'open' })}><span className="lbl">{t('tasks.metrics.open')}</span><span className="val">{open.length}</span></a>
             <a className="metric" href={q({ f: 'over' })}><span className="lbl">{t('tasks.metrics.over')}</span><span className={'val' + (over.length ? ' crit' : '')}>{over.length}</span></a>
-            <div className="metric"><span className="lbl">{t('tasks.metrics.remaining')}</span><span className="val">{remaining} <small>{t('common.minutes')}</small></span></div>
+            <div className="metric"><span className="lbl">{t('tasks.metrics.remaining')}</span><span className="val">{remaining.h > 0 && <>{remaining.h} <small>{t('tasks.hoursShort')}</small> </>}{remaining.m} <small>{t('common.minutes')}</small></span></div>
             {canMeds && <a className="metric" href="#meds-open"><span className="lbl">{t('tasks.metrics.meds')}</span><span className={'val' + (doses.length ? ' crit' : '')}>{doses.length}</span></a>}
           </div>
 
+          {canComplete && filter !== 'done' && <BacklogClose key={backlogRows.map((b) => b.id).join(',')} rows={backlogRows} medCount={backlog.length - backlogRows.length} />}
           {filter === 'mine' && !mine && <p className="small muted" style={{ margin: 0 }}>{t('tasks.mineHint')}</p>}
           <TaskTable
             rows={rows}

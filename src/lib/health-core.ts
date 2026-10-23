@@ -7,6 +7,7 @@ export const JOB_EXPECT_MS: Record<string, number> = {
   security: 15 * 60_000,
   cleanup: 2 * 3600_000,
   retention: 26 * 3600_000,
+  tasks: 15 * 60_000,
 }
 
 export type JobHealth = { name: string; state: JobState; lastStartedAt: Date | null; lastOk: boolean | null; durationMs: number | null; error: string | null }

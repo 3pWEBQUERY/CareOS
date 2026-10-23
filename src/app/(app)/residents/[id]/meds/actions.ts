@@ -1,19 +1,19 @@
 'use server'
 
 import { refresh } from 'next/cache'
-import type { AdministrationStatus, MedicationKind } from '@prisma/client'
+import type { AdministrationStatus } from '@prisma/client'
 import { db } from '@/lib/db'
 import { assertCan, getCtx, residentInScope, type Ctx } from '@/lib/context'
-import { run, fd, fdBool, fdNum, type ActionResult } from '@/lib/action'
+import { run, fd, type ActionResult } from '@/lib/action'
 import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { hasPermission, type Grant } from '@/lib/permissions'
 import { verifyPassword } from '@/lib/auth/password'
 import { rateLimit } from '@/lib/rate-limit'
-import { ensureTasksForDay, invalidateTaskGeneration } from '@/lib/tasks'
 import { addDays, addMinutes, atTime, hm, parseDateKey, startOfDay } from '@/lib/time'
 import { doseUnits, EFFECT_CHECK_MIN, hasDose, medAppliesAt, prnStatus, slotKey, syncSlotTask } from '@/lib/medication'
-import { blocking, checkAllergies } from '@/lib/allergy-check'
+import { confirmOrder, gateDto, interactionGate, saveOrder, stopOrder, type GateDto } from '@/lib/medication-orders'
+import { parseCodes } from '@/lib/medication-codes'
 
 type Resident = NonNullable<Awaited<ReturnType<typeof residentInScope>>>
 
@@ -226,83 +226,24 @@ export async function voidPrnAction(form: FormData): Promise<ActionResult> {
 }
 
 // ───────── Verordnungen ─────────
+// Logik gemeinsam mit dem Ärzteportal in src/lib/medication-orders.ts
 
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
-const KINDS: MedicationKind[] = ['regular', 'prn', 'temporary']
+async function orderResident(ctx: Ctx, residentId: string) {
+  const r = await residentInScope(ctx, residentId, 'resident.medication.read')
+  if (!r) throw new Error('not_found')
+  const scope = { unitId: r.unitId, locationId: r.unit.locationId }
+  return { r, canPrescribe: ctx.can('resident.medication.edit', scope), canPhone: ctx.can('resident.medication.phone_order', scope) }
+}
 
-/** Neue Verordnung oder Änderung. Änderungen setzen die alte Verordnung ab und legen eine neue an (Verlauf bleibt). */
+/** Neue Verordnung oder Änderung (ärztlich) bzw. telefonische/mündliche Anordnung (Pflege, Gegenzeichnung nötig). */
 export async function saveOrderAction(form: FormData): Promise<ActionResult> {
   return run(async () => {
     const ctx = await getCtx()
-    const { t } = ctx
-    const residentId = fd(form, 'residentId')
-    const r = await residentInScope(ctx, residentId, 'resident.medication.read')
-    if (!r) return err('common.notFound')
-    assertCan(ctx, 'resident.medication.edit', { unitId: r.unitId, locationId: r.unit.locationId })
-    const editId = fd(form, 'id')
-    const old = editId ? await db.medication.findFirst({ where: { id: editId, residentId: r.id } }) : null
-    if (editId && (!old || !old.active)) return err('meds.errors.orderInactive')
-
-    const name = fd(form, 'name')
-    if (name.length < 2) return err('meds.errors.name', 'name')
-    const kind = fd(form, 'kind') as MedicationKind
-    if (!KINDS.includes(kind)) return err('common.genericError', 'kind')
-    const times: string[] = []
-    const doses: string[] = []
-    if (kind !== 'prn') {
-      for (let i = 0; i < 6; i++) {
-        const time = fd(form, 'time_' + i)
-        const dose = fd(form, 'dose_' + i)
-        if (!dose || dose === '0') continue
-        if (!TIME_RE.test(time)) return err('meds.errors.time', 'time_' + i)
-        if (times.includes(time)) return err('meds.errors.timeDuplicate', 'time_' + i)
-        times.push(time)
-        doses.push(dose)
-      }
-      if (!times.length) return err('meds.errors.noDose', 'dose_0')
-      const order = times.map((tm, i) => [tm, doses[i]] as const).sort((a, b) => a[0].localeCompare(b[0]))
-      times.splice(0, times.length, ...order.map((o) => o[0]))
-      doses.splice(0, doses.length, ...order.map((o) => o[1]))
-    }
-    const prnDose = fd(form, 'prnDose')
-    const prnMax = fdNum(form, 'prnMaxPerDay')
-    const prnInt = fdNum(form, 'prnMinIntervalH')
-    if (kind === 'prn') {
-      if (!prnDose) return err('meds.errors.prnDose', 'prnDose')
-      if (prnMax == null || Number.isNaN(prnMax) || prnMax < 1 || prnMax > 24 || !Number.isInteger(prnMax)) return err('meds.errors.prnMaxInvalid', 'prnMaxPerDay')
-      if (prnInt != null && (Number.isNaN(prnInt) || prnInt < 0 || prnInt > 72 || !Number.isInteger(prnInt))) return err('meds.errors.prnIntervalInvalid', 'prnMinIntervalH')
-    }
-    const now = new Date()
-    const startKey = fd(form, 'startDate')
-    let start = startKey ? parseDateKey(startKey) : now
-    if (start <= now) start = now
-    const endKey = fd(form, 'endDate')
-    const end = endKey ? parseDateKey(endKey) : null
-    if (kind === 'temporary' && !end) return err('meds.errors.endDate', 'endDate')
-    if (end && end < startOfDay(start)) return err('meds.errors.endBeforeStart', 'endDate')
-    const stock = fdNum(form, 'stock')
-    if (stock != null && (Number.isNaN(stock) || stock < 0 || !Number.isInteger(stock))) return err('meds.errors.stock', 'stock')
-    const reason = fd(form, 'changeReason')
-    if (old && reason.length < 3) return err('meds.errors.changeReason', 'changeReason')
-    // Allergie-Abgleich (PRD §13.1, §32): Treffer nur mit Begründung, Begründung wird protokolliert
-    const allergyHits = checkAllergies(r.allergies, [name, fd(form, 'form')].join(' '))
-    const allergyReason = fd(form, 'allergyReason').slice(0, 500)
-    if (blocking(allergyHits) && allergyReason.length < 5) return err('meds.allergy.required', 'allergyReason')
-
-    const data = {
-      residentId: r.id, name, kind, form: fd(form, 'form') || null, route: fd(form, 'route') || 'p.o.', indication: fd(form, 'indication') || null,
-      times, doses, prnDose: kind === 'prn' ? prnDose : null, prnMaxPerDay: kind === 'prn' ? prnMax : null, prnMinIntervalH: kind === 'prn' ? prnInt : null,
-      startDate: start, endDate: end, prescriber: fd(form, 'prescriber') || null, requiresDoubleCheck: fdBool(form, 'requiresDoubleCheck'),
-      stock: stock ?? null, stockUnit: fd(form, 'stockUnit') || null, notes: fd(form, 'notes') || null, createdById: ctx.user.id,
-    }
-    const created = await db.$transaction(async (tx) => {
-      if (old) await tx.medication.update({ where: { id: old.id }, data: { active: false, stoppedAt: now, stoppedById: ctx.user.id } })
-      const m = await tx.medication.create({ data })
-      await audit(ctx, { action: old ? 'medication.order.change' : 'medication.order.create', entityType: 'Medication', entityId: m.id, before: old, after: m, context: { residentId: r.id, replaces: old?.id, reason: reason || undefined, allergy: allergyHits.length ? { hits: allergyHits, reason: allergyReason || undefined } : undefined } }, tx)
-      return m
-    })
-    await afterOrderChange(ctx, r, [...(old?.times ?? []), ...created.times])
-    return { ok: true, message: t(old ? 'meds.toast.orderChanged' : 'meds.toast.orderCreated', { drug: name }) }
+    const { r, canPrescribe, canPhone } = await orderResident(ctx, fd(form, 'residentId'))
+    if (!canPrescribe && !canPhone) assertCan(ctx, 'resident.medication.edit', { unitId: r.unitId, locationId: r.unit.locationId })
+    const res = await saveOrder(ctx, r, form, { canPrescribe, canPhone })
+    if (res.ok) refresh()
+    return res.ok ? { ok: true, message: res.message } : res
   }) as Promise<ActionResult>
 }
 
@@ -310,22 +251,33 @@ export async function stopOrderAction(form: FormData): Promise<ActionResult> {
   return run(async () => {
     const ctx = await getCtx()
     const { med, r } = await loadMed(ctx, fd(form, 'id'), 'resident.medication.edit')
-    if (!med.active) return err('meds.errors.orderInactive')
-    const reason = fd(form, 'reason')
-    if (reason.length < 3) return err('meds.errors.stopReason', 'reason')
-    const after = await db.medication.update({ where: { id: med.id }, data: { active: false, stoppedAt: new Date(), stoppedById: ctx.user.id } })
-    await audit(ctx, { action: 'medication.order.stop', entityType: 'Medication', entityId: med.id, before: med, after, context: { residentId: r.id, reason } })
-    await afterOrderChange(ctx, r, med.times)
-    return { ok: true, message: ctx.t('meds.toast.orderStopped', { drug: med.name }) }
+    const res = await stopOrder(ctx, r, med.id, fd(form, 'reason'))
+    if (res.ok) refresh()
+    return res
   }) as Promise<ActionResult>
 }
 
-async function afterOrderChange(ctx: Ctx, r: Resident, times: string[]) {
-  invalidateTaskGeneration(r.unitId)
-  const today = startOfDay()
-  // Tagesaufgaben sofort neu erzeugen und abgleichen: Zeitpunkte vor Beginn bzw. nach dem Absetzen entfallen.
-  await ensureTasksForDay(r.unitId, today)
-  for (const day of [today, addDays(today, 1)]) for (const time of new Set(times)) await syncSlotTask(r, day, time, ctx.user.id, ctx.t('meds.orderStoppedNote'))
-  await emit({ orgId: ctx.org.id, type: 'medication.changed', unitId: r.unitId, residentId: r.id, actorId: ctx.user.id })
-  refresh()
+/** Ärztliche Gegenzeichnung (Visum) einer telefonischen/mündlichen Verordnung. */
+export async function confirmOrderAction(medicationId: string): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    const { med, r } = await loadMed(ctx, medicationId, 'resident.medication.edit')
+    const res = await confirmOrder(ctx, r, med.id, true)
+    if (res.ok) refresh()
+    return res
+  }) as Promise<ActionResult>
+}
+
+/** Interaktionsprüfung im Verordnungsdialog, bevor gespeichert wird (der Server prüft beim Speichern erneut). */
+export async function previewInteractionsAction(residentId: string, draft: { name: string; atc: string; gtin: string; replacesId: string | null }): Promise<ActionResult<GateDto>> {
+  return run<GateDto>(async () => {
+    const ctx = await getCtx()
+    const { r, canPrescribe, canPhone } = await orderResident(ctx, residentId)
+    if (!canPrescribe && !canPhone) return { ok: false, error: 'common.notAllowed' }
+    const name = String(draft.name ?? '').trim().slice(0, 200)
+    if (name.length < 2) return { ok: true, data: { level: 'clear', source: null, needsReason: false, hits: [] } }
+    const codes = parseCodes({ atc: String(draft.atc ?? ''), gtin: String(draft.gtin ?? '') })
+    const g = await interactionGate(ctx.org.id, r.id, { name, atc: codes.atc, gtin: codes.gtin }, typeof draft.replacesId === 'string' ? draft.replacesId : null, ctx.locale)
+    return { ok: true, data: gateDto(g) }
+  })
 }

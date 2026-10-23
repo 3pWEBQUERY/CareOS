@@ -10,7 +10,7 @@ import { emit } from '@/lib/events'
 import { notify, usersWithPermission } from '@/lib/notify'
 import { taskTitle } from '@/lib/task-title'
 import { ensureTasksForDay, invalidateTaskGeneration, isClosed, syncIncidentActions } from '@/lib/tasks'
-import { addDays, atTime, dbDate, fmtDayMonth, fromDbDate, parseDateKey, sameDay, startOfDay } from '@/lib/time'
+import { addDays, addMinutes, atTime, dbDate, fmtDayMonth, fromDbDate, parseDateKey, sameDay, startOfDay } from '@/lib/time'
 import { nextOccurrence, RecurrenceInput } from '@/lib/recurrence'
 
 const err = (error: string, field?: string): ActionResult => ({ ok: false, error, field })
@@ -165,7 +165,7 @@ export async function reopenTaskAction(form: FormData): Promise<ActionResult> {
     const task = await loadTask(ctx, fd(form, 'id'), 'task.complete')
     if (isMedSlot(task)) return err('tasks.errors.medViaMar')
     if (!isClosed(task.status) && task.status !== 'escalated') return { ok: true }
-    const after = await db.task.update({ where: { id: task.id }, data: { status: 'planned', completedById: null, completedAt: null } })
+    const after = await db.task.update({ where: { id: task.id }, data: { status: 'planned', completedById: null, completedAt: null, autoClosed: null } })
     await audit(ctx, { action: 'task.reopen', entityType: 'Task', entityId: task.id, before: snapshot(task), after: snapshot(after), context: { residentId: task.residentId } })
     if (task.source === 'quality') await syncIncidentActions([task.id])
     await emit({ orgId: ctx.org.id, type: 'task.reopened', unitId: task.unitId, residentId: task.residentId, actorId: ctx.user.id, payload: { taskId: task.id } })
@@ -352,5 +352,36 @@ export async function resumeTaskTemplateAction(form: FormData): Promise<ActionRe
     invalidateTaskGeneration(tpl.unitId)
     refresh()
     return { ok: true, message: ctx.t('tasks.recur.resumed') }
+  }) as Promise<ActionResult>
+}
+
+/**
+ * Rückstand früherer Schichten als «nicht durchgeführt» abschliessen (PRD §12.3): gemeinsame Begründung, jede Aufgabe
+ * einzeln geprüft und protokolliert. Medikamenten-Zeitpunkte bleiben der Abgabeliste vorbehalten; nur Aufgaben,
+ * die vor Beginn der laufenden Schicht fällig waren.
+ */
+export async function closeBacklogAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    const ids = [...new Set(fd(form, 'ids').split(',').filter(Boolean))].slice(0, 300)
+    const reason = fd(form, 'reason')
+    if (!ids.length) return err('common.genericError')
+    if (reason.length < 3 || reason.length > 500) return err('tasks.errors.reason', 'reason')
+    const now = new Date()
+    const closed: string[] = []
+    const units = new Set<string>()
+    for (const id of ids) {
+      const task = await loadTask(ctx, id, 'task.complete')
+      if (isMedSlot(task) || isClosed(task.status) || task.dueAt >= addMinutes(now, -15)) continue
+      const upd = await db.task.updateMany({ where: { id: task.id, status: { notIn: ['done', 'partial', 'skipped'] } }, data: { status: 'skipped', completedById: ctx.user.id, completedAt: now, note: reason } })
+      if (!upd.count) continue
+      await audit(ctx, { action: 'task.complete', entityType: 'Task', entityId: task.id, before: snapshot(task), after: { status: 'skipped', completedById: ctx.user.id, completedAt: now, note: reason }, context: { residentId: task.residentId, backlog: true, bulk: ids.length } })
+      closed.push(task.id)
+      units.add(task.unitId)
+    }
+    await syncIncidentActions(closed)
+    for (const unitId of units) await emit({ orgId: ctx.org.id, type: 'task.completed', unitId, actorId: ctx.user.id, payload: { taskIds: closed.slice(0, 50), status: 'skipped', backlog: true } })
+    refresh()
+    return { ok: true, message: ctx.t('tasks.backlog.toast', { n: closed.length }) }
   }) as Promise<ActionResult>
 }

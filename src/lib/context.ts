@@ -1,11 +1,14 @@
 import 'server-only'
 import { cache } from 'react'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { db } from '@/lib/db'
 import { requireSession, requestMeta } from '@/lib/auth/session'
-import { hasPermission, type Grant, type Permission } from '@/lib/permissions'
+import { hasPermission, isExternalPhysician, type Grant, type Permission } from '@/lib/permissions'
 import { dictionary } from '@/i18n'
 import { makeT, type Locale, type Terminology, type TFn } from '@/i18n/core'
+import { moduleOfPermission, normalizeModules, orgHasModule, stripDisabled, type ModuleKey } from '@/lib/modules'
+import { emergencyGrant } from '@/lib/emergency-core'
+import { activeEmergency, logEmergencyView } from '@/lib/emergency'
 
 export const UNIT_COOKIE = 'careos_unit'
 
@@ -16,13 +19,22 @@ export type Ctx = Awaited<ReturnType<typeof loadCtx>>
 async function loadCtx() {
   const session = await requireSession()
   const user = session.user
-  const [org, assignments, meta] = await Promise.all([
+  const [org, assignments, meta, emergency] = await Promise.all([
     db.organization.findUniqueOrThrow({ where: { id: user.orgId } }),
     db.roleAssignment.findMany({ where: { userId: user.id }, include: { role: true } }),
     requestMeta(),
+    activeEmergency(user.id),
   ])
-  const grants: Grant[] = assignments.map((a) => ({ permissions: a.role.permissions, locationId: a.locationId, unitId: a.unitId }))
+  // Module (PRD §69): Berechtigungen abgeschalteter Module gelten nicht – Navigation, Seiten, Actions und Suche folgen.
+  const modules = normalizeModules(org.modules)
+  const grants: Grant[] = assignments.map((a) => ({ permissions: stripDisabled(a.role.permissions, modules), locationId: a.locationId, unitId: a.unitId }))
   const roleNames = [...new Set(assignments.map((a) => a.role.name))]
+  // Notfallzugriff (PRD §34/§37): befristeter, organisationsweiter Lese-Grant; jeder Seitenaufruf wird protokolliert.
+  const eg = emergencyGrant(emergency)
+  if (eg) grants.push({ ...eg, permissions: stripDisabled(eg.permissions, modules) })
+  // Externe Ärztinnen und Ärzte (Ärzteportal /md, PRD §60): in der Stationsapp keine Berechtigungen und keine Bereiche,
+  // auch wenn versehentlich eine Rolle zugewiesen ist. Zugriff nur über getMdCtx() auf zugeordnete Personen.
+  if (isExternalPhysician(user)) { grants.length = 0; roleNames.length = 0 }
 
   const allUnits = await db.unit.findMany({
     where: { orgId: org.id },
@@ -45,6 +57,16 @@ async function loadCtx() {
   const can = (perm: Permission, scope?: Scope) => hasPermission(grants, perm, scope)
   /** Berechtigung im aktuell gewählten Bereich. */
   const canHere = (perm: Permission) => hasPermission(grants, perm, unit ? { unitId: unit.id, locationId: unit.locationId } : undefined)
+  /** Modul aktiv? (auch §69-Paketnamen, siehe src/lib/modules.ts) */
+  const hasModule = (key: Parameters<typeof orgHasModule>[1]) => orgHasModule(modules, key)
+
+  if (eg && emergency) {
+    const h = await headers()
+    // Prefetches nicht protokollieren (keine tatsächliche Anzeige)
+    if (!h.get('next-router-prefetch')) {
+      await logEmergencyView({ accessId: emergency.id, orgId: org.id, userId: user.id, sessionId: session.id, path: h.get('x-careos-path') ?? '', ip: meta.ip, userAgent: meta.userAgent })
+    }
+  }
 
   return {
     session,
@@ -61,6 +83,10 @@ async function loadCtx() {
     t,
     can,
     canHere,
+    modules,
+    hasModule,
+    /** Laufender Notfallzugriff (Banner in der Shell), sonst null */
+    emergency: eg && emergency ? { id: emergency.id, expiresAt: emergency.expiresAt, startedAt: emergency.startedAt } : null,
     ip: meta.ip,
     userAgent: meta.userAgent,
   }
@@ -70,13 +96,20 @@ async function loadCtx() {
 export const getCtx = cache(loadCtx)
 
 export class ForbiddenError extends Error {
+  /** Gesetzt, wenn die Berechtigung zu einem abgeschalteten Modul gehört (Meldung «Modul nicht aktiv»). */
+  moduleOff: ModuleKey | null = null
   constructor(public perm: string) {
     super('forbidden:' + perm)
   }
 }
 
 export function assertCan(ctx: Ctx, perm: Permission, scope?: Scope) {
-  if (!ctx.can(perm, scope)) throw new ForbiddenError(perm)
+  if (!ctx.can(perm, scope)) {
+    const e = new ForbiddenError(perm)
+    const m = moduleOfPermission(perm)
+    if (m && !ctx.modules.includes(m)) e.moduleOff = m
+    throw e
+  }
 }
 
 /** Lädt einen Bewohner nur, wenn er im Zugriffsbereich liegt und die Leseberechtigung besteht. */
