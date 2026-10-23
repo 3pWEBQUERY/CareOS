@@ -17,7 +17,7 @@ export function PlanDialog({ source, onClose, unitId, month, defaultMode }: {
   onClose: () => void
   unitId: string
   month: string
-  defaultMode: 'fill' | 'replace'
+  defaultMode: 'fill' | 'adjust' | 'replace'
 }) {
   const t = useT()
   return (
@@ -28,6 +28,7 @@ export function PlanDialog({ source, onClose, unitId, month, defaultMode }: {
         <input type="hidden" name="source" value={source} />
         {source !== 'ai' && <p className="small fg2" style={{ margin: 0 }}>{t(source === 'auto' ? 'roster.dialog.autoBody' : 'roster.dialog.copyBody')}</p>}
         <RadioGroup label={t('roster.dialog.mode')} name="mode" defaultValue={defaultMode} options={[
+          { value: 'adjust', label: t('roster.dialog.adjust'), hint: t('roster.dialog.adjustHint') },
           { value: 'fill', label: t('roster.dialog.fill'), hint: t('roster.dialog.fillHint') },
           { value: 'replace', label: t('roster.dialog.replace'), hint: t('roster.dialog.replaceHint') },
         ]} />
@@ -102,7 +103,7 @@ export function PatternDialog({ onClose, onApply, people, days, types, monthLabe
 }
 
 /** Pensum und dauerhafte Vorgaben einer Person (Grundlage für Soll-Stunden und Planung). */
-export function PersonDialog({ person, unitId, types, onClose }: { person: RPersonRow; unitId: string; types: RTypeOpt[]; onClose: () => void }) {
+export function PersonDialog({ person, unitId, types, groupOptions, onClose }: { person: RPersonRow; unitId: string; types: RTypeOpt[]; groupOptions: { value: string; label: string }[]; onClose: () => void }) {
   const t = useT()
   const opts = types.map((x) => ({ value: x.code, label: `${x.code} · ${x.name}` }))
   return (
@@ -111,6 +112,10 @@ export function PersonDialog({ person, unitId, types, onClose }: { person: RPers
         <div className="form-grid">
           <NumberField label={t('roster.person.pensum')} name="pct" unit="%" min={5} max={100} step={5} defaultValue={person.pct} required hint={t('roster.person.pensumHint')} />
           <NumberField label={t('roster.person.maxNights')} name="maxNights" min={0} max={31} step={1} defaultValue={person.maxNights ?? ''} hint={t('roster.person.maxNightsHint')} />
+          <Select label={t('roster.person.group')} wrapClassName="span-all" name="group" defaultValue={person.groupOverride ?? ''} hint={t('roster.person.groupHint')}>
+            <option value="">{t('roster.person.groupAuto')}</option>
+            {groupOptions.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
+          </Select>
         </div>
         <CheckboxGroup label={t('roster.person.allowed')} name="allowed" options={opts} defaultValue={person.allowed} hint={t('roster.person.allowedHint')} inline optional />
         <CheckboxGroup label={t('roster.person.preferred')} name="preferred" options={opts} defaultValue={person.preferred} hint={t('roster.person.preferredHint')} inline optional />
@@ -123,15 +128,25 @@ export function PersonDialog({ person, unitId, types, onClose }: { person: RPers
   )
 }
 
-/** Dienstarten verwalten: eigene Dienste (z. B. «Stübli») mit Zeit, Pause, Farbe, Soll-Besetzung und Wochentagen. */
-export function ShiftTypesDialog({ onClose, types, weekdays }: { onClose: () => void; types: RTypeOpt[]; weekdays: { n: number; label: string }[] }) {
+/**
+ * Dienstarten verwalten: eigene Dienste (z. B. «Stübli»), Zeit, Pause, Farbe, Soll-Besetzung je Wochentag,
+ * wer den Dienst übernehmen darf und die Mindestbesetzung je Funktion (z. B. Frühdienst mind. 1 HF).
+ */
+export function ShiftTypesDialog({ onClose, types, weekdays, groupOptions }: { onClose: () => void; types: RTypeOpt[]; weekdays: { n: number; label: string }[]; groupOptions: { value: string; label: string }[] }) {
   const t = useT()
   const [edit, setEdit] = useState<RTypeOpt | 'new' | null>(null)
-  const daysLabel = (d: number[]) => (d.length === 7 ? t('roster.types.everyDay') : weekdays.filter((w) => d.includes(w.n)).map((w) => w.label).join(', '))
+  const groupLabel = new Map(groupOptions.map((g) => [g.value, g.label]))
+  const summary = (x: RTypeOpt) => {
+    const parts = [weekdays.map((w) => `${w.label} ${x.byDay[w.n]}`).join(' · ')]
+    if (x.groups.length) parts.push(t('roster.types.onlyFor', { groups: x.groups.map((g) => groupLabel.get(g)).join(', ') }))
+    const mins = Object.entries(x.min).filter(([, n]) => n > 0)
+    if (mins.length) parts.push(mins.map(([g, n]) => t('roster.types.minLine', { n, group: groupLabel.get(g) ?? g })).join(', '))
+    return parts
+  }
   if (edit) {
     const x = edit === 'new' ? null : edit
     return (
-      <Dialog open onClose={() => setEdit(null)} title={t(x ? 'roster.types.edit' : 'roster.types.add')}>
+      <Dialog open onClose={() => setEdit(null)} title={t(x ? 'roster.types.edit' : 'roster.types.add')} wide>
         <ActionForm action={saveRosterShiftTypeAction} onDone={(r) => r.ok && setEdit(null)} reset={false}>
           {x && <input type="hidden" name="id" value={x.id} />}
           <div className="form-grid">
@@ -143,9 +158,22 @@ export function ShiftTypesDialog({ onClose, types, weekdays }: { onClose: () => 
             <Select label={t('roster.types.color')} name="color" defaultValue={x?.color ?? 'ok'}>
               {SHIFT_COLORS.map((c) => <option key={c} value={c}>{t('roster.types.colors.' + c)}</option>)}
             </Select>
-            <NumberField label={t('roster.types.target')} name="target" min={0} max={50} step={1} defaultValue={x?.target ?? 1} required hint={t('roster.types.targetHint')} />
           </div>
-          <CheckboxGroup label={t('roster.types.days')} name="days" inline options={weekdays.map((w) => ({ value: String(w.n), label: w.label }))} defaultValue={(x?.days ?? [1, 2, 3, 4, 5]).map(String)} />
+          <fieldset className="rst-fs">
+            <legend>{t('roster.types.byDay')}</legend>
+            <div className="rst-week">
+              {weekdays.map((w) => <NumberField key={w.n} label={w.label} name={'t' + w.n} min={0} max={50} step={1} defaultValue={x?.byDay[w.n] ?? (w.n === 0 || w.n === 6 ? 0 : 1)} />)}
+            </div>
+            <p className="small muted" style={{ margin: 0 }}>{t('roster.types.byDayHint')}</p>
+          </fieldset>
+          <CheckboxGroup label={t('roster.types.groups')} name="groups" inline options={groupOptions} defaultValue={x?.groups ?? []} hint={t('roster.types.groupsHint')} optional />
+          <fieldset className="rst-fs">
+            <legend>{t('roster.types.min')}</legend>
+            <div className="rst-mins">
+              {groupOptions.map((g) => <NumberField key={g.value} label={g.label} name={'min_' + g.value} min={0} max={50} step={1} defaultValue={x?.min[g.value] ?? 0} />)}
+            </div>
+            <p className="small muted" style={{ margin: 0 }}>{t('roster.types.minHint')}</p>
+          </fieldset>
           <div className="form-actions">
             <Submit>{t('common.save')}</Submit>
             <button type="button" className="btn ghost" onClick={() => setEdit(null)}>{t('common.cancel')}</button>
@@ -167,8 +195,8 @@ export function ShiftTypesDialog({ onClose, types, weekdays }: { onClose: () => 
           <li key={x.id}>
             <span className={'sh ' + (['F', 'S', 'N'].includes(x.code) ? x.code : 'col-' + x.color)}>{x.code}</span>
             <span className="grow">
-              <strong>{x.name}</strong>
-              <span className="small muted"> · {x.start}–{x.end} · {x.hours} h · {t('roster.types.perDay', { n: x.target })} · {daysLabel(x.days)}</span>
+              <strong>{x.name}</strong> <span className="small muted">{x.start}–{x.end} · {x.hours} h</span>
+              {summary(x).map((line, i) => <span key={i} className="small muted rst-types-line">{line}</span>)}
             </span>
             <button type="button" className="btn sm ghost" onClick={() => setEdit(x)}>{t('common.edit')}</button>
           </li>

@@ -9,7 +9,7 @@ import { NumberField } from '@/components/ui/fields'
 import { shiftName } from '@/lib/shift-name'
 import { DEFAULT_RULES, RULE_LIMITS, isNight, round1, shiftHours, type RRules } from '@/lib/roster/model'
 import { loadRoster, monthStart } from '@/lib/roster/server'
-import { groupStaff } from '@/lib/roster/groups'
+import { STAFF_GROUPS, sortByGroup } from '@/lib/roster/groups'
 import { saveRosterRulesAction } from '../roster-actions'
 import { RosterBoard } from '../_roster/RosterBoard'
 import type { RProposalView, RosterProps } from '../_roster/types'
@@ -35,7 +35,9 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
   })
   const types = data.types.map((x) => ({
     id: x.id, code: x.code, name: shiftName(t, x), rawName: x.name, start: x.start, end: x.end, hours: round1(shiftHours(x)), night: isNight(x),
-    color: x.color, breakMinutes: x.breakMinutes, target: data.problem.targets[x.code] ?? 0, days: data.problem.targetDays?.[x.code] ?? [0, 1, 2, 3, 4, 5, 6], inUse: x._count.shifts > 0,
+    color: x.color, breakMinutes: x.breakMinutes, inUse: x._count.shifts > 0,
+    byDay: [0, 1, 2, 3, 4, 5, 6].map((w) => data.problem.targetByDay?.[x.code]?.[w] ?? (data.problem.targetDays?.[x.code]?.length && !data.problem.targetDays[x.code].includes(w) ? 0 : data.problem.targets[x.code] ?? 0)),
+    groups: data.problem.shiftRules?.[x.code]?.groups ?? [], min: (data.problem.shiftRules?.[x.code]?.min ?? {}) as Record<string, number>,
   }))
   const absenceAt: RosterProps['absenceAt'] = {}
   for (const [k, a] of Object.entries(data.absenceAt)) absenceAt[k] = { label: t('schedule.absence.short.' + a.kind), title: t('schedule.absence.kinds.' + a.kind), pending: a.status === 'requested' }
@@ -67,11 +69,12 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
     monthLabel: fmtDate(monthStart(month), locale, { month: 'long', year: 'numeric' }),
     days,
     types,
-    people: groupStaff(data.people).map((p) => ({
+    people: sortByGroup(data.people).map((p) => ({
       id: p.id, name: p.name, short: p.short, qual: p.qual, job: p.job, pct: p.pct, key: p.key,
       allowed: p.prefs.allowed ?? [], preferred: p.prefs.preferred ?? [], maxNights: p.prefs.maxNights ?? null,
-      group: p.custom ?? t('roster.groups.' + p.group),
+      group: p.custom ?? t('roster.groups.' + p.group), groupKey: p.group, groupOverride: p.prefs.group ?? null,
     })),
+    groupOptions: STAFF_GROUPS.map((g) => ({ value: g, label: t('roster.groups.' + g) })),
     problem: data.problem,
     current: data.current,
     shiftAt: data.shiftAt,

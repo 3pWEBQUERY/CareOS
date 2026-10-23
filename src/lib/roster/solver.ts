@@ -1,15 +1,17 @@
-import { cellKey, targetOn, dailySoll, isNight, isWeekend, isoMonday, restHours, shiftDay, shiftHours, sollHours, weekday, type Cell, type Grid, type RProblem, type RType } from './model'
+import { cellKey, eligible, targetOn, dailySoll, isNight, isWeekend, isoMonday, restHours, shiftDay, shiftHours, sollHours, weekday, type Cell, type Grid, type RProblem, type RType, type ShiftRule } from './model'
 import { cellOf, freeWeekends, hoursTolerance, typeMap, weekHours } from './evaluate'
 
 /**
  * Automatische Monatsplanung: übernimmt einen Startplan (z. B. den Vorschlag der KI), entfernt Einträge, die eine
  * harte Regel verletzen, und füllt fehlende Soll-Besetzung greedy nach Stundenbedarf, Wünschen, Qualifikation und
- * Fairness. Gesperrte Zellen und – im Modus `fill` – bestehende Dienste bleiben unverändert.
+ * Fairness. Beachtet je Dienstart, wer ihn übernehmen darf, und die Mindestbesetzung je Funktion. Gesperrte Zellen
+ * und – im Modus `fill` – bestehende Dienste bleiben unverändert.
  */
 
 export type PersonConstraint = { allowed?: string[]; offDays?: string[] }
 export type PlanOptions = {
-  mode: 'fill' | 'replace'
+  /** fill = nur leere Zellen; adjust = bestehende Dienste behalten, aber Überbesetzung und Verstösse abbauen; replace = neu */
+  mode: 'fill' | 'adjust' | 'replace'
   /** Startbelegung für änderbare Zellen (KI-Vorschlag, Vormonat) */
   seed?: Grid
   /** Einschränkungen je Person (aus den Anweisungen der Leitung) */
@@ -48,6 +50,7 @@ export function feasible(p: RProblem, g: Grid, types: Map<string, RType>, userId
   if (constraint?.allowed?.length && !constraint.allowed.includes(code)) return false
   if (constraint?.offDays?.includes(day)) return false
   const person = p.people.find((x) => x.id === userId)
+  if (!eligible(p, person, code)) return false
   if (person?.allowed?.length && !person.allowed.includes(code)) return false
   if (person?.maxNights != null && isNight(t)) {
     let n = 0
@@ -96,7 +99,7 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
       if (!types.has(v)) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'invalid' }); continue }
       if (p.absent[k]) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'absent' }); continue }
       const c = cons[person.id]
-      if ((c?.allowed?.length && !c.allowed.includes(v)) || c?.offDays?.includes(d) || (person.allowed?.length && !person.allowed.includes(v))) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'constraint' }); continue }
+      if ((c?.allowed?.length && !c.allowed.includes(v)) || c?.offDays?.includes(d) || (person.allowed?.length && !person.allowed.includes(v)) || !eligible(p, person, v)) { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'constraint' }); continue }
       // Wünsche haben Vorrang vor dem Startplan: Frei-Wunsch nicht belegen, Dienst-Wunsch übernehmen
       const w = p.wishes[k]
       if (w?.kind === 'off') { repairs.push({ user: person.id, day: d, from: v, to: null, reason: 'wish' }); continue }
@@ -144,8 +147,10 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
     for (const t of p.types) {
       const target = targetOn(p, d, t.code)
       let on = countOn(d, t.code)
+      const mins = p.shiftRules?.[t.code]?.min ?? {}
       while (on.length > target) {
-        const removable = on.filter((x) => editable.has(cellKey(x.id, d)))
+        // Niemand entfernen, der für die Mindestbesetzung seiner Funktion gebraucht wird
+        const removable = on.filter((x) => editable.has(cellKey(x.id, d)) && !(x.group && mins[x.group] && on.filter((y) => y.group === x.group).length <= mins[x.group]!))
         if (!removable.length) break
         const wants = (x: { id: string }) => { const w = p.wishes[cellKey(x.id, d)]; return w?.kind === 'shift' && w.code === t.code ? 1 : 0 }
         removable.sort((a, b) => wants(a) - wants(b) || (ist.get(b.id)! - soll.get(b.id)!) - (ist.get(a.id)! - soll.get(a.id)!))
@@ -160,53 +165,90 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
   // 4. Fehlende Besetzung füllen: Nachtdienste zuerst (wenigste Kandidaten), dann nach Beginnzeit
   const order = [...p.types].sort((a, b) => Number(isNight(b)) - Number(isNight(a)) || a.start.localeCompare(b.start))
   const keyNeeded = p.people.some((x) => x.key)
+  /** Beste freie Person für Dienst `t` am Tag `d` (optional nur aus einer Funktion). */
+  const pick = (d: string, t: RType, onlyGroup?: string) => {
+    const h = shiftHours(t)
+    const on = countOn(d, t.code)
+    const target = targetOn(p, d, t.code)
+    const hasKey = on.some((x) => x.key)
+    const left = target - on.length
+    const ok = (x: (typeof p.people)[number]) => {
+      const k = cellKey(x.id, d)
+      return editable.has(k) && !g[k] && (!onlyGroup || x.group === onlyGroup) && feasible(p, g, types, x.id, d, t.code, cons[x.id])
+    }
+    // Frei-Wünsche nur verletzen, wenn sonst niemand den Dienst übernehmen kann
+    const anyOther = p.people.some((x) => p.wishes[cellKey(x.id, d)]?.kind !== 'off' && ok(x))
+    let best: { id: string; score: number } | null = null
+    for (const person of p.people) {
+      const k = cellKey(person.id, d)
+      if (anyOther && p.wishes[k]?.kind === 'off') continue
+      if (!ok(person)) continue
+      const s = soll.get(person.id)!
+      const cur = ist.get(person.id)!
+      let score = s > 0 ? (2 * (s - cur)) / s : -1
+      if (cur + h > s + hoursTolerance(s) / 2) score -= 2
+      const w = p.wishes[k]
+      if (w?.kind === 'shift') score += w.code === t.code ? 6 : -1.5
+      if (w?.kind === 'off') score -= 8
+      if (person.preferred?.length) score += person.preferred.includes(t.code) ? 1 : -0.6
+      if (keyNeeded && !hasKey) score += person.key ? 2.5 : left === 1 ? -3 : 0
+      const prev = cellOf(p, g, person.id, shiftDay(d, -1))
+      if (prev === t.code) score += isNight(t) ? 0.6 : 0.15
+      else if (prev && isNight(types.get(prev)!) !== isNight(t)) score -= 0.4
+      let run = 0
+      while (run < 10 && cellOf(p, g, person.id, shiftDay(d, -(run + 1)))) run++
+      if (run >= 4) score -= 0.25 * (run - 3)
+      if (isWeekend(d)) {
+        score -= 0.35 * (weekendsWorked.get(person.id) ?? 0)
+        g[k] = t.code
+        const fw = freeWeekends(p, g, types, person.id)
+        delete g[k]
+        if (fw.total >= p.rules.minFreeWeekends && fw.free < p.rules.minFreeWeekends) score -= 2
+      }
+      score += hash(`${opts.salt ?? 0}|${person.id}|${d}|${t.code}`) * 0.05
+      if (!best || score > best.score) best = { id: person.id, score }
+    }
+    return best?.id ?? null
+  }
+  const assign = (u: string, d: string, t: RType) => {
+    g[cellKey(u, d)] = t.code
+    ist.set(u, ist.get(u)! + shiftHours(t))
+    if (weekday(d) === 6) weekendsWorked.set(u, (weekendsWorked.get(u) ?? 0) + 1)
+    repairs.push({ user: u, day: d, from: null, to: t.code, reason: 'fill' })
+  }
   for (const d of p.days)
     for (const t of order) {
       const target = targetOn(p, d, t.code)
-      const h = shiftHours(t)
-      for (let guard = 0; guard < 50; guard++) {
-        const on = countOn(d, t.code)
-        if (on.length >= target) break
-        const hasKey = on.some((x) => x.key)
-        const left = target - on.length
-        let best: { id: string; score: number } | null = null
-        // Frei-Wünsche nur verletzen, wenn sonst niemand den Dienst übernehmen kann
-        const anyOther = p.people.some((x) => { const k = cellKey(x.id, d); return editable.has(k) && !g[k] && p.wishes[k]?.kind !== 'off' && feasible(p, g, types, x.id, d, t.code, cons[x.id]) })
-        for (const person of p.people) {
-          const k = cellKey(person.id, d)
-          if (!editable.has(k) || g[k]) continue
-          if (anyOther && p.wishes[k]?.kind === 'off') continue
-          if (!feasible(p, g, types, person.id, d, t.code, cons[person.id])) continue
-          const s = soll.get(person.id)!
-          const cur = ist.get(person.id)!
-          let score = s > 0 ? (2 * (s - cur)) / s : -1
-          if (cur + h > s + hoursTolerance(s) / 2) score -= 2
-          const w = p.wishes[k]
-          if (w?.kind === 'shift') score += w.code === t.code ? 6 : -1.5
-          if (w?.kind === 'off') score -= 8
-          if (person.preferred?.length) score += person.preferred.includes(t.code) ? 1 : -0.6
-          if (keyNeeded && !hasKey) score += person.key ? 2.5 : left === 1 ? -3 : 0
-          const prev = cellOf(p, g, person.id, shiftDay(d, -1))
-          if (prev === t.code) score += isNight(t) ? 0.6 : 0.15
-          else if (prev && isNight(types.get(prev)!) !== isNight(t)) score -= 0.4
-          let run = 0
-          while (run < 10 && cellOf(p, g, person.id, shiftDay(d, -(run + 1)))) run++
-          if (run >= 4) score -= 0.25 * (run - 3)
-          if (isWeekend(d)) {
-            score -= 0.35 * (weekendsWorked.get(person.id) ?? 0)
-            g[k] = t.code
-            const fw = freeWeekends(p, g, types, person.id)
-            delete g[k]
-            if (fw.total >= p.rules.minFreeWeekends && fw.free < p.rules.minFreeWeekends) score -= 2
+      if (target <= 0) continue
+      // a) Mindestbesetzung je Funktion (z. B. mind. 1 Pflegefachperson HF)
+      for (const [grp, min] of Object.entries(p.shiftRules?.[t.code]?.min ?? {})) {
+        for (let guard = 0; guard < 50; guard++) {
+          if (countOn(d, t.code).filter((x) => x.group === grp).length >= (min ?? 0)) break
+          if (countOn(d, t.code).length >= target) {
+            // Platz schaffen: änderbare Person einer Funktion über ihrem Minimum gegen die fehlende Funktion tauschen
+            const mins = p.shiftRules?.[t.code]?.min ?? {}
+            const on = countOn(d, t.code)
+            const spare = on.find((x) => editable.has(cellKey(x.id, d)) && x.group !== grp && on.filter((y) => y.group === x.group).length > (x.group ? mins[x.group] ?? 0 : 0))
+            if (!spare) break
+            const cand = pick(d, t, grp)
+            if (!cand) break
+            delete g[cellKey(spare.id, d)]
+            ist.set(spare.id, ist.get(spare.id)! - shiftHours(t))
+            repairs.push({ user: spare.id, day: d, from: t.code, to: null, reason: 'over' })
+            assign(cand, d, t)
+            continue
           }
-          score += hash(`${opts.salt ?? 0}|${person.id}|${d}|${t.code}`) * 0.05
-          if (!best || score > best.score) best = { id: person.id, score }
+          const u = pick(d, t, grp)
+          if (!u) break
+          assign(u, d, t)
         }
-        if (!best) break
-        g[cellKey(best.id, d)] = t.code
-        ist.set(best.id, ist.get(best.id)! + h)
-        if (weekday(d) === 6) weekendsWorked.set(best.id, (weekendsWorked.get(best.id) ?? 0) + 1)
-        repairs.push({ user: best.id, day: d, from: null, to: t.code, reason: 'fill' })
+      }
+      // b) restliche Plätze bis zur Soll-Besetzung
+      for (let guard = 0; guard < 50; guard++) {
+        if (countOn(d, t.code).length >= target) break
+        const u = pick(d, t)
+        if (!u) break
+        assign(u, d, t)
       }
     }
 
@@ -244,7 +286,14 @@ export function plan(p: RProblem, current: Grid, opts: PlanOptions): PlanResult 
     } else if (w.kind === 'shift' && cur !== w.code) {
       if (!cur && countOn(d, w.code).length < targetOn(p, d, w.code) && swapOk(u, u, d, w.code, w.code)) { setCell(u, d, w.code, 'wish'); continue }
       // Mit jemandem tauschen, der den gewünschten Dienst ohne eigenen Wunsch hat
-      const q = p.people.find((x) => { const kq = cellKey(x.id, d); return x.id !== u && editable.has(kq) && g[kq] === w.code && !p.wishes[kq] && swapOk(u, x.id, d, w.code, cur) })
+      const uGroup = p.people.find((x) => x.id === u)?.group
+      const minFor = (grp?: string) => (grp ? p.shiftRules?.[w.code]?.min?.[grp as keyof NonNullable<ShiftRule['min']>] ?? 0 : 0)
+      const q = p.people.find((x) => {
+        const kq = cellKey(x.id, d)
+        if (x.id === u || !editable.has(kq) || g[kq] !== w.code || p.wishes[kq]) return false
+        if (x.group !== uGroup && countOn(d, w.code).filter((y) => y.group === x.group).length <= minFor(x.group)) return false
+        return swapOk(u, x.id, d, w.code, cur)
+      })
       if (q) { setCell(u, d, w.code, 'wish'); setCell(q.id, d, cur, 'wish') }
     }
   }

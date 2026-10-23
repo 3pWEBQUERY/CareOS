@@ -106,7 +106,7 @@ test('KI: Prompt enthält Regeln, Personen, Abwesenheiten, Wünsche und Anweisun
   const { system, user, alias } = buildPrompt(p, { [cellKey('u0', '2026-11-02')]: 'F' }, 'fill', 'November 2026', 'P2 keine Nachtdienste', 'de')
   assert.match(system, /mindestens 11 Stunden/)
   assert.match(user, /Tage 1–30/)
-  assert.match(user, /P1 \| P0 \| 80 %/)
+  assert.match(user, /P1 \| P0 \| Weitere \| 80 %/)
   assert.match(user, /fix: 2 F/)
   assert.match(user, /abwesend: 10–11/)
   assert.match(user, /Wünsche: frei 20/)
@@ -179,4 +179,43 @@ test('Vorgaben je Person (nur bestimmte Dienste, max. Nächte) und Soll-Besetzun
   }
   assert.ok(p.days.filter((d) => grid[cellKey('u1', d)] === 'N').length <= 2)
   assert.ok(p.days.filter((d) => grid[cellKey('u2', d)] === 'ST').length >= 8)
+})
+
+test('Dienstart-Regeln: nur bestimmte Funktionen, Mindestbesetzung je Funktion, Soll je Wochentag', () => {
+  const groups = ['lead', 'hf', 'hf', 'hf', 'hf', 'fage', 'fage', 'fage', 'fage', 'srk', 'srk', 'srk', 'srk', 'srk'] as const
+  const base = problem({
+    types: [...TYPES, { code: 'ST', start: '09:00', end: '13:00', breakMinutes: 0 }],
+    targets: { F: 3, S: 3, N: 1, ST: 1 },
+    targetByDay: { ST: [0, 1, 1, 1, 1, 1, 0], F: [2, 3, 3, 3, 3, 3, 2] },
+    shiftRules: { ST: { groups: ['srk'] }, F: { min: { hf: 1, fage: 1 } }, N: { groups: ['hf', 'fage'], min: { hf: 1 } } },
+  })
+  const p = { ...base, people: base.people.map((x, i) => ({ ...x, key: false, group: groups[i] })) }
+  const { grid } = plan(p, {}, { mode: 'replace' })
+  const ev = evaluate(p, grid)
+  assert.deepEqual(ev.issues.filter((i) => i.severity === 'error'), [])
+  const groupOf = new Map(p.people.map((x) => [x.id, x.group]))
+  for (const d of p.days) {
+    const on = (c: string) => p.people.filter((x) => grid[cellKey(x.id, d)] === c)
+    for (const x of on('ST')) assert.equal(groupOf.get(x.id), 'srk', `Stübli ${d} ${x.id}`)
+    for (const x of on('N')) assert.notEqual(groupOf.get(x.id), 'srk')
+    assert.ok(on('F').some((x) => groupOf.get(x.id) === 'hf'), `F ohne HF ${d}`)
+    const wd = new Date(d + 'T00:00:00Z').getUTCDay()
+    assert.equal(on('F').length, wd === 0 || wd === 6 ? 2 : 3, `F ${d}`)
+  }
+  assert.equal(ev.issues.filter((i) => i.code === 'groupMin').length, 0)
+})
+
+test('Modus «adjust»: Überbesetzung und unzulässige bestehende Dienste werden abgebaut, passende bleiben', () => {
+  const base = problem({ shiftRules: { N: { groups: ['hf'] } } })
+  const p = { ...base, people: base.people.map((x, i) => ({ ...x, group: (i < 5 ? 'hf' : 'srk') as 'hf' | 'srk' })) }
+  const current: Record<string, string> = {}
+  for (let i = 0; i < 8; i++) current[cellKey('u' + i, '2026-11-10')] = 'F' // 8 statt 3
+  current[cellKey('u9', '2026-11-11')] = 'N' // SRK darf keine Nacht
+  const { grid } = plan(p, current, { mode: 'adjust' })
+  assert.equal(p.people.filter((x) => grid[cellKey(x.id, '2026-11-10')] === 'F').length, 3)
+  assert.notEqual(grid[cellKey('u9', '2026-11-11')], 'N')
+  const fill = plan(p, current, { mode: 'fill' }).grid
+  assert.equal(p.people.filter((x) => fill[cellKey(x.id, '2026-11-10')] === 'F').length, 8)
+  const ev = evaluate(p, fill)
+  assert.ok(ev.issues.some((i) => i.code === 'notEligible' && i.user === 'u9'))
 })

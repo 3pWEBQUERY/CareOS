@@ -15,6 +15,8 @@ export function issueText(t: T, i: Issue, ctx: { days: Map<string, RDay>; types:
     case 'keyQual': return t('roster.issue.keyQual', { date: day, shift, qual: ctx.keyQual ?? '' })
     case 'hours': return t('roster.issue.hours', { diff: (Number(d.diff) > 0 ? '+' : '') + d.diff, soll: d.soll })
     case 'wish': return t('roster.issue.wish', { date: day })
+    case 'notEligible': case 'notAllowed': return t('roster.issue.' + i.code, { shift })
+    case 'groupMin': return t('roster.issue.groupMin', { date: day, shift, n: d.n, min: d.min, group: t('roster.groups.' + d.group) })
     default: return t('roster.issue.' + i.code, d)
   }
 }

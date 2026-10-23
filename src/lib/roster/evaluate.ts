@@ -1,12 +1,12 @@
-import { cellKey, targetOn, dailySoll, isNight, isWeekend, isoMonday, restHours, round1, shiftDay, shiftHours, sollHours, weekday, type Grid, type RProblem, type RType } from './model'
+import { cellKey, eligible, targetOn, dailySoll, isNight, isWeekend, isoMonday, restHours, round1, shiftDay, shiftHours, sollHours, weekday, type Grid, type RProblem, type RType } from './model'
 
 /**
  * Regelprüfung eines Plans. Fehler (`error`) verletzen eine harte Regel und werden von der automatischen Planung
  * nie erzeugt; Warnungen (`warn`) und Hinweise (`info`) betreffen Besetzung, Qualifikation, Wünsche und Stunden.
  */
 export type IssueCode =
-  | 'absent' | 'rest' | 'consecutive' | 'nights' | 'weekly'
-  | 'pending' | 'under' | 'keyQual' | 'hours' | 'weekends'
+  | 'absent' | 'rest' | 'consecutive' | 'nights' | 'weekly' | 'notEligible' | 'notAllowed'
+  | 'pending' | 'under' | 'keyQual' | 'groupMin' | 'hours' | 'weekends'
   | 'over' | 'wish'
 export type Issue = {
   code: IssueCode
@@ -18,11 +18,11 @@ export type Issue = {
 }
 
 export type PersonStats = { soll: number; ist: number; diff: number; shifts: number; nights: number; weekends: number; freeWeekends: number }
-export type Coverage = Record<string, Record<string, { n: number; target: number; key: boolean }>>
+export type Coverage = Record<string, Record<string, { n: number; target: number; key: boolean; groups: Record<string, number> }>>
 
 export const SEVERITY: Record<IssueCode, Issue['severity']> = {
-  absent: 'error', rest: 'error', consecutive: 'error', nights: 'error', weekly: 'error',
-  pending: 'warn', under: 'warn', keyQual: 'warn', hours: 'warn', weekends: 'warn',
+  absent: 'error', rest: 'error', consecutive: 'error', nights: 'error', weekly: 'error', notEligible: 'error', notAllowed: 'error',
+  pending: 'warn', under: 'warn', keyQual: 'warn', groupMin: 'warn', hours: 'warn', weekends: 'warn',
   over: 'info', wish: 'info',
 }
 
@@ -46,6 +46,9 @@ export function cellViolations(p: RProblem, g: Grid, types: Map<string, RType>, 
   const out: Issue[] = []
   const k = cellKey(userId, day)
   const r = p.rules
+  const person = p.people.find((x) => x.id === userId)
+  if (!eligible(p, person, code)) out.push({ code: 'notEligible', severity: 'error', user: userId, day, shift: code })
+  else if (person?.allowed?.length && !person.allowed.includes(code)) out.push({ code: 'notAllowed', severity: 'error', user: userId, day, shift: code })
   if (p.absent[k] === 'approved') out.push({ code: 'absent', severity: 'error', user: userId, day, shift: code })
   else if (p.absent[k] === 'requested') out.push({ code: 'pending', severity: 'warn', user: userId, day, shift: code })
 
@@ -126,13 +129,14 @@ export function coverage(p: RProblem, g: Grid): Coverage {
   const out: Coverage = {}
   for (const d of p.days) {
     const row: Coverage[string] = {}
-    for (const t of p.types) row[t.code] = { n: 0, target: targetOn(p, d, t.code), key: false }
+    for (const t of p.types) row[t.code] = { n: 0, target: targetOn(p, d, t.code), key: false, groups: {} }
     for (const person of p.people) {
       const k = cellKey(person.id, d)
       if (p.foreign[k] || p.absent[k] === 'approved') continue
       const c = cellOf(p, g, person.id, d)
       if (!c || !row[c]) continue
       row[c].n++
+      if (person.group) row[c].groups[person.group] = (row[c].groups[person.group] ?? 0) + 1
       if (keyOf.get(person.id)) row[c].key = true
     }
     out[d] = row
@@ -182,6 +186,9 @@ export function evaluate(p: RProblem, g: Grid): Evaluation {
       if (c.n < c.target) issues.push({ code: 'under', severity: 'warn', day: d, shift: t.code, data: { n: c.n, target: c.target } })
       else if (c.n > c.target) issues.push({ code: 'over', severity: 'info', day: d, shift: t.code, data: { n: c.n, target: c.target } })
       if (hasKeyQual && c.target > 0 && c.n > 0 && !c.key) issues.push({ code: 'keyQual', severity: 'warn', day: d, shift: t.code })
+      if (c.target > 0)
+        for (const [grp, min] of Object.entries(p.shiftRules?.[t.code]?.min ?? {}))
+          if ((c.groups[grp] ?? 0) < (min ?? 0)) issues.push({ code: 'groupMin', severity: 'warn', day: d, shift: t.code, data: { group: grp, n: c.groups[grp] ?? 0, min: min ?? 0 } })
     }
   let total = 0
   let met = 0

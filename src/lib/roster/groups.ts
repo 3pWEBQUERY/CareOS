@@ -33,3 +33,9 @@ export function groupStaff<T extends { name: string; qual: string; job: string; 
   }
   return withGroup.sort((a, b) => rank(a) - rank(b) || (a.custom ?? '').localeCompare(b.custom ?? '') || a.name.localeCompare(b.name, 'de'))
 }
+
+/** Bereits zugeordnete Personen (Gruppe ggf. manuell festgelegt) in Gruppenreihenfolge und nach Name ordnen. */
+export function sortByGroup<T extends { name: string; level: number; group: StaffGroup; custom?: string }>(people: T[]) {
+  const rank = (x: T) => (x.custom ? STAFF_GROUPS.indexOf('srk') + 0.5 - x.level / 100 : STAFF_GROUPS.indexOf(x.group))
+  return [...people].sort((a, b) => rank(a) - rank(b) || (a.custom ?? '').localeCompare(b.custom ?? '') || a.name.localeCompare(b.name, 'de'))
+}

@@ -5,6 +5,7 @@ import { refresh } from 'next/cache'
 import { after } from 'next/server'
 import { Prisma as PrismaNS, type Prisma } from '@prisma/client'
 import { parseShiftTypeForm } from '@/lib/shift-types'
+import { STAFF_GROUPS, type StaffGroup } from '@/lib/roster/groups'
 import { db } from '@/lib/db'
 import { getCtx, assertCan, ForbiddenError, type Ctx } from '@/lib/context'
 import { run, fd, fdNum, type ActionResult } from '@/lib/action'
@@ -141,7 +142,7 @@ async function computeProposal(ctx: Ctx, proposalId: string) {
   const pr = await db.scheduleProposal.findUniqueOrThrow({ where: { id: proposalId } })
   const month = dbKey(pr.month).slice(0, 7)
   const data = await loadRoster(ctx.org.id, ctx.org.settings, pr.unitId, month)
-  const mode = pr.mode === 'fill' ? 'fill' : 'replace'
+  const mode = pr.mode === 'fill' || pr.mode === 'adjust' ? pr.mode : 'replace'
   let seed: Grid | undefined
   let constraints: Record<string, PersonConstraint> | undefined
   let notes: string[] | undefined
@@ -189,7 +190,7 @@ export async function startProposalAction(form: FormData): Promise<ActionResult<
     const unit = await managedUnit(ctx, fd(form, 'unitId'))
     const month = fd(form, 'month')
     const source = fd(form, 'source')
-    const mode = fd(form, 'mode') === 'fill' ? 'fill' : 'replace'
+    const mode = (['fill', 'adjust'] as const).find((m) => m === fd(form, 'mode')) ?? 'replace'
     if (!MONTH_RE.test(month) || !['ai', 'auto', 'copy'].includes(source)) return err('roster.errors.invalid')
     if (month < dateKey(new Date()).slice(0, 7)) return err('roster.errors.past')
     if (source === 'ai') {
@@ -300,7 +301,7 @@ export async function savePersonPlanAction(unitId: string, userId: string, form:
     const maxNights = nightsRaw === '' ? null : Number(nightsRaw)
     if (maxNights != null && (!Number.isInteger(maxNights) || maxNights < 0 || maxNights > 31)) return err('roster.errors.maxNights', 'maxNights')
     const codes = (await db.shiftType.findMany({ where: { orgId: ctx.org.id }, select: { code: true } })).map((x) => x.code)
-    const prefs = readShiftPrefs({ allowed: form.getAll('allowed'), preferred: form.getAll('preferred'), maxNights }, codes)
+    const prefs = readShiftPrefs({ allowed: form.getAll('allowed'), preferred: form.getAll('preferred'), maxNights, group: fd(form, 'group') || null }, codes)
     const u = await db.user.findFirst({ where: { id: userId, orgId: ctx.org.id }, select: { id: true, employmentPct: true, shiftPrefs: true } })
     if (!u) return err('common.notFound')
     await db.user.update({ where: { id: u.id }, data: { employmentPct: pct, shiftPrefs: prefs as Prisma.InputJsonValue } })
@@ -320,10 +321,21 @@ export async function saveRosterShiftTypeAction(form: FormData): Promise<ActionR
     const parsed = parseShiftTypeForm(form)
     if (!parsed.ok) return parsed
     const { data } = parsed
-    const target = Number(fd(form, 'target') || 0)
-    if (!Number.isInteger(target) || target < 0 || target > 50) return err('schedule.errors.target', 'target')
-    const days = form.getAll('days').map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
-    if (!days.length) return err('roster.types.noDays', 'days')
+    // Soll-Besetzung je Wochentag (t0 = So … t6 = Sa)
+    const byDay: number[] = []
+    for (let i = 0; i < 7; i++) {
+      const v = Number(fd(form, 't' + i) || 0)
+      if (!Number.isInteger(v) || v < 0 || v > 50) return err('schedule.errors.target', 't' + i)
+      byDay.push(v)
+    }
+    const groups = STAFF_GROUPS.filter((g) => form.getAll('groups').includes(g))
+    const min: Partial<Record<StaffGroup, number>> = {}
+    for (const g of STAFF_GROUPS) {
+      const v = Number(fd(form, 'min_' + g) || 0)
+      if (!Number.isInteger(v) || v < 0 || v > 50) return err('roster.types.badMin', 'min_' + g)
+      if (v > 0) min[g] = v
+    }
+    if (groups.length && Object.keys(min).some((g) => !groups.includes(g as StaffGroup))) return err('roster.types.minNotAllowed', 'groups')
     const id = fd(form, 'id')
     try {
       if (id) {
@@ -341,9 +353,12 @@ export async function saveRosterShiftTypeAction(form: FormData): Promise<ActionR
     }
     const org = await db.organization.findUniqueOrThrow({ where: { id: ctx.org.id }, select: { settings: true } })
     const settings = (org.settings ?? {}) as Record<string, unknown>
-    const coverage = { ...((settings.coverage ?? {}) as Record<string, number>), [data.code]: target }
-    const coverageDays = { ...((settings.coverageDays ?? {}) as Record<string, number[]>), [data.code]: [...new Set(days)].sort() }
-    await db.organization.update({ where: { id: ctx.org.id }, data: { settings: { ...settings, coverage, coverageDays } as Prisma.InputJsonValue } })
+    const coverage = { ...((settings.coverage ?? {}) as Record<string, number>), [data.code]: Math.max(...byDay) }
+    const coverageByDay = { ...((settings.coverageByDay ?? {}) as Record<string, number[]>), [data.code]: byDay }
+    const coverageDays = { ...((settings.coverageDays ?? {}) as Record<string, number[]>) }
+    delete coverageDays[data.code]
+    const shiftRules = { ...((settings.shiftRules ?? {}) as Record<string, unknown>), [data.code]: { groups: groups.length === STAFF_GROUPS.length ? [] : groups, min } }
+    await db.organization.update({ where: { id: ctx.org.id }, data: { settings: { ...settings, coverage, coverageByDay, coverageDays, shiftRules } as Prisma.InputJsonValue } })
     await emit({ orgId: ctx.org.id, type: 'schedule.changed', unitId: null, actorId: ctx.user.id, payload: { shiftType: data.code } })
     refresh()
     return { ok: true, message: 'roster.types.saved' }
