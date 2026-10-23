@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useT } from '@/i18n/client'
 import { toast } from '@/components/toast'
@@ -446,10 +446,18 @@ export function RosterBoard(props: RosterProps) {
           </thead>
           <tbody>
             {people.map((p, r) => {
+              const head = r === 0 || people[r - 1].group !== p.group
+              const count = head ? people.filter((x) => x.group === p.group).length : 0
               const s = ev.people[p.id]
               const off = s && Math.abs(s.diff) > Math.max(8, s.soll * 0.1)
               return (
-                <tr key={p.id}>
+                <Fragment key={p.id}>
+                {head && (
+                  <tr className="rst-group">
+                    <th scope="colgroup" colSpan={days.length + 6}><span className="rst-gl">{p.group} <span className="muted">{count}</span></span></th>
+                  </tr>
+                )}
+                <tr>
                   <th scope="row" className="rst-name">
                     <button type="button" className="rst-person" onClick={() => setPerson(p)} aria-label={t('roster.grid.editPerson', { name: p.name })}>
                       <span className="ellipsis">{p.name}{p.key ? ' *' : ''}</span>
@@ -463,6 +471,7 @@ export function RosterBoard(props: RosterProps) {
                   <td className="rst-sum num">{s?.nights}</td>
                   <td className="rst-sum num">{s?.weekends}</td>
                 </tr>
+                </Fragment>
               )
             })}
           </tbody>

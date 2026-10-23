@@ -2463,3 +2463,7 @@ select.field::-ms-expand { display: none }
 .rst-types { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px }
 .rst-types li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line) }
 .rst-types .grow { flex: 1; min-width: 0 }
+.rst .rst-group th { background: var(--surface-2); text-align: left; padding: 6px 8px; font-family: var(--font-cond); font-size: 0.75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-2); border-top: 1px solid var(--line-strong) }
+.rst .rst-group .rst-gl { position: sticky; left: 8px }
+.rst .rst-group .muted { font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; margin-left: 6px }
+@media print { .rst .rst-group th { background: #eee; color: #000 } }

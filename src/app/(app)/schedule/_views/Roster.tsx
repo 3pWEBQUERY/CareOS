@@ -9,6 +9,7 @@ import { NumberField } from '@/components/ui/fields'
 import { shiftName } from '@/lib/shift-name'
 import { DEFAULT_RULES, RULE_LIMITS, isNight, round1, shiftHours, type RRules } from '@/lib/roster/model'
 import { loadRoster, monthStart } from '@/lib/roster/server'
+import { groupStaff } from '@/lib/roster/groups'
 import { saveRosterRulesAction } from '../roster-actions'
 import { RosterBoard } from '../_roster/RosterBoard'
 import type { RProposalView, RosterProps } from '../_roster/types'
@@ -66,7 +67,11 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
     monthLabel: fmtDate(monthStart(month), locale, { month: 'long', year: 'numeric' }),
     days,
     types,
-    people: data.people.map((p) => ({ id: p.id, name: p.name, short: p.short, qual: p.qual, job: p.job, pct: p.pct, key: p.key, allowed: p.prefs.allowed ?? [], preferred: p.prefs.preferred ?? [], maxNights: p.prefs.maxNights ?? null })),
+    people: groupStaff(data.people).map((p) => ({
+      id: p.id, name: p.name, short: p.short, qual: p.qual, job: p.job, pct: p.pct, key: p.key,
+      allowed: p.prefs.allowed ?? [], preferred: p.prefs.preferred ?? [], maxNights: p.prefs.maxNights ?? null,
+      group: p.custom ?? t('roster.groups.' + p.group),
+    })),
     problem: data.problem,
     current: data.current,
     shiftAt: data.shiftAt,
