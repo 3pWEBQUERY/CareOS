@@ -50,6 +50,8 @@ export type DirectoryRow = {
   avatar: string | null
   unitIds: string[]
   units: string
+  /** Rolle ohne Bereich und Standort: in der Liste «Ganze Organisation» statt Stammbereich */
+  orgWide: boolean
   qualifications: string[]
   workPhone: string | null
   email: string
@@ -73,11 +75,13 @@ export async function directory(ctx: Ctx, now = new Date()): Promise<DirectoryRo
   const today = ctx.can('schedule.read') ? await todayFor(ctx.org.id, null, now) : new Map<string, TodayState>()
   const unitName = new Map(units.map((u) => [u.id, u.shortName ?? u.name]))
   return users.map((u) => {
-    const unitIds = [...new Set([u.primaryUnitId, ...u.roles.flatMap((r) => (r.unitId ? [r.unitId] : r.locationId ? units.filter((x) => x.locationId === r.locationId).map((x) => x.id) : []))].filter((x): x is string => !!x))]
+    // Organisationsweite Rolle gilt in allen Bereichen (wie Standortrollen in allen Bereichen des Standorts)
+    const orgWide = u.roles.some((r) => !r.unitId && !r.locationId)
+    const unitIds = orgWide ? units.map((x) => x.id) : [...new Set([u.primaryUnitId, ...u.roles.flatMap((r) => (r.unitId ? [r.unitId] : r.locationId ? units.filter((x) => x.locationId === r.locationId).map((x) => x.id) : []))].filter((x): x is string => !!x))]
     const t = today.get(u.id) ?? null
     return {
       id: u.id, name: `${u.firstName} ${u.lastName}`, firstName: u.firstName, lastName: u.lastName, initials: u.initials, jobTitle: u.jobTitle,
-      avatar: avatarUrl(u.avatarFileId), unitIds, units: u.primaryUnitId ? unitName.get(u.primaryUnitId) ?? '' : '',
+      avatar: avatarUrl(u.avatarFileId), unitIds, units: u.primaryUnitId ? unitName.get(u.primaryUnitId) ?? '' : '', orgWide,
       qualifications: u.qualifications.sort((a, b) => b.qualification.level - a.qualification.level).map((q) => q.qualification.name),
       workPhone: u.workPhone, email: u.email,
       // Abwesenheitsgrund nie in der Liste
@@ -131,7 +135,7 @@ export async function loadPerson(ctx: Ctx, id: string, now = new Date()) {
     person: {
       id: u.id, firstName: u.firstName, lastName: u.lastName, initials: u.initials, jobTitle: u.jobTitle, email: u.email, active: u.active,
       workPhone: u.workPhone, phone: access.privatePhone ? u.phone : null, phoneShared: u.phoneShared,
-      avatar: avatarUrl(u.avatarFileId), primaryUnit: primary ? `${primary.name} · ${primary.location.name}` : null,
+      avatar: avatarUrl(u.avatarFileId), primaryUnit: primary ? `${primary.name} · ${primary.location.name}` : null, orgWide: scope.orgWide,
       roles: u.roles.map((r) => ({ name: r.role.name, scope: r.unit?.name ?? r.location?.name ?? null })),
       teams: u.teams.map((t) => t.team.name),
       qualifications: u.qualifications
