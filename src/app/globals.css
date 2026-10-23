@@ -2467,3 +2467,9 @@ select.field::-ms-expand { display: none }
 .rst .rst-group .rst-gl { position: sticky; left: 8px }
 .rst .rst-group .muted { font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; margin-left: 6px }
 @media print { .rst .rst-group th { background: #eee; color: #000 } }
+.rst-fs { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; min-width: 0 }
+.rst-fs > legend { font-family: var(--font-cond); font-size: 0.6875rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); padding: 0; margin-bottom: 6px }
+.rst-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px }
+.rst-mins { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px }
+.rst-types-line { display: block }
+@media (max-width: 720px) { .rst-week { grid-template-columns: repeat(4, minmax(0, 1fr)) } }

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { cellKey, isNight, round1, shiftHours, sollHours, weekday, type Grid, type RProblem } from './model'
 import { editableKeys, type PersonConstraint } from './solver'
+import type { StaffGroup } from './groups'
 
 /**
  * Prompt und Auswertung der KI-Dienstplanung – rein, ohne Server-Abhängigkeiten (testbar). Aufruf: `./ai.ts`.
@@ -10,6 +11,9 @@ const LANG = { de: 'Deutsch', fr: 'Französisch', it: 'Italienisch', en: 'Englis
 type Locale = keyof typeof LANG
 
 const WD = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
+const GROUP_LABEL: Record<StaffGroup, string> = {
+  lead: 'Leitung', hf: 'Pflegefachpersonen HF/FH', fage: 'FaGe EFZ', ags: 'AGS EBA', srk: 'Pflegehilfe SRK', students: 'Studierende HF', apprentices: 'Lernende', other: 'Weitere',
+}
 
 function ranges(nums: number[]) {
   const out: string[] = []
@@ -22,7 +26,7 @@ function ranges(nums: number[]) {
   return out.join(', ')
 }
 
-export function buildPrompt(p: RProblem, current: Grid, mode: 'fill' | 'replace', monthLabel: string, instructions: string, locale: Locale) {
+export function buildPrompt(p: RProblem, current: Grid, mode: 'fill' | 'adjust' | 'replace', monthLabel: string, instructions: string, locale: Locale) {
   const n = p.days.length
   const editable = editableKeys(p, current, mode)
   const r = p.rules
@@ -32,14 +36,17 @@ export function buildPrompt(p: RProblem, current: Grid, mode: 'fill' | 'replace'
   lines.push('Wochentage: ' + p.days.map((d, i) => `${i + 1} ${WD[weekday(d)]}`).join(', '))
   lines.push('', 'Dienste (Code, Zeit, bezahlte Stunden):')
   for (const t of p.types) lines.push(`${t.code} ${t.start}–${t.end} ${round1(shiftHours(t))} h${isNight(t) ? ' (Nacht)' : ''}`)
-  const only = (code: string) => {
-    const days = p.targetDays?.[code]
-    return days?.length && days.length < 7 ? ` (nur ${days.map((d) => WD[d]).join(', ')})` : ''
-  }
-  lines.push('', 'Soll-Besetzung pro Tag: ' + p.types.map((t) => `${t.code} ${p.targets[t.code] ?? 0}${only(t.code)}`).join(', '))
-  lines.push('', 'Personen (Kürzel | Name | Pensum | Soll-Stunden im Monat | Schlüsselqualifikation *):')
+  lines.push('', 'Soll-Besetzung je Wochentag (So Mo Di Mi Do Fr Sa):')
+  for (const t of p.types) lines.push(`${t.code}: ${[0, 1, 2, 3, 4, 5, 6].map((w) => p.targetByDay?.[t.code]?.[w] ?? (p.targetDays?.[t.code]?.length && !p.targetDays[t.code].includes(w) ? 0 : p.targets[t.code] ?? 0)).join(' ')}`)
+  const ruleLines = p.types.flatMap((t) => {
+    const r = p.shiftRules?.[t.code]
+    const parts = [r?.groups?.length ? `nur ${r.groups.map((g) => GROUP_LABEL[g]).join(', ')}` : '', ...Object.entries(r?.min ?? {}).map(([g, n]) => `mind. ${n} ${GROUP_LABEL[g as StaffGroup]}`)].filter(Boolean)
+    return parts.length ? [`${t.code}: ${parts.join(' · ')}`] : []
+  })
+  if (ruleLines.length) lines.push('', 'Regeln je Dienst (Funktion der Person beachten):', ...ruleLines)
+  lines.push('', 'Personen (Kürzel | Name | Funktion | Pensum | Soll-Stunden im Monat | Schlüsselqualifikation *):')
   for (const x of p.people) {
-    lines.push(`${alias.get(x.id)} | ${x.name} | ${x.pct} % | ${round1(sollHours(r, x.pct, p.days))} h${x.key ? ' | *' : ''}`)
+    lines.push(`${alias.get(x.id)} | ${x.name} | ${x.group ? GROUP_LABEL[x.group] : 'Weitere'} | ${x.pct} % | ${round1(sollHours(r, x.pct, p.days))} h${x.key ? ' | *' : ''}`)
     const fixed: string[] = []
     const locked: number[] = []
     const away: number[] = []
@@ -78,11 +85,13 @@ Harte Regeln, nie verletzen:
 - Kein Dienst an Abwesenheitstagen. Fixe Einträge («fix», «fix frei») unverändert übernehmen.
 - Ruhezeit zwischen zwei Diensten mindestens ${r.minRestHours} Stunden: also nie Spätdienst und am Folgetag Frühdienst, nie Nachtdienst und am Folgetag ein Tagdienst. Das gilt auch für die Tage aus dem Vormonat.
 - Höchstens ${r.maxConsecutiveDays} Arbeitstage am Stück, höchstens ${r.maxConsecutiveNights} Nachtdienste am Stück, höchstens ${r.maxWeeklyHours} Stunden pro Kalenderwoche (Mo–So).
+- «Regeln je Dienst» einhalten: «nur …» = nur Personen dieser Funktionen, «mind. …» = so viele Personen dieser Funktion pro Tag (zählen zur Soll-Besetzung).
+- Soll-Besetzung nie überschreiten; lieber eine Person frei lassen als überbesetzen.
 - «Vorgaben» je Person einhalten: «nur …» = keine anderen Dienste, «max. … Nachtdienste» nicht überschreiten.
 - Einschränkungen aus den Anweisungen der Leitung gehen Wünschen vor.
 
 Ziele, in dieser Reihenfolge:
-1. Soll-Besetzung jedes Dienstes an jedem Tag genau erreichen, nicht überschreiten. Dienste mit «nur Mo, Di …» nur an diesen Wochentagen besetzen.
+1. Soll-Besetzung jedes Dienstes an jedem Tag genau erreichen (Wert des jeweiligen Wochentags, 0 = nicht besetzen).
 2. Wünsche erfüllen. Ein Frei-Wunsch wird nur verletzt, wenn die Soll-Besetzung sonst nicht erreichbar ist; ein Dienst-Wunsch geht Stundenausgleich, Rhythmus und Fairness vor. Bevorzugte Dienste («bevorzugt …») möglichst oft vergeben.
 3. In jedem besetzten Dienst mindestens eine Person mit Schlüsselqualifikation (*), falls möglich.
 4. Geplante Stunden je Person nahe an ihren Soll-Stunden (Pensum). Teilzeit nicht überplanen.

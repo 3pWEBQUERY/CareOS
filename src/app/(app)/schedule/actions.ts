@@ -150,7 +150,10 @@ export async function saveTargetsAction(form: FormData): Promise<ActionResult> {
     }
     const org = await db.organization.findUniqueOrThrow({ where: { id: ctx.org.id }, select: { settings: true } })
     const before = ((org.settings ?? {}) as Record<string, unknown>).coverage ?? null
-    const settings = { ...((org.settings ?? {}) as Record<string, unknown>), coverage }
+    // Soll je Wochentag (Monatsplan) mitführen: Tage mit 0 (z. B. Stübli am Wochenende) bleiben 0
+    const prev = (((org.settings ?? {}) as Record<string, unknown>).coverageByDay ?? {}) as Record<string, number[]>
+    const coverageByDay = Object.fromEntries(Object.entries(prev).map(([c, days]) => [c, c in coverage ? days.map((d) => (d === 0 ? 0 : coverage[c])) : days]))
+    const settings = { ...((org.settings ?? {}) as Record<string, unknown>), coverage, coverageByDay }
     await db.organization.update({ where: { id: ctx.org.id }, data: { settings: settings as Prisma.InputJsonValue } })
     await audit(ctx, { action: 'schedule.coverage.update', entityType: 'Organization', entityId: ctx.org.id, before, after: coverage })
     await changed(ctx, null, { coverage: true })

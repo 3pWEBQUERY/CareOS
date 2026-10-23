@@ -1,8 +1,9 @@
 import 'server-only'
 import { db } from '@/lib/db'
 import { addDays, dateKey, dbDate, parseDateKey } from '@/lib/time'
-import { absencesIn, coverageDays, coverageTargets, dbKey, hasQualOn, keyQualification, qualifiedUserIds, unitStaff } from '@/app/(app)/schedule/lib'
-import { cellKey, monthDays, readShiftPrefs, rosterRules, shiftDay, type Grid, type RProblem, type Wish } from './model'
+import { absencesIn, coverageByDay, coverageDays, coverageTargets, dbKey, hasQualOn, keyQualification, qualifiedUserIds, unitStaff } from '@/app/(app)/schedule/lib'
+import { staffGroup } from './groups'
+import { cellKey, monthDays, readShiftPrefs, readShiftRules, rosterRules, shiftDay, type Grid, type RProblem, type Wish } from './model'
 
 /** Abwesenheiten, die als Arbeitszeit gutgeschrieben werden. */
 const CREDITED = new Set(['vacation', 'sick', 'training'])
@@ -50,7 +51,11 @@ export async function loadRoster(orgId: string, settings: unknown, unitId: strin
   const codes = types.map((t) => t.code)
   const prefsOf = new Map(pct.map((x) => [x.id, readShiftPrefs(x.shiftPrefs, codes)]))
   const unitName = new Map(units.map((u) => [u.id, u.shortName || u.name]))
-  const people = staffRaw.map((s) => ({ ...s, pct: pctOf.get(s.id) ?? 100, key: hasQualOn(quals, s.id, parseDateKey(first)), prefs: prefsOf.get(s.id) ?? {} }))
+  const people = staffRaw.map((s) => {
+    const prefs = prefsOf.get(s.id) ?? {}
+    const detected = staffGroup(s.qual, s.job)
+    return { ...s, pct: pctOf.get(s.id) ?? 100, key: hasQualOn(quals, s.id, parseDateKey(first)), prefs, group: prefs.group ?? detected.group, custom: prefs.group ? undefined : detected.custom }
+  })
 
   const current: Grid = {}
   const locked: RProblem['locked'] = {}
@@ -99,7 +104,9 @@ export async function loadRoster(orgId: string, settings: unknown, unitId: strin
     types: types.map((t) => ({ code: t.code, start: t.start, end: t.end, breakMinutes: t.breakMinutes })),
     targets: coverageTargets(settings, codes),
     targetDays: coverageDays(settings, codes),
-    people: people.map((x) => ({ id: x.id, name: x.name, pct: x.pct, level: x.level, key: x.key, ...x.prefs })),
+    targetByDay: coverageByDay(settings, codes),
+    shiftRules: readShiftRules(settings, codes),
+    people: people.map((x) => ({ id: x.id, name: x.name, pct: x.pct, level: x.level, key: x.key, allowed: x.prefs.allowed, preferred: x.prefs.preferred, maxNights: x.prefs.maxNights, group: x.group })),
     absent, credit, wishes: wishMap, locked, foreign,
     rules: rosterRules(settings),
   }

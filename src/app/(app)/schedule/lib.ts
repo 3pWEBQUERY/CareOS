@@ -31,6 +31,17 @@ export function coverageDays(settings: unknown, codes: string[]) {
   return out
 }
 
+/** Soll-Besetzung je Wochentag (Organization.settings.coverageByDay, Index 0 = So … 6 = Sa), falls gesetzt. */
+export function coverageByDay(settings: unknown, codes: string[]) {
+  const raw = ((settings ?? {}) as { coverageByDay?: Record<string, unknown> }).coverageByDay ?? {}
+  const out: Record<string, number[]> = {}
+  for (const c of codes) {
+    const v = raw[c]
+    if (Array.isArray(v) && v.length === 7 && v.every((n) => Number.isInteger(Number(n)) && Number(n) >= 0 && Number(n) <= 50)) out[c] = v.map(Number)
+  }
+  return out
+}
+
 export function weekStart(d: Date) {
   const x = startOfDay(d)
   return addDays(x, -((x.getDay() + 6) % 7))
@@ -101,7 +112,8 @@ export async function planWeek(orgId: string, settings: unknown, unitId: string,
   ])
   const targets = coverageTargets(settings, types.map((t) => t.code))
   const cdays = coverageDays(settings, types.map((t) => t.code))
-  const targetOn = (code: string, day: Date) => (cdays[code] && !cdays[code].includes(day.getDay()) ? 0 : targets[code] ?? 0)
+  const byDay = coverageByDay(settings, types.map((t) => t.code))
+  const targetOn = (code: string, day: Date) => (byDay[code] ? byDay[code][day.getDay()] : cdays[code] && !cdays[code].includes(day.getDay()) ? 0 : targets[code] ?? 0)
   const userIds = [...new Set([...staff.map((s) => s.id), ...shifts.map((s) => s.userId).filter((x): x is string => !!x)])]
   const [absences, quals] = await Promise.all([absencesIn(userIds, from, to), qualifiedUserIds(key?.id, userIds)])
   const dayKeys = Array.from({ length: days }, (_, i) => addDays(from, i))

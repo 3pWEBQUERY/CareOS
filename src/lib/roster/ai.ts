@@ -15,7 +15,7 @@ import { aiSchema, buildPrompt, readAiResult } from './ai-format'
  * Datensparsam: Abwesenheiten ohne Grund (kein «krank»), keine Bewohnerdaten, Personen als Kürzel mit Namen nur
  * für die Zuordnung von Anweisungen.
  */
-export async function aiRoster(ctx: Ctx, p: RProblem, current: Grid, mode: 'fill' | 'replace', monthLabel: string, instructions: string) {
+export async function aiRoster(ctx: Ctx, p: RProblem, current: Grid, mode: 'fill' | 'adjust' | 'replace', monthLabel: string, instructions: string) {
   const client = await aiClient(ctx)
   const Schema = aiSchema(p.types.map((t) => t.code))
   const { system, user, alias } = buildPrompt(p, current, mode, monthLabel, instructions, ctx.locale)

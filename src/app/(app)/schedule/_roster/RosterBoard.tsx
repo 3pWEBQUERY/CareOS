@@ -516,9 +516,9 @@ export function RosterBoard(props: RosterProps) {
 
       <RosterIssues issues={ev.issues} people={people} fmt={fmt} onShow={goTo} />
 
-      {dialog === 'types' && <ShiftTypesDialog onClose={() => setDialog(null)} types={types} weekdays={props.weekdays} />}
+      {dialog === 'types' && <ShiftTypesDialog onClose={() => setDialog(null)} types={types} weekdays={props.weekdays} groupOptions={props.groupOptions} />}
       {(dialog === 'ai' || dialog === 'auto' || dialog === 'copy') && (
-        <PlanDialog source={dialog} onClose={() => setDialog(null)} unitId={unitId} month={month} defaultMode={Object.keys(current).length ? 'fill' : 'replace'} />
+        <PlanDialog source={dialog} onClose={() => setDialog(null)} unitId={unitId} month={month} defaultMode={Object.keys(current).length ? 'adjust' : 'replace'} />
       )}
       {dialog === 'pattern' && (
         <PatternDialog onClose={() => setDialog(null)} people={people} days={days} types={types} monthLabel={monthLabel}
@@ -530,7 +530,7 @@ export function RosterBoard(props: RosterProps) {
             return ch.length
           }} />
       )}
-      {person && <PersonDialog person={person} unitId={unitId} types={types} onClose={() => setPerson(null)} />}
+      {person && <PersonDialog person={person} unitId={unitId} types={types} groupOptions={props.groupOptions} onClose={() => setPerson(null)} />}
       <ShiftDialog draft={detail} onClose={() => setDetail(null)} types={types.map((x) => ({ id: x.id, code: x.code, name: x.name, start: x.start, end: x.end }))} staff={staff} quals={props.quals} unitId={unitId} />
     </div>
   )

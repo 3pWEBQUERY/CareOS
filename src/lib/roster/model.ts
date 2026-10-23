@@ -5,20 +5,47 @@
  * Regeln (Ruhezeit, Arbeitstage am Stück, Nächte am Stück, Wochenstunden) prüft `evaluate`, `plan` füllt und repariert.
  */
 
+import { STAFF_GROUPS, type StaffGroup } from './groups'
+
 export type RType = { code: string; start: string; end: string; breakMinutes: number }
 /**
  * Person in der Planung. Dauerhafte Vorgaben (User.shiftPrefs): `allowed` = nur diese Dienste (hart),
  * `preferred` = bevorzugte Dienste (weich), `maxNights` = höchstens so viele Nachtdienste im Monat (hart).
  */
-export type RPerson = { id: string; name: string; pct: number; level: number; key: boolean; allowed?: string[]; preferred?: string[]; maxNights?: number | null }
-export type ShiftPrefs = { allowed?: string[]; preferred?: string[]; maxNights?: number | null }
+export type RPerson = { id: string; name: string; pct: number; level: number; key: boolean; group?: StaffGroup; allowed?: string[]; preferred?: string[]; maxNights?: number | null }
+export type ShiftPrefs = { allowed?: string[]; preferred?: string[]; maxNights?: number | null; group?: StaffGroup | null }
+
+/**
+ * Regeln je Dienstart (Organization.settings.shiftRules): `groups` = Funktionen, die den Dienst übernehmen dürfen
+ * (leer = alle), `min` = Mindestanzahl je Funktion pro Tag (z. B. Frühdienst mind. 1 Pflegefachperson HF).
+ */
+export type ShiftRule = { groups?: StaffGroup[]; min?: Partial<Record<StaffGroup, number>> }
 
 /** Vorgaben aus User.shiftPrefs lesen (unbekannte Codes und ungültige Werte verwerfen). */
 export function readShiftPrefs(raw: unknown, codes: string[]): ShiftPrefs {
   const o = (raw ?? {}) as Record<string, unknown>
   const list = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && codes.includes(x)))] : [])
   const n = Number(o.maxNights)
-  return { allowed: list(o.allowed), preferred: list(o.preferred), maxNights: o.maxNights != null && Number.isInteger(n) && n >= 0 && n <= 31 ? n : null }
+  const group = typeof o.group === 'string' && (STAFF_GROUPS as readonly string[]).includes(o.group) ? (o.group as StaffGroup) : null
+  return { allowed: list(o.allowed), preferred: list(o.preferred), maxNights: o.maxNights != null && Number.isInteger(n) && n >= 0 && n <= 31 ? n : null, group }
+}
+
+/** Regeln je Dienstart aus Organization.settings.shiftRules (unbekannte Gruppen und ungültige Zahlen verwerfen). */
+export function readShiftRules(settings: unknown, codes: string[]): Record<string, ShiftRule> {
+  const raw = ((settings ?? {}) as { shiftRules?: Record<string, { groups?: unknown; min?: Record<string, unknown> }> }).shiftRules ?? {}
+  const out: Record<string, ShiftRule> = {}
+  for (const c of codes) {
+    const r = raw[c]
+    if (!r) continue
+    const groups = Array.isArray(r.groups) ? STAFF_GROUPS.filter((g) => (r.groups as unknown[]).includes(g)) : []
+    const min: Partial<Record<StaffGroup, number>> = {}
+    for (const g of STAFF_GROUPS) {
+      const v = Number(r.min?.[g])
+      if (Number.isInteger(v) && v > 0 && v <= 50) min[g] = v
+    }
+    out[c] = { ...(groups.length && groups.length < STAFF_GROUPS.length ? { groups } : {}), ...(Object.keys(min).length ? { min } : {}) }
+  }
+  return out
 }
 export type Cell = string | null
 export type Grid = Record<string, Cell>
@@ -80,6 +107,10 @@ export type RProblem = {
   targets: Record<string, number>
   /** Wochentage (0 = So … 6 = Sa), an denen die Soll-Besetzung eines Dienstes gilt; fehlt = jeden Tag */
   targetDays?: Record<string, number[]>
+  /** Soll-Besetzung je Wochentag (Index 0 = So … 6 = Sa); hat Vorrang vor `targets`/`targetDays` */
+  targetByDay?: Record<string, number[]>
+  /** Wer darf welchen Dienst, Mindestbesetzung je Funktion */
+  shiftRules?: Record<string, ShiftRule>
   people: RPerson[]
   /** Abwesenheiten: genehmigt oder beantragt */
   absent: Record<string, 'approved' | 'requested'>
@@ -94,8 +125,16 @@ export type RProblem = {
 
 export const cellKey = (userId: string, day: string) => `${userId}|${day}`
 
+/** Darf eine Person (nach Funktion) diesen Dienst übernehmen? */
+export const eligible = (p: Pick<RProblem, 'shiftRules'>, person: Pick<RPerson, 'group'> | undefined, code: string) => {
+  const groups = p.shiftRules?.[code]?.groups
+  return !groups?.length || (!!person?.group && groups.includes(person.group))
+}
+
 /** Soll-Besetzung eines Dienstes an einem Tag (Wochentage je Dienst beachtet). */
-export function targetOn(p: Pick<RProblem, 'targets' | 'targetDays'>, day: string, code: string) {
+export function targetOn(p: Pick<RProblem, 'targets' | 'targetDays' | 'targetByDay'>, day: string, code: string) {
+  const byDay = p.targetByDay?.[code]
+  if (byDay?.length === 7) return byDay[weekday(day)]
   const days = p.targetDays?.[code]
   if (days && days.length && !days.includes(weekday(day))) return 0
   return p.targets[code] ?? 0
