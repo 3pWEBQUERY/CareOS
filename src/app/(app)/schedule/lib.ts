@@ -1,6 +1,8 @@
 import 'server-only'
 import { db } from '@/lib/db'
-import { addDays, dateKey, dbDate, startOfDay } from '@/lib/time'
+import type { Prisma } from '@prisma/client'
+import type { Ctx } from '@/lib/context'
+import { addDays, dateKey, dbDate, fromDbDate, startOfDay } from '@/lib/time'
 
 /** Soll-Besetzung je Dienstart (Organization.settings.coverage), Standard F:3, S:3, N:1. */
 export const DEFAULT_COVERAGE: Record<string, number> = { F: 3, S: 3, N: 1 }
@@ -110,3 +112,22 @@ export async function planWeek(orgId: string, settings: unknown, unitId: string,
 
 /** @db.Date → "YYYY-MM-DD" */
 export const dbKey = (d: Date) => d.toISOString().slice(0, 10)
+
+/**
+ * Monate im Entwurf (SchedulePeriod.status = draft) sind nur für die Planenden sichtbar. Liefert eine Bedingung,
+ * die Dienste solcher Monate für die aktuelle Person ausblendet, und die betroffenen Monate für den Hinweis.
+ */
+export async function draftFilter(ctx: Ctx, from: Date, to: Date) {
+  const rows = await db.schedulePeriod.findMany({
+    where: { orgId: ctx.org.id, status: 'draft', month: { gte: dbDate(new Date(from.getFullYear(), from.getMonth(), 1)), lte: dbDate(to) } },
+    include: { unit: { select: { id: true, locationId: true } } },
+  })
+  const hidden = rows.filter((r) => !ctx.can('schedule.manage', { unitId: r.unit.id, locationId: r.unit.locationId }))
+  const where: Prisma.ShiftWhereInput | undefined = hidden.length
+    ? { NOT: { OR: hidden.map((r) => {
+        const m = fromDbDate(r.month)
+        return { unitId: r.unitId, date: { gte: dbDate(m), lte: dbDate(new Date(m.getFullYear(), m.getMonth() + 1, 0)) } }
+      }) } }
+    : undefined
+  return { where, months: [...new Set(hidden.map((r) => dbKey(r.month).slice(0, 7)))] }
+}

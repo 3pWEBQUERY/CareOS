@@ -44,7 +44,8 @@ export function PeopleDirectory({ rows, units, schedule, initial }: {
     window.history.replaceState(window.history.state, '', u.pathname + (u.search ? u.search : ''))
   }, [q, unit, f])
 
-  const index = useMemo(() => rows.map((r) => ({ r, hay: normalize([r.firstName, r.lastName, r.initials, r.jobTitle ?? '', r.units, ...r.qualifications].join(' ')) })), [rows])
+  const scope = (r: DirectoryRow) => (r.orgWide ? t('people.orgWide') : r.units)
+  const index = useMemo(() => rows.map((r) => ({ r, hay: normalize([r.firstName, r.lastName, r.initials, r.jobTitle ?? '', r.orgWide ? t('people.orgWide') : r.units, ...r.qualifications].join(' ')) })), [rows, t])
   const list = useMemo(() => {
     const words = normalize(query).split(/\s+/).filter(Boolean)
     return index
@@ -92,7 +93,7 @@ export function PeopleDirectory({ rows, units, schedule, initial }: {
                 <Avatar src={r.avatar} initials={r.initials} />
                 <span className="ppl-main">
                   <span className="ppl-name">{r.lastName} {r.firstName}</span>
-                  <span className="small muted ppl-sub">{[r.jobTitle, r.units].filter(Boolean).join(' · ')}</span>
+                  <span className="small muted ppl-sub">{[r.jobTitle, scope(r)].filter(Boolean).join(' · ')}</span>
                 </span>
                 {schedule && <span className="ppl-state"><TodayTag today={r.today} /></span>}
                 {r.workPhone && <span className="mono small muted ppl-phone">{r.workPhone}</span>}

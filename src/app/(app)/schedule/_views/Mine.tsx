@@ -2,7 +2,10 @@ import Link from 'next/link'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
 import { addDays, dateKey, dbDate, fmtDayMonth, fmtNum, fromDbDate, sameDay, shiftBounds, weekdayShort } from '@/lib/time'
-import { absencesIn, dbKey, unitStaff, weekStart } from '../lib'
+import { absencesIn, dbKey, draftFilter, unitStaff, weekStart } from '../lib'
+import { WishButton, type WishValue } from '../_ui/WishButton'
+import { rosterRules } from '@/lib/roster/model'
+import { fmtDate } from '@/lib/time'
 import { SwapButton } from '../_ui/SwapButton'
 import { shiftName } from '@/lib/shift-name'
 
@@ -15,9 +18,10 @@ const hours = (s: { code: string; name: string; start: string; end: string }, da
 export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: Date }) {
   const { t, user, locale } = ctx
   const end = addDays(week, 6)
+  const draft = await draftFilter(ctx, week, addDays(now, 400))
   const [shifts, absences, openCount] = await Promise.all([
     db.shift.findMany({
-      where: { userId: user.id, date: { gte: dbDate(week), lte: dbDate(end) }, status: { not: 'cancelled' } },
+      where: { userId: user.id, date: { gte: dbDate(week), lte: dbDate(end) }, status: { not: 'cancelled' }, ...draft.where },
       include: { shiftType: true, unit: { select: { id: true, name: true } }, swaps: { where: { status: 'requested' } } },
       orderBy: { date: 'asc' },
     }),
@@ -34,12 +38,14 @@ export async function MineView({ ctx, week, now }: { ctx: Ctx; week: Date; now: 
   const busySet = new Set(busy.map((b) => `${b.userId}|${dbKey(b.date)}`))
 
   const total = shifts.reduce((s, x) => s + hours(x.shiftType, fromDbDate(x.date)), 0)
-  const next = await db.shift.findFirst({ where: { userId: user.id, date: { gte: dbDate(now) }, status: { not: 'cancelled' } }, include: { shiftType: true }, orderBy: { date: 'asc' } })
+  const next = await db.shift.findFirst({ where: { userId: user.id, date: { gte: dbDate(now) }, status: { not: 'cancelled' }, ...draft.where }, include: { shiftType: true }, orderBy: { date: 'asc' } })
   const pendingSwaps = shifts.filter((s) => s.swaps.length).length
   const days = Array.from({ length: 7 }, (_, i) => addDays(week, i))
+  const draftHere = draft.months.filter((m) => m >= dateKey(week).slice(0, 7) && m <= dateKey(end).slice(0, 7))
 
   return (
     <>
+      {draftHere.map((m) => <div key={m} className="alert info"><span className="grow">{t('roster.draftHidden', { month: fmtDate(new Date(m + '-01T00:00:00'), locale, { month: 'long', year: 'numeric' }) })}</span></div>)}
       <div className="metrics metrics-sm2">
         <div className="metric"><span className="lbl">{t('schedule.mine.shifts')}</span><span className="val">{shifts.length}</span></div>
         <div className="metric"><span className="lbl">{t('schedule.mine.hours')}</span><span className="val">{fmtNum(total, total % 1 ? 1 : 0, locale)} <small>h</small></span></div>
@@ -114,11 +120,21 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
   const { t, user, locale } = ctx
   const first = weekStart(month)
   const last = addDays(weekStart(new Date(month.getFullYear(), month.getMonth() + 1, 0)), 6)
-  const [shifts, absences, open] = await Promise.all([
-    db.shift.findMany({ where: { userId: user.id, date: { gte: dbDate(first), lte: dbDate(last) }, status: { not: 'cancelled' } }, include: { shiftType: true } }),
+  const draft = await draftFilter(ctx, first, last)
+  const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0)
+  const [shifts, absences, open, wishes, types] = await Promise.all([
+    db.shift.findMany({ where: { userId: user.id, date: { gte: dbDate(first), lte: dbDate(last) }, status: { not: 'cancelled' }, ...draft.where }, include: { shiftType: true } }),
     absencesIn([user.id], first, last),
-    ctx.unit ? db.shift.findMany({ where: { unitId: ctx.unit.id, status: 'open', date: { gte: dbDate(first), lte: dbDate(last) } }, include: { shiftType: true } }) : [],
+    ctx.unit ? db.shift.findMany({ where: { unitId: ctx.unit.id, status: 'open', date: { gte: dbDate(first), lte: dbDate(last) }, ...draft.where }, include: { shiftType: true } }) : [],
+    db.shiftWish.findMany({ where: { userId: user.id, date: { gte: dbDate(month), lte: dbDate(monthEnd) } }, include: { shiftType: true } }),
+    db.shiftType.findMany({ where: { orgId: ctx.org.id }, orderBy: { start: 'asc' } }),
   ])
+  const wishAt = new Map<string, WishValue>(wishes.map((w) => [dbKey(w.date), { kind: w.kind === 'shift' ? 'shift' : 'off', shiftTypeId: w.shiftTypeId, code: w.shiftType?.code ?? null, note: w.note }]))
+  const maxWishes = rosterRules(ctx.org.settings).maxWishes
+  const wishHint = `${t('roster.wish.hint', { n: maxWishes })} ${t('roster.wish.count', { n: wishes.length, max: maxWishes })}`
+  const typeOpts = types.map((x) => ({ id: x.id, code: x.code, name: shiftName(t, x) }))
+  const todayKey = dateKey(now)
+  const draftHere = draft.months.includes(dateKey(month).slice(0, 7))
   const count = Math.round((last.getTime() - first.getTime()) / 864e5) + 1
   const days = Array.from({ length: count }, (_, i) => addDays(first, i))
   const inMonth = shifts.filter((s) => fromDbDate(s.date).getMonth() === month.getMonth())
@@ -126,6 +142,7 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
 
   return (
     <>
+      {draftHere && <div className="alert info"><span className="grow">{t('roster.draftHidden', { month: fmtDate(month, locale, { month: 'long', year: 'numeric' }) })}</span></div>}
       <div className="metrics metrics-sm2">
         <div className="metric"><span className="lbl">{t('schedule.mine.shifts')}</span><span className="val">{inMonth.length}</span></div>
         <div className="metric"><span className="lbl">{t('schedule.mine.hours')}</span><span className="val">{fmtNum(total, total % 1 ? 1 : 0, locale)} <small>h</small></span></div>
@@ -147,6 +164,7 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
                 {mine.map((s) => <span key={s.id} className={'sh ' + s.shiftType.code} title={`${shiftName(t, s.shiftType)} ${s.shiftType.start}–${s.shiftType.end}`}>{s.shiftType.code} <span className="month-time">{s.shiftType.start}</span><span className="sr-only"> {shiftName(t, s.shiftType)} {s.shiftType.start}–{s.shiftType.end}</span></span>)}
                 {abs && <span className="sh abs" title={t('schedule.absence.kinds.' + abs.kind)}>{t('schedule.absence.short.' + abs.kind)}{abs.status === 'requested' ? ' ?' : ''}</span>}
                 {op.length > 0 && <Link className="sh open" href="/schedule?view=open" title={t('schedule.open.title')}>{op.map((s) => s.shiftType.code).join(' ')} {t('schedule.open.short')}</Link>}
+                {d.getMonth() === month.getMonth() && k > todayKey && <WishButton date={k} dateLabel={`${weekdayShort(d, locale)} ${fmtDayMonth(d, locale)}`} wish={wishAt.get(k) ?? null} types={typeOpts} hint={wishHint} />}
               </div>
             )
           })}
@@ -156,6 +174,7 @@ export async function MonthView({ ctx, month, now }: { ctx: Ctx; month: Date; no
         <span><span className="sh F">F</span> <span className="sh S">S</span> <span className="sh N">N</span> {t('schedule.monthView.legendMine')}</span>
         <span><span className="sh abs">{t('schedule.absence.short.vacation')}</span> {t('schedule.plan.legendAbsence')}</span>
         <span><span className="sh open">S</span> {t('schedule.monthView.legendOpen')}</span>
+        <span><span className="wish-btn on" aria-hidden="true">{t('roster.wish.short.off')}</span> {t('roster.legend.wish')}</span>
       </div>
     </>
   )

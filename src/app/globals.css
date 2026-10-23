@@ -2285,3 +2285,100 @@ select.field::-ms-expand { display: none }
 .msg { max-width: none }
 .msg > div > p, .msg .chat-files, .msg .reacts { max-width: 72ch }
 .chat-day { justify-content: flex-end }
+
+/* ───────── Dienstplanung: Monatsraster (PEP-artig) ───────── */
+.rst-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap }
+.rst-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.rst-bar .seg button { font: inherit; font-size: 0.8125rem }
+.rst-bar .seg .sh { pointer-events: none }
+.rst-wrap { overflow: auto; max-height: min(74vh, 900px); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface) }
+.rst { border-collapse: separate; border-spacing: 0; font-size: 0.75rem; user-select: none; -webkit-user-select: none; min-width: 100% }
+.rst:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+.rst th, .rst td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 0 }
+.rst thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); font-family: var(--font-cond); font-weight: 600; color: var(--fg-3) }
+.rst .rst-name { position: sticky; left: 0; z-index: 1; background: var(--surface); text-align: left; min-width: 172px; max-width: 220px; padding: 4px 8px; font-weight: 500 }
+.rst thead .rst-name { z-index: 3; background: var(--surface-2); text-transform: uppercase; letter-spacing: .06em; font-size: 0.6875rem }
+.rst tfoot .rst-name { background: var(--surface-2) }
+.rst-person { all: unset; display: grid; gap: 1px; width: 100%; cursor: pointer; min-width: 0 }
+.rst-person:hover .ellipsis:first-child { color: var(--accent) }
+.rst-person:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px }
+.rst-day { width: 34px; min-width: 34px; text-align: center; padding: 3px 0 !important; line-height: 1.15 }
+.rst-day span { display: block }
+.rst-day span:first-child { font-size: 0.625rem; text-transform: uppercase; letter-spacing: .04em }
+.rst-day span:last-child { font-family: var(--font-mono); font-size: 0.75rem; color: var(--fg) }
+.rst-day.we { background: color-mix(in srgb, var(--sunken) 80%, var(--surface-2)) }
+.rst-day.td { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent) }
+.rst-sum { width: 44px; min-width: 44px; text-align: right; padding: 0 6px !important; font-family: var(--font-mono); white-space: nowrap }
+.rst thead .rst-sum { text-align: right; font-size: 0.6875rem; text-transform: uppercase }
+.rst tbody tr:hover .rst-name { background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface)) }
+
+.rc { position: relative; height: 30px; width: 34px; text-align: center; font-family: var(--font-mono); font-size: 0.75rem; font-weight: 600; cursor: cell; color: var(--fg) }
+.rc small { display: block; font-size: 0.5625rem; font-weight: 400; line-height: 1; color: var(--fg-3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 32px; margin: 0 auto }
+.rc.we { background: color-mix(in srgb, var(--sunken) 55%, transparent) }
+.rc.td { box-shadow: inset 1px 0 0 var(--accent), inset -1px 0 0 var(--accent) }
+.rc.c-F, .rc.c-x { background: var(--accent-soft); color: var(--accent) }
+.rc.c-S { background: var(--violet-soft); color: var(--violet) }
+.rc.c-N { background: color-mix(in srgb, var(--fg) 14%, var(--surface)); color: var(--fg) }
+.rc.lk { cursor: not-allowed }
+.rc.lk:not(.fg) { opacity: .62 }
+.rc.fg { background: repeating-linear-gradient(135deg, var(--sunken) 0 4px, var(--surface) 4px 8px); color: var(--fg-2) }
+.rc.ab { background: var(--warn-soft) }
+.rc .rc-abs { font-size: 0.625rem; font-weight: 500; color: var(--warn) }
+.rc.abp .rc-abs::after { content: "?" }
+.rc.w-off::before, .rc.w-shift::before { content: ""; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 7px 7px 0; border-color: transparent var(--warn) transparent transparent }
+.rc.w-shift::before { border-right-color: var(--accent) }
+.rc.w-met::before { border-right-color: var(--ok) }
+.rc.err { box-shadow: inset 0 0 0 2px var(--crit) }
+.rc.warn { box-shadow: inset 0 0 0 2px var(--warn) }
+.rc.chg::after { content: ""; position: absolute; left: 2px; bottom: 2px; width: 5px; height: 5px; border-radius: 50%; background: var(--violet) }
+.rc.sel { background-image: linear-gradient(color-mix(in srgb, var(--accent) 22%, transparent), color-mix(in srgb, var(--accent) 22%, transparent)) }
+.rc.act { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 1 }
+.rst.painting .rc:not(.lk) { cursor: copy }
+
+.rst-cov { height: 26px; text-align: center; font-family: var(--font-mono); font-size: 0.6875rem; position: relative }
+.rst-cov small { color: var(--fg-3) }
+.rst-cov i { position: absolute; top: 1px; right: 2px; font-style: normal; font-size: 0.5625rem; color: var(--crit) }
+.rst-cov.ok { color: var(--ok) }
+.rst-cov.under { color: var(--crit); background: var(--crit-soft) }
+.rst-cov.over { color: var(--warn) }
+.rst-cov.we { background-color: color-mix(in srgb, var(--sunken) 55%, transparent) }
+.rst-cov.under.we { background: var(--crit-soft) }
+.rst-status { margin: 0; min-height: 1.4em; color: var(--fg-2) }
+.rc-key { display: inline-block; position: relative; width: 14px; height: 12px; border: 1px solid var(--line-strong); vertical-align: -2px; background: var(--surface) }
+.rc-key.w-off::before { content: ""; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 6px 6px 0; border-color: transparent var(--warn) transparent transparent }
+.rc-key.chg::after { content: ""; position: absolute; left: 2px; bottom: 2px; width: 4px; height: 4px; border-radius: 50%; background: var(--violet) }
+.rc-key.err { box-shadow: inset 0 0 0 2px var(--crit) }
+.rc-key.fg { background: repeating-linear-gradient(135deg, var(--sunken) 0 3px, var(--surface) 3px 6px) }
+.rst-proposal .card-head { flex-wrap: wrap }
+.rst-proposal .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite; flex: none }
+@media (prefers-reduced-motion: reduce) { .rst-proposal .spin { animation-duration: 2.5s } }
+.rst-issues .grid-2 { gap: 12px }
+.rst-issues li .linkbtn { font: inherit; text-decoration: underline }
+@media (forced-colors: active) {
+  .rc.sel { outline: 1px solid Highlight; outline-offset: -1px }
+  .rc.err, .rc.warn { outline: 2px solid Mark; outline-offset: -2px }
+}
+@media print {
+  @page roster { size: A4 landscape; margin: 8mm }
+  .main:has(.roster), .main:has(.roster) .scroll { overflow: visible !important }
+  .main:has(.roster) .tabs, .main:has(.roster) .view-head .row { display: none !important }
+  .roster { page: roster }
+  .rst-wrap { max-height: none; overflow: visible; border: 0 }
+  .rst { font-size: 7pt; min-width: 0; width: 100% }
+  .rst thead th, .rst .rst-name { position: static }
+  .rc, .rst-day { width: auto; min-width: 0; height: 18px }
+  .rc.sel, .rc.act { background-image: none; outline: 0 }
+  .rc.c-F, .rc.c-x, .rc.c-S, .rc.c-N { background: none; color: #000 }
+  .rc.err, .rc.warn { box-shadow: none }
+  .rc.w-off::before, .rc.w-shift::before, .rc.chg::after { display: none }
+}
+.wish-btn { font: inherit; font-family: var(--font-mono); font-size: 0.6875rem; line-height: 16px; padding: 0 6px; border-radius: var(--r-sm); border: 1px dashed var(--line-strong); background: none; color: var(--fg-3); cursor: pointer; opacity: 0; align-self: flex-start }
+.month > div:hover .wish-btn, .wish-btn:focus-visible, .wish-btn.on { opacity: 1 }
+.wish-btn.on { border-style: solid; border-color: var(--warn); color: var(--warn) }
+.wish-btn:hover { border-color: var(--accent); color: var(--accent) }
+@media (hover: none) { .wish-btn { opacity: 1 } }
+.rst-head .spacer, .rst-bar .spacer, .rst-proposal .card-head .spacer { flex: 1 }
+@media (max-width: 720px) {
+  .rst .rst-name { min-width: 118px; max-width: 128px; padding: 3px 6px }
+  .rst-person .small { display: none }
+}

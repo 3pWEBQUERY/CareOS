@@ -8,7 +8,7 @@ import { audit } from '@/lib/audit'
 import { emit } from '@/lib/events'
 import { dateKey, parseDateKey } from '@/lib/time'
 import { portalEnabled } from '@/lib/portal/module'
-import { CONSENT_BY, normalizeGrants, residentVisible } from '@/lib/portal/policy'
+import { CONSENT_BY, isPhysicianContact, normalizeGrants, residentVisible } from '@/lib/portal/policy'
 import { normalizeEmail } from '@/lib/portal/invite-core'
 import { accessSnap, revokeAccess, sendPortalInvite } from '@/lib/portal/manage'
 import { actionResident } from '../../_lib/resident'
@@ -34,6 +34,8 @@ export async function invitePortalAction(residentId: string, contactId: string, 
     if (!residentVisible(full)) return { ok: false, error: 'portal.errors.residentInactive' }
     const contact = await db.contact.findFirst({ where: { id: contactId, residentId: r.id } })
     if (!contact) return { ok: false, error: 'common.notFound' }
+    // Ärztinnen und Ärzte erhalten ein externes Konto im Ärzteportal (/md), keinen Angehörigenzugang
+    if (isPhysicianContact(contact.relation)) return { ok: false, error: 'portal.errors.physician' }
     const p = schema.parse({
       name: fd(form, 'name'), email: normalizeEmail(fd(form, 'email')), role: fd(form, 'role') || 'relative', consentBy: fd(form, 'consentBy'),
       consentName: fd(form, 'consentName'), consentAt: fd(form, 'consentAt'), consentNote: fd(form, 'consentNote'),

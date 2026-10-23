@@ -1,6 +1,7 @@
 import 'server-only'
 import type { Ctx } from '@/lib/context'
 import type { Permission } from '@/lib/permissions'
+import type { ModuleKey } from '@/lib/modules'
 import { ADMIN_SECTIONS } from '@/app/(app)/admin/sections'
 
 /**
@@ -8,7 +9,7 @@ import { ADMIN_SECTIONS } from '@/app/(app)/admin/sections'
  * mehrere Klicks erreicht. Statisch, nach Berechtigung gefiltert. Labels sind i18n-Schlüssel,
  * keywords helfen bei Synonymen (DE/FR/IT/EN, damit z. B. "MFA" oder "2FA" trifft).
  */
-type Fn = { label: string; hint?: string; href: string; perm?: Permission; anyPrefix?: string; keywords?: string }
+type Fn = { label: string; hint?: string; href: string; perm?: Permission; anyPrefix?: string; keywords?: string; module?: ModuleKey }
 
 const FUNCTIONS: Fn[] = [
   { label: 'profile.mfa.title', hint: 'profile.security', href: '/profile#p-mfa', keywords: 'mfa 2fa totp zwei faktor authenticator double authentification autenticazione sicherheit security' },
@@ -26,7 +27,11 @@ const FUNCTIONS: Fn[] = [
   { label: 'learn.tabs.compliance', hint: 'nav.learn', href: '/learn/compliance', perm: 'learn.manage', keywords: 'matrix schulung pflichtschulung' },
   { label: 'docs.new', hint: 'nav.docs', href: '/docs', perm: 'docs.manage', keywords: 'weisung standard richtlinie' },
   { label: 'nav.medround', hint: 'common.palette.groupAction', href: '/tasks/medround', perm: 'resident.medication.administer', keywords: 'medikamente abgabe runde' },
-  { label: 'visit.title', hint: 'common.palette.groupAction', href: '/tasks/visit', perm: 'resident.read', keywords: 'visite arzt arztvisite anordnung fragen visite médicale visita medica round doctor' },
+  { label: 'visit.title', hint: 'common.palette.groupAction', href: '/tasks/visit', perm: 'resident.read', module: 'visit', keywords: 'visite arzt arztvisite anordnung fragen visite médicale visita medica round doctor' },
+  { label: 'meds.pharmacy.title', hint: 'nav.tasks', href: '/tasks/pharmacy', perm: 'resident.medication.stock', module: 'medication', keywords: 'apotheke bestellung bestand wareneingang lieferung pharmacie commande stock farmacia ordine scorte pharmacy order stock' },
+  { label: 'nav.therapy', href: '/therapy', perm: 'therapy.read', keywords: 'physiotherapie ergotherapie logopädie aktivierung therapieplan physiothérapie ergothérapie fisioterapia ergoterapia physiotherapy occupational speech' },
+  { label: 'nav.family', hint: 'nav.team', href: '/team/family', perm: 'portal.respond', module: 'portals', keywords: 'angehörige angehörigenportal besuch besuchsanfrage proches portail visite familiari portale visita family portal visit' },
+  { label: 'insights.billing.title', hint: 'nav.insights', href: '/insights?tab=management#bill-h', perm: 'insights.view', keywords: 'abrechnung export csv pflegestufe pflegeminuten facturation fatturazione billing invoice' },
   { label: 'care.approvals.title', hint: 'nav.tasks', href: '/tasks/approvals', perm: 'resident.careplan.approve', keywords: 'freigabe freigeben pflegeplanung entwurf eingereicht validation valider planification approvazione approvare pianificazione approve approval care plan' },
   { label: 'common.quick.incident', hint: 'nav.quality', href: '/quality/new', perm: 'quality.report', keywords: 'sturz ereignis meldung cirs vorfall' },
   { label: 'common.palette.fn.newPost', hint: 'nav.team', href: '/team/new', perm: 'team.post', keywords: 'mitteilung post news' },
@@ -44,7 +49,7 @@ export function searchFunctions(ctx: Ctx, q: string, limit = 6) {
   const admin = ADMIN_SECTIONS.filter((s) => ctx.can(s.perm)).map((s) => ({
     label: t('admin.nav.' + s.key), hint: `${t('nav.admin')} · ${t('admin.nav.' + s.key + 'Hint')}`, href: s.href, keywords: 'admin ' + s.key,
   }))
-  const fns = FUNCTIONS.filter((f) => !f.perm || ctx.can(f.perm)).map((f) => ({ label: t(f.label), hint: f.hint ? t(f.hint) : undefined, href: f.href, keywords: f.keywords ?? '' }))
+  const fns = FUNCTIONS.filter((f) => (!f.perm || ctx.can(f.perm)) && (!f.module || ctx.hasModule(f.module))).map((f) => ({ label: t(f.label), hint: f.hint ? t(f.hint) : undefined, href: f.href, keywords: f.keywords ?? '' }))
   for (const f of [...fns, ...admin]) {
     if (!norm(`${f.label} ${f.hint ?? ''} ${f.keywords}`).includes(needle)) continue
     out.push({ label: f.label, hint: f.hint, href: f.href })

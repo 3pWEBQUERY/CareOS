@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getCtx } from '@/lib/context'
 import { audit } from '@/lib/audit'
+import { exportRateLimit } from '@/lib/rate-limit'
 
 /**
  * Datenexport der Organisation als JSON (Datenportabilität, PRD §36).
@@ -11,6 +12,8 @@ import { audit } from '@/lib/audit'
 export async function GET() {
   const ctx = await getCtx()
   if (!ctx.can('admin.org')) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+  const rl = await exportRateLimit('org', ctx.user.id)
+  if (!rl.ok) return NextResponse.json({ error: 'rate' }, { status: 429, headers: { 'retry-after': String(rl.retryAfter) } })
   const orgId = ctx.org.id
   const [org, locations, units, teams, roles, users, qualifications, shiftTypes, careDomains, assessmentDefs, incidentTypes, vitalThresholds, channels, featureFlags, residents, incidents, documents, courses] = await Promise.all([
     db.organization.findUniqueOrThrow({ where: { id: orgId } }),

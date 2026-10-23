@@ -85,6 +85,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ...nav.map((n) => ({ group: t('common.palette.groupView'), label: n.label, href: n.href })),
     ...(ctx.can('resident.medication.administer') ? [{ group: t('common.palette.groupAction'), label: t('nav.medround'), href: '/tasks/medround' }] : []),
     ...(ctx.can('resident.read') && ctx.hasModule('visit') ? [{ group: t('common.palette.groupAction'), label: t('visit.title'), href: '/tasks/visit' }] : []),
+    ...(ctx.can('resident.medication.stock') && ctx.hasModule('medication') ? [{ group: t('common.palette.groupView'), label: t('meds.pharmacy.title'), href: '/tasks/pharmacy' }] : []),
     ...(ctx.can('api.personal') || ctx.can('admin.integrations') ? [{ group: t('common.palette.groupView'), label: t('nav.developer'), href: '/developer' }] : []),
     ...(isPlatformOperator(user) ? [{ group: t('common.palette.groupView'), label: t('nav.platform'), href: '/platform' }] : []),
     ...(ctx.can('admin.emergency') ? [{ group: t('common.palette.groupView'), label: t('tenancy.emergency.title'), href: '/admin/emergency' }] : []),

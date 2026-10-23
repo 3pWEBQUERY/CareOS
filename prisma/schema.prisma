@@ -160,6 +160,11 @@ enum ShiftStatus {
   cancelled
 }
 
+enum SchedulePeriodStatus {
+  draft
+  released
+}
+
 enum AbsenceKind {
   vacation
   sick
@@ -280,6 +285,8 @@ model Unit {
   incidents  Incident[]
   taskTemplates TaskTemplate[]
   shiftAssignments ShiftAssignment[]
+  schedulePeriods  SchedulePeriod[]
+  scheduleProposals ScheduleProposal[]
 
   @@index([orgId])
   @@index([locationId])
@@ -361,6 +368,9 @@ model User {
   pushPriorities   String[]           @default(["critical", "action"])
   pushSubscriptions PushSubscription[]
   shiftAssignments  ShiftAssignment[]
+  /// Dienstplanung: Beschäftigungsgrad in Prozent (Soll-Stunden = Wochenstunden × Pensum).
+  employmentPct     Int                @default(100)
+  shiftWishes       ShiftWish[]
   /// Benachrichtigungen je Art (PRD §25, src/lib/notify-prefs.ts): { kinds: { <art>: { app, push } }, offDutyPush }.
   notificationPrefs Json              @default("{}")
   /// Personenverzeichnis (PRD §55): dienstliche Nummer (Stationstelefon, DECT) – für alle Mitarbeitenden sichtbar.
@@ -487,8 +497,11 @@ model ShiftType {
   start   String
   end     String
   color   String       @default("accent")
+  /// Dienstplanung: unbezahlte Pause in Minuten (Arbeitszeit = Dauer − Pause, src/lib/roster).
+  breakMinutes Int     @default(0)
   org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   shifts  Shift[]
+  wishes  ShiftWish[]
 
   @@unique([orgId, code])
 }
@@ -544,6 +557,74 @@ model Absence {
   user User @relation("AbsenceUser", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// Dienstplanung (PEP-artig): Monat je Bereich. Ohne Eintrag gilt ein Monat als freigegeben.
+/// Entwurf = Dienste sind nur für die Leitung sichtbar; Freigabe benachrichtigt das Team.
+model SchedulePeriod {
+  id           String               @id @default(cuid())
+  orgId        String
+  unitId       String
+  /// Erster Tag des Monats
+  month        DateTime             @db.Date
+  status       SchedulePeriodStatus @default(draft)
+  releasedAt   DateTime?
+  releasedById String?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, month])
+  @@index([orgId, status])
+}
+
+/// Dienstwunsch einer Person für einen Tag: frei oder ein bestimmter Dienst.
+model ShiftWish {
+  id          String     @id @default(cuid())
+  orgId       String
+  userId      String
+  date        DateTime   @db.Date
+  /// off | shift
+  kind        String
+  shiftTypeId String?
+  note        String?
+  createdAt   DateTime   @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shiftType ShiftType? @relation(fields: [shiftTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([orgId, date])
+}
+
+/// Planungsvorschlag für einen Monat (KI oder automatische Planung). Wird erst nach Prüfung übernommen.
+model ScheduleProposal {
+  id           String    @id @default(cuid())
+  orgId        String
+  unitId       String
+  month        DateTime  @db.Date
+  /// ai | auto | copy
+  source       String
+  /// fill = nur leere Zellen, replace = Monat ab heute neu planen
+  mode         String
+  /// running | ready | failed | applied | discarded
+  status       String    @default("running")
+  instructions String?
+  /// Vorgeschlagene Zellen [{ u, d, c }] (Person, Tag YYYY-MM-DD, Dienstcode oder null = frei)
+  cells        Json      @default("[]")
+  /// Kennzahlen, Hinweise der KI, Korrekturen der Regelprüfung
+  summary      Json      @default("{}")
+  error        String?
+  model        String?
+  createdById  String
+  createdAt    DateTime  @default(now())
+  decidedAt    DateTime?
+  decidedById  String?
+
+  unit Unit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId, month])
 }
 
 model Qualification {

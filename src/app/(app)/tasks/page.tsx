@@ -42,7 +42,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const canComplete = ctx.canHere('task.complete')
   const canMeds = ctx.canHere('resident.medication.read')
   const canRound = ctx.canHere('resident.medication.administer')
-  const canVisit = ctx.canHere('resident.read')
+  const canVisit = ctx.canHere('resident.read') && ctx.hasModule('visit')
+  const canPharmacy = ctx.canHere('resident.medication.stock') && ctx.hasModule('medication')
 
   const now = new Date()
   const today = startOfDay(now)
@@ -193,6 +194,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
             <div className="row">
               {canRound && <Link className="btn" href="/tasks/medround">{t('tasks.medround')}</Link>}
               {canVisit && <Link className="btn" href="/tasks/visit">{t('visit.nav')}</Link>}
+              {canPharmacy && <Link className="btn" href="/tasks/pharmacy">{t('meds.pharmacy.title')}</Link>}
               {canManage && (
                 <CreateTask
                   initialOpen={sp.new === '1'}

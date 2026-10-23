@@ -265,6 +265,7 @@ async function Shifts() {
       <TextField label={t('admin.config.name')} name="name" defaultValue={st?.name} required maxLength={60} />
       <TimeField label={t('admin.config.start')} name="start" defaultValue={st?.start ?? '07:00'} required />
       <TimeField label={t('admin.config.end')} name="end" defaultValue={st?.end ?? '15:30'} required />
+      <NumberField label={t('admin.config.breakMinutes')} name="breakMinutes" unit="min" min={0} max={240} step={5} defaultValue={st?.breakMinutes ?? 0} />
     </div>
   )
   return (
@@ -276,7 +277,7 @@ async function Shifts() {
         </div>
         <div className="tablewrap">
           <table className="stable">
-            <thead><tr><th>{t('admin.config.code')}</th><th>{t('admin.config.name')}</th><th>{t('admin.config.start')}</th><th>{t('admin.config.end')}</th><th className="right">{t('admin.config.planned')}</th><th><span className="sr-only">{t('admin.common.actions')}</span></th></tr></thead>
+            <thead><tr><th>{t('admin.config.code')}</th><th>{t('admin.config.name')}</th><th>{t('admin.config.start')}</th><th>{t('admin.config.end')}</th><th className="right">{t('admin.config.breakMinutes')}</th><th className="right">{t('admin.config.planned')}</th><th><span className="sr-only">{t('admin.common.actions')}</span></th></tr></thead>
             <tbody>
               {types.map((st) => (
                 <tr key={st.id}>
@@ -284,6 +285,7 @@ async function Shifts() {
                   <td>{st.name}</td>
                   <td className="num">{st.start}</td>
                   <td className="num">{st.end}</td>
+                  <td className="num right">{st.breakMinutes} min</td>
                   <td className="num right">{st._count.shifts}</td>
                   <td className="right nowrap">
                     <FormDialog label={t('common.edit')} buttonClass="btn sm ghost" title={st.name} action={saveShiftTypeAction} submit={t('common.save')} success="common.saved">{fields(st)}</FormDialog>

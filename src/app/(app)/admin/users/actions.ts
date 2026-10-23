@@ -26,8 +26,8 @@ async function userInOrg(ctx: Ctx, id: string) {
 }
 
 /** Sicht auf einen Benutzer ohne Geheimnisse – für before/after im Audit. */
-const safe = (u: { email: string; firstName: string; lastName: string; initials: string; jobTitle: string | null; employeeNo: string | null; phone: string | null; workPhone: string | null; primaryUnitId: string | null; locale: string; active: boolean }) => ({
-  email: u.email, firstName: u.firstName, lastName: u.lastName, initials: u.initials, jobTitle: u.jobTitle, employeeNo: u.employeeNo, phone: u.phone, workPhone: u.workPhone, primaryUnitId: u.primaryUnitId, locale: u.locale, active: u.active,
+const safe = (u: { email: string; firstName: string; lastName: string; initials: string; jobTitle: string | null; employeeNo: string | null; phone: string | null; workPhone: string | null; primaryUnitId: string | null; locale: string; active: boolean; employmentPct: number }) => ({
+  email: u.email, firstName: u.firstName, lastName: u.lastName, initials: u.initials, jobTitle: u.jobTitle, employeeNo: u.employeeNo, phone: u.phone, workPhone: u.workPhone, primaryUnitId: u.primaryUnitId, locale: u.locale, active: u.active, employmentPct: u.employmentPct,
 })
 
 const holdsOrgWide = (ctx: Ctx, perm: string) => ctx.grants.some((g) => !g.unitId && !g.locationId && g.permissions.includes(perm))
@@ -67,12 +67,14 @@ function parseUserFields(form: FormData) {
     workPhone: fd(form, 'workPhone').slice(0, 40) || null,
     primaryUnitId: fd(form, 'primaryUnitId') || null,
     locale: z.enum(LOCALES).catch('de').parse(fd(form, 'locale')),
+    employmentPct: Number(fd(form, 'employmentPct') || 100),
   }
 }
 
 async function validateUser(ctx: Ctx, u: ReturnType<typeof parseUserFields>, id?: string): Promise<ActionResult | null> {
   if (!z.email().safeParse(u.email).success) return { ok: false, error: 'admin.users.badEmail', field: 'email' }
   if (!u.firstName) return { ok: false, error: 'admin.errors.name', field: 'firstName' }
+  if (!Number.isInteger(u.employmentPct) || u.employmentPct < 5 || u.employmentPct > 100) return { ok: false, error: 'admin.users.badPensum', field: 'employmentPct' }
   if (!u.lastName) return { ok: false, error: 'admin.errors.name', field: 'lastName' }
   const clash = await db.user.findUnique({ where: { email: u.email } })
   if (clash && clash.id !== id) return { ok: false, error: 'admin.users.emailTaken', field: 'email' }

@@ -64,7 +64,7 @@ Schritt-für-Schritt-Anleitung mit Variablen-Generator: [`docs/RAILWAY.md`](docs
 
 5. **Domain erzeugen:** Settings → Networking → „Generate Domain“. Danach `APP_URL` prüfen.
 6. **Optional:**
-   - `ANTHROPIC_API_KEY` (und `AI_MODEL`, Standard `claude-opus-5-5`) aktiviert CareOS AI. Abschaltbar pro Organisation unter Admin → Klinische Konfiguration → Funktionen.
+   - `ANTHROPIC_API_KEY` (und `AI_MODEL`, Standard `claude-haiku-5-5`) aktiviert CareOS AI. Abschaltbar pro Organisation unter Admin → Klinische Konfiguration → Funktionen.
    - `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_LABEL` für Single Sign-on (z. B. Microsoft Entra ID). Redirect-URI: `<APP_URL>/api/auth/sso/callback`. Benutzer werden über die E-Mail zugeordnet, Konten werden nicht automatisch angelegt.
    - `SESSION_HOURS` (Standard 12) – gleitende Sitzungsdauer.
    - `JOBS_DISABLED=true` schaltet die Hintergrundjobs in dieser Instanz ab.

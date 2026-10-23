@@ -3,6 +3,7 @@ import { getCtx } from '@/lib/context'
 import { fmtDate, hm } from '@/lib/time'
 import { RETENTION_ACTION, RETENTION_CATEGORIES, RETENTION_RULES, lastDailySlot } from '@/lib/retention-policy'
 import { retentionPreview } from '@/lib/retention'
+import { PORTAL_ORPHAN_DAYS, PORTAL_RETENTION_KEYS } from '@/lib/portal/retention'
 import { Forbidden } from '@/components/ui/Empty'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
 import { ActBtn } from '@/components/admin/ui'
@@ -15,7 +16,12 @@ export async function generateMetadata() {
   return { title: `${t('admin.nav.privacy')} · ${t('nav.admin')}` }
 }
 
-const SUMMARY_KEYS = [...RETENTION_CATEGORIES, 'files'] as const
+/** Portal-Daten im Probelauf: Kommunikation nach Frist «chat», Sitzungen nach «sessions», verwaiste Konten/Einladungen nach PORTAL_ORPHAN_DAYS. */
+type PortalKey = (typeof PORTAL_RETENTION_KEYS)[number]
+const PORTAL_BASIS: Record<PortalKey, 'chat' | 'sessions' | 'orphan'> = {
+  portalMessages: 'chat', portalThreads: 'chat', portalVisits: 'chat', portalUpdates: 'chat', portalSessions: 'sessions', portalInvites: 'orphan', portalAccounts: 'orphan',
+}
+const SUMMARY_KEYS = [...RETENTION_CATEGORIES, ...PORTAL_RETENTION_KEYS, 'files'] as const
 
 export default async function PrivacyPage() {
   const ctx = await getCtx()
@@ -33,6 +39,9 @@ export default async function PrivacyPage() {
   }
   const when = (d: Date) => `${fmtDate(d, locale)} ${hm(d)}`
   const next = lastDailySlot(new Date(now.getTime() + 86400_000), '02:30', 'Europe/Zurich')
+  const portalCount = (k: PortalKey) => counts[k] ?? 0
+  const showPortal = ctx.hasModule('portals') || PORTAL_RETENTION_KEYS.some((k) => portalCount(k) > 0)
+  const orphanCutoff = new Date(now.getTime() - PORTAL_ORPHAN_DAYS * 86400_000)
   const summary = (s: unknown) => {
     const o = (s && typeof s === 'object' ? s : {}) as Record<string, number>
     const parts = SUMMARY_KEYS.filter((k) => Number(o[k]) > 0).map((k) => `${t('admin.privacy.short.' + k)} ${o[k]}`)
@@ -99,6 +108,42 @@ export default async function PrivacyPage() {
             </div>
           </section>
 
+          {showPortal && (
+            <section className="card" aria-labelledby="p-portal">
+              <div className="card-head"><h2 id="p-portal">{t('admin.privacy.portalTitle')}</h2><span className="small muted">{t('admin.privacy.portalHint', { days: PORTAL_ORPHAN_DAYS })}</span></div>
+              <div className="tablewrap" style={{ border: 0, borderRadius: 0 }}>
+                <table className="stable">
+                  <thead>
+                    <tr>
+                      <th>{t('admin.privacy.category')}</th>
+                      <th>{t('admin.privacy.period')}</th>
+                      <th>{t('admin.privacy.consequence')}</th>
+                      <th>{t('admin.privacy.preview')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PORTAL_RETENTION_KEYS.map((k) => {
+                      const n = portalCount(k)
+                      const basis = PORTAL_BASIS[k]
+                      const cut = basis === 'orphan' ? orphanCutoff : cutoffs[basis]
+                      return (
+                        <tr key={k}>
+                          <th scope="row" style={{ minWidth: 220 }}>{t('admin.privacy.portal.' + k)}</th>
+                          <td className="small nowrap">{t('admin.privacy.portalBasis.' + basis, { days: PORTAL_ORPHAN_DAYS })}</td>
+                          <td><span className="tag outline">{t('admin.privacy.delete')}</span></td>
+                          <td className="small nowrap">
+                            <div className={n > 0 ? 'warn-text' : 'muted'}>{t('admin.privacy.wouldDelete', { n })}</div>
+                            <div className="muted mono" style={{ fontSize: '0.6875rem' }}>{t('admin.privacy.cutoff', { date: fmtDate(cut, locale) })}</div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
           {counts.missingDischarge > 0 && (
             <div className="alert warn" role="status"><span className="grow">{t('admin.privacy.missingDischarge', { n: counts.missingDischarge })}</span></div>
           )}
@@ -114,8 +159,11 @@ export default async function PrivacyPage() {
                 action={runRetentionNowAction}
                 className="btn danger"
                 confirm="admin.privacy.runConfirm"
-                context={<span>{t('admin.ux.runAffected', { n: RETENTION_CATEGORIES.reduce((n, c) => n + counts[c], 0) })}</span>}
-                consequences={RETENTION_CATEGORIES.filter((c) => counts[c] > 0).map((c) => `${t('admin.privacy.cat.' + c)}: ${t(RETENTION_ACTION[c] === 'anonymise' ? 'admin.privacy.wouldAnonymise' : 'admin.privacy.wouldDelete', { n: counts[c] })}`)}
+                context={<span>{t('admin.ux.runAffected', { n: RETENTION_CATEGORIES.reduce((n, c) => n + counts[c], 0) + PORTAL_RETENTION_KEYS.reduce((n, k) => n + portalCount(k), 0) })}</span>}
+                consequences={[
+                  ...RETENTION_CATEGORIES.filter((c) => counts[c] > 0).map((c) => `${t('admin.privacy.cat.' + c)}: ${t(RETENTION_ACTION[c] === 'anonymise' ? 'admin.privacy.wouldAnonymise' : 'admin.privacy.wouldDelete', { n: counts[c] })}`),
+                  ...PORTAL_RETENTION_KEYS.filter((k) => portalCount(k) > 0).map((k) => `${t('admin.privacy.short.' + k)}: ${t('admin.privacy.wouldDelete', { n: portalCount(k) })}`),
+                ]}
                 ack={t('admin.ux.runAck')}
               >{t('admin.privacy.run')}</ActBtn>
             </div>

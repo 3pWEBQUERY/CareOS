@@ -80,5 +80,5 @@ lines.push(
   '# S3_SSE=',
   '',
 )
-lines.push('# Optional: CareOS AI', '# ANTHROPIC_API_KEY=', '# AI_MODEL=claude-opus-5-5', '', '# Optional: Single Sign-on (OpenID Connect)', '# OIDC_ISSUER=', '# OIDC_CLIENT_ID=', '# OIDC_CLIENT_SECRET=', '# OIDC_LABEL=Mit Microsoft anmelden')
+lines.push('# Optional: CareOS AI', '# ANTHROPIC_API_KEY=', '# AI_MODEL=claude-haiku-5-5', '', '# Optional: Single Sign-on (OpenID Connect)', '# OIDC_ISSUER=', '# OIDC_CLIENT_ID=', '# OIDC_CLIENT_SECRET=', '# OIDC_LABEL=Mit Microsoft anmelden')
 console.log(lines.join('\n'))

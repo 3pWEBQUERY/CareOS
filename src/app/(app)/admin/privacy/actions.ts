@@ -10,6 +10,7 @@ import { orgSettings } from '@/lib/admin'
 import { RETENTION_CATEGORIES, RETENTION_RULES, retentionPolicy, type RetentionPolicy } from '@/lib/retention-policy'
 import { recordRun, withJobLock } from '@/lib/jobs'
 import { runRetention } from '@/lib/retention'
+import { PORTAL_RETENTION_KEYS } from '@/lib/portal/retention'
 
 export async function saveRetentionAction(form: FormData): Promise<ActionResult> {
   return run(async () => {
@@ -43,7 +44,9 @@ export async function runRetentionNowAction(): Promise<ActionResult> {
     refresh()
     if (!r.value.ok) return { ok: false, error: ctx.t('admin.privacy.failed', { error: r.value.error.slice(0, 160) }) }
     const c = r.value.value
-    const n = RETENTION_CATEGORIES.reduce((s, k) => s + c[k], 0)
+    // Portal-Daten zählen mit (Kommunikation, Sitzungen, verwaiste Konten und Einladungen)
+    const portal = PORTAL_RETENTION_KEYS.reduce((s, k) => s + (c[k] ?? 0), 0)
+    const n = RETENTION_CATEGORIES.reduce((s, k) => s + c[k], 0) + portal
     return { ok: true, message: ctx.t('admin.privacy.runDone', { n }) }
   })
 }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  NEVER_SHARED, PORTAL_GRANTS, accessState, clampToConsent, effectiveGrants, isShareableFileCategory, normalizeGrants, portalAppointment,
+  NEVER_SHARED, PORTAL_GRANTS, accessState, clampToConsent, effectiveGrants, isPhysicianContact, isShareableFileCategory, normalizeGrants, portalAppointment,
   portalFile, portalResident, portalSettings, residentVisible, threadStatusAfter, visitProblem, visitTransition,
 } from './policy'
 
@@ -136,4 +136,11 @@ test('Sitzungs-Trennung: Portal nutzt nie getCtx/getSession der Stationsapp', ()
   }
   const staff = readFileSync(join(ROOT, 'src/lib/auth/session.ts'), 'utf8')
   assert.ok(!/portal/i.test(staff), 'Stationsapp-Sitzung kennt das Portal nicht')
+})
+
+test('Einladung: ärztliche Kontaktpersonen erhalten keinen Portalzugang (Ärzteportal)', () => {
+  for (const r of ['Hausarzt', 'Hausärztin', 'Zahnarzt', 'Ärztin', 'Dr. med.', 'médecin traitant', 'Médecin', 'medico curante', 'Medica di base', 'Dottoressa', 'GP', 'Physician', 'family doctor'])
+    assert.ok(isPhysicianContact(r), r)
+  for (const r of ['Tochter', 'Sohn', 'Beistand', 'Ehemann', 'fille', 'curateur', 'figlia', 'curatore', 'daughter', 'guardian', 'Nachbarin', '', null])
+    assert.ok(!isPhysicianContact(r), String(r))
 })

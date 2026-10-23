@@ -4,7 +4,7 @@
  * Reine Logik ohne Datenbank (Server, Client, Tests).
  */
 import { z } from 'zod'
-import { addDays, startOfDay } from '@/lib/time'
+import { addDays, atTime, startOfDay } from '@/lib/time'
 
 export const DISCIPLINES = ['physio', 'ergo', 'speech', 'activation'] as const
 export type Discipline = (typeof DISCIPLINES)[number]
@@ -46,6 +46,15 @@ export const sessionSchema = z.object({
   if (v.outcome === 'other' && v.text.length < 3) c.addIssue({ code: 'custom', path: ['text'], message: 'therapy.errors.reason' })
   if (v.outcome === 'done' && v.durationMin < 5) c.addIssue({ code: 'custom', path: ['durationMin'], message: 'therapy.errors.duration' })
 })
+
+/**
+ * Pflege-Anleitung als wiederkehrende Aufgabe (TaskTemplate, erzeugt über ensureTasksForDay): täglich zur Uhrzeit,
+ * bis zum Planende. Liegt die Uhrzeit am Starttag schon zurück, beginnt sie am Folgetag (keine sofort überfällige Aufgabe).
+ */
+export function careRecurrence(start: Date, careTime: string, end: Date | null, now = new Date()) {
+  const first = atTime(start, careTime) < now ? addDays(startOfDay(start), 1) : startOfDay(start)
+  return { rhythm: 'daily' as const, every: 1, weekdays: [] as number[], monthDay: null, times: [careTime], startDate: first, endDate: end }
+}
 
 /** Montag 00:00 der Woche von `d` (Schweiz: Woche beginnt am Montag). */
 export function weekStart(d: Date): Date {
