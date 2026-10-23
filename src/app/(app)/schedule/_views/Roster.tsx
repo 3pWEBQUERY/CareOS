@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { db } from '@/lib/db'
 import type { Ctx } from '@/lib/context'
-import { aiConfigured, env } from '@/lib/env'
+import { aiConfigured } from '@/lib/env'
 import { dateKey, dbDate, fmtDate, fmtDayMonth, parseDateKey, weekdayShort } from '@/lib/time'
 import { Empty } from '@/components/ui/Empty'
 import { ActionForm, Submit } from '@/components/ui/ActionForm'
@@ -32,7 +32,10 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
     const wd = weekdayShort(d, locale)
     return { key: k, dom: d.getDate(), wd, label: `${wd} ${fmtDayMonth(d, locale)}`, weekend: d.getDay() === 0 || d.getDay() === 6, past: k < data.today, today: k === data.today }
   })
-  const types = data.types.map((x) => ({ id: x.id, code: x.code, name: shiftName(t, x), start: x.start, end: x.end, hours: round1(shiftHours(x)), night: isNight(x) }))
+  const types = data.types.map((x) => ({
+    id: x.id, code: x.code, name: shiftName(t, x), rawName: x.name, start: x.start, end: x.end, hours: round1(shiftHours(x)), night: isNight(x),
+    color: x.color, breakMinutes: x.breakMinutes, target: data.problem.targets[x.code] ?? 0, days: data.problem.targetDays?.[x.code] ?? [0, 1, 2, 3, 4, 5, 6], inUse: x._count.shifts > 0,
+  }))
   const absenceAt: RosterProps['absenceAt'] = {}
   for (const [k, a] of Object.entries(data.absenceAt)) absenceAt[k] = { label: t('schedule.absence.short.' + a.kind), title: t('schedule.absence.kinds.' + a.kind), pending: a.status === 'requested' }
   const openByDay: RosterProps['openByDay'] = {}
@@ -52,7 +55,6 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
       cells: proposalRow.status === 'ready' ? (proposalRow.cells as RProposalView['cells']) : [],
       summary: proposalRow.status === 'ready' ? (proposalRow.summary as RProposalView['summary']) : null,
       error: stale ? 'error' : proposalRow.error,
-      model: proposalRow.model,
     }
   }
   const aiOn = aiConfigured() && ctx.hasModule('ai') && ctx.can('ai.use')
@@ -64,7 +66,7 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
     monthLabel: fmtDate(monthStart(month), locale, { month: 'long', year: 'numeric' }),
     days,
     types,
-    people: data.people.map((p) => ({ id: p.id, name: p.name, short: p.short, qual: p.qual, job: p.job, pct: p.pct, key: p.key })),
+    people: data.people.map((p) => ({ id: p.id, name: p.name, short: p.short, qual: p.qual, job: p.job, pct: p.pct, key: p.key, allowed: p.prefs.allowed ?? [], preferred: p.prefs.preferred ?? [], maxNights: p.prefs.maxNights ?? null })),
     problem: data.problem,
     current: data.current,
     shiftAt: data.shiftAt,
@@ -73,7 +75,9 @@ export async function RosterView({ ctx, month }: { ctx: Ctx; month: string }) {
     openByDay,
     period: data.period.status,
     proposal,
-    ai: { available: aiOn, reason: aiOn ? null : !aiConfigured() ? 'roster.ai.notConfigured' : 'roster.ai.off', model: env.ai.model },
+    ai: { available: aiOn, reason: aiOn ? null : !aiConfigured() ? 'roster.ai.notConfigured' : 'roster.ai.off' },
+    canEditTypes: ctx.can('schedule.manage'),
+    weekdays: [1, 2, 3, 4, 5, 6, 0].map((n) => ({ n, label: weekdayShort(new Date(2026, 10, 1 + n), locale) })),
     keyQual: data.key?.name ?? null,
     quals: quals.map((q) => q.name),
     rules: data.problem.rules,

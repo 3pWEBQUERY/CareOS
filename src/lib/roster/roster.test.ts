@@ -141,3 +141,42 @@ test('KI: Antwort wird übersetzt und vom Solver regelkonform gemacht', async ()
   assert.equal(grid[cellKey('u1', '2026-11-12')] ?? null, null)
   assert.throws(() => aiSchema(['F']).parse({ plan: [{ person: 'P1', shifts: ['Q'] }], constraints: [], notes: [] }))
 })
+
+test('Wünsche haben Vorrang: Frei-Wünsche bleiben frei, Dienst-Wünsche werden erfüllt, auch gegen den Startplan', () => {
+  const days = monthDays('2026-11')
+  const wishes: RProblem['wishes'] = {}
+  for (const [i, d] of days.entries()) {
+    if (i % 3 === 0) wishes[cellKey('u' + (i % 14), d)] = { kind: 'off' }
+    if (i % 4 === 1) wishes[cellKey('u' + ((i + 5) % 14), d)] = { kind: 'shift', code: i % 8 === 1 ? 'N' : 'F' }
+  }
+  const p = problem({ wishes })
+  // Startplan setzt genau die Frei-Wunsch-Tage ein
+  const seed: Record<string, string> = {}
+  for (const [k, w] of Object.entries(wishes)) if (w.kind === 'off') seed[k] = 'F'
+  const { grid } = plan(p, {}, { mode: 'replace', seed })
+  const ev = evaluate(p, grid)
+  assert.deepEqual(ev.issues.filter((i) => i.severity === 'error'), [])
+  for (const [k, w] of Object.entries(wishes)) if (w.kind === 'off') assert.equal(grid[k] ?? null, null, `Frei-Wunsch ${k}`)
+  assert.ok(ev.wishes.met / ev.wishes.total >= 0.9, `Wünsche ${ev.wishes.met}/${ev.wishes.total}`)
+})
+
+test('Vorgaben je Person (nur bestimmte Dienste, max. Nächte) und Soll-Besetzung nur an Wochentagen', () => {
+  const p = problem({
+    types: [...TYPES, { code: 'ST', start: '09:00', end: '13:00', breakMinutes: 0 }],
+    targets: { F: 3, S: 3, N: 1, ST: 1 },
+    targetDays: { ST: [1, 2, 3, 4, 5] },
+  })
+  p.people[0] = { ...p.people[0], allowed: ['F'] }
+  p.people[1] = { ...p.people[1], maxNights: 2 }
+  p.people[2] = { ...p.people[2], preferred: ['ST'] }
+  const { grid } = plan(p, {}, { mode: 'replace' })
+  for (const d of p.days) {
+    const v = grid[cellKey('u0', d)]
+    assert.ok(!v || v === 'F', `u0 ${d} ${v}`)
+    const st = p.people.filter((x) => grid[cellKey(x.id, d)] === 'ST').length
+    const wd = new Date(d + 'T00:00:00Z').getUTCDay()
+    assert.equal(st, wd === 0 || wd === 6 ? 0 : 1, `Stübli ${d}`)
+  }
+  assert.ok(p.days.filter((d) => grid[cellKey('u1', d)] === 'N').length <= 2)
+  assert.ok(p.days.filter((d) => grid[cellKey('u2', d)] === 'ST').length >= 8)
+})

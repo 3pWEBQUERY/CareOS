@@ -51,7 +51,6 @@ export function ProposalBanner({ proposal: p, monthLabel, preview, onPreview, on
     <section className="card rst-proposal" aria-labelledby="rst-prop">
       <div className="card-head">
         <h2 id="rst-prop">{title}</h2>
-        {p.model && <span className="small muted">{t('roster.proposal.model', { model: p.model })}</span>}
         <span className="spacer" />
         <Switch label={t('roster.proposal.preview')} checked={preview} onChange={(e) => onPreview(e.currentTarget.checked)} />
       </div>

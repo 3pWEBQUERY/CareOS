@@ -6,7 +6,20 @@
  */
 
 export type RType = { code: string; start: string; end: string; breakMinutes: number }
-export type RPerson = { id: string; name: string; pct: number; level: number; key: boolean }
+/**
+ * Person in der Planung. Dauerhafte Vorgaben (User.shiftPrefs): `allowed` = nur diese Dienste (hart),
+ * `preferred` = bevorzugte Dienste (weich), `maxNights` = höchstens so viele Nachtdienste im Monat (hart).
+ */
+export type RPerson = { id: string; name: string; pct: number; level: number; key: boolean; allowed?: string[]; preferred?: string[]; maxNights?: number | null }
+export type ShiftPrefs = { allowed?: string[]; preferred?: string[]; maxNights?: number | null }
+
+/** Vorgaben aus User.shiftPrefs lesen (unbekannte Codes und ungültige Werte verwerfen). */
+export function readShiftPrefs(raw: unknown, codes: string[]): ShiftPrefs {
+  const o = (raw ?? {}) as Record<string, unknown>
+  const list = (v: unknown) => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === 'string' && codes.includes(x)))] : [])
+  const n = Number(o.maxNights)
+  return { allowed: list(o.allowed), preferred: list(o.preferred), maxNights: o.maxNights != null && Number.isInteger(n) && n >= 0 && n <= 31 ? n : null }
+}
 export type Cell = string | null
 export type Grid = Record<string, Cell>
 export type Wish = { kind: 'off' } | { kind: 'shift'; code: string }
@@ -65,6 +78,8 @@ export type RProblem = {
   after: string[]
   types: RType[]
   targets: Record<string, number>
+  /** Wochentage (0 = So … 6 = Sa), an denen die Soll-Besetzung eines Dienstes gilt; fehlt = jeden Tag */
+  targetDays?: Record<string, number[]>
   people: RPerson[]
   /** Abwesenheiten: genehmigt oder beantragt */
   absent: Record<string, 'approved' | 'requested'>
@@ -78,6 +93,13 @@ export type RProblem = {
 }
 
 export const cellKey = (userId: string, day: string) => `${userId}|${day}`
+
+/** Soll-Besetzung eines Dienstes an einem Tag (Wochentage je Dienst beachtet). */
+export function targetOn(p: Pick<RProblem, 'targets' | 'targetDays'>, day: string, code: string) {
+  const days = p.targetDays?.[code]
+  if (days && days.length && !days.includes(weekday(day))) return 0
+  return p.targets[code] ?? 0
+}
 
 export const toMin = (t: string) => {
   const [h, m] = t.split(':').map(Number)

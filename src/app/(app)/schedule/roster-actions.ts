@@ -3,7 +3,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { refresh } from 'next/cache'
 import { after } from 'next/server'
-import type { Prisma } from '@prisma/client'
+import { Prisma as PrismaNS, type Prisma } from '@prisma/client'
+import { parseShiftTypeForm } from '@/lib/shift-types'
 import { db } from '@/lib/db'
 import { getCtx, assertCan, ForbiddenError, type Ctx } from '@/lib/context'
 import { run, fd, fdNum, type ActionResult } from '@/lib/action'
@@ -14,7 +15,7 @@ import { aiConfigured } from '@/lib/env'
 import { AiUnavailable } from '@/lib/ai'
 import { captureError } from '@/lib/errors'
 import { dateKey, dbDate, fmtDate, parseDateKey } from '@/lib/time'
-import { DEFAULT_RULES, RULE_LIMITS, cellKey, monthDays, rosterRules, shiftDay, type Grid, type RRules } from '@/lib/roster/model'
+import { DEFAULT_RULES, RULE_LIMITS, cellKey, monthDays, readShiftPrefs, rosterRules, shiftDay, type Grid, type RRules } from '@/lib/roster/model'
 import { evaluate } from '@/lib/roster/evaluate'
 import { diffGrids, plan, type PersonConstraint } from '@/lib/roster/solver'
 import { MONTH_RE, loadRoster, monthStart, periodStatus } from '@/lib/roster/server'
@@ -288,17 +289,78 @@ export async function setPeriodStatusAction(unitId: string, month: string, statu
 
 // ───────── Pensum und Regeln ─────────
 
-export async function savePensumAction(unitId: string, userId: string, pct: number): Promise<ActionResult> {
+/** Pensum und dauerhafte Planungsvorgaben einer Person (nur bestimmte Dienste, bevorzugte Dienste, max. Nächte). */
+export async function savePersonPlanAction(unitId: string, userId: string, form: FormData): Promise<ActionResult> {
   return run(async () => {
     const ctx = await getCtx()
     await managedUnit(ctx, unitId)
-    if (!Number.isInteger(pct) || pct < 5 || pct > 100) return err('roster.errors.pensum')
-    const u = await db.user.findFirst({ where: { id: userId, orgId: ctx.org.id }, select: { id: true, employmentPct: true } })
+    const pct = Number(fd(form, 'pct').replace(',', '.'))
+    if (!Number.isInteger(pct) || pct < 5 || pct > 100) return err('roster.errors.pensum', 'pct')
+    const nightsRaw = fd(form, 'maxNights')
+    const maxNights = nightsRaw === '' ? null : Number(nightsRaw)
+    if (maxNights != null && (!Number.isInteger(maxNights) || maxNights < 0 || maxNights > 31)) return err('roster.errors.maxNights', 'maxNights')
+    const codes = (await db.shiftType.findMany({ where: { orgId: ctx.org.id }, select: { code: true } })).map((x) => x.code)
+    const prefs = readShiftPrefs({ allowed: form.getAll('allowed'), preferred: form.getAll('preferred'), maxNights }, codes)
+    const u = await db.user.findFirst({ where: { id: userId, orgId: ctx.org.id }, select: { id: true, employmentPct: true, shiftPrefs: true } })
     if (!u) return err('common.notFound')
-    await db.user.update({ where: { id: u.id }, data: { employmentPct: pct } })
-    await audit(ctx, { action: 'user.employment', entityType: 'User', entityId: u.id, before: { employmentPct: u.employmentPct }, after: { employmentPct: pct } })
+    await db.user.update({ where: { id: u.id }, data: { employmentPct: pct, shiftPrefs: prefs as Prisma.InputJsonValue } })
+    await audit(ctx, { action: 'user.employment', entityType: 'User', entityId: u.id, before: { employmentPct: u.employmentPct, shiftPrefs: u.shiftPrefs }, after: { employmentPct: pct, shiftPrefs: prefs } })
     refresh()
-    return { ok: true, message: 'roster.pensumSaved' }
+    return { ok: true, message: 'roster.person.saved' }
+  })
+}
+
+// ───────── Dienstarten (Leitung) ─────────
+
+/** Dienstart anlegen oder ändern, inkl. Soll-Besetzung und Wochentagen (z. B. «Stübli» nur Mo–Fr). */
+export async function saveRosterShiftTypeAction(form: FormData): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    assertCan(ctx, 'schedule.manage')
+    const parsed = parseShiftTypeForm(form)
+    if (!parsed.ok) return parsed
+    const { data } = parsed
+    const target = Number(fd(form, 'target') || 0)
+    if (!Number.isInteger(target) || target < 0 || target > 50) return err('schedule.errors.target', 'target')
+    const days = form.getAll('days').map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n <= 6)
+    if (!days.length) return err('roster.types.noDays', 'days')
+    const id = fd(form, 'id')
+    try {
+      if (id) {
+        const before = await db.shiftType.findFirst({ where: { id, orgId: ctx.org.id } })
+        if (!before) return err('common.notFound')
+        await db.shiftType.update({ where: { id }, data })
+        await audit(ctx, { action: 'admin.config.shift_type', entityType: 'ShiftType', entityId: id, before: { code: before.code, name: before.name, start: before.start, end: before.end, breakMinutes: before.breakMinutes, color: before.color }, after: data })
+      } else {
+        const st = await db.shiftType.create({ data: { ...data, orgId: ctx.org.id } })
+        await audit(ctx, { action: 'admin.config.shift_type_create', entityType: 'ShiftType', entityId: st.id, after: data })
+      }
+    } catch (e) {
+      if (e instanceof PrismaNS.PrismaClientKnownRequestError && e.code === 'P2002') return err('admin.config.codeTaken', 'code')
+      throw e
+    }
+    const org = await db.organization.findUniqueOrThrow({ where: { id: ctx.org.id }, select: { settings: true } })
+    const settings = (org.settings ?? {}) as Record<string, unknown>
+    const coverage = { ...((settings.coverage ?? {}) as Record<string, number>), [data.code]: target }
+    const coverageDays = { ...((settings.coverageDays ?? {}) as Record<string, number[]>), [data.code]: [...new Set(days)].sort() }
+    await db.organization.update({ where: { id: ctx.org.id }, data: { settings: { ...settings, coverage, coverageDays } as Prisma.InputJsonValue } })
+    await emit({ orgId: ctx.org.id, type: 'schedule.changed', unitId: null, actorId: ctx.user.id, payload: { shiftType: data.code } })
+    refresh()
+    return { ok: true, message: 'roster.types.saved' }
+  })
+}
+
+export async function deleteRosterShiftTypeAction(id: string): Promise<ActionResult> {
+  return run(async () => {
+    const ctx = await getCtx()
+    assertCan(ctx, 'schedule.manage')
+    const st = await db.shiftType.findFirst({ where: { id, orgId: ctx.org.id }, include: { _count: { select: { shifts: true } } } })
+    if (!st) return err('common.notFound')
+    if (st._count.shifts) return err('admin.config.shiftTypeInUse')
+    await db.shiftType.delete({ where: { id } })
+    await audit(ctx, { action: 'admin.config.shift_type_delete', entityType: 'ShiftType', entityId: id, before: { code: st.code, name: st.name } })
+    refresh()
+    return { ok: true, message: 'roster.types.deleted' }
   })
 }
 

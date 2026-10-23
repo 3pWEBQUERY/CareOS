@@ -11,7 +11,7 @@ import { saveCellsAction, setPeriodStatusAction, type CellChange } from '../rost
 import { ShiftDialog, type ShiftDraft } from '../_ui/ShiftDialog'
 import { ActButton } from '../../team/_ui/ActButton'
 import { ProposalBanner } from './ProposalBanner'
-import { PatternDialog, PersonDialog, PlanDialog } from './RosterDialogs'
+import { PatternDialog, PersonDialog, PlanDialog, ShiftTypesDialog } from './RosterDialogs'
 import { RosterIssues } from './RosterIssues'
 import { issueText } from './format'
 import type { RPersonRow, RosterProps } from './types'
@@ -21,7 +21,8 @@ type Sel = { active: Pos | null; anchor: Pos | null }
 type Change = { key: string; from: Cell; to: Cell }
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n))
-const chipClass = (code: string) => (['F', 'S', 'N'].includes(code) ? code : 'x')
+/** Farbklasse einer Dienstart: F/S/N fest, eigene Dienste nach gewählter Farbe. */
+const colorOf = (types: Map<string, { color: string }>, code: string) => (['F', 'S', 'N'].includes(code) ? code : 'col-' + (types.get(code)?.color ?? 'accent'))
 
 /**
  * Monatsplanung (PEP-artig): Raster Mitarbeitende × Tage mit Tastatur- und Mausbedienung, Pinsel, Kopieren und
@@ -42,7 +43,7 @@ export function RosterBoard(props: RosterProps) {
   const [brush, setBrush] = useState<string | null | undefined>(undefined)
   const [preview, setPreview] = useState(proposal?.status === 'ready')
   const [saving, setSaving] = useState(false)
-  const [dialog, setDialog] = useState<null | 'ai' | 'auto' | 'copy' | 'pattern'>(null)
+  const [dialog, setDialog] = useState<null | 'ai' | 'auto' | 'copy' | 'pattern' | 'types'>(null)
   const [person, setPerson] = useState<RPersonRow | null>(null)
   const [detail, setDetail] = useState<ShiftDraft | null>(null)
   const [, rerender] = useState(0)
@@ -366,7 +367,7 @@ export function RosterBoard(props: RosterProps) {
     const warn = iss?.some((i) => i.code === 'pending')
     const inSel = !!rc && r >= rc.r0 && r <= rc.r1 && c >= rc.c0 && c <= rc.c1
     const act = sel.active?.r === r && sel.active?.c === c
-    const cls = ['rc', v && 'c-' + chipClass(v), d.weekend && 'we', d.today && 'td', k in problem.locked && 'lk', meta?.unit && 'fg', abs && !v && 'ab', abs?.pending && 'abp',
+    const cls = ['rc', v && 'c-' + colorOf(typeMap, v), d.weekend && 'we', d.today && 'td', k in problem.locked && 'lk', meta?.unit && 'fg', abs && !v && 'ab', abs?.pending && 'abp',
       w && 'w-' + w.kind, w?.kind === 'shift' && v === w.code && 'w-met', err && 'err', !err && warn && 'warn', proposed?.changed.has(k) && 'chg', inSel && 'sel', act && 'act'].filter(Boolean).join(' ')
     const label = `${p.short}, ${d.label}: ${v ? (typeMap.get(v)?.name ?? v) : abs ? abs.title : t('roster.cell.free')}${err ? ' ▲' : ''}`
     return (
@@ -386,6 +387,8 @@ export function RosterBoard(props: RosterProps) {
         <span className={'tag ' + (props.period === 'draft' ? 'warn' : 'ok')}>{t('roster.period.' + props.period)}</span>
         <span className="small muted">{t(props.period === 'draft' ? 'roster.period.draftHint' : 'roster.period.releasedHint')}</span>
         <span className="spacer" />
+        {props.canEditTypes && <button type="button" className="btn sm ghost" onClick={() => setDialog('types')}>{t('roster.types.button')}</button>}
+        <button type="button" className="btn sm ghost" onClick={() => window.print()}>{t('roster.tools.print')}</button>
         {props.period === 'draft' ? (
           <ActButton action={() => setPeriodStatusAction(unitId, month, 'released')} className="btn sm primary" confirm={`${t('roster.period.releaseConfirm', { month: monthLabel })} ${t('roster.period.releaseBody')}`}>{t('roster.period.release')}</ActButton>
         ) : editable ? (
@@ -400,7 +403,7 @@ export function RosterBoard(props: RosterProps) {
           <button type="button" aria-pressed={brush === undefined} onClick={() => setBrush(undefined)}>{t('roster.tools.select')}</button>
           {types.map((x) => (
             <Tooltip key={x.id} content={`${x.name} ${x.start}–${x.end}`}>
-              <button type="button" aria-pressed={brush === x.code} aria-label={`${t('roster.tools.palette')}: ${x.name}`} onClick={() => setBrush((b) => (b === x.code ? undefined : x.code))}><span className={'sh ' + x.code}>{x.code}</span></button>
+              <button type="button" aria-pressed={brush === x.code} aria-label={`${t('roster.tools.palette')}: ${x.name}`} onClick={() => setBrush((b) => (b === x.code ? undefined : x.code))}><span className={'sh ' + colorOf(typeMap, x.code)}>{x.code}</span></button>
             </Tooltip>
           ))}
           <button type="button" aria-pressed={brush === null} onClick={() => setBrush((b) => (b === null ? undefined : null))}>{t('roster.tools.free')}</button>
@@ -411,15 +414,18 @@ export function RosterBoard(props: RosterProps) {
         <span className="spacer" />
         {editable && (
           <>
-            <Tooltip content={props.ai.available ? t('roster.dialog.model', { model: props.ai.model }) : tr(props.ai.reason ?? 'roster.ai.off')}>
-              <button type="button" className="btn sm primary" aria-disabled={!props.ai.available || undefined} onClick={() => (props.ai.available ? setDialog('ai') : toast(tr(props.ai.reason ?? 'roster.ai.off')))}>{t('roster.tools.ai')}</button>
-            </Tooltip>
+            {props.ai.available ? (
+              <button type="button" className="btn sm primary" onClick={() => setDialog('ai')}>{t('roster.tools.ai')}</button>
+            ) : (
+              <Tooltip content={tr(props.ai.reason ?? 'roster.ai.off')}>
+                <button type="button" className="btn sm primary" aria-disabled onClick={() => toast(tr(props.ai.reason ?? 'roster.ai.off'))}>{t('roster.tools.ai')}</button>
+              </Tooltip>
+            )}
             <button type="button" className="btn sm" onClick={() => setDialog('auto')}>{t('roster.tools.auto')}</button>
             <button type="button" className="btn sm ghost" onClick={() => setDialog('copy')}>{t('roster.tools.copy')}</button>
           </>
         )}
         <button type="button" className="btn sm ghost" onClick={() => setDialog('pattern')}>{t('roster.tools.pattern')}</button>
-        <button type="button" className="btn sm ghost" onClick={() => window.print()}>{t('roster.tools.print')}</button>
       </div>
 
       <h2 className="print-only">{t('roster.grid.label', { month: monthLabel })}</h2>
@@ -463,7 +469,7 @@ export function RosterBoard(props: RosterProps) {
           <tfoot>
             {types.map((x) => (
               <tr key={x.id}>
-                <th scope="row" className="rst-name"><span className={'sh ' + x.code}>{x.code}</span> <span className="small">{t('roster.grid.coverage')}</span></th>
+                <th scope="row" className="rst-name"><span className={'sh ' + colorOf(typeMap, x.code)}>{x.code}</span> <span className="small">{t('roster.grid.coverage')}</span></th>
                 {days.map((d) => {
                   const cv = ev.coverage[d.key]?.[x.code]
                   const open = openByDay[d.key]?.[x.code] ?? 0
@@ -491,7 +497,7 @@ export function RosterBoard(props: RosterProps) {
       </div>
       <p id="rst-status" className="rst-status small no-print" aria-live="polite">{status}</p>
       <div className="mlegend no-print">
-        {types.map((x) => <span key={x.id}><span className={'sh ' + x.code}>{x.code}</span> {x.name} <span className="mono">{x.start}–{x.end} · {x.hours} h</span></span>)}
+        {types.map((x) => <span key={x.id}><span className={'sh ' + colorOf(typeMap, x.code)}>{x.code}</span> {x.name} <span className="mono">{x.start}–{x.end} · {x.hours} h</span></span>)}
         <span><span className="rc-key w-off" aria-hidden="true" /> {t('roster.legend.wish')}</span>
         <span><span className="rc-key chg" aria-hidden="true" /> {t('roster.legend.changed')}</span>
         <span><span className="rc-key err" aria-hidden="true" /> {t('roster.legend.violation')}</span>
@@ -501,8 +507,9 @@ export function RosterBoard(props: RosterProps) {
 
       <RosterIssues issues={ev.issues} people={people} fmt={fmt} onShow={goTo} />
 
-      {dialog && dialog !== 'pattern' && (
-        <PlanDialog source={dialog} onClose={() => setDialog(null)} unitId={unitId} month={month} defaultMode={Object.keys(current).length ? 'fill' : 'replace'} model={props.ai.model} />
+      {dialog === 'types' && <ShiftTypesDialog onClose={() => setDialog(null)} types={types} weekdays={props.weekdays} />}
+      {(dialog === 'ai' || dialog === 'auto' || dialog === 'copy') && (
+        <PlanDialog source={dialog} onClose={() => setDialog(null)} unitId={unitId} month={month} defaultMode={Object.keys(current).length ? 'fill' : 'replace'} />
       )}
       {dialog === 'pattern' && (
         <PatternDialog onClose={() => setDialog(null)} people={people} days={days} types={types} monthLabel={monthLabel}
@@ -514,7 +521,7 @@ export function RosterBoard(props: RosterProps) {
             return ch.length
           }} />
       )}
-      {person && <PersonDialog person={person} unitId={unitId} onClose={() => setPerson(null)} />}
+      {person && <PersonDialog person={person} unitId={unitId} types={types} onClose={() => setPerson(null)} />}
       <ShiftDialog draft={detail} onClose={() => setDetail(null)} types={types.map((x) => ({ id: x.id, code: x.code, name: x.name, start: x.start, end: x.end }))} staff={staff} quals={props.quals} unitId={unitId} />
     </div>
   )

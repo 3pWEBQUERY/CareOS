@@ -142,8 +142,9 @@ export const IconClock = () => (
     <circle cx="10" cy="10" r="7" /><path d="M10 6v4l2.5 2" />
   </svg>
 )
-export const IconChevron = ({ dir }: { dir: 'left' | 'right' }) => (
+const CHEVRON = { left: 'M12.5 4.5 7 10l5.5 5.5', right: 'M7.5 4.5 13 10l-5.5 5.5', down: 'M4.5 7.5 10 13l5.5-5.5' }
+export const IconChevron = ({ dir }: { dir: 'left' | 'right' | 'down' }) => (
   <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-    <path d={dir === 'left' ? 'M12.5 4.5 7 10l5.5 5.5' : 'M7.5 4.5 13 10l-5.5 5.5'} />
+    <path d={CHEVRON[dir]} />
   </svg>
 )

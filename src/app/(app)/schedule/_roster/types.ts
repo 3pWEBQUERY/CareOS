@@ -2,8 +2,8 @@ import type { Grid, RProblem, RRules } from '@/lib/roster/model'
 
 /** Daten für das Monatsraster (serialisierbar, vom Server vorbereitet). */
 export type RDay = { key: string; dom: number; wd: string; label: string; weekend: boolean; past: boolean; today: boolean }
-export type RTypeOpt = { id: string; code: string; name: string; start: string; end: string; hours: number; night: boolean }
-export type RPersonRow = { id: string; name: string; short: string; qual: string; job: string; pct: number; key: boolean }
+export type RTypeOpt = { id: string; code: string; name: string; rawName: string; start: string; end: string; hours: number; night: boolean; color: string; breakMinutes: number; target: number; days: number[]; inUse: boolean }
+export type RPersonRow = { id: string; name: string; short: string; qual: string; job: string; pct: number; key: boolean; allowed: string[]; preferred: string[]; maxNights: number | null }
 export type RShiftMeta = { id: string; typeId: string; status: string; note: string | null; req: string | null; unit: string | null }
 export type RProposalView = {
   id: string
@@ -23,7 +23,6 @@ export type RProposalView = {
     before: { coverageRate: number; errors: number }
   } | null
   error: string | null
-  model: string | null
 }
 
 export type RosterProps = {
@@ -41,7 +40,9 @@ export type RosterProps = {
   openByDay: Record<string, Record<string, number>>
   period: 'draft' | 'released'
   proposal: RProposalView | null
-  ai: { available: boolean; reason: string | null; model: string }
+  ai: { available: boolean; reason: string | null }
+  canEditTypes: boolean
+  weekdays: { n: number; label: string }[]
   keyQual: string | null
   quals: string[]
   rules: RRules
