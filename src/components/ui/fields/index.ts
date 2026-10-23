@@ -2,12 +2,12 @@
  * Formularfelder des Design Systems (PRD §50). Alle Formulare verwenden diese Komponenten statt roher
  * <input>/<select>/<textarea> (Ausnahme: <input type="hidden">). Prüfung: src/lib/raw-fields.test.ts.
  *
- * Server-kompatibel (ohne 'use client' nutzbar): Field, TextField, SearchField, Select, Textarea, Checkbox, Switch, CheckboxGroup.
- * Client: NumberField, Combobox, RadioGroup, SegmentedControl, FileField, ColorField, DateField, TimeField, DateTimeField.
+ * Server-kompatibel (ohne 'use client' nutzbar): Field, TextField, SearchField, Textarea, Checkbox, Switch, CheckboxGroup.
+ * Client (aus Server-Seiten mit serialisierbaren Props nutzbar): Select, NumberField, Combobox, RadioGroup, SegmentedControl, FileField, ColorField, DateField, TimeField, DateTimeField.
  */
 export { Field, useFieldIds, splitField, cx, type FieldProps, type FieldIds } from './Field'
 export { TextField, SearchField, type TextFieldProps } from './TextField'
-export { Select, type SelectProps } from './Select'
+export { Select, type SelectProps, type SelectChangeEvent } from './Select'
 export { Textarea, type TextareaProps } from './Textarea'
 export { Checkbox, Switch, CheckboxGroup, type CheckboxProps, type CheckOption } from './Checkbox'
 export { NumberField, type NumberFieldProps } from './NumberField'

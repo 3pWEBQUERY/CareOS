@@ -33,10 +33,7 @@ export default async function MorePage() {
       <div className="scroll">
         <div className="tabpanel">
           {units.length > 1 && (
-            <label className="fld" htmlFor="more-unit">
-              <span className="lbl">{t('nav.areas')}</span>
-              <UnitSwitcher id="more-unit" className="field" units={units} current={ctx.unit?.id ?? null} label={t('nav.areas')} />
-            </label>
+            <UnitSwitcher field units={units} current={ctx.unit?.id ?? null} label={t('nav.areas')} />
           )}
           <nav className="more-grid" aria-label={t('nav.more')}>
             {items.map(([href, label]) => <Link key={href} href={href}>{label}</Link>)}

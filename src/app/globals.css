@@ -2114,3 +2114,45 @@ select.field::-ms-expand { display: none }
 .chat-file-main { display: flex; flex-direction: column; min-width: 0 }
 .chat-file-name { color: var(--fg); font-size: 0.8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16rem }
 .chat-file-meta { font-size: 0.6875rem; color: var(--fg-3) }
+
+/* ── Select: eigene Auswahlliste (WAI-ARIA Select-only Combobox) statt nativem <select>.
+   Knopf .sel-btn trägt .field (Zustände Hover/Fokus/Fehler/Deaktiviert von dort), Pfeil wie Combobox,
+   Liste .sel-pop (Optionen im Stil .cb-opt), Mobile als Blatt (.is-sheet, wie Datum/Zeit). ── */
+.sel-btn { display: flex; align-items: center; gap: 6px; text-align: left; padding-right: 7px; min-width: 0; cursor: pointer }
+.sel-btn:disabled { cursor: not-allowed }
+.sel-btn:not(.field):disabled { opacity: .6 }
+.field.sel-btn:active:not(:disabled):not([data-loading]) { background: var(--sunken) }
+.field.sel-btn[aria-expanded="true"] { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 1px var(--accent) }
+.field.sel-btn[aria-invalid="true"][aria-expanded="true"] { border-color: var(--crit); box-shadow: 0 0 0 1px var(--crit) }
+.sel-btn[data-loading] { cursor: progress }
+.sel-val { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.sel-val[data-ph] { color: var(--fg-3) }
+.sel-chev { flex: none; display: grid; place-items: center; width: 16px; height: 16px; color: var(--fg-2); transform: rotate(90deg); transition: transform .12s }
+.sel-btn:hover:not(:disabled) .sel-chev { color: var(--fg) }
+.sel-btn[aria-expanded="true"] .sel-chev { transform: rotate(-90deg) }
+.sel-btn[data-loading] .sel-chev { transform: none }
+.sel-spin { width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .7s linear infinite }
+.sel-pop { position: fixed; z-index: 80; display: flex; flex-direction: column; padding: 4px; background: var(--surface); color: var(--fg); border: 1px solid var(--line-strong); border-radius: var(--r); box-shadow: var(--shadow-pop); font-size: 0.875rem; font-weight: 400; line-height: 1.45; letter-spacing: normal; text-transform: none; text-align: left; white-space: normal; max-width: calc(100vw - 16px) }
+.sel-list { position: relative; min-width: 9rem; max-height: min(20rem, 45vh); overflow: auto; overscroll-behavior: contain }
+.sel-list:focus { outline: none }
+.sel-list .cb-group { top: 0 }
+.sel-opt:hover:not([aria-disabled="true"]):not([data-active]) { background: var(--surface-2) }
+.sel-opt[data-ph] .cb-opt-l { color: var(--fg-2) }
+.sel-opt[data-ph][aria-selected="true"] { font-weight: 400 }
+.sel-opt[aria-selected="true"] .cb-opt-l::after { content: " \2713" / "" } /* Häkchen nur sichtbar; «ausgewählt» liest aria-selected */
+.sel-opt[data-ph] .cb-opt-l::after { content: none }
+.sel-pop.is-sheet { left: 0; right: 0; bottom: 0; top: auto; max-width: none; border-width: 1px 0 0; border-radius: var(--r) var(--r) 0 0; padding: 12px max(16px, env(safe-area-inset-left, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) }
+.sel-pop.is-sheet .sel-list { max-height: min(26rem, 60dvh) }
+.sel-pop.is-sheet .cb-opt { font-size: 1rem }
+/* Topbar: Bereichswahl randlos («Standort · Wohngruppe») */
+.ctx .sel-btn { width: auto; max-width: 280px; min-height: 28px; margin: -4px -6px; padding: 0 6px; gap: 4px; border: 0; border-radius: var(--r-sm); background: none; font-weight: 500 }
+.ctx .sel-btn:hover:not(:disabled) { background: var(--surface-2) }
+.ctx .sel-btn[aria-expanded="true"] { background: var(--surface-2) }
+.ctx .sel-btn .sel-val { font-size: inherit; color: var(--fg) }
+.ctx .sel-btn .sel-chev, .ctx .sel-btn .sel-spin { font-size: inherit; color: var(--fg-2) }
+@media (min-width: 721px) and (max-width: 920px) { .ctx .sel-btn { max-width: calc(100% + 12px) } }
+/* Verlaufseintrag: Kategorie im Kopf (vorher .entry-head select) */
+.entry-head .sel-btn { width: auto; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 4px 6px }
+.entry-head .sel-btn:hover:not(:disabled) { border-color: var(--fg-3) }
+@media (max-width: 720px) { .entry-head .sel-btn { min-height: 40px } }
+@media (forced-colors: active) { .sel-opt[data-active] { outline: 2px solid Highlight; outline-offset: -2px } .field.sel-btn[aria-expanded="true"] { outline: 2px solid Highlight } }
